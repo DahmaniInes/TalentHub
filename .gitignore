@@ -1,0 +1,25 @@
+# --- FRONTEND (Angular) ---
+**/node_modules/
+**/dist/
+**/.angular/
+**/.vscode/
+.DS_Store
+
+# --- BACKEND (Spring Boot / Java) ---
+**/target/
+**/.mvn/
+**/help.md
+**/.classpath
+**/.project
+**/.settings/
+**/.factorypath
+bin/
+
+# --- FICHIERS SENSIBLES ---
+# Pour ne pas commit ton fichier de configuration Spring
+**/application.yml
+**/application.yaml
+**/application.properties
+
+# --- LOGS ---
+*.log

@@ -1,0 +1,317 @@
+<div class="sidebar-overlay" [class.visible]="sidebarOpen" (click)="closeSidebar()"></div>
+
+<div class="layout-wrapper" [class.sidebar-is-collapsed]="sidebarCollapsed" >
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar" [class.open]="sidebarOpen" [class.collapsed]="sidebarCollapsed">
+
+    <!-- HEADER FIXE -->
+  <!-- HEADER FIXE -->
+<div class="sidebar-header">
+  <div class="sidebar-logo">
+
+    <!-- Logo original restauré -->
+    <img
+      src="assets/images/Logo.png"
+      alt="Logo"
+      class="logo-img"
+      (error)="onLogoError($event)"
+    />
+    <!-- Fallback si image échoue -->
+    <div class="logo-icon-fallback" style="display:none">
+      <span>T</span>
+    </div>
+
+    <span class="logo-talenthub">TalentHub</span>
+  </div>
+</div>
+
+
+
+    <!-- Ligne séparatrice alignée avec topbar -->
+    <div class="sidebar-logo-divider"></div>
+
+    <!-- BODY SCROLLABLE -->
+    <div class="sidebar-body">
+
+      <p class="nav-section-label">Main</p>
+      <nav class="sidebar-nav">
+        <a routerLink="home" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
+          <span class="nav-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path  d="M2.5192 7.82274C2 8.77128 2 9.91549 2 12.2039V13.725C2 17.6258 2 19.5763 3.17157 20.7881C4.34315 22 6.22876 22 10 22H14C17.7712 22 19.6569 22 20.8284 20.7881C22 19.5763 22 17.6258 22 13.725V12.2039C22 9.91549 22 8.77128 21.4808 7.82274C20.9616 6.87421 20.0131 6.28551 18.116 5.10812L16.116 3.86687C14.1106 2.62229 13.1079 2 12 2C10.8921 2 9.88939 2.62229 7.88403 3.86687L5.88403 5.10813C3.98695 6.28551 3.0384 6.87421 2.5192 7.82274ZM11.25 18C11.25 18.4142 11.5858 18.75 12 18.75C12.4142 18.75 12.75 18.4142 12.75 18V15C12.75 14.5858 12.4142 14.25 12 14.25C11.5858 14.25 11.25 14.5858 11.25 15V18Z" fill="currentColor"/>
+            </svg>
+          </span>
+          <span class="nav-label">Home</span>
+          <span class="nav-tooltip">Home</span>
+        </a>
+        
+
+
+
+
+       
+
+
+      
+
+    
+
+
+     
+
+
+        <a routerLink="/dashboard" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
+          <span class="nav-icon">
+            <svg width="800px" height="800px" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 1H12V15H16V1Z" fill="currentColor"/>
+              <path d="M6 5H10V15H6V5Z" fill="currentColor"/>
+              <path d="M0 9H4V15H0V9Z" fill="currentColor"/>
+              </svg>          </span>
+          <span class="nav-label">Dashboard</span>
+          <span class="nav-tooltip">Dashboard</span>
+        </a>
+        
+        
+
+
+
+        <a routerLink="/add-user" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
+          <span class="nav-icon">
+            <svg fill="currentColor" width="20" height="20" viewBox="0 0 256 256" id="Flat" xmlns="http://www.w3.org/2000/svg">
+              <path d="M166.5415,192.78516a7.99991,7.99991,0,0,1-6.54052,12.606l-144.0044.00537a8.0002,8.0002,0,0,1-6.542-12.60546,96.21448,96.21448,0,0,1,45.34753-34.84351,60.00007,60.00007,0,1,1,66.39661,0A96.21491,96.21491,0,0,1,166.5415,192.78516Zm81.522,0a96.214,96.214,0,0,0-45.34327-34.83765A60.00088,60.00088,0,0,0,153.24707,50.23535a8,8,0,0,0-4.251,12.47852,75.83151,75.83151,0,0,1,3.84082,84.88623,8,8,0,0,0,2.04493,10.60107,113.20643,113.20643,0,0,1,8.74365,7.2146c.14429.15674.28979.31275.44873.46021a112.03418,112.03418,0,0,1,25.479,34.90527,7.99971,7.99971,0,0,0,7.24951,4.61523l44.72071-.00537a8.0001,8.0001,0,0,0,6.54-12.606Z"/>
+            </svg>          </span>
+          <span class="nav-label">Employés</span>
+          <span class="nav-tooltip">Employés</span>
+        </a>
+
+        
+
+
+        <a routerLink="/departments" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
+          <span class="nav-icon">
+            <svg fill="currentColor" width="800px" height="800px" viewBox="0 0 512 512" id="_x30_1" version="1.1" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M452,120h-76C376,53.726,322.274,0,256,0h0c-66.274,0-120,53.726-120,120H60c-33.137,0-60,26.863-60,60v272  c0,33.137,26.863,60,60,60h392c33.137,0,60-26.863,60-60V180C512,146.863,485.137,120,452,120z M256,60c33.137,0,60,26.863,60,60  H196C196,86.863,222.863,60,256,60z M402,260v20c0,16.569-13.431,30-30,30h0c-16.569,0-30-13.431-30-30v-20H170v20  c0,16.569-13.431,30-30,30h0c-16.569,0-30-13.431-30-30v-20c-16.569,0-30-13.431-30-30s13.431-30,30-30h292  c16.569,0,30,13.431,30,30S418.569,260,402,260z"/></svg>
+          
+          </span>
+          <span class="nav-label">Départements</span>
+          <span class="nav-tooltip">Départements</span>
+        </a>
+
+
+        <a routerLink="/FeuilleTempsComponent" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
+          <span class="nav-icon">
+            <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" 
+               width="800px" height="800px" viewBox="0 0 52 52" enable-background="new 0 0 52 52" xml:space="preserve">
+            <path d="M39.3,26.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9V25c0-1,0.9-1.9,1.9-1.9h22.9c1,0,1.9,0.9,1.9,1.9
+              v1.9H39.3z M35.5,38.3c0,1-0.9,1.9-1.9,1.9h-19c-1,0-1.9-0.9-1.9-1.9v-1.9c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9H35.5z
+               M12.7,13.5c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9
+              C12.7,15.4,12.7,13.5,12.7,13.5z M41.2,4H10.8C7.6,4,5,6.6,5,9.7v32.4c0,3.1,2.6,5.7,5.7,5.7h30.5c3.1,0,5.7-2.6,5.7-5.7V9.7
+              C47,6.6,44.4,4,41.2,4z"/>
+            </svg>          </span>
+          <span class="nav-label">Départements</span>
+          <span class="nav-tooltip">Départements</span>
+        </a>
+
+        <a routerLink="/salaries" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
+          <span class="nav-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </span>
+          <span class="nav-label">Salaires</span>
+          <span class="nav-tooltip">Salaires</span>
+        </a>
+
+        <a routerLink="/integrations" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
+          <span class="nav-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+          </span>
+          <span class="nav-label">Intégrations</span>
+          <span class="nav-tooltip">Intégrations</span>
+        </a>
+
+      </nav>
+
+      <div class="sidebar-divider"></div>
+
+      <p class="nav-section-label">Système</p>
+      <nav class="sidebar-nav">
+
+        <a routerLink="/auth" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
+          <span class="nav-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </span>
+          <span class="nav-label">Authentification</span>
+          <span class="nav-tooltip">Authentification</span>
+          <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+
+        <a routerLink="/settings" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
+          <span class="nav-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </span>
+          <span class="nav-label">Paramètres</span>
+          <span class="nav-tooltip">Paramètres</span>
+        </a>
+
+        <a routerLink="/templates" class="nav-item disabled">
+          <span class="nav-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </span>
+          <span class="nav-label">Templates</span>
+          <span class="nav-tooltip">Templates</span>
+        </a>
+
+      </nav>
+
+      <!-- User bas de sidebar -->
+      <div class="sidebar-user">
+        <div class="sidebar-avatar-initials">{{ userInitials }}</div>
+        <div class="sidebar-user-info">
+          <p class="user-name">{{ userName }}</p>
+          <p class="user-role">Account Settings</p>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="main-area">
+
+    <header class="topbar">
+      <button class="mobile-menu-btn" (click)="toggleSidebar()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+
+      <div class="topbar-left">
+        <!-- Icône toggle collapse -->
+        <button class="topbar-icon-btn topbar-left-icon" (click)="toggleCollapse()"
+                [title]="sidebarCollapsed ? 'Agrandir' : 'Réduire'">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" id="sidebar">
+                  <g fill="none" fill-rule="evenodd" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" transform="translate(1 1)">
+                    <rect width="18" height="18" rx="2"></rect>
+                    <path d="M6 0v18"></path>
+                  </g>
+                </svg>
+        </button>
+
+        <div class="topbar-search">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               class="search-icon">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="text" placeholder="Rechercher..." class="search-input" />
+          <kbd class="search-kbd">⌘ K</kbd>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <button class="topbar-icon-btn" (click)="toggleTheme()" [title]="isDark ? 'Mode clair' : 'Mode sombre'">
+          <svg *ngIf="!isDark" xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+          </svg>
+          <svg *ngIf="isDark" xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+
+        <button class="topbar-icon-btn notif-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span class="notif-dot"></span>
+        </button>
+
+   <!-- Dans le topbar-right, remplacer le topbar-user-block -->
+<div class="topbar-user-block"
+(click)="toggleUserMenu($event)"
+style="position: relative">
+
+<!-- Avatar : photo ou initiales -->
+<ng-container *ngIf="userPhoto; else initialsAvatar">
+<img [src]="userPhoto" alt="avatar"
+    class="topbar-avatar-initials"
+    style="object-fit: cover; padding: 0">
+</ng-container>
+<ng-template #initialsAvatar>
+<div class="topbar-avatar-initials">{{ userInitials }}</div>
+</ng-template>
+
+<!-- Nom + Rôle -->
+<div class="topbar-user-info">
+<span class="topbar-user-name">{{ userName }}</span>
+<span class="topbar-user-role">{{ userRole }}</span>
+</div>
+
+<!-- Chevron -->
+<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+  fill="none" stroke="currentColor" stroke-width="2"
+  style="color: var(--text-muted); flex-shrink: 0; margin-left: 2px;"
+  [style.transform]="showUserMenu ? 'rotate(180deg)' : 'rotate(0)'"
+  style="transition: transform 0.2s">
+<polyline points="6 9 12 15 18 9"/>
+</svg>
+
+<!-- Menu dropdown -->
+<div *ngIf="showUserMenu"
+  class="lyt-user-menu"
+  (click)="$event.stopPropagation()">
+
+<!-- Header du menu -->
+<div class="lyt-user-menu-header">
+ <ng-container *ngIf="userPhoto; else menuInitials">
+   <img [src]="userPhoto" alt="avatar" class="lyt-menu-avatar" style="object-fit: cover">
+ </ng-container>
+ <ng-template #menuInitials>
+   <div class="lyt-menu-avatar lyt-menu-avatar-initials">{{ userInitials }}</div>
+ </ng-template>
+ <div>
+   <p class="lyt-menu-name">{{ userName }}</p>
+   <p class="lyt-menu-role">{{ userRole }}</p>
+ </div>
+</div>
+
+<div class="lyt-menu-divider"></div>
+
+<!-- Actions -->
+<button type="button" class="lyt-menu-item">
+ <svg viewBox="0 0 16 16" fill="none">
+   <circle cx="8" cy="5.5" r="2.5" stroke="currentColor" stroke-width="1.5"/>
+   <path d="M2 13.5c0-2.485 2.686-4.5 6-4.5s6 2.015 6 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+ </svg>
+ Mon profil
+</button>
+
+<div class="lyt-menu-divider"></div>
+
+<!-- Logout -->
+<button type="button" class="lyt-menu-item lyt-menu-item-danger" (click)="logout()">
+ <svg viewBox="0 0 16 16" fill="none">
+   <path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+   <path d="M10 11l3-3-3-3M13 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+ </svg>
+ Se déconnecter
+</button>
+</div>
+</div>
+</div>
+
+
+
+    </header>
+
+    <main class="page-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

@@ -1,0 +1,353 @@
+<div class="min-h-screen p-6" style="background: var(--bg-primary)">
+    <div class="max-w-6xl mx-auto">
+  
+      <!-- ── Header ── -->
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-bold" style="color: var(--text-primary)">Feuilles de temps</h1>
+          <p class="text-sm mt-0.5" style="color: var(--text-muted)">
+            Gérez vos heures travaillées par semaine
+          </p>
+        </div>
+        <button class="fc-btn fc-btn-primary" (click)="openCreate()">
+          <svg viewBox="0 0 16 16" fill="none" style="width:15px;height:15px">
+            <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Nouvelle feuille
+        </button>
+      </div>
+  
+      <!-- ── Alertes ── -->
+      <div *ngIf="successMessage()" class="fc-alert fc-alert-success mb-4">
+        <span class="fc-alert-icon">✅</span>
+        <div class="fc-alert-body"><p class="fc-alert-text">{{ successMessage() }}</p></div>
+        <button class="fc-alert-close" (click)="successMessage.set(null)">×</button>
+      </div>
+      <div *ngIf="errorMessage()" class="fc-alert fc-alert-error mb-4">
+        <span class="fc-alert-icon">⚠️</span>
+        <div class="fc-alert-body">
+          <p class="fc-alert-title">Erreur</p>
+          <p class="fc-alert-text">{{ errorMessage() }}</p>
+        </div>
+        <button class="fc-alert-close" (click)="errorMessage.set(null)">×</button>
+      </div>
+  
+
+
+
+<!-- ── Stats cards ── -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="fc-card">
+      <p class="text-xs font-semibold mb-1" style="color: var(--text-muted)">Total feuilles</p>
+      <p class="text-2xl font-bold" style="color: var(--text-primary)">{{ feuilles().length }}</p>
+    </div>
+    <div class="fc-card">
+      <p class="text-xs font-semibold mb-1" style="color: var(--text-muted)">Heures totales</p>
+      <p class="text-2xl font-bold" style="color: var(--accent)">
+        {{ formatMin(totalMinutesTravailles()) }}
+      </p>
+    </div>
+    <div class="fc-card">
+      <p class="text-xs font-semibold mb-1" style="color: var(--text-muted)">En attente</p>
+      <p class="text-2xl font-bold" style="color: #3b82f6">{{ countSoumises() }}</p>
+    </div>
+    <div class="fc-card">
+      <p class="text-xs font-semibold mb-1" style="color: var(--text-muted)">Validées</p>
+      <p class="text-2xl font-bold" style="color: #10b981">{{ countValidees() }}</p>
+    </div>
+  </div>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      <!-- ── Filtres statut ── -->
+      <div class="flex gap-2 mb-5 flex-wrap">
+        <button class="ft-filter-btn" [class.active]="filterStatut() === 'TOUS'"
+                (click)="filterStatut.set('TOUS')">
+          Toutes <span class="ft-filter-count">{{ feuilles().length }}</span>
+        </button>
+        <button class="ft-filter-btn" [class.active]="filterStatut() === 'BROUILLON'"
+                (click)="filterStatut.set('BROUILLON')">
+          Brouillons <span class="ft-filter-count">{{ countByStatut('BROUILLON') }}</span>
+        </button>
+        <button class="ft-filter-btn" [class.active]="filterStatut() === 'SOUMISE'"
+                (click)="filterStatut.set('SOUMISE')">
+          Soumises <span class="ft-filter-count">{{ countByStatut('SOUMISE') }}</span>
+        </button>
+        <button class="ft-filter-btn" [class.active]="filterStatut() === 'VALIDEE'"
+                (click)="filterStatut.set('VALIDEE')">
+          Validées <span class="ft-filter-count">{{ countByStatut('VALIDEE') }}</span>
+        </button>
+        <button class="ft-filter-btn" [class.active]="filterStatut() === 'REJETEE'"
+                (click)="filterStatut.set('REJETEE')">
+          Rejetées <span class="ft-filter-count">{{ countByStatut('REJETEE') }}</span>
+        </button>
+      </div>
+
+
+      <!-- ── Chargement ── -->
+      <div *ngIf="loading() && feuilles().length === 0"
+           class="fc-card flex items-center justify-center py-16 gap-3"
+           style="color: var(--text-muted)">
+        <div class="fc-spinner" style="border-color: rgba(0,0,0,0.1); border-top-color: var(--accent)"></div>
+        Chargement...
+      </div>
+  
+      <!-- ── Liste vide ── -->
+      <div *ngIf="!loading() && filteredFeuilles().length === 0"
+           class="fc-card text-center py-16">
+        <div class="text-5xl mb-4">📋</div>
+        <p class="font-bold text-base" style="color: var(--text-primary)">Aucune feuille de temps</p>
+        <p class="text-sm mt-1 mb-4" style="color: var(--text-muted)">
+          Commencez par créer votre première feuille de temps.
+        </p>
+        <button class="fc-btn fc-btn-primary" (click)="openCreate()">Créer une feuille</button>
+      </div>
+  
+      <!-- ── Liste des feuilles ── -->
+      <div class="flex flex-col gap-3" *ngIf="filteredFeuilles().length > 0">
+        <div *ngFor="let ft of filteredFeuilles()"
+             class="ft-card"
+             [class.ft-card-validee]="ft.statut === 'VALIDEE'"
+             [class.ft-card-rejetee]="ft.statut === 'REJETEE'"
+             [class.ft-card-soumise]="ft.statut === 'SOUMISE'">
+  
+          <!-- Ligne principale -->
+          <div class="flex items-center gap-4 flex-wrap">
+  
+            <!-- Semaine -->
+            <div class="ft-week-badge">
+              <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
+                <rect x="1" y="2" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+                <path d="M1 6h12M4.5 1v2.5M9.5 1v2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+              </svg>
+              <span>{{ ft.semaineDu | date:'dd/MM' }} – {{ ft.semaineAu | date:'dd/MM/yyyy' }}</span>
+            </div>
+  
+            <!-- Employé -->
+            <span class="text-sm font-medium" style="color: var(--text-secondary)">
+              {{ ft.utilisateurNom || '—' }}
+            </span>
+  
+            <!-- Statut badge -->
+            <span class="ft-statut-badge ft-statut-{{ statutColor(ft.statut) }}">
+              {{ statutLabel(ft.statut) }}
+            </span>
+  
+            <!-- Heures -->
+            <div class="flex items-center gap-3 ml-auto flex-wrap">
+              <div class="ft-time-chip">
+                <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px;color:var(--accent)">
+                  <circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.3"/>
+                  <path d="M7 4v3l2 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                </svg>
+                <span>{{ formatMin(ft.minutesTravaillees) }}</span>
+              </div>
+              <div *ngIf="ft.minutesSupplementaires > 0" class="ft-time-chip ft-time-extra">
+                +{{ formatMin(ft.minutesSupplementaires) }}
+              </div>
+              <div *ngIf="ft.minutesAbsence > 0" class="ft-time-chip ft-time-absence">
+                -{{ formatMin(ft.minutesAbsence) }}
+              </div>
+            </div>
+  
+
+
+
+
+            <!-- Actions -->
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <button *ngIf="ft.statut === 'BROUILLON' || ft.statut === 'REJETEE'"
+                      class="fc-btn fc-btn-ghost fc-btn-sm"
+                      (click)="soumettre(ft)">
+                Soumettre
+              </button>
+              <button *ngIf="ft.statut !== 'VALIDEE'"
+                      class="fc-btn fc-btn-secondary fc-btn-sm"
+                      (click)="openEdit(ft)">
+                <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+                  <path d="M9 2l3 3-7 7H2V9l7-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <button *ngIf="ft.statut !== 'VALIDEE'"
+                      class="fc-btn fc-btn-danger fc-btn-sm"
+                      (click)="delete(ft)">
+                <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+                  <path d="M2 3h10M5 3V2h4v1M4 3l.5 8h5L10 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+  
+          <!-- Barre de progression heures -->
+          <div class="ft-progress-wrap" *ngIf="ft.minutesTravaillees > 0">
+            <div class="ft-progress-bar">
+              <div class="ft-progress-fill"
+                   [style.width.%]="getPct(ft.minutesTravaillees, 2400)"></div>
+            </div>
+            <span class="ft-progress-label">
+              {{ getPct(ft.minutesTravaillees, 2400) }}% de 40h
+            </span>
+          </div>
+  
+          <!-- Commentaire -->
+          <p *ngIf="ft.commentaireEmploye"
+             class="text-xs mt-2 italic" style="color: var(--text-muted)">
+            💬 {{ ft.commentaireEmploye }}
+          </p>
+  
+          <!-- Commentaire valideur -->
+          <div *ngIf="ft.commentaireValideur"
+               class="mt-2 px-3 py-2 rounded-lg text-xs"
+               [style.background]="ft.statut === 'VALIDEE' ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)'"
+               [style.color]="ft.statut === 'VALIDEE' ? '#10b981' : '#ef4444'">
+            {{ ft.statut === 'VALIDEE' ? '✓' : '✗' }} {{ ft.commentaireValideur }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ══════════════════════════════
+       MODAL — Créer / Modifier
+  ══════════════════════════════ -->
+  <div *ngIf="showModal()" class="fc-modal-overlay" (click)="showModal.set(false)">
+    <div class="fc-modal" style="max-width: 560px" (click)="$event.stopPropagation()">
+  
+      <div class="flex items-center gap-3 mb-5">
+        <div class="fc-section-badge" style="width:36px;height:36px;border-radius:10px">
+          <svg viewBox="0 0 16 16" fill="none" style="width:16px;height:16px">
+            <rect x="1" y="2" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M1 7h14M4.5 1v2.5M11.5 1v2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <h3 class="fc-modal-title" style="margin:0">
+            {{ editingId() ? 'Modifier la feuille' : 'Nouvelle feuille de temps' }}
+          </h3>
+          <p class="text-xs" style="color: var(--text-muted)">Les heures sont saisies en minutes</p>
+        </div>
+      </div>
+  
+      <form [formGroup]="form">
+  
+
+
+
+
+
+
+        <!-- Employé -->
+        <div class="fc-group">
+          <label class="fc-label">Employé <span class="fc-required">*</span></label>
+          <select formControlName="utilisateurId" class="fc-select">
+            <option [value]="null">-- Sélectionner --</option>
+            <option *ngFor="let u of utilisateurs()" [value]="u.id">
+              {{ u.prenom }} {{ u.nom }}
+            </option>
+          </select>
+        </div>
+  
+        <!-- Semaine -->
+        <div class="fc-grid-2">
+          <div class="fc-group">
+            <label class="fc-label">Semaine du (Lundi) <span class="fc-required">*</span></label>
+            <input type="date" formControlName="semaineDu" class="fc-input">
+          </div>
+          <div class="fc-group">
+            <label class="fc-label">Au (Vendredi)</label>
+            <input type="date" formControlName="semaineAu" class="fc-input" readonly
+                   style="opacity: 0.7; cursor: not-allowed">
+          </div>
+        </div>
+  
+
+
+        <!-- Heures en minutes -->
+        <!-- Remplacer les 3 blocs avec ft-min-preview par : -->
+<div class="fc-group">
+  <label class="fc-label">
+    Heures travaillées <span class="fc-required">*</span>
+    <span class="text-xs font-normal" style="color: var(--text-muted)">(ex: 480 = 8h, 2400 = 40h)</span>
+  </label>
+  <div style="position: relative">
+    <input type="number" formControlName="minutesTravaillees"
+           min="0" max="7200" step="15"
+           class="fc-input" placeholder="Ex: 2400 pour 40h">
+    <!-- ✅ Appel de méthode, pas référence à une fonction -->
+    <span *ngIf="form.get('minutesTravaillees')?.value" class="ft-min-preview">
+      = {{ getPreview('minutesTravaillees') }}
+    </span>
+  </div>
+</div>
+
+<div class="fc-grid-2">
+  <div class="fc-group">
+    <label class="fc-label">
+      H. supplémentaires
+      <span class="text-xs font-normal" style="color: var(--text-muted)">(min)</span>
+    </label>
+    <div style="position: relative">
+      <input type="number" formControlName="minutesSupplementaires"
+             min="0" max="1440" step="15" class="fc-input" placeholder="0">
+      <span *ngIf="form.get('minutesSupplementaires')?.value" class="ft-min-preview">
+        = {{ getPreview('minutesSupplementaires') }}
+      </span>
+    </div>
+  </div>
+  <div class="fc-group">
+    <label class="fc-label">
+      H. d'absence
+      <span class="text-xs font-normal" style="color: var(--text-muted)">(min)</span>
+    </label>
+    <div style="position: relative">
+      <input type="number" formControlName="minutesAbsence"
+             min="0" max="7200" step="15" class="fc-input" placeholder="0">
+      <span *ngIf="form.get('minutesAbsence')?.value" class="ft-min-preview">
+        = {{ getPreview('minutesAbsence') }}
+      </span>
+    </div>
+  </div>
+</div>
+
+
+
+        <!-- Commentaire -->
+        <div class="fc-group">
+          <label class="fc-label">Commentaire</label>
+          <textarea formControlName="commentaireEmploye" rows="2"
+                    class="fc-textarea" placeholder="Remarques éventuelles..."></textarea>
+        </div>
+  
+        <!-- Erreur -->
+        <div *ngIf="errorMessage()" class="fc-alert fc-alert-error">
+          <span class="fc-alert-icon">⚠️</span>
+          <div class="fc-alert-body">
+            <p class="fc-alert-title">Erreur</p>
+            <p class="fc-alert-text">{{ errorMessage() }}</p>
+          </div>
+        </div>
+      </form>
+  
+      <div class="fc-modal-actions">
+        <button class="fc-btn fc-btn-secondary" (click)="showModal.set(false)">Annuler</button>
+        <button class="fc-btn fc-btn-primary" (click)="save()" [disabled]="loading()">
+          <div class="fc-spinner" *ngIf="loading()"></div>
+          {{ editingId() ? 'Enregistrer' : 'Créer' }}
+        </button>
+      </div>
+    </div>
+  </div>

@@ -1,0 +1,35 @@
+<div class="complete-profile-container">
+    <h2>Complétez votre profil (optionnel)</h2>
+    <p>Ces informations pourront être modifiées plus tard.</p>
+  
+    <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" enctype="multipart/form-data">
+      <div class="form-group">
+        <label>Date de naissance</label>
+        <input type="date" formControlName="dateNaissance">
+      </div>
+  
+      <div class="form-group">
+        <label>Photo de profil </label>
+        <input type="file" (change)="onFileSelected($event)" accept="image/*">
+      </div>
+  
+      <div class="form-group">
+        <label>Téléphone</label>
+        <input type="tel" formControlName="telephone">
+      </div>
+  
+      <div class="form-group">
+        <label>Adresse</label>
+        <textarea formControlName="adresse" rows="2"></textarea>
+      </div>
+  
+      <div class="buttons">
+        <button type="submit" [disabled]="loading()" class="btn-primary">
+          {{ loading() ? 'Enregistrement...' : 'Enregistrer mes informations' }}
+        </button>
+        <button type="button" (click)="skip()" class="btn-secondary">Passer pour le moment</button>
+      </div>
+    </form>
+  
+    <p *ngIf="success()" class="success-msg">✅ Profil mis à jour avec succès !</p>
+  </div>
