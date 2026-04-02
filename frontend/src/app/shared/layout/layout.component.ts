@@ -39,7 +39,13 @@ export class LayoutComponent implements OnInit {
     if (!keycloakId) return;
     this.userService.getUserByKeycloakId(keycloakId).subscribe({
       next: (user) => this.currentUser.set(user),
-      error: () => console.warn('Utilisateur non trouvé en base')
+      error: (err) => {
+        if (err.status === 404) {
+          // ✅ Utilisateur pas encore en base — utiliser les infos Keycloak directement
+          console.info('Profil utilisateur non trouvé en base.');
+        }
+        // Pas d'affichage d'erreur — l'UI utilise les fallbacks Keycloak
+      }
     });
   }
 

@@ -6,14 +6,15 @@ import {DashboardComponent} from './dashboard/dashboard.component';
 import {UserCreationComponent} from './admin/user-creation/user-creation.component';
 import { CompleteProfileComponent } from './complete-profile/complete-profile.component';
 import { FeuilleTempsComponent } from './feuille-temps/feuille-temps.component';   // ← Correction ici
+import { DemandeComponent } from './demande/demande.component';   // ← Correction ici
 
 const routes: Routes = [
   { path: 'home', component: HomeComponent },
   { path: 'dashboard', component: DashboardComponent },
   { path: 'add-user', component: UserCreationComponent },
   { path: 'complete-profile', component: CompleteProfileComponent },
-  { path: 'FeuilleTempsComponent', component: FeuilleTempsComponent }   // ← Nom correct
-
+  { path: 'FeuilleTempsComponent', component: FeuilleTempsComponent } ,  // ← Nom correct
+  { path: 'Demande', component: DemandeComponent }   // ← Nom correct
 
 ];
 

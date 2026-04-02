@@ -1,11 +1,9 @@
-package com.talenthub.application_service.Config;
+package com.talenthub.nomenclature_service.Config;
 
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -16,10 +14,9 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.cors.CorsConfigurationSource; // <-- SANS .reactive
-import java.util.Arrays;
-import java.util.Collections;
+
 import java.util.List;
 
 @Configuration
@@ -27,15 +24,10 @@ import java.util.List;
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-    @Value("${keycloak.auth-server-url:http://localhost:8080}")
-    private String authServerUrl;
-
-    @Value("${keycloak.realm:talenthub}")
-    private String realm;
-
     @Bean
     public JwtDecoder jwtDecoder() {
-        String jwkSetUri = authServerUrl + "/realms/" + realm + "/protocol/openid-connect/certs";
+        // Adapte l'URL si ton Keycloak est sur un autre port ou domaine
+        String jwkSetUri = "http://localhost:8080/realms/talenthub/protocol/openid-connect/certs";
         return NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
     }
 
@@ -44,10 +36,11 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
 
-                // Important : activer CORS (même si on le gère principalement au Gateway)
-                .cors(cors -> cors.disable())       // ✅ Gateway gère le CORS
+                // ✅ Désactiver CORS ici — le gateway s'en charge
+                .cors(cors -> cors.disable())
 
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
@@ -58,21 +51,10 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
-                        // CRUCIAL : autoriser TOUTES les requêtes OPTIONS sans authentification
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        .requestMatchers("/actuator/health", "/public/**").permitAll()
-
-                        // Pour tester → on laisse /profils en public temporairement
-                        .requestMatchers("/profils/**").permitAll()
-
-                        // Remets tes vraies règles plus tard :
-                         .requestMatchers("/utilisateurs/**").permitAll()
-
-                        .requestMatchers("/profil-permissions/**").permitAll()  // ✅ Ajouter
-                        .requestMatchers("/permissions/**").permitAll()          // ✅ Ajouter
-                        .requestMatchers("/feuilles-temps/**").permitAll()
-                        .requestMatchers("/demandes/**").permitAll()
+                        .requestMatchers("/types-demande/**").permitAll()
+                        .requestMatchers("/statuts-demande/**").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .anyRequest().authenticated()
                 )
 
@@ -85,6 +67,9 @@ public class SecurityConfig {
 
         return http.build();
     }
+
+
+
 
     private JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
