@@ -89,9 +89,7 @@ public class Utilisateur {
     @Builder.Default
     private List<Reclamation> reclamations = new ArrayList<>();
 
-    @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @Builder.Default
-    private List<Notification> notifications = new ArrayList<>();
+
 
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default

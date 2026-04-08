@@ -1,0 +1,263 @@
+/* ══════════════════════════════════════════════════════════
+   approbation-feuille-temps.component.css
+   Variables : --bg-card, --border-color, --bg-hover, --bg-input,
+   --text-primary, --text-secondary, --text-muted, --accent, --accent-soft
+══════════════════════════════════════════════════════════ */
+
+/* Page Header */
+.appro-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ── Stat Cards ── */
+.appro-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+@media (max-width: 640px) { .appro-stats-grid { grid-template-columns: 1fr; } }
+
+.appro-stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: transform .2s, box-shadow .2s;
+  position: relative;
+  overflow: hidden;
+}
+/* Barre colorée en haut */
+.appro-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.appro-stat-attente::before { background: #3b82f6; }
+.appro-stat-validee::before { background: #10b981; }
+.appro-stat-rejetee::before { background: #ef4444; }
+
+.appro-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 32px rgba(0,0,0,.25);
+}
+
+.appro-stat-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.appro-stat-attente .appro-stat-icon { background: rgba(59,130,246,.18);  color: #60a5fa; }
+.appro-stat-validee .appro-stat-icon { background: rgba(16,185,129,.18);  color: #34d399; }
+.appro-stat-rejetee .appro-stat-icon { background: rgba(239,68,68,.18);   color: #f87171; }
+
+.appro-stat-body { flex: 1; }
+
+.appro-stat-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text-muted);
+  margin: 0 0 3px;
+}
+.appro-stat-value {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.appro-stat-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin: 3px 0 0;
+}
+
+/* ── Filtres ── */
+.appro-filtres-zone {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+/* ── Employee Cards ── */
+.appro-cards-list { display: flex; flex-direction: column; gap: 10px; }
+
+.appro-employee-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+  overflow: hidden;
+}
+/* Bande colorée gauche */
+.appro-employee-card::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+}
+.appro-card-soumise::after { background: #3b82f6; }
+.appro-card-validee::after { background: #10b981; }
+.appro-card-rejetee::after { background: #ef4444; }
+
+.appro-employee-card:hover {
+  box-shadow: 0 8px 28px rgba(0,0,0,.25);
+  transform: translateY(-1px);
+  border-color: var(--accent);
+}
+
+.appro-emp-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.875rem;
+  color: white;
+  flex-shrink: 0;
+  letter-spacing: -.5px;
+}
+
+.appro-emp-info { flex: 1; min-width: 0; }
+
+.appro-emp-name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.appro-emp-week { font-size: 0.75rem; color: var(--text-muted); margin: 0; }
+
+.appro-emp-heures { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* ── Detail Stats ── */
+.appro-detail-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.appro-detail-stat {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 16px;
+  text-align: center;
+}
+.appro-detail-val {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 4px 0 0;
+  letter-spacing: -0.5px;
+}
+
+/* ── Catégorie badge (tableau) ── */
+.appro-cat-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* ── Zone décision ── */
+.appro-decision-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 8px;
+}
+
+.appro-decision-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  color: var(--text-secondary);
+}
+.appro-decision-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.appro-decision-btns {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.appro-btn-rejeter,
+.appro-btn-valider {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all .15s;
+  font-family: inherit;
+}
+
+.appro-btn-rejeter {
+  background: rgba(239,68,68,.15);
+  color: #f87171;
+  border: 1px solid rgba(239,68,68,.4);
+}
+.appro-btn-rejeter:hover:not(:disabled) {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+  box-shadow: 0 4px 16px rgba(239,68,68,.4);
+}
+
+.appro-btn-valider {
+  background: #10b981;
+  color: white;
+}
+.appro-btn-valider:hover:not(:disabled) {
+  background: #059669;
+  box-shadow: 0 4px 16px rgba(16,185,129,.4);
+}
+
+.appro-btn-rejeter:disabled,
+.appro-btn-valider:disabled { opacity: .5; cursor: not-allowed; }

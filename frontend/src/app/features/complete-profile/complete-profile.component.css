@@ -1,0 +1,378 @@
+/* ============================================================
+   COMPLETE PROFILE — Plein écran, sans carte
+   Hérite des variables CSS de styles.css
+   ============================================================ */
+
+   .sr-only {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0,0,0,0); border: 0;
+  }
+  
+  /* ── Racine plein écran ── */
+  .cp-root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-primary);
+    transition: background-color 0.4s ease;
+  }
+  
+  /* ══════════════════════════════════════
+     TOPBAR
+  ══════════════════════════════════════ */
+  .cp-topbar {
+    height: 62px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-topbar);
+    flex-shrink: 0;
+    transition: background-color 0.4s, border-color 0.4s;
+  }
+  
+  /* ── Logo ── */
+  .cp-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .cp-logo-img {
+    height: 34px;
+    width: auto;
+    object-fit: contain;
+  }
+  
+  .cp-logo-fallback {
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 800; color: white;
+  }
+  
+  .cp-logo-text {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: 0.8px;
+    transition: color 0.3s;
+  }
+  
+  /* ── Actions topbar ── */
+  .cp-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  /* Bouton icône (thème) */
+  .cp-icon-btn {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    border: none; background: transparent;
+    border-radius: 9px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.2s, background-color 0.2s;
+  }
+  .cp-icon-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+  }
+  
+  /* Bouton Skip topbar */
+  .cp-btn-skip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 14px;
+    border-radius: 9px;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.18s;
+  }
+  .cp-btn-skip:hover {
+    background: var(--bg-hover);
+    color: var(--text-secondary);
+  }
+  
+  /* ══════════════════════════════════════
+     MAIN — Zone centrale
+  ══════════════════════════════════════ */
+  .cp-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 52px 24px 40px;
+    max-width: 700px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  
+  /* ──────────────────────────────────────
+     HERO — Avatar + Titre
+  ────────────────────────────────────── */
+  .cp-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 44px;
+    text-align: center;
+  }
+  
+  /* Avatar */
+  .cp-avatar-wrap {
+    position: relative;
+    cursor: pointer;
+    display: block;
+  }
+  
+  .cp-avatar {
+    width: 88px; height: 88px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 700;
+    color: white;
+    transition: opacity 0.2s;
+  }
+  
+  .cp-avatar-img {
+    width: 88px; height: 88px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--accent-soft);
+    display: block;
+  }
+  
+  .cp-avatar-overlay {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .cp-avatar-overlay svg { width: 24px; height: 24px; color: white; }
+  .cp-avatar-wrap:hover .cp-avatar-overlay { opacity: 1; }
+  
+  /* Titre */
+  .cp-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0;
+    letter-spacing: -0.3px;
+    transition: color 0.3s;
+  }
+  
+  .cp-subtitle {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin: 0;
+    max-width: 420px;
+    line-height: 1.6;
+  }
+  
+  /* ──────────────────────────────────────
+     FORMULAIRE
+  ────────────────────────────────────── */
+  .cp-form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  /* Ligne de 2 champs */
+  .cp-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  
+  /* Champ individuel */
+  .cp-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .cp-field-full {
+    grid-column: 1 / -1;
+  }
+  
+  /* Label */
+  .cp-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    transition: color 0.3s;
+  }
+  
+  /* Wrapper input avec icône */
+  .cp-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-input);
+    border: 1.5px solid var(--border-color);
+    border-radius: 12px;
+    padding: 0 14px;
+    height: 46px;
+    transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s;
+  }
+  
+  .cp-input-wrap.focused {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+    background: var(--bg-card);
+  }
+  
+  .cp-textarea-wrap {
+    height: auto;
+    padding: 12px 14px;
+    align-items: flex-start;
+  }
+  
+  /* Icône champ */
+  .cp-ico {
+    width: 15px; height: 15px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    transition: color 0.2s;
+  }
+  .cp-input-wrap.focused .cp-ico { color: var(--accent); }
+  
+  /* Input natif transparent */
+  .cp-input {
+    flex: 1;
+    background: transparent;
+    border: none; outline: none;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    font-family: inherit;
+    min-width: 0;
+    transition: color 0.3s;
+  }
+  .cp-input::placeholder { color: var(--text-muted); }
+  
+  .cp-textarea {
+    resize: none;
+    line-height: 1.5;
+  }
+  
+  /* Bouton upload photo */
+  .cp-upload-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 46px;
+    padding: 0 14px;
+    background: var(--bg-input);
+    border: 1.5px dashed var(--border-color);
+    border-radius: 12px;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cp-upload-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
+  
+  /* ── Alertes ── */
+  .cp-alert {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 16px;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  .cp-alert-error   { background: rgba(239,68,68,0.08);  color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }
+  .cp-alert-success { background: rgba(16,185,129,0.08); color: #10b981; border: 1px solid rgba(16,185,129,0.2); }
+  
+  /* ── Bouton Enregistrer ── */
+  .cp-btn-save {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 13px 32px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    align-self: center;
+    margin-top: 8px;
+    transition: opacity 0.2s, box-shadow 0.2s, transform 0.15s;
+    box-shadow: 0 4px 18px var(--accent-soft);
+    min-width: 220px;
+  }
+  .cp-btn-save:hover:not(:disabled) {
+    opacity: 0.9;
+    box-shadow: 0 6px 24px var(--accent-soft);
+    transform: translateY(-1px);
+  }
+  .cp-btn-save:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  
+  /* Spinner */
+  .cp-spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: cpSpin 0.65s linear infinite;
+  }
+  @keyframes cpSpin { to { transform: rotate(360deg); } }
+  
+  /* ══════════════════════════════════════
+     FOOTER
+  ══════════════════════════════════════ */
+  .cp-footer {
+    text-align: center;
+    padding: 18px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+    transition: color 0.3s, border-color 0.4s;
+  }
+  
+  /* ══════════════════════════════════════
+     RESPONSIVE
+  ══════════════════════════════════════ */
+  @media (max-width: 640px) {
+    .cp-topbar { padding: 0 16px; }
+    .cp-main   { padding: 32px 16px 32px; }
+    .cp-title  { font-size: 1.4rem; }
+    .cp-row    { grid-template-columns: 1fr; }
+    .cp-field-full { grid-column: auto; }
+    .cp-btn-save   { width: 100%; }
+  }

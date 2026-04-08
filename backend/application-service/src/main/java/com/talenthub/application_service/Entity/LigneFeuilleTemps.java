@@ -1,19 +1,12 @@
 package com.talenthub.application_service.Entity;
 
-
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
-
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "lignes_feuille_temps")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class LigneFeuilleTemps {
 
     @Id
@@ -24,102 +17,33 @@ public class LigneFeuilleTemps {
     @JoinColumn(name = "feuille_temps_id", nullable = false)
     private FeuilleTemps feuilleTemps;
 
-    @NotNull
     @Column(nullable = false)
     private LocalDate date;
 
-    // PRESENT | ABSENT | CONGE | MALADIE | FERIE
-    @Column(nullable = false, length = 20)
+    // Référence vers CategorieEntree du nomenclature-service
+    // TRAVAIL | CONGE | MALADIE | FERIE | AUTRE
+    @Column(name = "categorie_code", nullable = false, length = 50)
+    private String categorieCode;
+
+    @Column(name = "heure_debut", length = 10)
+    private String heureDebut; // "08:00"
+
+    @Column(name = "heure_fin", length = 10)
+    private String heureFin;   // "17:00"
+
+    // Stockage en minutes
+    @Column(name = "minutes_normales")
     @Builder.Default
-    private String typeJour = "PRESENT";
+    private int minutesNormales = 0;
 
-    @Column(name = "heure_arrivee", length = 10)
-    private String heureArrivee; // ex: "08:30"
-
-    @Column(name = "heure_depart", length = 10)
-    private String heureDepart; // ex: "17:30"
-
-    @Column(name = "heures_travaillees")
+    @Column(name = "minutes_supplementaires")
     @Builder.Default
-    private double heuresTravaillees = 0.0;
+    private int minutesSupplementaires = 0;
 
-    @Column(name = "heures_sup")
+    @Column(name = "minutes_absence")
     @Builder.Default
-    private double heuresSup = 0.0;
+    private int minutesAbsence = 0;
 
     @Column(length = 255)
     private String commentaire;
-
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public FeuilleTemps getFeuilleTemps() {
-        return feuilleTemps;
-    }
-
-    public void setFeuilleTemps(FeuilleTemps feuilleTemps) {
-        this.feuilleTemps = feuilleTemps;
-    }
-
-    public LocalDate getDate() {
-        return date;
-    }
-
-    public void setDate(LocalDate date) {
-        this.date = date;
-    }
-
-    public String getTypeJour() {
-        return typeJour;
-    }
-
-    public void setTypeJour(String typeJour) {
-        this.typeJour = typeJour;
-    }
-
-    public String getHeureArrivee() {
-        return heureArrivee;
-    }
-
-    public void setHeureArrivee(String heureArrivee) {
-        this.heureArrivee = heureArrivee;
-    }
-
-    public String getHeureDepart() {
-        return heureDepart;
-    }
-
-    public void setHeureDepart(String heureDepart) {
-        this.heureDepart = heureDepart;
-    }
-
-    public double getHeuresTravaillees() {
-        return heuresTravaillees;
-    }
-
-    public void setHeuresTravaillees(double heuresTravaillees) {
-        this.heuresTravaillees = heuresTravaillees;
-    }
-
-    public double getHeuresSup() {
-        return heuresSup;
-    }
-
-    public void setHeuresSup(double heuresSup) {
-        this.heuresSup = heuresSup;
-    }
-
-    public String getCommentaire() {
-        return commentaire;
-    }
-
-    public void setCommentaire(String commentaire) {
-        this.commentaire = commentaire;
-    }
 }

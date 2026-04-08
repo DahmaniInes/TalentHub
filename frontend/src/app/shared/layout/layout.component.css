@@ -704,3 +704,176 @@
   .lyt-menu-item-danger:hover {
     background: rgba(239, 68, 68, 0.08);
   }
+
+
+  /* ══════════════════════════════════════
+   NOTIFICATIONS
+══════════════════════════════════════ */
+
+/* ── Badge compteur ── */
+.notif-count-badge {
+  position: absolute;
+  top: 4px; right: 4px;
+  min-width: 16px; height: 16px;
+  padding: 0 4px;
+  border-radius: 99px;
+  background: #ef4444;
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid var(--bg-topbar);
+  pointer-events: none;
+  line-height: 1;
+}
+
+/* Bouton cloche actif */
+.notif-btn.notif-active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+
+
+
+/* ── Panel ── */
+.notif-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 360px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+  z-index: 600;
+  overflow: hidden;
+  animation: notifPanelIn 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+
+@keyframes notifPanelIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Header panel ── */
+.notif-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.notif-panel-title {
+  font-size: 14px; font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Boutons action header */
+.notif-action-btn {
+  width: 28px; height: 28px;
+  border-radius: 7px; border: none;
+  background: var(--bg-input);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.notif-action-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.notif-action-danger:hover { background: rgba(239,68,68,0.1); color: #ef4444; }
+
+/* ── Liste ── */
+.notif-list {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+/* ── Vide ── */
+.notif-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ── Item notification ── */
+.notif-item {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid var(--border-color);
+  position: relative;
+}
+.notif-item:last-child { border-bottom: none; }
+.notif-item:hover { background: var(--bg-hover); }
+
+/* Non-lu — fond légèrement teinté */
+.notif-item-unread {
+  background: rgba(192, 38, 211, 0.04);
+}
+.notif-item-unread:hover {
+  background: rgba(192, 38, 211, 0.08);
+}
+
+/* Icône type */
+.notif-item-icon {
+  width: 36px; height: 36px; min-width: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+
+/* Contenu */
+.notif-item-body { flex: 1; min-width: 0; }
+
+.notif-item-titre {
+  font-size: 13px; font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.notif-item-desc {
+  font-size: 11.5px; color: var(--text-muted);
+  margin: 0 0 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
+}
+
+.notif-item-date {
+  font-size: 10.5px; color: var(--text-muted);
+  font-weight: 500; margin: 0;
+}
+
+/* Actions item */
+.notif-item-actions {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 6px;
+  flex-shrink: 0;
+}
+
+.notif-unread-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.notif-delete-btn {
+  width: 20px; height: 20px;
+  border-radius: 5px; border: none;
+  background: none; cursor: pointer;
+  color: var(--text-muted);
+  font-size: 14px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+}
+.notif-item:hover .notif-delete-btn { opacity: 1; }
+.notif-delete-btn:hover {
+  background: rgba(239,68,68,0.1);
+  color: #ef4444;
+}

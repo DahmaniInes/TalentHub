@@ -4,6 +4,8 @@ import com.talenthub.application_service.Entity.FeuilleTemps;
 import lombok.Getter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 public class FeuilleTempsDTO {
@@ -22,6 +24,7 @@ public class FeuilleTempsDTO {
     private final LocalDateTime dateValidation;
     private final LocalDateTime dateCreation;
     private final LocalDateTime dateMiseAJour;
+    private final List<LigneFeuilleTempsDTO> lignes; // ✅ Ajouter
 
     public FeuilleTempsDTO(FeuilleTemps ft) {
         this.id = ft.getId();
@@ -40,5 +43,9 @@ public class FeuilleTempsDTO {
         this.dateValidation = ft.getDateValidation();
         this.dateCreation = ft.getDateCreation();
         this.dateMiseAJour = ft.getDateMiseAJour();
+
+        this.lignes = ft.getLignes() != null
+                ? ft.getLignes().stream().map(LigneFeuilleTempsDTO::new).collect(Collectors.toList())
+                : List.of();
     }
 }

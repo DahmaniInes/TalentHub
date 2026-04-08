@@ -24,8 +24,7 @@ public class FeuilleTempsController {
     @GetMapping
     public ResponseEntity<List<FeuilleTempsDTO>> getAll() {
         return ResponseEntity.ok(
-                service.getAllFeuillesTemps().stream().map(FeuilleTempsDTO::new).toList()
-        );
+                service.getAllFeuillesTemps().stream().map(FeuilleTempsDTO::new).toList());
     }
 
     @GetMapping("/{id}")
@@ -38,15 +37,20 @@ public class FeuilleTempsController {
     @GetMapping("/utilisateur/{utilisateurId}")
     public ResponseEntity<List<FeuilleTempsDTO>> getByUtilisateur(@PathVariable Long utilisateurId) {
         return ResponseEntity.ok(
-                service.getByUtilisateur(utilisateurId).stream().map(FeuilleTempsDTO::new).toList()
-        );
+                service.getByUtilisateur(utilisateurId).stream().map(FeuilleTempsDTO::new).toList());
     }
 
     @GetMapping("/statut/{statut}")
     public ResponseEntity<List<FeuilleTempsDTO>> getByStatut(@PathVariable String statut) {
         return ResponseEntity.ok(
-                service.getByStatut(statut).stream().map(FeuilleTempsDTO::new).toList()
-        );
+                service.getByStatut(statut).stream().map(FeuilleTempsDTO::new).toList());
+    }
+
+    // ✅ Endpoint pour les approbateurs — toutes les feuilles soumises
+    @GetMapping("/soumises")
+    public ResponseEntity<List<FeuilleTempsDTO>> getSoumises() {
+        return ResponseEntity.ok(
+                service.getFeuillesSoumises().stream().map(FeuilleTempsDTO::new).toList());
     }
 
     @PostMapping
@@ -66,13 +70,18 @@ public class FeuilleTempsController {
         return ResponseEntity.ok(new FeuilleTempsDTO(service.soumettre(id)));
     }
 
+    // ✅ Annuler la soumission — repasse en BROUILLON
+    @PostMapping("/{id}/annuler-soumission")
+    public ResponseEntity<FeuilleTempsDTO> annulerSoumission(@PathVariable Long id) {
+        return ResponseEntity.ok(new FeuilleTempsDTO(service.annulerSoumission(id)));
+    }
+
     @PostMapping("/{id}/valider")
     public ResponseEntity<FeuilleTempsDTO> valider(
             @PathVariable Long id,
             @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(new FeuilleTempsDTO(
-                service.valider(id, body.get("valideurId"), body.get("commentaire"))
-        ));
+                service.valider(id, body.get("valideurId"), body.get("commentaire"))));
     }
 
     @PostMapping("/{id}/rejeter")
@@ -80,13 +89,19 @@ public class FeuilleTempsController {
             @PathVariable Long id,
             @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(new FeuilleTempsDTO(
-                service.rejeter(id, body.get("valideurId"), body.get("commentaire"))
-        ));
+                service.rejeter(id, body.get("valideurId"), body.get("commentaire"))));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
+    }
+    // ✅ Toutes les feuilles pour approbateurs (SOUMISE, VALIDEE, REJETEE)
+    @GetMapping("/approbations")
+    public ResponseEntity<List<FeuilleTempsDTO>> getPourApprobation() {
+        return ResponseEntity.ok(
+                service.getPourApprobation().stream().map(FeuilleTempsDTO::new).toList()
+        );
     }
 }

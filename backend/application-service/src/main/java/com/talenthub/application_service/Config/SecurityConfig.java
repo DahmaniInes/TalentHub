@@ -73,6 +73,8 @@ public class SecurityConfig {
                         .requestMatchers("/permissions/**").permitAll()          // ✅ Ajouter
                         .requestMatchers("/feuilles-temps/**").permitAll()
                         .requestMatchers("/demandes/**").permitAll()
+                        .requestMatchers("/notifications/**").permitAll()
+
                         .anyRequest().authenticated()
                 )
 

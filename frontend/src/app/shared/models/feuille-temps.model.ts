@@ -1,4 +1,18 @@
 export type StatutFT = 'BROUILLON' | 'SOUMISE' | 'VALIDEE' | 'REJETEE';
+export type CategorieFT = 'TRAVAIL' | 'CONGE' | 'MALADIE' | 'FERIE' | 'AUTRE';
+
+export interface LigneFeuilleTemps {
+  id?: number;
+  date: string;            // "YYYY-MM-DD"
+  categorieCode: CategorieFT;
+  heureDebut?: string;     // "08:00"
+  heureFin?: string;       // "17:00"
+  minutesNormales: number;
+  minutesSupplementaires: number;
+  minutesAbsence: number;
+  commentaire?: string;
+  totalMinutes?: number;   // calculé par le backend
+}
 
 export interface FeuilleTemps {
   id: number;
@@ -16,6 +30,7 @@ export interface FeuilleTemps {
   dateValidation?: string;
   dateCreation?: string;
   dateMiseAJour?: string;
+  lignes: LigneFeuilleTemps[];
 }
 
 export interface FeuilleTempsRequest {
@@ -27,4 +42,5 @@ export interface FeuilleTempsRequest {
   minutesAbsence: number;
   statut?: string;
   commentaireEmploye?: string;
+  lignes: LigneFeuilleTemps[];
 }

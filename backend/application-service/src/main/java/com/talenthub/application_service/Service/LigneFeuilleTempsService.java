@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-// 12. LigneFeuilleTempsService.java
+
 @Service
 @Transactional
 public class LigneFeuilleTempsService {
@@ -27,20 +27,27 @@ public class LigneFeuilleTempsService {
         return repository.findById(id);
     }
 
+    public List<LigneFeuilleTemps> getLignesByFeuilleTemps(Long feuilleTempsId) {
+        return repository.findByFeuilleTempsId(feuilleTempsId);
+    }
+
     public LigneFeuilleTemps createLigne(LigneFeuilleTemps ligne) {
         return repository.save(ligne);
     }
 
     public LigneFeuilleTemps updateLigne(Long id, LigneFeuilleTemps details) {
         LigneFeuilleTemps ligne = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Ligne feuille de temps non trouvée avec id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Ligne feuille de temps non trouvée avec id: " + id));
 
+        // ✅ Noms corrects correspondant à l'entité LigneFeuilleTemps
         ligne.setDate(details.getDate());
-        ligne.setTypeJour(details.getTypeJour());
-        ligne.setHeureArrivee(details.getHeureArrivee());
-        ligne.setHeureDepart(details.getHeureDepart());
-        ligne.setHeuresTravaillees(details.getHeuresTravaillees());
-        ligne.setHeuresSup(details.getHeuresSup());
+        ligne.setCategorieCode(details.getCategorieCode());  // anciennement typeJour
+        ligne.setHeureDebut(details.getHeureDebut());        // anciennement heureArrivee
+        ligne.setHeureFin(details.getHeureFin());            // anciennement heureDepart
+        ligne.setMinutesNormales(details.getMinutesNormales());       // anciennement heuresTravaillees
+        ligne.setMinutesSupplementaires(details.getMinutesSupplementaires()); // anciennement heuresSup
+        ligne.setMinutesAbsence(details.getMinutesAbsence());
         ligne.setCommentaire(details.getCommentaire());
 
         return repository.save(ligne);
@@ -48,7 +55,8 @@ public class LigneFeuilleTempsService {
 
     public void deleteLigne(Long id) {
         if (!repository.existsById(id)) {
-            throw new ResourceNotFoundException("Ligne feuille de temps non trouvée avec id: " + id);
+            throw new ResourceNotFoundException(
+                    "Ligne feuille de temps non trouvée avec id: " + id);
         }
         repository.deleteById(id);
     }

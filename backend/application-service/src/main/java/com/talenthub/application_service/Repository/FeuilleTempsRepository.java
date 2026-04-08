@@ -11,4 +11,5 @@ public interface FeuilleTempsRepository extends JpaRepository<FeuilleTemps, Long
     List<FeuilleTemps> findByStatut(String statut);
     Optional<FeuilleTemps> findByUtilisateurIdAndSemaineDu(Long utilisateurId, LocalDate semaineDu);
     List<FeuilleTemps> findByUtilisateurIdOrderBySemaineDuDesc(Long utilisateurId);
+    List<FeuilleTemps> findByStatutIn(List<String> statuts);
 }

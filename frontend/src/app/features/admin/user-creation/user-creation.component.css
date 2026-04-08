@@ -542,8 +542,7 @@ font-family: 'Segoe UI', system-ui, sans-serif;
     display: flex;
     flex-direction: column;
     gap: 6px;
-    max-height: 260px;
-    overflow-y: auto;
+    /* max-height et overflow-y supprimés */
   }
   
   .uc-profil-card {
@@ -560,11 +559,14 @@ font-family: 'Segoe UI', system-ui, sans-serif;
   
   .uc-profil-card.selected {
     border-color: var(--uc-accent);
-    background: var(--uc-accent-light);
+    background: var(--uc-input-bg);  /* ← était var(--uc-accent-light) */
   }
   
-  .uc-profil-card:hover:not(.selected) { border-color: var(--uc-border); background: #f8fafc; }
-  
+  .uc-profil-card:hover:not(.selected) {
+    border-color: var(--uc-border);
+    background: var(--uc-input-bg);  /* ← était #f8fafc (blanc) */
+  }
+
   .uc-profil-radio {
     width: 16px;
     height: 16px;
@@ -603,8 +605,10 @@ font-family: 'Segoe UI', system-ui, sans-serif;
     text-overflow: ellipsis;
   }
   
-  .uc-profil-card.selected .uc-profil-name { color: var(--uc-accent); }
-  
+  .uc-profil-card.selected .uc-profil-name {
+    color: var(--uc-accent);
+  }
+
   .uc-profil-desc {
     font-size: 11px;
     color: var(--uc-text-muted);
@@ -662,9 +666,12 @@ font-family: 'Segoe UI', system-ui, sans-serif;
     transition: background 0.15s;
   }
   
-  .uc-perm-row:hover { background: var(--uc-input-bg); }
-  .uc-perm-row.selected { background: var(--uc-accent-light); }
-  
+  .uc-perm-row:hover {
+    background: var(--uc-input-bg);
+  }
+.uc-perm-row.selected {
+  background: transparent;  /* ← était var(--uc-accent-light) */
+}  
   .uc-checkbox-wrap { cursor: pointer; flex-shrink: 0; }
   
   .uc-checkbox {

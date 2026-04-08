@@ -1,0 +1,188 @@
+/* ═══════════════════════════════════════════════════════════
+   TOAST + MODAL — À coller dans styles.css (dans @layer components)
+   Variables : --bg-card, --border-color, --bg-hover,
+   --text-primary, --text-secondary, --text-muted
+═══════════════════════════════════════════════════════════ */
+
+/* ── TOAST CONTAINER ── */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+    max-width: 380px;
+    width: calc(100vw - 40px);
+  }
+  
+  .toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 16px;
+    border-radius: 12px;
+    border: 1px solid;
+    box-shadow: 0 8px 32px rgba(0,0,0,.25);
+    pointer-events: all;
+    animation: toastIn .3s cubic-bezier(.34,1.56,.64,1) both;
+    min-width: 280px;
+  }
+  
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateX(110%) scale(.9); }
+    to   { opacity: 1; transform: translateX(0)    scale(1);  }
+  }
+  
+  .toast-icon { font-size: 1.1rem; flex-shrink: 0; }
+  
+  .toast-msg {
+    flex: 1;
+    font-size: 0.8375rem;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+  
+  .toast-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+    opacity: 0.55;
+    padding: 0 2px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    transition: opacity .15s;
+    color: inherit;
+    font-family: inherit;
+  }
+  .toast-close:hover { opacity: 1; }
+  
+  /* ── Toast variantes — utilise --bg-card pour s'adapter au thème ── */
+  .toast-success {
+    background: color-mix(in srgb, #10b981 12%, var(--bg-card));
+    border-color: rgba(16,185,129,.35);
+    color: #34d399;
+  }
+  .toast-error {
+    background: color-mix(in srgb, #ef4444 12%, var(--bg-card));
+    border-color: rgba(239,68,68,.35);
+    color: #f87171;
+  }
+  .toast-warning {
+    background: color-mix(in srgb, #f59e0b 12%, var(--bg-card));
+    border-color: rgba(245,158,11,.35);
+    color: #fbbf24;
+  }
+  .toast-info {
+    background: color-mix(in srgb, #3b82f6 12%, var(--bg-card));
+    border-color: rgba(59,130,246,.35);
+    color: #60a5fa;
+  }
+  
+  /* Fallback si color-mix non supporté (anciens navigateurs) */
+  @supports not (color: color-mix(in srgb, red 10%, blue)) {
+    .toast-success { background: rgba(16,185,129,.15);  }
+    .toast-error   { background: rgba(239,68,68,.15);   }
+    .toast-warning { background: rgba(245,158,11,.15);  }
+    .toast-info    { background: rgba(59,130,246,.15);  }
+  }
+  
+  /* ── MODAL BACKDROP ── */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.6);
+    backdrop-filter: blur(6px);
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: backdropIn .2s ease both;
+  }
+  
+  @keyframes backdropIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  
+  /* ── MODAL BOX — utilise --bg-card du thème ── */
+  .modal-box {
+    background: var(--bg-card);             /* ✅ suit le thème */
+    border: 1px solid var(--border-color);   /* ✅ suit le thème */
+    border-radius: 20px;
+    padding: 32px 28px 24px;
+    max-width: 440px;
+    width: 100%;
+    box-shadow: 0 24px 80px rgba(0,0,0,.4);
+    animation: modalIn .3s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(.88) translateY(16px); }
+    to   { opacity: 1; transform: scale(1)   translateY(0);    }
+  }
+  
+  .modal-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  
+  .modal-icon { font-size: 1.6rem; line-height: 1; flex-shrink: 0; }
+  
+  .modal-title {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: var(--text-primary);    /* ✅ suit le thème */
+    margin: 0;
+  }
+  
+  .modal-message {
+    font-size: 0.875rem;
+    color: var(--text-muted);      /* ✅ suit le thème */
+    line-height: 1.6;
+    margin: 0 0 24px;
+  }
+  
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+  
+  .modal-btn {
+    padding: 9px 20px;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all .15s ease;
+    font-family: inherit;
+  }
+  
+  /* Bouton Annuler — suit le thème */
+  .modal-btn-cancel {
+    background: var(--bg-hover);
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+  }
+  .modal-btn-cancel:hover { background: var(--bg-input); }
+  
+  /* Boutons Confirmer */
+  .modal-btn-confirm { color: white; border: none; }
+  
+  .modal-confirm-danger  { background: #ef4444; }
+  .modal-confirm-danger:hover  { background: #dc2626; box-shadow: 0 4px 14px rgba(239,68,68,.4); }
+  
+  .modal-confirm-warning { background: #f59e0b; }
+  .modal-confirm-warning:hover { background: #d97706; box-shadow: 0 4px 14px rgba(245,158,11,.4); }
+  
+  .modal-confirm-info    { background: var(--accent); }
+  .modal-confirm-info:hover    { opacity: .9; box-shadow: 0 4px 14px var(--accent-soft); }

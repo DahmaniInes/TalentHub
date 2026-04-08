@@ -1,35 +1,196 @@
-<div class="complete-profile-container">
-    <h2>Complétez votre profil (optionnel)</h2>
-    <p>Ces informations pourront être modifiées plus tard.</p>
+<div class="cp-root">
+
+    <!-- ══ TOPBAR ══ -->
+    <header class="cp-topbar">
   
-    <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" enctype="multipart/form-data">
-      <div class="form-group">
-        <label>Date de naissance</label>
-        <input type="date" formControlName="dateNaissance">
+      <!-- Logo -->
+      <div class="cp-logo">
+        <img src="assets/images/Logo.png" alt="TalentHub" class="cp-logo-img"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+        <div class="cp-logo-fallback" style="display:none">T</div>
+        <span class="cp-logo-text">TalentHub</span>
       </div>
   
-      <div class="form-group">
-        <label>Photo de profil </label>
-        <input type="file" (change)="onFileSelected($event)" accept="image/*">
-      </div>
+      <!-- Actions topbar -->
+      <div class="cp-topbar-actions">
   
-      <div class="form-group">
-        <label>Téléphone</label>
-        <input type="tel" formControlName="telephone">
-      </div>
-  
-      <div class="form-group">
-        <label>Adresse</label>
-        <textarea formControlName="adresse" rows="2"></textarea>
-      </div>
-  
-      <div class="buttons">
-        <button type="submit" [disabled]="loading()" class="btn-primary">
-          {{ loading() ? 'Enregistrement...' : 'Enregistrer mes informations' }}
+        <!-- Toggle Dark/Light — même icônes que le layout -->
+        <button class="cp-icon-btn" (click)="toggleTheme()"
+                [title]="isDark ? 'Mode clair' : 'Mode sombre'">
+          <!-- Soleil (mode clair actif) -->
+          <svg *ngIf="!isDark" xmlns="http://www.w3.org/2000/svg"
+               width="20" height="20" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41
+                     M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+          </svg>
+          <!-- Lune (mode sombre actif) -->
+          <svg *ngIf="isDark" xmlns="http://www.w3.org/2000/svg"
+               width="20" height="20" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
         </button>
-        <button type="button" (click)="skip()" class="btn-secondary">Passer pour le moment</button>
-      </div>
-    </form>
   
-    <p *ngIf="success()" class="success-msg">✅ Profil mis à jour avec succès !</p>
+        <!-- Bouton Skip -->
+        <button class="cp-btn-skip" (click)="skip()">
+          Passer
+          <svg viewBox="0 0 16 16" fill="none" style="width:13px;height:13px">
+            <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.7"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+  
+      </div>
+    </header>
+  
+    <!-- ══ CONTENU PRINCIPAL ══ -->
+    <main class="cp-main">
+  
+      <!-- ── Avatar + Titre ── -->
+      <div class="cp-hero">
+  
+        <!-- Avatar cliquable pour changer la photo -->
+        <label class="cp-avatar-wrap" title="Changer la photo">
+          <div class="cp-avatar" *ngIf="!previewUrl()">{{ userInitials }}</div>
+          <img *ngIf="previewUrl()" [src]="previewUrl()" class="cp-avatar-img" alt="Photo">
+          <div class="cp-avatar-overlay">
+            <svg viewBox="0 0 20 20" fill="none">
+              <path d="M13 3H7L6 5H3a1 1 0 00-1 1v10a1 1 0 001 1h14a1 1 0 001-1V6a1 1 0 00-1-1h-3L13 3z"
+                    stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+              <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <input type="file" accept="image/*" (change)="onFileSelected($event)" class="sr-only">
+        </label>
+  
+        <h1 class="cp-title">Complétez votre profil</h1>
+        <p class="cp-subtitle">Ces informations sont optionnelles et modifiables à tout moment.</p>
+  
+      </div>
+  
+      <!-- ── Formulaire ── -->
+      <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="cp-form">
+  
+        <!-- Ligne 1 -->
+        <div class="cp-row">
+          <div class="cp-field">
+            <label class="cp-label">Date de naissance</label>
+            <div class="cp-input-wrap" [class.focused]="dateNaissanceFocused">
+              <svg class="cp-ico" viewBox="0 0 16 16" fill="none">
+                <rect x="1" y="2" width="14" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+                <path d="M1 7h14M4.5 1v2.5M11.5 1v2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+              </svg>
+              <input type="date" formControlName="dateNaissance" class="cp-input"
+                     (focus)="dateNaissanceFocused=true" (blur)="dateNaissanceFocused=false">
+            </div>
+          </div>
+  
+          <div class="cp-field">
+            <label class="cp-label">Date de fin de contrat</label>
+            <div class="cp-input-wrap" [class.focused]="dateFinFocused">
+              <svg class="cp-ico" viewBox="0 0 16 16" fill="none">
+                <rect x="1" y="2" width="14" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+                <path d="M1 7h14M4.5 1v2.5M11.5 1v2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+              </svg>
+              <input type="date" formControlName="dateFinContrat" class="cp-input"
+                     (focus)="dateFinFocused=true" (blur)="dateFinFocused=false">
+            </div>
+          </div>
+        </div>
+  
+        <!-- Ligne 2 -->
+        <div class="cp-row">
+          <div class="cp-field">
+            <label class="cp-label">Téléphone</label>
+            <div class="cp-input-wrap" [class.focused]="telFocused">
+              <svg class="cp-ico" viewBox="0 0 16 16" fill="none">
+                <path d="M3 2h2.5l1 3-1.5 1.5a9 9 0 003.5 3.5L10 8.5l3 1V12a1 1 0 01-1 1C5.16 13 2 9.84 2 3a1 1 0 011-1z"
+                      stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+              </svg>
+              <input type="tel" formControlName="telephone" placeholder="71 234 567" class="cp-input"
+                     (focus)="telFocused=true" (blur)="telFocused=false">
+            </div>
+          </div>
+  
+          <div class="cp-field">
+            <label class="cp-label">Poste</label>
+            <div class="cp-input-wrap" [class.focused]="posteFocused">
+              <svg class="cp-ico" viewBox="0 0 16 16" fill="none">
+                <rect x="1" y="6" width="14" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+                <path d="M5.5 6V4.5a2 2 0 013 0V6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+              </svg>
+              <input type="text" formControlName="poste" placeholder="Développeur, RH..." class="cp-input"
+                     (focus)="posteFocused=true" (blur)="posteFocused=false">
+            </div>
+          </div>
+        </div>
+  
+        <!-- Ligne 3 -->
+        <div class="cp-row">
+          <div class="cp-field">
+            <label class="cp-label">Département</label>
+            <div class="cp-input-wrap" [class.focused]="deptFocused">
+              <svg class="cp-ico" viewBox="0 0 16 16" fill="none">
+                <rect x="1" y="2" width="14" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+                <path d="M1 7h14M5.5 2v12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+              </svg>
+              <input type="text" formControlName="departement" placeholder="Informatique, RH..." class="cp-input"
+                     (focus)="deptFocused=true" (blur)="deptFocused=false">
+            </div>
+          </div>
+  
+          <div class="cp-field">
+            <label class="cp-label">Photo de profil</label>
+            <label class="cp-upload-btn">
+              <svg viewBox="0 0 16 16" fill="none" class="cp-ico">
+                <path d="M8 3v8M5 6l3-3 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 12h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+              </svg>
+              {{ selectedFile ? selectedFile.name : 'Choisir une image' }}
+              <input type="file" accept="image/*" (change)="onFileSelected($event)" class="sr-only">
+            </label>
+          </div>
+        </div>
+  
+        <!-- Adresse pleine largeur -->
+        <div class="cp-field cp-field-full">
+          <label class="cp-label">Adresse</label>
+          <div class="cp-input-wrap cp-textarea-wrap" [class.focused]="adresseFocused">
+            <svg class="cp-ico" viewBox="0 0 16 16" fill="none" style="align-self:flex-start;margin-top:3px">
+              <path d="M8 1C5.24 1 3 3.24 3 6c0 3.75 5 9 5 9s5-5.25 5-9c0-2.76-2.24-5-5-5z"
+                    stroke="currentColor" stroke-width="1.3"/>
+              <circle cx="8" cy="6" r="1.5" stroke="currentColor" stroke-width="1.2"/>
+            </svg>
+            <textarea formControlName="adresse" rows="2" placeholder="Adresse complète" class="cp-input cp-textarea"
+                      (focus)="adresseFocused=true" (blur)="adresseFocused=false"></textarea>
+          </div>
+        </div>
+  
+        <!-- Messages ── -->
+        <div *ngIf="errorMsg()" class="cp-alert cp-alert-error">⚠️ {{ errorMsg() }}</div>
+        <div *ngIf="success()" class="cp-alert cp-alert-success">✅ Profil mis à jour ! Redirection...</div>
+  
+        <!-- ── Bouton principal ── -->
+        <button type="submit" class="cp-btn-save" [disabled]="loading()">
+          <div *ngIf="loading()" class="cp-spinner"></div>
+          <svg *ngIf="!loading()" viewBox="0 0 16 16" fill="none" style="width:15px;height:15px">
+            <path d="M13 2H4a1 1 0 00-1 1v10a1 1 0 001 1h8l3-3V3a1 1 0 00-1-1zM5 8h6M5 11h4"
+                  stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+          {{ loading() ? 'Enregistrement...' : 'Enregistrer mon profil' }}
+        </button>
+  
+      </form>
+  
+    </main>
+  
+    <!-- ══ FOOTER ══ -->
+    <footer class="cp-footer">
+      © TalentHub 2026 — Tous droits réservés
+    </footer>
+  
   </div>

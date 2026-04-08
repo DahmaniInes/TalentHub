@@ -9,29 +9,20 @@ const BASE = 'http://localhost:8085/api/feuilles-temps';
 export class FeuilleTempsService {
   private http = inject(HttpClient);
 
-  // ── API ──
-  getAll(): Observable<FeuilleTemps[]> {
-    return this.http.get<FeuilleTemps[]>(BASE);
-  }
+  getAll(): Observable<FeuilleTemps[]> { return this.http.get<FeuilleTemps[]>(BASE); }
+  getById(id: number): Observable<FeuilleTemps> { return this.http.get<FeuilleTemps>(`${BASE}/${id}`); }
+  getByUtilisateur(id: number): Observable<FeuilleTemps[]> { return this.http.get<FeuilleTemps[]>(`${BASE}/utilisateur/${id}`); }
 
-  getById(id: number): Observable<FeuilleTemps> {
-    return this.http.get<FeuilleTemps>(`${BASE}/${id}`);
-  }
+  // ✅ Toutes les feuilles soumises pour les approbateurs
+  getSoumises(): Observable<FeuilleTemps[]> { return this.http.get<FeuilleTemps[]>(`${BASE}/approbations`); }
 
-  getByUtilisateur(utilisateurId: number): Observable<FeuilleTemps[]> {
-    return this.http.get<FeuilleTemps[]>(`${BASE}/utilisateur/${utilisateurId}`);
-  }
+  create(req: FeuilleTempsRequest): Observable<FeuilleTemps> { return this.http.post<FeuilleTemps>(BASE, req); }
+  update(id: number, req: FeuilleTempsRequest): Observable<FeuilleTemps> { return this.http.put<FeuilleTemps>(`${BASE}/${id}`, req); }
+  soumettre(id: number): Observable<FeuilleTemps> { return this.http.post<FeuilleTemps>(`${BASE}/${id}/soumettre`, {}); }
 
-  create(req: FeuilleTempsRequest): Observable<FeuilleTemps> {
-    return this.http.post<FeuilleTemps>(BASE, req);
-  }
-
-  update(id: number, req: FeuilleTempsRequest): Observable<FeuilleTemps> {
-    return this.http.put<FeuilleTemps>(`${BASE}/${id}`, req);
-  }
-
-  soumettre(id: number): Observable<FeuilleTemps> {
-    return this.http.post<FeuilleTemps>(`${BASE}/${id}/soumettre`, {});
+  // ✅ Annuler la soumission
+  annulerSoumission(id: number): Observable<FeuilleTemps> {
+    return this.http.post<FeuilleTemps>(`${BASE}/${id}/annuler-soumission`, {});
   }
 
   valider(id: number, valideurId: string, commentaire: string): Observable<FeuilleTemps> {
@@ -42,11 +33,8 @@ export class FeuilleTempsService {
     return this.http.post<FeuilleTemps>(`${BASE}/${id}/rejeter`, { valideurId, commentaire });
   }
 
-  delete(id: number): Observable<void> {
-    return this.http.delete<void>(`${BASE}/${id}`);
-  }
+  delete(id: number): Observable<void> { return this.http.delete<void>(`${BASE}/${id}`); }
 
-  // ── Utilitaires statiques ──
   static formatMinutes(min: number): string {
     if (!min || min <= 0) return '0h';
     const h = Math.floor(min / 60);
@@ -67,4 +55,6 @@ export class FeuilleTempsService {
     d.setDate(d.getDate() + 4);
     return d.toISOString().split('T')[0];
   }
+
+  
 }

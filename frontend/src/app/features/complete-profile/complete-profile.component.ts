@@ -1,91 +1,143 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal, PLATFORM_ID, Inject } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { KeycloakService } from '../../services/keycloak.service';
 import { UserService } from '../../services/user.service';
+import { Utilisateur } from '../../shared/models/utilisateur.model';
 
 @Component({
   selector: 'app-complete-profile',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './complete-profile.component.html',
-  styleUrls: ['./complete-profile.component.css']
+  styleUrl: './complete-profile.component.css'
 })
 export class CompleteProfileComponent implements OnInit {
 
   private keycloak = inject(KeycloakService);
-  private userService = inject(UserService);
-  private router = inject(Router);
-  private fb = inject(FormBuilder);
+  private userSvc  = inject(UserService);
+  private router   = inject(Router);
+  private fb       = inject(FormBuilder);
 
   profileForm: FormGroup;
-  loading = signal(false);
-  success = signal(false);
-  selectedFile: File | null = null;     // ← Pour stocker le fichier sélectionné
+  loading      = signal(false);
+  success      = signal(false);
+  errorMsg     = signal<string | null>(null);
+  selectedFile: File | null = null;
+  previewUrl   = signal<string | null>(null);
+  currentUser  = signal<Utilisateur | null>(null);
+  isDark       = false;
 
-  constructor() {
+  // ✅ Propriétés de focus pour les effets visuels des inputs
+  dateNaissanceFocused = false;
+  dateFinFocused       = false;
+  telFocused           = false;
+  posteFocused         = false;
+  deptFocused          = false;
+  adresseFocused       = false;
+
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) {
     this.profileForm = this.fb.group({
-      dateNaissance: [''],
-      telephone: [''],
-      adresse: [''],
+      dateNaissance:  [''],
       dateFinContrat: [''],
-      poste: [''],
-      departement: ['']
-      // photoUrl est géré via le fichier, on ne le met plus dans le form
+      telephone:      [''],
+      adresse:        [''],
+      poste:          [''],
+      departement:    ['']
     });
   }
 
   ngOnInit(): void {
-    // Optionnel : charger les données existantes de l'utilisateur
+    if (isPlatformBrowser(this.platformId)) {
+      const saved = localStorage.getItem('theme') || 'light';
+      this.isDark = saved === 'dark';
+      this.applyTheme(this.isDark);
+    }
+    this.loadExistingProfile();
   }
 
-  // ====================== NOUVELLE MÉTHODE ======================
-  onFileSelected(event: any): void {
-    const file = event.target.files[0];
-    if (file) {
-      // Optionnel : validation du type et de la taille
-      if (!file.type.startsWith('image/')) {
-        alert('Veuillez sélectionner une image');
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) { // 5MB max
-        alert('L\'image ne doit pas dépasser 5MB');
-        return;
-      }
-      this.selectedFile = file;
+  toggleTheme(): void {
+    const next = !this.isDark;
+    if (!(document as any).startViewTransition) {
+      this.isDark = next;
+      this.applyTheme(next);
+      return;
     }
+    document.documentElement.classList.toggle('going-light', !next);
+    (document as any).startViewTransition(() => {
+      this.isDark = next;
+      this.applyTheme(next);
+    });
+  }
+
+  private applyTheme(dark: boolean): void {
+    dark
+      ? document.documentElement.classList.add('dark')
+      : document.documentElement.classList.remove('dark');
+    localStorage.setItem('theme', dark ? 'dark' : 'light');
+  }
+
+  private loadExistingProfile(): void {
+    const kcId = this.keycloak.getKeycloakUserId();
+    if (!kcId) return;
+    this.userSvc.getUserByKeycloakId(kcId).subscribe({
+      next: (u: Utilisateur) => {
+        this.currentUser.set(u);
+        this.profileForm.patchValue({
+          dateNaissance:  u.dateNaissance  || '',
+          dateFinContrat: u.dateFinContrat || '',
+          telephone:      u.telephone      || '',
+          adresse:        u.adresse        || '',
+          poste:          u.poste          || '',
+          departement:    u.departement    || ''
+        });
+        if (u.photoUrl) this.previewUrl.set(u.photoUrl);
+      },
+      error: () => console.info('Profil non trouvé, formulaire vide')
+    });
+  }
+
+  onFileSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { this.errorMsg.set('Sélectionnez une image.'); return; }
+    if (file.size > 5 * 1024 * 1024)    { this.errorMsg.set('Image trop lourde (max 5 Mo).'); return; }
+    this.selectedFile = file;
+    const reader = new FileReader();
+    reader.onload = e => this.previewUrl.set(e.target?.result as string);
+    reader.readAsDataURL(file);
+    this.errorMsg.set(null);
   }
 
   onSubmit(): void {
     this.loading.set(true);
-
+    this.errorMsg.set(null);
     const formData = new FormData();
+    formData.append('updates', new Blob(
+      [JSON.stringify(this.profileForm.value)],
+      { type: 'application/json' }
+    ));
+    if (this.selectedFile) formData.append('photo', this.selectedFile);
 
-    // Ajouter les champs du formulaire en JSON
-    formData.append('updates', new Blob([JSON.stringify(this.profileForm.value)], {
-      type: 'application/json'
-    }));
-
-    // Ajouter la photo si elle existe
-    if (this.selectedFile) {
-      formData.append('photo', this.selectedFile);
-    }
-
-    this.userService.updateUserProfileWithPhoto(formData).subscribe({
+    this.userSvc.updateUserProfileWithPhoto(formData).subscribe({
       next: () => {
         this.success.set(true);
-        setTimeout(() => this.router.navigate(['/dashboard']), 1500);
+        setTimeout(() => this.router.navigate(['/home']), 1500);
       },
-      error: (err: any) => {
-        console.error('Erreur mise à jour profil', err);
-        alert('Une erreur est survenue lors de la mise à jour');
+      error: () => {
+        this.errorMsg.set('Une erreur est survenue. Réessayez.');
+        this.loading.set(false);
       },
       complete: () => this.loading.set(false)
     });
   }
 
-  skip(): void {
-    this.router.navigate(['/dashboard']);
+  skip(): void { this.router.navigate(['/home']); }
+
+  get userInitials(): string {
+    const u = this.currentUser();
+    if (!u) return '?';
+    return ((u.prenom?.[0] ?? '') + (u.nom?.[0] ?? '')).toUpperCase();
   }
 }
