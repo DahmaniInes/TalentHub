@@ -1,38 +1,44 @@
 <!-- user-creation.component.html -->
-<div class="uc-wrapper" (click)="closeAllMenus()">
+<div class="uc-wrapper">
 
-  <!-- STEPPER -->
+  <!-- ══════════════════════════════════════════
+       STEPPER BAR
+       ✅ Les étapes validées RESTENT avec leur icône (pas de checkmark)
+         — currentStep > i+1 → classe "done" mais garde le même rendu visuel
+  ══════════════════════════════════════════ -->
   <div class="uc-stepper-bar">
     <div class="uc-stepper-track">
-      <div class="uc-stepper-progress" [style.width.%]="((currentStep - 1) / (steps.length - 1)) * 100"></div>
+      <div class="uc-stepper-progress"
+           [style.width.%]="((currentStep - 1) / (steps.length - 1)) * 100"></div>
     </div>
+
     <div class="uc-step-node"
          *ngFor="let step of steps; let i = index"
          [class.active]="currentStep === i + 1"
          [class.done]="currentStep > i + 1"
          (click)="goToStep(i + 1)">
+
       <div class="uc-step-circle">
-        <svg *ngIf="currentStep > i + 1" viewBox="0 0 20 20" fill="none">
-          <path d="M4 10l4.5 4.5L16 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- ✅ Toujours afficher l'icône — PAS de checkmark sur les étapes "done" -->
+        <svg *ngIf="i === 0" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="7" r="3" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6"
+                stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
         </svg>
-        <ng-container *ngIf="currentStep <= i + 1">
-          <svg *ngIf="i===0" viewBox="0 0 20 20" fill="none">
-            <circle cx="10" cy="7" r="3" stroke="currentColor" stroke-width="1.8"/>
-            <path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-          </svg>
-          <svg *ngIf="i===1" viewBox="0 0 20 20" fill="none">
-            <rect x="2" y="7" width="16" height="11" rx="2" stroke="currentColor" stroke-width="1.8"/>
-            <path d="M7 7V5a2 2 0 014 0v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-            <path d="M2 11h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-          <svg *ngIf="i===2" viewBox="0 0 20 20" fill="none">
-            <path d="M10 2l7 3v5c0 4-3 7-7 8-4-1-7-4-7-8V5l7-3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-          </svg>
-          <svg *ngIf="i===3" viewBox="0 0 20 20" fill="none">
-            <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.8"/>
-            <path d="M6.5 10l2.5 2.5 4.5-4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </ng-container>
+        <svg *ngIf="i === 1" viewBox="0 0 20 20" fill="none">
+          <rect x="2" y="7" width="16" height="11" rx="2" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M7 7V5a2 2 0 014 0v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M2 11h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <svg *ngIf="i === 2" viewBox="0 0 20 20" fill="none">
+          <path d="M10 2l7 3v5c0 4-3 7-7 8-4-1-7-4-7-8V5l7-3z"
+                stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+        </svg>
+        <svg *ngIf="i === 3" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M6.5 10l2.5 2.5 4.5-4.5"
+                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </div>
       <span class="uc-step-label">{{ step }}</span>
     </div>
@@ -57,6 +63,7 @@
       </div>
 
       <div class="uc-fields-grid">
+        <!-- Prénom -->
         <div class="uc-field-group">
           <label class="uc-label">Prénom <span class="uc-required">*</span></label>
           <div class="uc-input-wrap" [class.focused]="focusState['prenom']"
@@ -73,6 +80,7 @@
           </p>
         </div>
 
+        <!-- Nom -->
         <div class="uc-field-group">
           <label class="uc-label">Nom <span class="uc-required">*</span></label>
           <div class="uc-input-wrap" [class.focused]="focusState['nom']"
@@ -89,6 +97,7 @@
           </p>
         </div>
 
+        <!-- Email -->
         <div class="uc-field-group uc-field-full">
           <label class="uc-label">Email professionnel <span class="uc-required">*</span></label>
           <div class="uc-input-wrap" [class.focused]="focusState['email']"
@@ -105,11 +114,13 @@
           </p>
         </div>
 
+        <!-- Téléphone -->
         <div class="uc-field-group uc-field-full">
-          <label class="uc-label">Téléphone</label>
+          <label class="uc-label">Téléphone <span class="uc-optional">optionnel</span></label>
           <div class="uc-input-wrap" [class.focused]="focusState['telephone']">
             <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
-              <path d="M4 3h3l1.5 4-2 1.5a10.07 10.07 0 005 5L13 11l4 1.5V16a1 1 0 01-1 1C7.163 17 3 12.837 3 4a1 1 0 011-1z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+              <path d="M4 3h3l1.5 4-2 1.5a10.07 10.07 0 005 5L13 11l4 1.5V16a1 1 0 01-1 1C7.163 17 3 12.837 3 4a1 1 0 011-1z"
+                    stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
             </svg>
             <input formControlName="telephone" placeholder="71 234 567" class="uc-input"
                    (focus)="focusState['telephone']=true" (blur)="focusState['telephone']=false">
@@ -118,7 +129,7 @@
       </div>
     </div>
 
-    <!-- ─── STEP 2 — POSTE ─── -->
+    <!-- ─── STEP 2 — INFORMATIONS PROFESSIONNELLES (tous optionnels) ─── -->
     <div class="uc-step-content" *ngIf="currentStep === 2">
       <div class="uc-step-header">
         <div class="uc-step-icon-lg">
@@ -130,25 +141,14 @@
         </div>
         <div>
           <h2 class="uc-step-title">Informations professionnelles</h2>
-          <p class="uc-step-subtitle">Poste, département et date d'embauche</p>
+          <p class="uc-step-subtitle">Tous les champs sont optionnels</p>
         </div>
       </div>
 
       <div class="uc-fields-grid">
+        <!-- Poste -->
         <div class="uc-field-group">
-          <label class="uc-label">Date d'embauche</label>
-          <div class="uc-input-wrap" [class.focused]="focusState['dateEmbauche']">
-            <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
-              <rect x="2" y="4" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/>
-              <path d="M2 9h16M6 2v3M14 2v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-            </svg>
-            <input type="date" formControlName="dateEmbauche" class="uc-input"
-                   (focus)="focusState['dateEmbauche']=true" (blur)="focusState['dateEmbauche']=false">
-          </div>
-        </div>
-
-        <div class="uc-field-group">
-          <label class="uc-label">Poste</label>
+          <label class="uc-label">Poste <span class="uc-optional">optionnel</span></label>
           <div class="uc-input-wrap" [class.focused]="focusState['poste']">
             <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
               <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.6"/>
@@ -159,8 +159,9 @@
           </div>
         </div>
 
-        <div class="uc-field-group uc-field-full">
-          <label class="uc-label">Département</label>
+        <!-- Département -->
+        <div class="uc-field-group">
+          <label class="uc-label">Département <span class="uc-optional">optionnel</span></label>
           <div class="uc-input-wrap" [class.focused]="focusState['departement']">
             <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
               <rect x="2" y="3" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/>
@@ -171,255 +172,109 @@
           </div>
         </div>
 
+        <!-- Date embauche -->
+        <div class="uc-field-group">
+          <label class="uc-label">Date d'embauche <span class="uc-optional">optionnel</span></label>
+          <div class="uc-input-wrap" [class.focused]="focusState['dateEmbauche']">
+            <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
+              <rect x="2" y="4" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M2 9h16M6 2v3M14 2v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+            <input type="date" formControlName="dateEmbauche" class="uc-input"
+                   (focus)="focusState['dateEmbauche']=true" (blur)="focusState['dateEmbauche']=false">
+          </div>
+        </div>
+
+        <!-- ✅ Date fin de contrat -->
+        <div class="uc-field-group">
+          <label class="uc-label">Date de fin de contrat <span class="uc-optional">optionnel</span></label>
+          <div class="uc-input-wrap" [class.focused]="focusState['dateFinContrat']">
+            <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
+              <rect x="2" y="4" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M2 9h16M6 2v3M14 2v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M7 13l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <input type="date" formControlName="dateFinContrat" class="uc-input"
+                   (focus)="focusState['dateFinContrat']=true" (blur)="focusState['dateFinContrat']=false">
+          </div>
+        </div>
+
+        <!-- Adresse -->
         <div class="uc-field-group uc-field-full">
-          <label class="uc-label">Adresse</label>
+          <label class="uc-label">Adresse <span class="uc-optional">optionnel</span></label>
           <div class="uc-textarea-wrap" [class.focused]="focusState['adresse']">
-            <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none" style="align-self: flex-start; margin-top: 2px;">
-              <path d="M10 2C6.686 2 4 4.686 4 8c0 4.5 6 10 6 10s6-5.5 6-10c0-3.314-2.686-6-6-6z" stroke="currentColor" stroke-width="1.6"/>
+            <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none"
+                 style="align-self: flex-start; margin-top: 2px;">
+              <path d="M10 2C6.686 2 4 4.686 4 8c0 4.5 6 10 6 10s6-5.5 6-10c0-3.314-2.686-6-6-6z"
+                    stroke="currentColor" stroke-width="1.6"/>
               <circle cx="10" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/>
             </svg>
             <textarea formControlName="adresse" rows="3" placeholder="Adresse complète"
                       class="uc-textarea"
-                      (focus)="focusState['adresse']=true" (blur)="focusState['adresse']=false"></textarea>
+                      (focus)="focusState['adresse']=true"
+                      (blur)="focusState['adresse']=false"></textarea>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ─── STEP 3 — ACCÈS ─── -->
+    <!-- ─── STEP 3 — PROFIL (lecture seule, pas de CRUD) ─── -->
     <div class="uc-step-content" *ngIf="currentStep === 3">
       <div class="uc-step-header">
         <div class="uc-step-icon-lg">
           <svg viewBox="0 0 24 24" fill="none">
-            <path d="M12 2l9 4v6c0 5.5-4 9.5-9 11-5-1.5-9-5.5-9-11V6l9-4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="M12 2l9 4v6c0 5.5-4 9.5-9 11-5-1.5-9-5.5-9-11V6l9-4z"
+                  stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
           </svg>
         </div>
         <div>
-          <h2 class="uc-step-title">Profil & Permissions</h2>
-          <p class="uc-step-subtitle">Sélectionnez le rôle et les accès accordés</p>
+          <h2 class="uc-step-title">Profil utilisateur</h2>
+          <p class="uc-step-subtitle">Sélectionnez le profil à assigner à cet utilisateur</p>
         </div>
       </div>
 
-      <div class="uc-two-cols">
+      <!-- Liste des profils — sélection simple, lecture seule -->
+      <div class="uc-profil-list">
+        <label *ngFor="let profil of profils()"
+               class="uc-profil-card"
+               [class.selected]="userForm.get('profilId')?.value == profil.id">
+          <input type="radio" formControlName="profilId" [value]="profil.id" class="sr-only">
 
-        <!-- ── Colonne Profil ── -->
-        <div class="uc-section-block">
-          <div class="uc-section-block-header">
-            <span class="uc-section-block-title">
-              <svg viewBox="0 0 16 16" fill="none" class="uc-section-icon">
-                <path d="M8 2a2.5 2.5 0 100 5 2.5 2.5 0 000-5zM3 12.5c0-2.485 2.239-4.5 5-4.5s5 2.015 5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              </svg>
-              Profil utilisateur
-            </span>
-            <button type="button" class="uc-btn-icon-sm"
-                    (click)="openAddProfilModal(); $event.stopPropagation()" title="Ajouter un profil">
-              <svg viewBox="0 0 16 16" fill="none">
-                <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-              </svg>
-            </button>
+          <!-- Radio dot -->
+          <div class="uc-profil-radio" [class.active]="userForm.get('profilId')?.value == profil.id">
+            <div class="uc-radio-dot" *ngIf="userForm.get('profilId')?.value == profil.id"></div>
           </div>
 
-          <!-- ✅ PAS de max-height ni overflow — tout visible sans scrollbar -->
-          <div class="uc-profil-list">
-            <label *ngFor="let profil of profils()"
-                   class="uc-profil-card"
-                   [class.selected]="userForm.get('profilId')?.value == profil.id">
-              <input type="radio" formControlName="profilId" [value]="profil.id" class="sr-only">
-
-              <!-- ✅ Seul l'icône radio change, pas la cellule entière -->
-              <div class="uc-profil-radio">
-                <div class="uc-radio-dot" *ngIf="userForm.get('profilId')?.value == profil.id"></div>
-              </div>
-
-              <div class="uc-profil-info">
-                <span class="uc-profil-name">{{ profil.nom }}</span>
-                <span class="uc-profil-desc" *ngIf="profil.description">{{ profil.description }}</span>
-              </div>
-
-              <div class="uc-profil-actions" (click)="$event.preventDefault(); $event.stopPropagation()">
-                <div class="relative">
-                  <button type="button" class="uc-icon-btn" (click)="toggleProfilMenu(profil.id, $event)">
-                    <svg viewBox="0 0 16 16" fill="none">
-                      <circle cx="8" cy="3" r="1" fill="currentColor"/>
-                      <circle cx="8" cy="8" r="1" fill="currentColor"/>
-                      <circle cx="8" cy="13" r="1" fill="currentColor"/>
-                    </svg>
-                  </button>
-                  <div *ngIf="showProfilMenu() === profil.id" class="uc-dropdown" (click)="$event.stopPropagation()">
-                    <button type="button" class="uc-dropdown-item"
-                            (click)="openEditProfilModal(profil); showProfilMenu.set(null)">
-                      <svg viewBox="0 0 16 16" fill="none">
-                        <path d="M11 2l3 3-8 8H3V10l8-8z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
-                      </svg>
-                      Modifier
-                    </button>
-                    <button type="button" class="uc-dropdown-item danger"
-                            (click)="deleteProfil(profil); showProfilMenu.set(null)">
-                      <svg viewBox="0 0 16 16" fill="none">
-                        <path d="M3 4h10M6 4V2h4v2M5 4l.5 9h5L11 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                      Supprimer
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </label>
-
-            <div *ngIf="profils().length === 0" class="uc-empty-state">
-              <svg viewBox="0 0 40 40" fill="none" class="uc-empty-icon">
-                <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
-                <path d="M20 12v8M20 24h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-              <p>Aucun profil disponible</p>
-              <span>Créez un profil pour commencer</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── Colonne Permissions ── -->
-        <div class="uc-section-block">
-          <div class="uc-section-block-header">
-            <span class="uc-section-block-title">
-              <svg viewBox="0 0 16 16" fill="none" class="uc-section-icon">
-                <path d="M8 1l7 3v4c0 4-3 6.5-7 8C4 15 1 12.5 1 9V4l7-3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
-              </svg>
-              Permissions
-            </span>
-            <div class="flex items-center gap-2">
-              <span *ngIf="selectedPermsCount() > 0" class="uc-perm-count-badge">
-                {{ selectedPermsCount() }} sélectionnée(s)
-              </span>
-              <button type="button" class="uc-btn-icon-sm"
-                      (click)="openAddPermModal(); $event.stopPropagation()" title="Ajouter une permission">
-                <svg viewBox="0 0 16 16" fill="none">
-                  <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <div *ngIf="loadingPerms()" class="uc-loading">
-            <div class="uc-spinner-ring"></div>
-            <span>Chargement…</span>
-          </div>
-
-          <div *ngIf="!loadingPerms() && moduleGroups().length === 0" class="uc-empty-state">
-            <svg viewBox="0 0 40 40" fill="none" class="uc-empty-icon">
-              <rect x="6" y="8" width="28" height="26" rx="3" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
-              <path d="M13 17h14M13 22h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <!-- Icône profil -->
+          <div class="uc-profil-icon">
+            <svg viewBox="0 0 20 20" fill="none" style="width:18px;height:18px">
+              <circle cx="10" cy="7" r="3" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6"
+                    stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
             </svg>
-            <p>Aucune permission</p>
-            <span>Cliquez sur + pour en créer</span>
           </div>
 
-          <div *ngFor="let group of getModules()" class="uc-module-group">
-            <div class="uc-module-header">
-              <svg viewBox="0 0 14 14" fill="none" class="uc-module-folder">
-                <path d="M1 3a1 1 0 011-1h3l1.5 1.5H12a1 1 0 011 1V11a1 1 0 01-1 1H2a1 1 0 01-1-1V3z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
-              </svg>
-
-              <ng-container *ngIf="!group.editing">
-                <span class="uc-module-name">{{ group.module }}</span>
-              </ng-container>
-              <ng-container *ngIf="group.editing">
-                <input [(ngModel)]="group.editName" [ngModelOptions]="{standalone: true}"
-                       (click)="$event.stopPropagation()" class="uc-module-edit-input">
-                <button type="button" class="uc-icon-btn success" (click)="saveEditModule(group)">
-                  <svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </button>
-                <button type="button" class="uc-icon-btn danger" (click)="cancelEditModule(group)">
-                  <svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-                </button>
-              </ng-container>
-
-              <div class="relative ml-auto" *ngIf="!group.editing">
-                <button type="button" class="uc-icon-btn" (click)="toggleModuleMenu(group, $event)">
-                  <svg viewBox="0 0 16 16" fill="none">
-                    <circle cx="3" cy="8" r="1" fill="currentColor"/>
-                    <circle cx="8" cy="8" r="1" fill="currentColor"/>
-                    <circle cx="13" cy="8" r="1" fill="currentColor"/>
-                  </svg>
-                </button>
-                <div *ngIf="group.showMenu" class="uc-dropdown" (click)="$event.stopPropagation()">
-                  <button type="button" class="uc-dropdown-item" (click)="startEditModule(group); group.showMenu=false">
-                    <svg viewBox="0 0 16 16" fill="none"><path d="M11 2l3 3-8 8H3V10l8-8z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
-                    Renommer
-                  </button>
-                  <button type="button" class="uc-dropdown-item danger" (click)="deleteModule(group); group.showMenu=false">
-                    <svg viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V2h4v2M5 4l.5 9h5L11 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    Supprimer module
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Permission rows -->
-            <div *ngFor="let row of group.rows" class="uc-perm-row">
-
-              <ng-container *ngIf="!row.editing">
-                <!-- ✅ Seul le checkbox change — pas la cellule entière -->
-                <label class="uc-checkbox-wrap" (click)="$event.stopPropagation()">
-                  <input type="checkbox" [(ngModel)]="row.selected"
-                         [ngModelOptions]="{standalone: true}" class="sr-only">
-                  <div class="uc-checkbox" [class.checked]="row.selected">
-                    <svg *ngIf="row.selected" viewBox="0 0 12 12" fill="none">
-                      <path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                  </div>
-                </label>
-
-                <span class="uc-perm-label" [class.selected]="row.selected">{{ row.permission.libelle }}</span>
-
-                <div *ngIf="row.permission.description" class="uc-tooltip-wrap">
-                  <button type="button" class="uc-tooltip-trigger">
-                    <svg viewBox="0 0 14 14" fill="none">
-                      <circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.3"/>
-                      <path d="M7 6.5v3M7 4.5h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-                    </svg>
-                  </button>
-                  <div class="uc-tooltip-box">{{ row.permission.description }}</div>
-                </div>
-
-                <div class="relative ml-auto">
-                  <button type="button" class="uc-icon-btn" (click)="togglePermMenu(row, $event)">
-                    <svg viewBox="0 0 16 16" fill="none">
-                      <circle cx="3" cy="8" r="1" fill="currentColor"/>
-                      <circle cx="8" cy="8" r="1" fill="currentColor"/>
-                      <circle cx="13" cy="8" r="1" fill="currentColor"/>
-                    </svg>
-                  </button>
-                  <div *ngIf="row.showMenu" class="uc-dropdown" (click)="$event.stopPropagation()">
-                    <button type="button" class="uc-dropdown-item" (click)="startEditPerm(row)">
-                      <svg viewBox="0 0 16 16" fill="none"><path d="M11 2l3 3-8 8H3V10l8-8z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
-                      Modifier
-                    </button>
-                    <button type="button" class="uc-dropdown-item danger" (click)="deletePerm(row)">
-                      <svg viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V2h4v2M5 4l.5 9h5L11 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                      Supprimer
-                    </button>
-                  </div>
-                </div>
-              </ng-container>
-
-              <!-- Inline edit permission -->
-              <ng-container *ngIf="row.editing">
-                <div class="uc-inline-edit" (click)="$event.stopPropagation()">
-                  <input [(ngModel)]="row.editForm.libelle" [ngModelOptions]="{standalone: true}"
-                         placeholder="Libellé" class="uc-inline-input">
-                  <input [(ngModel)]="row.editForm.description" [ngModelOptions]="{standalone: true}"
-                         placeholder="Description" class="uc-inline-input">
-                  <button type="button" class="uc-icon-btn success" (click)="saveEditPerm(row)">
-                    <svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  </button>
-                  <button type="button" class="uc-icon-btn danger" (click)="cancelEditPerm(row)">
-                    <svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-                  </button>
-                </div>
-              </ng-container>
-            </div>
+          <!-- Info -->
+          <div class="uc-profil-info">
+            <span class="uc-profil-name">{{ profil.nom }}</span>
+            <span class="uc-profil-desc" *ngIf="profil.description">{{ profil.description }}</span>
           </div>
+        </label>
+
+        <!-- Vide -->
+        <div *ngIf="profils().length === 0" class="uc-profil-empty">
+          <svg viewBox="0 0 40 40" fill="none" style="width:36px;height:36px;color:var(--text-muted)">
+            <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+            <path d="M20 12v8M20 24h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <p>Aucun profil disponible</p>
+          <span>Créez des profils dans la section Profils & Permissions</span>
         </div>
       </div>
+
+      <p class="uc-field-error" *ngIf="userForm.get('profilId')?.invalid && userForm.get('profilId')?.touched">
+        Veuillez sélectionner un profil
+      </p>
     </div>
 
     <!-- ─── STEP 4 — RÉCAPITULATIF ─── -->
@@ -449,9 +304,7 @@
           </div>
           <div class="uc-recap-row">
             <span class="uc-recap-key">Nom complet</span>
-            <span class="uc-recap-val">
-              {{ userForm.get('prenom')?.value }} {{ userForm.get('nom')?.value }}
-            </span>
+            <span class="uc-recap-val">{{ userForm.get('prenom')?.value }} {{ userForm.get('nom')?.value }}</span>
           </div>
           <div class="uc-recap-row">
             <span class="uc-recap-key">Email</span>
@@ -480,10 +333,14 @@
             <span class="uc-recap-key">Département</span>
             <span class="uc-recap-val">{{ userForm.get('departement')?.value }}</span>
           </div>
-          <!-- ✅ CORRIGÉ — date d'embauche formatée via méthode -->
           <div class="uc-recap-row">
             <span class="uc-recap-key">Embauche</span>
-            <span class="uc-recap-val">{{ getDateEmbaucheFormatted() }}</span>
+            <span class="uc-recap-val">{{ formatDate('dateEmbauche') }}</span>
+          </div>
+          <!-- ✅ Fin de contrat dans le récapitulatif -->
+          <div class="uc-recap-row" *ngIf="userForm.get('dateFinContrat')?.value">
+            <span class="uc-recap-key">Fin de contrat</span>
+            <span class="uc-recap-val">{{ formatDate('dateFinContrat') }}</span>
           </div>
         </div>
 
@@ -491,21 +348,15 @@
         <div class="uc-recap-card uc-recap-card-full">
           <div class="uc-recap-card-header">
             <svg viewBox="0 0 18 18" fill="none">
-              <path d="M9 1.5l7.5 3.5v5c0 4-3 6.5-7.5 7.5C4.5 16 1.5 13.5 1.5 9.5v-5L9 1.5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+              <path d="M9 1.5l7.5 3.5v5c0 4-3 6.5-7.5 7.5C4.5 16 1.5 13.5 1.5 9.5v-5L9 1.5z"
+                    stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
             </svg>
             Accès
           </div>
           <div class="uc-recap-row">
             <span class="uc-recap-key">Profil</span>
-            <!-- ✅ CORRIGÉ — affiche le nom, pas [object Object] -->
             <span class="uc-recap-val">
               <span class="uc-recap-badge">{{ getSelectedProfilName() }}</span>
-            </span>
-          </div>
-          <div class="uc-recap-row">
-            <span class="uc-recap-key">Permissions</span>
-            <span class="uc-recap-val">
-              <span class="uc-perm-count-badge">{{ selectedPermsCount() }} permission(s)</span>
             </span>
           </div>
         </div>
@@ -551,136 +402,4 @@
       </button>
     </div>
   </form>
-</div>
-
-<!-- MODAL PROFIL -->
-<div *ngIf="showAddProfilModal()" class="uc-modal-overlay" (click)="closeProfilModal()">
-  <div class="uc-modal" (click)="$event.stopPropagation()">
-    <div class="uc-modal-header">
-      <div class="uc-modal-icon">
-        <svg viewBox="0 0 20 20" fill="none">
-          <circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.7"/>
-          <path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-        </svg>
-      </div>
-      <h3 class="uc-modal-title">{{ editingProfil() ? 'Modifier le profil' : 'Nouveau profil' }}</h3>
-      <button type="button" class="uc-modal-close" (click)="closeProfilModal()">
-        <svg viewBox="0 0 16 16" fill="none">
-          <path d="M4 4l8 8M12 4L4 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-        </svg>
-      </button>
-    </div>
-    <div class="uc-modal-body">
-      <div class="uc-field-group">
-        <label class="uc-label">Nom <span class="uc-required">*</span></label>
-        <div class="uc-input-wrap">
-          <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
-            <path d="M4 6h12M4 10h8M4 14h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-          </svg>
-          <input [(ngModel)]="newProfilForm().nom" [ngModelOptions]="{standalone: true}"
-                 placeholder="Ex: MANAGER" class="uc-input">
-        </div>
-      </div>
-      <div class="uc-field-group">
-        <label class="uc-label">Description</label>
-        <div class="uc-input-wrap">
-          <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
-            <path d="M4 6h12M4 10h12M4 14h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-          </svg>
-          <input [(ngModel)]="newProfilForm().description" [ngModelOptions]="{standalone: true}"
-                 placeholder="Description du rôle" class="uc-input">
-        </div>
-      </div>
-      <label class="uc-toggle-row">
-        <input type="checkbox" [(ngModel)]="newProfilForm().actif" [ngModelOptions]="{standalone: true}" class="sr-only">
-        <div class="uc-toggle" [class.on]="newProfilForm().actif">
-          <div class="uc-toggle-knob"></div>
-        </div>
-        <span class="uc-toggle-label">Profil actif</span>
-      </label>
-    </div>
-    <div class="uc-modal-footer">
-      <button type="button" class="uc-btn uc-btn-ghost" (click)="closeProfilModal()">Annuler</button>
-      <button type="button" class="uc-btn uc-btn-primary" (click)="saveProfil()">
-        <svg viewBox="0 0 16 16" fill="none">
-          <path d="M13 2H4a1 1 0 00-1 1v10a1 1 0 001 1h8l3-3V3a1 1 0 00-1-1zM5 8h6M5 11h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-        </svg>
-        {{ editingProfil() ? 'Enregistrer' : 'Créer' }}
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL PERMISSION -->
-<div *ngIf="showAddPermModal()" class="uc-modal-overlay" (click)="closeAddPermModal()">
-  <div class="uc-modal" (click)="$event.stopPropagation()">
-    <div class="uc-modal-header">
-      <div class="uc-modal-icon">
-        <svg viewBox="0 0 20 20" fill="none">
-          <path d="M10 2l8 3.5v5c0 4.5-3.5 7.5-8 9-4.5-1.5-8-4.5-8-9v-5L10 2z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <h3 class="uc-modal-title">Nouvelle permission</h3>
-      <button type="button" class="uc-modal-close" (click)="closeAddPermModal()">
-        <svg viewBox="0 0 16 16" fill="none">
-          <path d="M4 4l8 8M12 4L4 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-        </svg>
-      </button>
-    </div>
-    <div class="uc-modal-body">
-      <div class="uc-grid-2">
-        <div class="uc-field-group">
-          <label class="uc-label">Code <span class="uc-required">*</span></label>
-          <div class="uc-input-wrap">
-            <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
-              <path d="M7 8l-3 2 3 2M13 8l3 2-3 2M11 6l-2 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <input [(ngModel)]="newPermForm().code" [ngModelOptions]="{standalone: true}"
-                   placeholder="CONGE_READ" class="uc-input"
-                   style="font-family: 'Courier New', monospace; letter-spacing: 0.5px">
-          </div>
-        </div>
-        <div class="uc-field-group">
-          <label class="uc-label">Module <span class="uc-required">*</span></label>
-          <div class="uc-input-wrap">
-            <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
-              <rect x="2" y="3" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/>
-              <path d="M2 8h16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-            </svg>
-            <input [(ngModel)]="newPermForm().module" [ngModelOptions]="{standalone: true}"
-                   placeholder="CONGES" class="uc-input">
-          </div>
-        </div>
-      </div>
-      <div class="uc-field-group">
-        <label class="uc-label">Libellé <span class="uc-required">*</span></label>
-        <div class="uc-input-wrap">
-          <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
-            <path d="M4 6h12M4 10h8M4 14h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-          </svg>
-          <input [(ngModel)]="newPermForm().libelle" [ngModelOptions]="{standalone: true}"
-                 placeholder="Voir les congés" class="uc-input">
-        </div>
-      </div>
-      <div class="uc-field-group">
-        <label class="uc-label">Description</label>
-        <div class="uc-input-wrap">
-          <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
-            <path d="M4 6h12M4 10h12M4 14h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-          </svg>
-          <input [(ngModel)]="newPermForm().description" [ngModelOptions]="{standalone: true}"
-                 placeholder="Description détaillée" class="uc-input">
-        </div>
-      </div>
-    </div>
-    <div class="uc-modal-footer">
-      <button type="button" class="uc-btn uc-btn-ghost" (click)="closeAddPermModal()">Annuler</button>
-      <button type="button" class="uc-btn uc-btn-primary" (click)="saveNewPermission()">
-        <svg viewBox="0 0 16 16" fill="none">
-          <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-        Créer
-      </button>
-    </div>
-  </div>
 </div>

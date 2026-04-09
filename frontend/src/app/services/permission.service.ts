@@ -1,3 +1,4 @@
+// src/app/services/permission.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
@@ -7,13 +8,21 @@ import { Profil } from '../shared/models/profil.model';
 
 const BASE = 'http://localhost:8085/api';
 
-// ✅ Interface pour les permissions d'un profil
 export interface ProfilPermission {
   id: number;
   profilId: number;
   permissionId: number;
   permissionModule: string;
   permissionLibelle: string;
+  canRead: boolean;
+  canWrite: boolean;
+  canDelete: boolean;
+  canExport: boolean;
+}
+
+export interface AssignPermissionRequest {
+  profilId: number;
+  permissionId: number;
   canRead: boolean;
   canWrite: boolean;
   canDelete: boolean;
@@ -52,17 +61,30 @@ export class PermissionService {
     return this.http.delete<void>(`${BASE}/profils/${id}`);
   }
 
-  // ✅ Permissions d'un profil (pour vérifier les accès)
+  // ── Profil-Permissions (assignation) ──
+
+  /** Toutes les permissions d'un profil */
   getByProfil(profilId: number): Observable<ProfilPermission[]> {
     return this.http.get<ProfilPermission[]>(`${BASE}/profil-permissions/profil/${profilId}`);
   }
 
-  // ✅ Vérifier si un profil a une permission spécifique
-  hasPermission(
-    profilId: number,
-    module: string,
-    libelle: string
-  ): Observable<boolean> {
+  /** Assigner une permission à un profil */
+  assignPermission(req: AssignPermissionRequest): Observable<ProfilPermission> {
+    return this.http.post<ProfilPermission>(`${BASE}/profil-permissions`, req);
+  }
+
+  /** Mettre à jour les droits d'une ligne profil-permission */
+  updateProfilPermission(id: number, req: Partial<AssignPermissionRequest>): Observable<ProfilPermission> {
+    return this.http.put<ProfilPermission>(`${BASE}/profil-permissions/${id}`, req);
+  }
+
+  /** Retirer une permission d'un profil */
+  removeProfilPermission(id: number): Observable<void> {
+    return this.http.delete<void>(`${BASE}/profil-permissions/${id}`);
+  }
+
+  /** Vérifier si un profil a une permission spécifique */
+  hasPermission(profilId: number, module: string, libelle: string): Observable<boolean> {
     return this.getByProfil(profilId).pipe(
       map(perms => perms.some(p =>
         p.permissionModule === module &&
@@ -72,4 +94,4 @@ export class PermissionService {
       catchError(() => of(false))
     );
   }
-}
+} 

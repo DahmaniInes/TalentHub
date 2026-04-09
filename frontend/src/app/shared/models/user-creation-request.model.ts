@@ -18,5 +18,6 @@ export interface UserCreationRequest {
     adresse?: string;
     profilId: number;
     permissions: PermissionSelection[];  // ✅ Ajouter
+    dateFinContrat?: string;        // format : "YYYY-MM-DD"
 
   }

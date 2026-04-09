@@ -7,15 +7,18 @@ import {UserCreationComponent} from './admin/user-creation/user-creation.compone
 import { FeuilleTempsComponent } from './feuille-temps/feuille-temps.component';   // ← Correction ici
 import { DemandeComponent } from './demande/demande.component';   // ← Correction ici
 import { ApprobationFeuilleTempsComponent } from './approbation-feuille-temps/approbation-feuille-temps.component';
-
+import { ProfilPermissionsComponent } from './admin/profil-permissions/profil-permissions.component';
 const routes: Routes = [
   { path: 'home', component: HomeComponent },
   { path: 'dashboard', component: DashboardComponent },
   { path: 'add-user', component: UserCreationComponent },
   { path: 'FeuilleTempsComponent', component: FeuilleTempsComponent } ,  // ← Nom correct
   { path: 'Demande', component: DemandeComponent },   // ← Nom correct
-  { path: 'approbations-ft', component: ApprobationFeuilleTempsComponent }
-
+  { path: 'approbations-ft', component: ApprobationFeuilleTempsComponent },
+  {
+    path: 'admin/profil-permissions',
+    component: ProfilPermissionsComponent
+  }
 
 ];
 

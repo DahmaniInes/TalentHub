@@ -1,0 +1,358 @@
+<!-- profil-permissions.component.html -->
+<div class="pp-wrapper">
+
+    <!-- ═══ HEADER ═══ -->
+    <div class="pp-header">
+      <div>
+        <h1 class="pp-title">
+          <svg viewBox="0 0 22 22" fill="none" class="pp-title-icon">
+            <path d="M11 2l9 4v5c0 5.5-4 9-9 10.5C6 20 2 16.5 2 11V6l9-4z"
+                  stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          </svg>
+          Profils & Permissions
+        </h1>
+        <p class="pp-subtitle">Gérez les profils et assignez les permissions d'accès</p>
+      </div>
+      <div class="pp-header-actions">
+        <button class="pp-btn pp-btn-secondary" (click)="openAddPerm()">
+          <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px">
+            <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          Nouvelle permission
+        </button>
+        <button class="pp-btn pp-btn-primary" (click)="openAddProfil()">
+          <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px">
+            <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          Nouveau profil
+        </button>
+      </div>
+    </div>
+  
+    <!-- ═══ STAT CARDS — grille 4 colonnes fixe ═══ -->
+    <div class="pp-stats-grid">
+  
+      <!-- Total utilisateurs -->
+      <div class="pp-stat-card">
+        <div class="pp-stat-icon pp-stat-icon-blue">
+          <svg viewBox="0 0 20 20" fill="currentColor" style="width:20px;height:20px">
+            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+          </svg>
+        </div>
+        <div class="pp-stat-body">
+          <p class="pp-stat-label">Total utilisateurs</p>
+          <p class="pp-stat-value">{{ totalUsers() }}</p>
+        </div>
+      </div>
+  
+      <!-- Total permissions -->
+      <div class="pp-stat-card">
+        <div class="pp-stat-icon pp-stat-icon-purple">
+          <svg viewBox="0 0 20 20" fill="currentColor" style="width:20px;height:20px">
+            <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+        </div>
+        <div class="pp-stat-body">
+          <p class="pp-stat-label">Permissions</p>
+          <p class="pp-stat-value">{{ permissions().length }}</p>
+        </div>
+      </div>
+  
+      <!-- ✅ Card par profil — SANS avatar, avec modifier/supprimer -->
+      <div *ngFor="let profil of profils()" class="pp-stat-card pp-stat-card-profil">
+        <div class="pp-stat-icon pp-stat-icon-profil">
+          <svg viewBox="0 0 20 20" fill="currentColor" style="width:18px;height:18px">
+            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+          </svg>
+        </div>
+        <div class="pp-stat-body">
+          <p class="pp-stat-label">{{ profil.nom }}</p>
+          <p class="pp-stat-value">{{ usersByProfil()[profil.id] || 0 }}</p>
+          <p class="pp-stat-sub">utilisateur(s)</p>
+        </div>
+        <!-- ✅ Actions modifier/supprimer -->
+        <div class="pp-stat-actions">
+          <button class="pp-icon-btn" (click)="openEditProfil(profil)" title="Modifier">
+            <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+              <path d="M9 2l3 3-7 7H2V9l7-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="pp-icon-btn pp-icon-btn-danger" (click)="deleteProfil(profil)" title="Supprimer">
+            <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+              <path d="M2 3h10M5 3V2h4v1M4 3l.5 8h5L10 3" stroke="currentColor"
+                    stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+  
+    </div>
+  
+    <!-- ═══ TABLEAU MATRICIEL ═══ -->
+    <div class="pp-table-card">
+  
+      <div *ngIf="loading()" class="pp-loading-center">
+        <div class="pp-spinner"></div>
+        <span>Chargement de la matrice...</span>
+      </div>
+  
+      <div *ngIf="!loading()" class="pp-table-scroll">
+        <table class="pp-matrix-table">
+          <thead>
+            <tr>
+              <!-- Colonne permissions — ✅ pas d'avatar -->
+              <th class="pp-th-perm">Permission</th>
+  
+              <!-- ✅ En-tête profil SANS avatar, juste le nom -->
+              <th *ngFor="let profil of profils()" class="pp-th-profil">
+                <span class="pp-th-profil-nom">{{ profil.nom }}</span>
+              </th>
+  
+              <th class="pp-th-actions">Actions</th>
+            </tr>
+          </thead>
+  
+          <tbody>
+            <ng-container *ngFor="let section of sections()">
+  
+              <!-- ── Ligne module ── -->
+              <tr class="pp-tr-module">
+                <td class="pp-td-module-name">
+                  <div class="pp-module-cell">
+                    <button class="pp-collapse-btn" (click)="toggleCollapse(section)">
+                      <svg viewBox="0 0 12 12" fill="none" style="width:11px;height:11px;transition:transform .2s"
+                           [style.transform]="section.collapsed ? 'rotate(-90deg)' : 'rotate(0)'">
+                        <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px;color:var(--text-muted)">
+                      <path d="M1 3a1 1 0 011-1h3l1.5 1.5H12a1 1 0 011 1V11a1 1 0 01-1 1H2a1 1 0 01-1-1V3z"
+                            stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="pp-module-label">{{ section.module }}</span>
+                    <span class="pp-module-count">{{ section.rows.length }}</span>
+                    <button class="pp-add-to-module-btn" (click)="openAddToModule(section.module)"
+                            title="Ajouter une permission dans ce module">
+                      <svg viewBox="0 0 14 14" fill="none" style="width:11px;height:11px">
+                        <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+  
+                <!-- ✅ Checkbox module — même style que les cellules -->
+                <td *ngFor="let profil of profils(); let pi = index" class="pp-td-module-check">
+                  <label class="pp-cell-label" title="Tout assigner / retirer">
+                    <input type="checkbox"
+                           [checked]="section.allAssigned[pi]"
+                           (change)="toggleModuleForProfil(section, pi)"
+                           class="sr-only">
+                    <div class="pp-cell-check" [class.checked]="section.allAssigned[pi]">
+                      <svg *ngIf="section.allAssigned[pi]" viewBox="0 0 12 12" fill="none">
+                        <path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="2"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </div>
+                  </label>
+                </td>
+  
+                <td class="pp-td-module-actions"></td>
+              </tr>
+  
+              <!-- ── Lignes permissions ── -->
+              <ng-container *ngIf="!section.collapsed">
+                <tr *ngFor="let row of section.rows" class="pp-tr-perm">
+  
+                  <td class="pp-td-perm-name">
+                    <span class="pp-perm-libelle">{{ row.permission.libelle }}</span>
+                    <span *ngIf="row.permission.description" class="pp-perm-desc">
+                      {{ row.permission.description }}
+                    </span>
+                  </td>
+  
+                  <!-- ✅ Cellule avec vérification défensive row.cells[pi] -->
+                  <td *ngFor="let profil of profils(); let pi = index" class="pp-td-cell">
+                    <div class="pp-cell-wrap">
+                      <ng-container *ngIf="row.cells[pi] as cell">
+                        <div *ngIf="cell.saving" class="pp-cell-spinner"></div>
+                        <label *ngIf="!cell.saving" class="pp-cell-label">
+                          <input type="checkbox"
+                                 [checked]="cell.assigned"
+                                 (change)="toggleCell(section, row, pi)"
+                                 class="sr-only">
+                          <div class="pp-cell-check" [class.checked]="cell.assigned">
+                            <svg *ngIf="cell.assigned" viewBox="0 0 12 12" fill="none">
+                              <path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                          </div>
+                        </label>
+                      </ng-container>
+                      <!-- ✅ Cellule vide si la colonne n'existe pas encore (nouveau profil) -->
+                      <ng-container *ngIf="!row.cells[pi]">
+                        <div class="pp-cell-check">
+                          <div class="pp-cell-spinner-sm"></div>
+                        </div>
+                      </ng-container>
+                    </div>
+                  </td>
+  
+                  <td class="pp-td-row-actions">
+                    <button class="pp-icon-btn" (click)="openEditPerm(row.permission)" title="Modifier">
+                      <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+                        <path d="M9 2l3 3-7 7H2V9l7-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <button class="pp-icon-btn pp-icon-btn-danger" (click)="deletePerm(row.permission)" title="Supprimer">
+                      <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+                        <path d="M2 3h10M5 3V2h4v1M4 3l.5 8h5L10 3" stroke="currentColor"
+                              stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              </ng-container>
+  
+            </ng-container>
+          </tbody>
+        </table>
+  
+        <div *ngIf="sections().length === 0" class="pp-empty">
+          <div style="font-size: 2.5rem">🔐</div>
+          <p>Aucune permission définie</p>
+          <button class="pp-btn pp-btn-primary" (click)="openAddPerm()">Créer la première permission</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- MODAL PROFIL -->
+  <div *ngIf="showProfilModal()" class="pp-modal-backdrop" (click)="closeProfilModal()">
+    <div class="pp-modal" (click)="$event.stopPropagation()">
+      <div class="pp-modal-header">
+        <div class="pp-modal-icon-wrap">
+          <svg viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h3 class="pp-modal-title">{{ editingProfil() ? 'Modifier le profil' : 'Nouveau profil' }}</h3>
+        <button class="pp-modal-close" (click)="closeProfilModal()">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4L4 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="pp-modal-body">
+        <div class="pp-field">
+          <label class="pp-label">Nom <span class="pp-required">*</span></label>
+          <input [(ngModel)]="profilForm().nom" [ngModelOptions]="{standalone: true}"
+                 placeholder="Ex: MANAGER RH" class="pp-input">
+        </div>
+        <div class="pp-field">
+          <label class="pp-label">Description</label>
+          <input [(ngModel)]="profilForm().description" [ngModelOptions]="{standalone: true}"
+                 placeholder="Description du rôle" class="pp-input">
+        </div>
+        <label class="pp-toggle-row">
+          <input type="checkbox" [(ngModel)]="profilForm().actif" [ngModelOptions]="{standalone: true}" class="sr-only">
+          <div class="pp-toggle" [class.on]="profilForm().actif"><div class="pp-toggle-knob"></div></div>
+          <span class="pp-toggle-text">Profil actif</span>
+        </label>
+      </div>
+      <div class="pp-modal-footer">
+        <button class="pp-btn pp-btn-ghost" (click)="closeProfilModal()">Annuler</button>
+        <button class="pp-btn pp-btn-primary" (click)="saveProfil()">
+          {{ editingProfil() ? 'Enregistrer' : 'Créer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- MODAL PERMISSION -->
+  <div *ngIf="showPermModal()" class="pp-modal-backdrop" (click)="closePermModal()">
+    <div class="pp-modal" (click)="$event.stopPropagation()">
+      <div class="pp-modal-header">
+        <div class="pp-modal-icon-wrap">
+          <svg viewBox="0 0 20 20" fill="none">
+            <path d="M10 2l8 3.5v5c0 4.5-3.5 7.5-8 9-4.5-1.5-8-4.5-8-9v-5L10 2z"
+                  stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h3 class="pp-modal-title">{{ editingPerm() ? 'Modifier' : 'Nouvelle permission' }}</h3>
+        <button class="pp-modal-close" (click)="closePermModal()">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4L4 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="pp-modal-body">
+        <div class="pp-grid-2">
+          <div class="pp-field">
+            <label class="pp-label">Module <span class="pp-required">*</span></label>
+            <input [(ngModel)]="permForm().module" [ngModelOptions]="{standalone: true}"
+                   placeholder="CONGES" class="pp-input pp-input-upper">
+          </div>
+          <div class="pp-field">
+            <label class="pp-label">Code</label>
+            <input [(ngModel)]="permForm().code" [ngModelOptions]="{standalone: true}"
+                   placeholder="CONGE_READ" class="pp-input pp-input-mono">
+          </div>
+        </div>
+        <div class="pp-field">
+          <label class="pp-label">Libellé <span class="pp-required">*</span></label>
+          <input [(ngModel)]="permForm().libelle" [ngModelOptions]="{standalone: true}"
+                 placeholder="Voir les congés" class="pp-input">
+        </div>
+        <div class="pp-field">
+          <label class="pp-label">Description</label>
+          <input [(ngModel)]="permForm().description" [ngModelOptions]="{standalone: true}"
+                 placeholder="Description optionnelle" class="pp-input">
+        </div>
+      </div>
+      <div class="pp-modal-footer">
+        <button class="pp-btn pp-btn-ghost" (click)="closePermModal()">Annuler</button>
+        <button class="pp-btn pp-btn-primary" (click)="savePerm()">
+          {{ editingPerm() ? 'Enregistrer' : 'Créer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- MODAL AJOUT DANS MODULE -->
+  <div *ngIf="showAddToModuleModal()" class="pp-modal-backdrop" (click)="closeAddToModuleModal()">
+    <div class="pp-modal" (click)="$event.stopPropagation()">
+      <div class="pp-modal-header">
+        <div class="pp-modal-icon-wrap">
+          <svg viewBox="0 0 20 20" fill="none">
+            <path d="M10 2l8 3.5v5c0 4.5-3.5 7.5-8 9-4.5-1.5-8-4.5-8-9v-5L10 2z"
+                  stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h3 class="pp-modal-title">
+          Ajouter dans <span class="pp-module-tag">{{ addToModuleName() }}</span>
+        </h3>
+        <button class="pp-modal-close" (click)="closeAddToModuleModal()">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4L4 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="pp-modal-body">
+        <div class="pp-field">
+          <label class="pp-label">Code</label>
+          <input [(ngModel)]="addToModuleForm().code" [ngModelOptions]="{standalone: true}"
+                 placeholder="CONGE_READ" class="pp-input pp-input-mono">
+        </div>
+        <div class="pp-field">
+          <label class="pp-label">Libellé <span class="pp-required">*</span></label>
+          <input [(ngModel)]="addToModuleForm().libelle" [ngModelOptions]="{standalone: true}"
+                 placeholder="Voir les congés" class="pp-input">
+        </div>
+        <div class="pp-field">
+          <label class="pp-label">Description</label>
+          <input [(ngModel)]="addToModuleForm().description" [ngModelOptions]="{standalone: true}"
+                 placeholder="Description optionnelle" class="pp-input">
+        </div>
+      </div>
+      <div class="pp-modal-footer">
+        <button class="pp-btn pp-btn-ghost" (click)="closeAddToModuleModal()">Annuler</button>
+        <button class="pp-btn pp-btn-primary" (click)="saveAddToModule()">Ajouter</button>
+      </div>
+    </div>
+  </div>
