@@ -97,7 +97,7 @@ public class Utilisateur {
 
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
-    private List<Tache> taches = new ArrayList<>();
+    private List<Activité> taches = new ArrayList<>();
 
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
@@ -107,6 +107,10 @@ public class Utilisateur {
     @Builder.Default
     private List<Rapport> rapports = new ArrayList<>();
 
+
+    @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<MembreEquipe> membresEquipe = new ArrayList<>();
     // Lifecycle hooks
     @PrePersist
     protected void onCreate() {

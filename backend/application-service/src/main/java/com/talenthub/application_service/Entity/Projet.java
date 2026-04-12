@@ -1,3 +1,4 @@
+// src/main/java/com/talenthub/application_service/Entity/Projet.java
 package com.talenthub.application_service.Entity;
 
 import jakarta.persistence.*;
@@ -11,11 +12,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "projets")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Projet {
 
     @Id
@@ -29,6 +26,13 @@ public class Projet {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "numero_projet", unique = true, length = 50)
+    private String numeroProjet;    // ex: "PRJ-2024-001"
+
+    @Column(length = 7)
+    private String couleur;         // ex: "#c026d3"
+
+    // ── Dates ──
     @Column(name = "date_debut")
     private LocalDate dateDebut;
 
@@ -38,25 +42,59 @@ public class Projet {
     @Column(name = "date_fin_reelle")
     private LocalDate dateFinReelle;
 
+    // ── Statut ──
     // PLANIFIE | EN_COURS | SUSPENDU | TERMINE | ANNULE
     @Column(nullable = false, length = 20)
     @Builder.Default
     private String statut = "PLANIFIE";
 
-    // Avancement en pourcentage (0-100)
     @Column(nullable = false)
     @Builder.Default
     private int avancement = 0;
 
-    @Column(length = 100)
-    private String responsableKeycloakId;
-
+    // ── Finance ──
     @Column(name = "budget_prevu")
     private Double budgetPrevu;
 
     @Column(name = "budget_consomme")
-    private Double budgetConsomme;
+    @Builder.Default
+    private Double budgetConsomme = 0.0;
 
+    @Column(name = "quota_horaire")
+    private Double quotaHoraire;
+
+    // MENSUEL | TRIMESTRIEL | ANNUEL | ILLIMITE
+    @Column(name = "type_budget", length = 20)
+    @Builder.Default
+    private String typeBudget = "ILLIMITE";
+
+    // ── Flags ──
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean visible = true;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean facturable = true;
+
+    @Column(name = "autoriser_activites_globales", nullable = false)
+    @Builder.Default
+    private boolean autoriserActivitesGlobales = false;
+
+    // ── Admin du projet (keycloakId du responsable principal) ──
+    @Column(name = "responsable_keycloak_id", length = 100)
+    private String responsableKeycloakId;
+
+    // ── Liste des admins du projet (keycloakId séparés par virgule
+    //    ou relation Many-to-Many si préféré) ──
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "projet_admins",
+            joinColumns = @JoinColumn(name = "projet_id"))
+    @Column(name = "keycloak_id", length = 100)
+    @Builder.Default
+    private List<String> projetAdmins = new ArrayList<>();
+
+    // ── Metadata ──
     @Column(name = "date_creation", updatable = false)
     private LocalDateTime dateCreation;
 
@@ -65,9 +103,20 @@ public class Projet {
 
     // ── Relations ──
 
+    /** Client propriétaire du projet */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "client_id")
+    private Client client;
+
+    /** Membres de l'équipe (table porteuse MembreEquipe) */
     @OneToMany(mappedBy = "projet", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
-    private List<Tache> taches = new ArrayList<>();
+    private List<MembreEquipe> membres = new ArrayList<>();
+
+    /** Activités du projet */
+    @OneToMany(mappedBy = "projet", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Activité> activites = new ArrayList<>();
 
     @OneToMany(mappedBy = "projet", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
@@ -82,126 +131,5 @@ public class Projet {
     @PreUpdate
     protected void onUpdate() {
         this.dateMiseAJour = LocalDateTime.now();
-    }
-
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getNom() {
-        return nom;
-    }
-
-    public void setNom(String nom) {
-        this.nom = nom;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public LocalDate getDateDebut() {
-        return dateDebut;
-    }
-
-    public void setDateDebut(LocalDate dateDebut) {
-        this.dateDebut = dateDebut;
-    }
-
-    public LocalDate getDateFin() {
-        return dateFin;
-    }
-
-    public void setDateFin(LocalDate dateFin) {
-        this.dateFin = dateFin;
-    }
-
-    public LocalDate getDateFinReelle() {
-        return dateFinReelle;
-    }
-
-    public void setDateFinReelle(LocalDate dateFinReelle) {
-        this.dateFinReelle = dateFinReelle;
-    }
-
-    public String getStatut() {
-        return statut;
-    }
-
-    public void setStatut(String statut) {
-        this.statut = statut;
-    }
-
-    public int getAvancement() {
-        return avancement;
-    }
-
-    public void setAvancement(int avancement) {
-        this.avancement = avancement;
-    }
-
-    public String getResponsableKeycloakId() {
-        return responsableKeycloakId;
-    }
-
-    public void setResponsableKeycloakId(String responsableKeycloakId) {
-        this.responsableKeycloakId = responsableKeycloakId;
-    }
-
-    public Double getBudgetPrevu() {
-        return budgetPrevu;
-    }
-
-    public void setBudgetPrevu(Double budgetPrevu) {
-        this.budgetPrevu = budgetPrevu;
-    }
-
-    public Double getBudgetConsomme() {
-        return budgetConsomme;
-    }
-
-    public void setBudgetConsomme(Double budgetConsomme) {
-        this.budgetConsomme = budgetConsomme;
-    }
-
-    public LocalDateTime getDateCreation() {
-        return dateCreation;
-    }
-
-    public void setDateCreation(LocalDateTime dateCreation) {
-        this.dateCreation = dateCreation;
-    }
-
-    public LocalDateTime getDateMiseAJour() {
-        return dateMiseAJour;
-    }
-
-    public void setDateMiseAJour(LocalDateTime dateMiseAJour) {
-        this.dateMiseAJour = dateMiseAJour;
-    }
-
-    public List<Tache> getTaches() {
-        return taches;
-    }
-
-    public void setTaches(List<Tache> taches) {
-        this.taches = taches;
-    }
-
-    public List<Document> getDocuments() {
-        return documents;
-    }
-
-    public void setDocuments(List<Document> documents) {
-        this.documents = documents;
     }
 }

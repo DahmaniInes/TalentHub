@@ -11,7 +11,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class StatutTache {
+public class StatutActivité {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

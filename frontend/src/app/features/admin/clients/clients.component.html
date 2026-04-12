@@ -1,0 +1,305 @@
+<!-- clients.component.html -->
+<div class="cl-wrapper">
+
+    <!-- HEADER -->
+    <div class="cl-header">
+      <div>
+        <h1 class="cl-title">
+          <svg viewBox="0 0 22 22" fill="none" class="cl-title-icon">
+            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"
+                  fill="currentColor"/>
+          </svg>
+          Clients
+        </h1>
+        <p class="cl-subtitle">{{ clients().length }} client(s) enregistré(s)</p>
+      </div>
+      <button class="cl-btn cl-btn-primary" (click)="openAdd()">
+        <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px">
+          <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        Nouveau client
+      </button>
+    </div>
+  
+    <!-- SEARCH -->
+    <div class="cl-search-bar">
+      <svg viewBox="0 0 16 16" fill="none" class="cl-search-icon">
+        <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.4"/>
+        <path d="m11 11 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+      <input [value]="search()" (input)="search.set($any($event.target).value)"
+             type="text" placeholder="Rechercher un client..."
+             class="cl-search-input">
+    </div>
+  
+    <!-- LOADING -->
+    <div *ngIf="loading()" class="cl-loading">
+      <div class="cl-spinner"></div>
+      <span>Chargement...</span>
+    </div>
+  
+    <!-- GRILLE CLIENTS -->
+    <div *ngIf="!loading()" class="cl-grid">
+  
+      <div *ngFor="let client of filteredClients()" class="cl-card">
+        <!-- Bande colorée -->
+        <div class="cl-card-band" [style.background]="getCouleurStyle(client.couleur)"></div>
+  
+        <!-- Header card -->
+        <div class="cl-card-header">
+          <div class="cl-card-avatar"
+               [style.background]="getCouleurStyle(client.couleur)">
+            {{ getInitiales(client.nom) }}
+          </div>
+          <div class="cl-card-info">
+            <h3 class="cl-card-nom">{{ client.nom }}</h3>
+            <p class="cl-card-societe">{{ client.nomSociete || client.contact || '—' }}</p>
+          </div>
+          <div class="cl-card-actions">
+            <button class="cl-icon-btn" (click)="openEdit(client)" title="Modifier">
+              <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
+                <path d="M9 2l3 3-7 7H2V9l7-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <button class="cl-icon-btn cl-icon-btn-danger" (click)="delete(client)" title="Supprimer">
+              <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
+                <path d="M2 3h10M5 3V2h4v1M4 3l.5 8h5L10 3" stroke="currentColor"
+                      stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+  
+        <!-- Body -->
+        <div class="cl-card-body">
+          <div class="cl-card-row" *ngIf="client.courriel">
+            <svg viewBox="0 0 16 16" fill="none" class="cl-row-icon">
+              <rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.3"/>
+              <path d="M1 6l7 4 7-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+            <span>{{ client.courriel }}</span>
+          </div>
+          <div class="cl-card-row" *ngIf="client.telephone || client.mobile">
+            <svg viewBox="0 0 16 16" fill="none" class="cl-row-icon">
+              <path d="M3 2h2.5l1.2 3.2-1.6 1.2a8.1 8.1 0 004 4l1.2-1.6L13.8 10V12.5A1 1 0 0113 13.5C6.5 13.5 2.5 9.5 2.5 3A1 1 0 013 2z"
+                    stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+            </svg>
+            <span>{{ client.telephone || client.mobile }}</span>
+          </div>
+          <div class="cl-card-row" *ngIf="client.ville || client.pays">
+            <svg viewBox="0 0 16 16" fill="none" class="cl-row-icon">
+              <path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6c0 3.5 4.5 8.5 4.5 8.5S12.5 9.5 12.5 6c0-2.5-2-4.5-4.5-4.5z"
+                    stroke="currentColor" stroke-width="1.3"/>
+              <circle cx="8" cy="6" r="1.5" stroke="currentColor" stroke-width="1.2"/>
+            </svg>
+            <span>{{ client.ville }}{{ client.pays ? ', ' + client.pays : '' }}</span>
+          </div>
+        </div>
+  
+        <!-- Footer -->
+        <div class="cl-card-footer">
+          <div class="cl-badge" [class.cl-badge-actif]="client.actif" [class.cl-badge-inactif]="!client.actif">
+            {{ client.actif ? 'Actif' : 'Inactif' }}
+          </div>
+          <div class="cl-badge cl-badge-neutral">{{ client.nombreProjets || 0 }} projet(s)</div>
+          <div class="cl-badge cl-badge-neutral" *ngIf="client.devise">{{ client.devise }}</div>
+        </div>
+      </div>
+  
+      <!-- Vide -->
+      <div *ngIf="filteredClients().length === 0" class="cl-empty">
+        <svg viewBox="0 0 48 48" fill="none" style="width:48px;height:48px;color:var(--text-muted)">
+          <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 4"/>
+          <path d="M24 15v9M24 28h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <p>Aucun client trouvé</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ══════════════ MODAL CLIENT ══════════════ -->
+  <div *ngIf="showModal()" class="cl-modal-backdrop" (click)="closeModal()">
+    <div class="cl-modal" (click)="$event.stopPropagation()">
+  
+      <div class="cl-modal-header">
+        <div class="cl-modal-icon-wrap">
+          <svg viewBox="0 0 20 20" fill="none">
+            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"
+                  fill="currentColor"/>
+          </svg>
+        </div>
+        <h3 class="cl-modal-title">{{ editingClient() ? 'Modifier le client' : 'Nouveau client' }}</h3>
+        <button class="cl-modal-close" (click)="closeModal()">
+          <svg viewBox="0 0 16 16" fill="none">
+            <path d="M4 4l8 8M12 4L4 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+  
+      <!-- Onglets -->
+      <div class="cl-tabs">
+        <button class="cl-tab" [class.active]="activeTab()==='general'"   (click)="activeTab.set('general')">Général</button>
+        <button class="cl-tab" [class.active]="activeTab()==='contact'"   (click)="activeTab.set('contact')">Contact</button>
+        <button class="cl-tab" [class.active]="activeTab()==='finance'"   (click)="activeTab.set('finance')">Finance</button>
+        <button class="cl-tab" [class.active]="activeTab()==='adresse'"   (click)="activeTab.set('adresse')">Adresse</button>
+      </div>
+  
+      <div class="cl-modal-body">
+  
+        <!-- TAB: GÉNÉRAL -->
+        <ng-container *ngIf="activeTab()==='general'">
+          <div class="cl-field">
+            <label class="cl-label">Nom <span class="cl-required">*</span></label>
+            <input [(ngModel)]="form().nom" [ngModelOptions]="{standalone:true}"
+                   placeholder="Nom du client" class="cl-input">
+          </div>
+          <div class="cl-field">
+            <label class="cl-label">Description</label>
+            <textarea [(ngModel)]="form().description" [ngModelOptions]="{standalone:true}"
+                      rows="3" placeholder="Description..." class="cl-textarea"></textarea>
+          </div>
+          <div class="cl-grid-2">
+            <div class="cl-field">
+              <label class="cl-label">Compte</label>
+              <input [(ngModel)]="form().compte" [ngModelOptions]="{standalone:true}"
+                     placeholder="Ref comptable" class="cl-input">
+            </div>
+            <div class="cl-field">
+              <label class="cl-label">ID TVA</label>
+              <input [(ngModel)]="form().idTva" [ngModelOptions]="{standalone:true}"
+                     placeholder="TN12345678" class="cl-input">
+            </div>
+            <div class="cl-field">
+              <label class="cl-label">Devise</label>
+              <input [(ngModel)]="form().devise" [ngModelOptions]="{standalone:true}"
+                     placeholder="TND" class="cl-input cl-input-upper">
+            </div>
+            <div class="cl-field">
+              <label class="cl-label">Couleur</label>
+              <div class="cl-colors-row">
+                <button *ngFor="let c of COULEURS" type="button"
+                        class="cl-color-btn"
+                        [class.selected]="form().couleur === c"
+                        [style.background]="c"
+                        (click)="form().couleur = c"></button>
+              </div>
+            </div>
+          </div>
+          <div class="cl-flags-row">
+            <label class="cl-toggle-row">
+              <input type="checkbox" [(ngModel)]="form().visible" [ngModelOptions]="{standalone:true}" class="sr-only">
+              <div class="cl-toggle" [class.on]="form().visible"><div class="cl-toggle-knob"></div></div>
+              <span>Visible</span>
+            </label>
+            <label class="cl-toggle-row">
+              <input type="checkbox" [(ngModel)]="form().facturable" [ngModelOptions]="{standalone:true}" class="sr-only">
+              <div class="cl-toggle" [class.on]="form().facturable"><div class="cl-toggle-knob"></div></div>
+              <span>Facturable</span>
+            </label>
+            <label class="cl-toggle-row">
+              <input type="checkbox" [(ngModel)]="form().actif" [ngModelOptions]="{standalone:true}" class="sr-only">
+              <div class="cl-toggle" [class.on]="form().actif"><div class="cl-toggle-knob"></div></div>
+              <span>Actif</span>
+            </label>
+          </div>
+        </ng-container>
+  
+        <!-- TAB: CONTACT -->
+        <ng-container *ngIf="activeTab()==='contact'">
+          <div class="cl-field">
+            <label class="cl-label">Contact principal</label>
+            <input [(ngModel)]="form().contact" [ngModelOptions]="{standalone:true}"
+                   placeholder="Nom du contact" class="cl-input">
+          </div>
+          <div class="cl-field">
+            <label class="cl-label">Courriel</label>
+            <input type="email" [(ngModel)]="form().courriel" [ngModelOptions]="{standalone:true}"
+                   placeholder="contact@exemple.com" class="cl-input">
+          </div>
+          <div class="cl-field">
+            <label class="cl-label">Page d'accueil</label>
+            <input [(ngModel)]="form().pageAccueil" [ngModelOptions]="{standalone:true}"
+                   placeholder="https://exemple.com" class="cl-input">
+          </div>
+          <div class="cl-grid-3">
+            <div class="cl-field">
+              <label class="cl-label">Mobile</label>
+              <input [(ngModel)]="form().mobile" [ngModelOptions]="{standalone:true}"
+                     placeholder="+216 XX XXX XXX" class="cl-input">
+            </div>
+            <div class="cl-field">
+              <label class="cl-label">Téléphone</label>
+              <input [(ngModel)]="form().telephone" [ngModelOptions]="{standalone:true}"
+                     placeholder="71 XXX XXX" class="cl-input">
+            </div>
+            <div class="cl-field">
+              <label class="cl-label">Fax</label>
+              <input [(ngModel)]="form().fax" [ngModelOptions]="{standalone:true}"
+                     placeholder="71 XXX XXX" class="cl-input">
+            </div>
+          </div>
+        </ng-container>
+  
+        <!-- TAB: FINANCE -->
+        <ng-container *ngIf="activeTab()==='finance'">
+          <div class="cl-grid-2">
+            <div class="cl-field">
+              <label class="cl-label">Budget</label>
+              <input type="number" [(ngModel)]="form().budget" [ngModelOptions]="{standalone:true}"
+                     placeholder="0.00" class="cl-input">
+            </div>
+            <div class="cl-field">
+              <label class="cl-label">Quota horaire (h)</label>
+              <input type="number" [(ngModel)]="form().quotaHoraire" [ngModelOptions]="{standalone:true}"
+                     placeholder="0" class="cl-input">
+            </div>
+          </div>
+          <div class="cl-field">
+            <label class="cl-label">Type de budget</label>
+            <select [(ngModel)]="form().typeBudget" [ngModelOptions]="{standalone:true}" class="cl-select">
+              <option *ngFor="let t of TYPE_BUDGETS" [value]="t">{{ t }}</option>
+            </select>
+          </div>
+        </ng-container>
+  
+        <!-- TAB: ADRESSE -->
+        <ng-container *ngIf="activeTab()==='adresse'">
+          <div class="cl-field">
+            <label class="cl-label">Nom de la société</label>
+            <input [(ngModel)]="form().nomSociete" [ngModelOptions]="{standalone:true}"
+                   placeholder="Entreprise SARL" class="cl-input">
+          </div>
+          <div class="cl-grid-2">
+            <div class="cl-field">
+              <label class="cl-label">Code postal</label>
+              <input [(ngModel)]="form().codePostal" [ngModelOptions]="{standalone:true}"
+                     placeholder="1000" class="cl-input">
+            </div>
+            <div class="cl-field">
+              <label class="cl-label">Ville</label>
+              <input [(ngModel)]="form().ville" [ngModelOptions]="{standalone:true}"
+                     placeholder="Tunis" class="cl-input">
+            </div>
+            <div class="cl-field">
+              <label class="cl-label">Pays</label>
+              <input [(ngModel)]="form().pays" [ngModelOptions]="{standalone:true}"
+                     placeholder="Tunisie" class="cl-input">
+            </div>
+            <div class="cl-field">
+              <label class="cl-label">Fuseau horaire</label>
+              <input [(ngModel)]="form().fuseauHoraire" [ngModelOptions]="{standalone:true}"
+                     placeholder="Africa/Tunis" class="cl-input">
+            </div>
+          </div>
+        </ng-container>
+  
+      </div>
+  
+      <div class="cl-modal-footer">
+        <button class="cl-btn cl-btn-ghost" (click)="closeModal()">Annuler</button>
+        <button class="cl-btn cl-btn-primary" (click)="save()">
+          {{ editingClient() ? 'Enregistrer' : 'Créer' }}
+        </button>
+      </div>
+    </div>
+  </div>

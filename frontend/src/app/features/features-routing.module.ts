@@ -8,6 +8,11 @@ import { FeuilleTempsComponent } from './feuille-temps/feuille-temps.component';
 import { DemandeComponent } from './demande/demande.component';   // ← Correction ici
 import { ApprobationFeuilleTempsComponent } from './approbation-feuille-temps/approbation-feuille-temps.component';
 import { ProfilPermissionsComponent } from './admin/profil-permissions/profil-permissions.component';
+
+import { ClientsComponent } from './admin/clients/clients.component';
+  import { ProjetsComponent  } from './admin/projets/projets.component';
+ 
+  
 const routes: Routes = [
   { path: 'home', component: HomeComponent },
   { path: 'dashboard', component: DashboardComponent },
@@ -18,7 +23,9 @@ const routes: Routes = [
   {
     path: 'admin/profil-permissions',
     component: ProfilPermissionsComponent
-  }
+  },
+  { path: 'clients', component: ClientsComponent },
+  { path: 'projets', component: ProjetsComponent  }
 
 ];
 

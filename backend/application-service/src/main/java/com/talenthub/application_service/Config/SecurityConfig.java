@@ -74,7 +74,10 @@ public class SecurityConfig {
                         .requestMatchers("/feuilles-temps/**").permitAll()
                         .requestMatchers("/demandes/**").permitAll()
                         .requestMatchers("/notifications/**").permitAll()
-
+                        .requestMatchers("/clients/**").permitAll()
+                        .requestMatchers("/projets/**").permitAll()
+                        .requestMatchers("/membres-equipe/**").permitAll()
+                        .requestMatchers("/activites/**").permitAll()
                         .anyRequest().authenticated()
                 )
 
