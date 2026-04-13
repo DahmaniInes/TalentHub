@@ -267,4 +267,64 @@ public class UtilisateurService {
             throw new RuntimeException("Erreur lors de la mise à jour du profil : " + e.getMessage(), e);
         }
     }
+
+
+
+
+
+
+
+
+
+    public Utilisateur toggleActif(Long id) {
+        Utilisateur u = getUtilisateurById(id);
+        u.setActif(!u.isActif());
+        // Désactiver aussi dans Keycloak
+        try {
+            keycloakAdmin.realm(realm).users().get(u.getKeycloakId())
+                    .update(buildKcRepresentation(u));
+        } catch (Exception e) {
+            System.err.println("Keycloak toggle-actif failed: " + e.getMessage());
+        }
+        return repository.save(u);
+    }
+
+    public void resetPassword(Long id) {
+        Utilisateur u = getUtilisateurById(id);
+        try {
+            keycloakAdmin.realm(realm).users().get(u.getKeycloakId())
+                    .executeActionsEmail(
+                            "talenthub-frontend",
+                            "http://localhost:4200",
+                            86400,
+                            java.util.Collections.singletonList("UPDATE_PASSWORD")
+                    );
+        } catch (Exception e) {
+            throw new RuntimeException("Impossible d'envoyer l'email de réinitialisation: " + e.getMessage());
+        }
+    }
+
+    public Utilisateur updateByAdmin(Long id, java.util.Map<String, Object> body) {
+        Utilisateur u = getUtilisateurById(id);
+        if (body.containsKey("nom"))         u.setNom(body.get("nom").toString());
+        if (body.containsKey("prenom"))      u.setPrenom(body.get("prenom").toString());
+        if (body.containsKey("telephone"))   u.setTelephone(body.get("telephone").toString());
+        if (body.containsKey("poste"))       u.setPoste(body.get("poste").toString());
+        if (body.containsKey("departement")) u.setDepartement(body.get("departement").toString());
+        if (body.containsKey("adresse"))     u.setAdresse(body.get("adresse").toString());
+        if (body.containsKey("profilId")) {
+            Long profilId = Long.valueOf(body.get("profilId").toString());
+            profilService.getProfilById(profilId).ifPresent(u::setProfil);
+        }
+        if (body.containsKey("dateFinContrat") && body.get("dateFinContrat") != null) {
+            u.setDateFinContrat(java.time.LocalDate.parse(body.get("dateFinContrat").toString()));
+        }
+        return repository.save(u);
+    }
+
+    private org.keycloak.representations.idm.UserRepresentation buildKcRepresentation(Utilisateur u) {
+        var rep = new org.keycloak.representations.idm.UserRepresentation();
+        rep.setEnabled(u.isActif());
+        return rep;
+    }
 }

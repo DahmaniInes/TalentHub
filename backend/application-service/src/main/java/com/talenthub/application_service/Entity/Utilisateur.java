@@ -127,7 +127,4 @@ public class Utilisateur {
     public String getNomComplet() {
         return prenom + " " + nom;
     }
-
-
-
 }

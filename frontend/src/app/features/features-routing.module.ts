@@ -11,6 +11,9 @@ import { ProfilPermissionsComponent } from './admin/profil-permissions/profil-pe
 
 import { ClientsComponent } from './admin/clients/clients.component';
   import { ProjetsComponent  } from './admin/projets/projets.component';
+  import { UsersComponent }  from './users/users.component';
+  import { GroupsComponent } from './groups/groups.component';
+ 
  
   
 const routes: Routes = [
@@ -20,12 +23,11 @@ const routes: Routes = [
   { path: 'FeuilleTempsComponent', component: FeuilleTempsComponent } ,  // ← Nom correct
   { path: 'Demande', component: DemandeComponent },   // ← Nom correct
   { path: 'approbations-ft', component: ApprobationFeuilleTempsComponent },
-  {
-    path: 'admin/profil-permissions',
-    component: ProfilPermissionsComponent
-  },
+  { path: 'admin/profil-permissions',component: ProfilPermissionsComponent},
   { path: 'clients', component: ClientsComponent },
-  { path: 'projets', component: ProjetsComponent  }
+  { path: 'projets', component: ProjetsComponent  },
+  { path: 'users',  component: UsersComponent  },
+  { path: 'groups', component: GroupsComponent }
 
 ];
 

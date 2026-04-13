@@ -78,4 +78,35 @@ public class UtilisateurController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @PatchMapping("/{id}/toggle-actif")
+    public ResponseEntity<UtilisateurResponseDTO> toggleActif(@PathVariable Long id) {
+        Utilisateur u = utilisateurService.toggleActif(id);
+        return ResponseEntity.ok(new UtilisateurResponseDTO(u));
+    }
+
+    @PatchMapping("/{id}/reset-password")
+    public ResponseEntity<Void> resetPassword(@PathVariable Long id) {
+        utilisateurService.resetPassword(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UtilisateurResponseDTO> updateUtilisateur(
+            @PathVariable Long id, @RequestBody Map<String, Object> body) {
+        Utilisateur updated = utilisateurService.updateByAdmin(id, body);
+        return ResponseEntity.ok(new UtilisateurResponseDTO(updated));
+    }
 }

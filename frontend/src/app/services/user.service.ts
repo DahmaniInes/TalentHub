@@ -47,4 +47,23 @@ export class UserService {
   getUserByKeycloakId(keycloakId: string): Observable<Utilisateur> {
     return this.http.get<Utilisateur>(`${this.apiUrl}/keycloak/${keycloakId}`);
   }
+
+
+
+
+  toggleActif(id: number): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/${id}/toggle-actif`, {});
+  }
+ 
+  resetPassword(id: number): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/${id}/reset-password`, {});
+  }
+ 
+  updateByAdmin(id: number, body: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${id}`, body);
+  }
+ 
+  deleteUser(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
 }

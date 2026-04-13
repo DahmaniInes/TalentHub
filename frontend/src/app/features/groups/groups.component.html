@@ -1,0 +1,294 @@
+<!-- groups.component.html -->
+<div class="grp-wrapper">
+
+    <!-- ═══ HEADER ═══ -->
+    <div class="grp-header">
+      <div>
+        <h1 class="grp-title">
+          <svg viewBox="0 0 22 22" fill="none" class="grp-title-icon">
+            <rect x="2" y="8" width="18" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M6 8V6a5 5 0 0110 0v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          Groupes
+        </h1>
+        <p class="grp-subtitle">
+          {{ groupes().length }} groupe(s) ·
+          {{ totalMembres() }} membre(s) au total
+        </p>
+      </div>
+      <button class="grp-btn grp-btn-primary" (click)="openAdd()">
+        <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px">
+          <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        Nouveau groupe
+      </button>
+    </div>
+  
+    <!-- ═══ RECHERCHE ═══ -->
+    <div class="grp-search-wrap">
+      <svg viewBox="0 0 16 16" fill="none" class="grp-search-icon">
+        <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.4"/>
+        <path d="m11 11 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+      <input [value]="search()" (input)="search.set($any($event.target).value)"
+             type="text" placeholder="Rechercher un groupe..."
+             class="grp-search-input">
+    </div>
+  
+    <!-- ═══ LOADING ═══ -->
+    <div *ngIf="loading()" class="grp-loading">
+      <div class="grp-spinner"></div>
+      <span>Chargement des groupes...</span>
+    </div>
+  
+    <!-- ═══ LAYOUT SPLIT ═══ -->
+    <div *ngIf="!loading()" class="grp-layout" [class.grp-layout-detail]="selectedGroupe()">
+  
+      <!-- ─── Grille groupes ─── -->
+      <div class="grp-grid">
+        <div *ngFor="let g of filteredGroupes()"
+             class="grp-card"
+             [class.selected]="selectedGroupe()?.id === g.id"
+             (click)="selectGroupe(g)">
+  
+          <!-- Bande couleur -->
+          <div class="grp-card-band" [style.background]="g.couleur || '#6366f1'"></div>
+  
+          <!-- Icône groupe -->
+          <div class="grp-card-icon" [style.background]="(g.couleur || '#6366f1') + '22'"
+               [style.color]="g.couleur || '#6366f1'">
+            <svg viewBox="0 0 20 20" fill="currentColor" style="width:20px;height:20px">
+              <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+            </svg>
+          </div>
+  
+          <!-- Infos -->
+          <div class="grp-card-body">
+            <h3 class="grp-card-nom">{{ g.nom }}</h3>
+            <p class="grp-card-desc" *ngIf="g.description">{{ g.description }}</p>
+            <div class="grp-card-meta">
+              <span class="grp-meta-chip">
+                <svg viewBox="0 0 12 12" fill="none" style="width:10px;height:10px">
+                  <circle cx="6" cy="4" r="2.5" stroke="currentColor" stroke-width="1.2"/>
+                  <path d="M1.5 10.5c0-2.485 2.015-4.5 4.5-4.5s4.5 2.015 4.5 4.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                </svg>
+                {{ g.nombreMembres || 0 }} membres
+              </span>
+              <span *ngIf="g.teamLeadNom" class="grp-meta-lead">
+                ⭐ {{ g.teamLeadPrenom }} {{ g.teamLeadNom }}
+              </span>
+            </div>
+          </div>
+  
+          <!-- Avatars membres (max 3) -->
+          <div class="grp-card-avatars" *ngIf="g.membres && g.membres.length > 0">
+            <div *ngFor="let m of g.membres | slice:0:3; let i = index"
+                 class="grp-mini-avatar"
+                 [style.background]="getAvatarColor(m.nom)"
+                 [style.left]="(i * 18) + 'px'"
+                 [title]="m.prenom + ' ' + m.nom">
+              {{ getMembreInitiales(m) }}
+            </div>
+            <span *ngIf="g.membres.length > 3" class="grp-avatars-more"
+                  [style.left]="(3 * 18) + 'px'">
+              +{{ g.membres.length - 3 }}
+            </span>
+          </div>
+  
+          <!-- Actions rapides -->
+          <div class="grp-card-actions" (click)="$event.stopPropagation()">
+            <button class="grp-quick-btn" (click)="openEdit(g)" title="Modifier">
+              <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+                <path d="M9 2l3 3-7 7H2V9l7-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <button class="grp-quick-btn grp-quick-danger" (click)="delete(g)" title="Supprimer">
+              <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+                <path d="M2 3h10M5 3V2h4v1M4 3l.5 8h5L10 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+  
+        <!-- Vide -->
+        <div *ngIf="filteredGroupes().length === 0" class="grp-empty">
+          <div style="font-size:2.5rem">👥</div>
+          <p>Aucun groupe trouvé</p>
+          <button class="grp-btn grp-btn-primary" (click)="openAdd()">Créer le premier groupe</button>
+        </div>
+      </div>
+  
+      <!-- ─── Panneau détail groupe ─── -->
+      <div class="grp-detail-panel" *ngIf="selectedGroupe() as g">
+  
+        <!-- Header -->
+        <div class="grp-detail-header">
+          <div class="grp-detail-icon" [style.background]="(g.couleur || '#6366f1') + '22'"
+               [style.color]="g.couleur || '#6366f1'">
+            <svg viewBox="0 0 20 20" fill="currentColor" style="width:22px;height:22px">
+              <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+            </svg>
+          </div>
+          <div class="grp-detail-info">
+            <h2 class="grp-detail-nom">{{ g.nom }}</h2>
+            <p class="grp-detail-desc" *ngIf="g.description">{{ g.description }}</p>
+            <div class="grp-detail-meta">
+              <span class="grp-meta-chip">{{ g.membres?.length || 0 }} membre(s)</span>
+              <span class="grp-status-chip" [class.actif]="g.actif">
+                {{ g.actif ? 'Actif' : 'Inactif' }}
+              </span>
+            </div>
+          </div>
+          <div class="grp-detail-actions">
+            <button class="grp-quick-btn" (click)="openEdit(g)" title="Modifier">
+              <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+                <path d="M9 2l3 3-7 7H2V9l7-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <button class="grp-quick-btn" (click)="selectedGroupe.set(null)" title="Fermer">
+              <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+                <path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+  
+        <!-- Team Lead -->
+        <div class="grp-lead-section" *ngIf="g.teamLeadId">
+          <p class="grp-section-label">Team Lead</p>
+          <div class="grp-lead-card">
+            <div class="grp-lead-avatar"
+                 [style.background]="getAvatarColor(g.teamLeadNom || '')">
+              {{ (g.teamLeadPrenom || '?').charAt(0) }}{{ (g.teamLeadNom || '').charAt(0) }}
+            </div>
+            <div>
+              <span class="grp-lead-nom">{{ g.teamLeadPrenom }} {{ g.teamLeadNom }}</span>
+              <span class="grp-lead-badge">⭐ Team Lead</span>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Membres -->
+        <div class="grp-membres-section">
+          <p class="grp-section-label">Membres ({{ g.membres?.length || 0 }})</p>
+          <div class="grp-membres-list">
+            <div *ngFor="let m of g.membres" class="grp-membre-item">
+              <div class="grp-membre-avatar" [style.background]="getAvatarColor(m.nom)">
+                <img *ngIf="m.photoUrl" [src]="m.photoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+                <span *ngIf="!m.photoUrl">{{ getMembreInitiales(m) }}</span>
+              </div>
+              <div class="grp-membre-info">
+                <span class="grp-membre-nom">{{ m.prenom }} {{ m.nom }}</span>
+                <span class="grp-membre-poste" *ngIf="m.poste">{{ m.poste }}</span>
+                <span *ngIf="isTeamLead(g, m.id)" class="grp-lead-indicator">⭐ Lead</span>
+              </div>
+              <button class="grp-quick-btn grp-quick-danger" (click)="removeMembre(m)" title="Retirer">
+                <svg viewBox="0 0 14 14" fill="none" style="width:11px;height:11px">
+                  <path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </div>
+  
+            <div *ngIf="!g.membres || g.membres.length === 0" class="grp-empty-membres">
+              Aucun membre dans ce groupe
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ══════ MODAL GROUPE ══════ -->
+  <div *ngIf="showModal()" class="grp-modal-backdrop" (click)="closeModal()">
+    <div class="grp-modal" (click)="$event.stopPropagation()">
+  
+      <div class="grp-modal-header">
+        <div class="grp-modal-icon-wrap">
+          <svg viewBox="0 0 20 20" fill="currentColor" style="width:18px;height:18px;color:var(--accent)">
+            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+          </svg>
+        </div>
+        <h3 class="grp-modal-title">{{ editingGroupe() ? 'Modifier le groupe' : 'Nouveau groupe' }}</h3>
+        <button class="grp-modal-close" (click)="closeModal()">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4L4 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+  
+      <div class="grp-modal-body">
+        <!-- Nom -->
+        <div class="grp-field">
+          <label class="grp-label">Nom <span class="grp-required">*</span></label>
+          <input [(ngModel)]="form().nom" [ngModelOptions]="{standalone:true}"
+                 placeholder="Nom du groupe" class="grp-input">
+        </div>
+  
+        <!-- Description -->
+        <div class="grp-field">
+          <label class="grp-label">Description</label>
+          <textarea [(ngModel)]="form().description" [ngModelOptions]="{standalone:true}"
+                    rows="2" placeholder="Description..." class="grp-textarea"></textarea>
+        </div>
+  
+        <!-- Couleur -->
+        <div class="grp-field">
+          <label class="grp-label">Couleur</label>
+          <div class="grp-colors-row">
+            <button *ngFor="let c of COULEURS" type="button"
+                    class="grp-color-btn" [class.selected]="form().couleur === c"
+                    [style.background]="c" (click)="form().couleur = c"></button>
+          </div>
+        </div>
+  
+        <!-- Membres -->
+        <div class="grp-field">
+          <label class="grp-label">Membres</label>
+          <!-- Membres déjà sélectionnés -->
+          <div class="grp-selected-membres" *ngIf="membresSelectionnes().length > 0">
+            <div *ngFor="let u of membresSelectionnes()" class="grp-sel-membre">
+              <div class="grp-sel-avatar" [style.background]="getAvatarColor(u.nom)">
+                {{ getInitiales(u) }}
+              </div>
+              <span class="grp-sel-nom">{{ u.prenom }} {{ u.nom }}</span>
+              <!-- Star = teamLead -->
+              <button class="grp-lead-star"
+                      [class.active]="form().teamLeadId === u.id"
+                      (click)="setTeamLeadInForm(u.id)"
+                      title="Définir comme Team Lead">⭐</button>
+              <button class="grp-sel-remove" (click)="removeMembreFromForm(u.id)">×</button>
+            </div>
+          </div>
+          <!-- Ajouter un membre -->
+          <div class="grp-add-membre-row">
+            <select class="grp-select-field" (change)="addMembreToForm(+$any($event.target).value); $any($event.target).value=''">
+              <option value="">+ Ajouter un membre...</option>
+              <option *ngFor="let u of utilisateursDispo()" [value]="u.id">
+                {{ u.prenom }} {{ u.nom }} — {{ u.poste || u.email }}
+              </option>
+            </select>
+          </div>
+          <p class="grp-field-hint" *ngIf="membresSelectionnes().length > 0">
+            Cliquez sur ⭐ pour définir le Team Lead
+          </p>
+        </div>
+  
+        <!-- Actif -->
+        <label class="grp-toggle-row">
+          <input type="checkbox" [(ngModel)]="form().actif" [ngModelOptions]="{standalone:true}" class="sr-only">
+          <div class="grp-toggle" [class.on]="form().actif"><div class="grp-toggle-knob"></div></div>
+          <span>Groupe actif</span>
+        </label>
+      </div>
+  
+      <div class="grp-modal-footer">
+        <button class="grp-btn grp-btn-ghost" (click)="closeModal()">Annuler</button>
+        <button class="grp-btn grp-btn-primary" (click)="save()" [disabled]="saving()">
+          <div class="grp-spinner-sm" *ngIf="saving()"></div>
+          {{ saving() ? 'Enregistrement...' : (editingGroupe() ? 'Enregistrer' : 'Créer') }}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  
+  <!-- ════════════════════ CSS ════════════════════ -->
+  <!-- À METTRE DANS groups.component.css -->

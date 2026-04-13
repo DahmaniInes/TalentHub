@@ -69,8 +69,8 @@ public class SecurityConfig {
                         // Remets tes vraies règles plus tard :
                          .requestMatchers("/utilisateurs/**").permitAll()
 
-                        .requestMatchers("/profil-permissions/**").permitAll()  // ✅ Ajouter
-                        .requestMatchers("/permissions/**").permitAll()          // ✅ Ajouter
+                        .requestMatchers("/profil-permissions/**").permitAll()
+                        .requestMatchers("/permissions/**").permitAll()
                         .requestMatchers("/feuilles-temps/**").permitAll()
                         .requestMatchers("/demandes/**").permitAll()
                         .requestMatchers("/notifications/**").permitAll()
@@ -78,6 +78,8 @@ public class SecurityConfig {
                         .requestMatchers("/projets/**").permitAll()
                         .requestMatchers("/membres-equipe/**").permitAll()
                         .requestMatchers("/activites/**").permitAll()
+                        .requestMatchers("/groupes/**").permitAll()
+
                         .anyRequest().authenticated()
                 )
 

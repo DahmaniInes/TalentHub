@@ -1,0 +1,301 @@
+<!-- users.component.html -->
+<div class="usr-wrapper">
+
+    <!-- ═══ HEADER ═══ -->
+    <div class="usr-header">
+      <div>
+        <h1 class="usr-title">
+          <svg viewBox="0 0 22 22" fill="none" class="usr-title-icon">
+            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"
+                  fill="currentColor"/>
+          </svg>
+          Utilisateurs
+        </h1>
+        <p class="usr-subtitle">
+          {{ users().length }} utilisateur(s) ·
+          <span class="usr-badge-actif">{{ statsActifs() }} actifs</span>
+          <span class="usr-badge-inactif">{{ statsInactifs() }} inactifs</span>
+        </p>
+      </div>
+      <!-- ✅ Bouton navigue vers /add-user -->
+      <button class="usr-btn usr-btn-primary" (click)="goToAdd()">
+        <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px">
+          <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        Ajouter un utilisateur
+      </button>
+    </div>
+  
+    <!-- ═══ FILTRES ═══ -->
+    <div class="usr-filters">
+      <div class="usr-search-wrap">
+        <svg viewBox="0 0 16 16" fill="none" class="usr-search-icon">
+          <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="m11 11 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        <input [value]="search()" (input)="search.set($any($event.target).value)"
+               type="text" placeholder="Rechercher par nom, email, poste..."
+               class="usr-search-input">
+      </div>
+  
+      <select [value]="filterStatut()" (change)="filterStatut.set($any($event.target).value)"
+              class="usr-select">
+        <option value="tous">Tous les statuts</option>
+        <option value="actif">Actifs</option>
+        <option value="inactif">Inactifs</option>
+      </select>
+  
+      <select [value]="filterProfil()" (change)="filterProfil.set($any($event.target).value)"
+              class="usr-select">
+        <option value="">Tous les profils</option>
+        <option *ngFor="let p of profilsUniques()" [value]="p">{{ p }}</option>
+      </select>
+  
+      <span class="usr-count-badge">{{ filteredUsers().length }} résultat(s)</span>
+    </div>
+  
+    <!-- ═══ LOADING ═══ -->
+    <div *ngIf="loading()" class="usr-loading">
+      <div class="usr-spinner"></div>
+      <span>Chargement des utilisateurs...</span>
+    </div>
+  
+    <!-- ═══ GRILLE MATRICIELLE ═══ -->
+    <div *ngIf="!loading()" class="usr-layout" [class.usr-layout-detail]="showDetail()">
+  
+      <!-- ─── Matrice users ─── -->
+      <div class="usr-grid-col">
+        <div class="usr-grid">
+  
+          <!-- Card user -->
+          <div *ngFor="let user of filteredUsers()"
+               class="usr-card"
+               [class.selected]="selectedUser()?.id === user.id"
+               [class.inactive]="!user.actif"
+               (click)="openDetail(user)">
+  
+            <!-- Bande couleur en haut -->
+            <div class="usr-card-band" [style.background]="getAvatarColor(user)"></div>
+  
+            <!-- Avatar -->
+            <div class="usr-card-avatar-wrap">
+              <div *ngIf="!user.photoUrl" class="usr-avatar"
+                   [style.background]="getAvatarColor(user)">
+                {{ getInitiales(user) }}
+              </div>
+              <img *ngIf="user.photoUrl" [src]="user.photoUrl" [alt]="user.nomComplet"
+                   class="usr-avatar-img">
+              <!-- Indicateur actif/inactif -->
+              <div class="usr-status-dot" [class.active]="user.actif"
+                   [title]="user.actif ? 'Actif' : 'Inactif'"></div>
+            </div>
+  
+            <!-- Infos -->
+            <div class="usr-card-body">
+              <h3 class="usr-card-nom">{{ user.nomComplet }}</h3>
+              <p class="usr-card-email">{{ user.email }}</p>
+              <p class="usr-card-poste" *ngIf="user.poste">{{ user.poste }}</p>
+              <div class="usr-card-tags">
+                <span class="usr-tag" *ngIf="user.profilNom">{{ user.profilNom }}</span>
+                <span class="usr-tag usr-tag-dept" *ngIf="user.departement">{{ user.departement }}</span>
+              </div>
+            </div>
+  
+            <!-- Actions rapides (visibles au hover) -->
+            <div class="usr-card-quick-actions" (click)="$event.stopPropagation()">
+              <button class="usr-quick-btn"
+                      [title]="user.actif ? 'Désactiver' : 'Activer'"
+                      (click)="toggleActif(user)">
+                <svg *ngIf="user.actif" viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+                  <circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.3"/>
+                  <path d="M5 9l2-2 2 2M7 7V4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg *ngIf="!user.actif" viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+                  <circle cx="7" cy="7" r="6" stroke="#10b981" stroke-width="1.3"/>
+                  <path d="M4.5 7l2 2 3-3" stroke="#10b981" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <button class="usr-quick-btn usr-quick-danger" title="Supprimer" (click)="deleteUser(user)">
+                <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+                  <path d="M2 3h10M5 3V2h4v1M4 3l.5 8h5L10 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+  
+          <!-- Vide -->
+          <div *ngIf="filteredUsers().length === 0" class="usr-empty">
+            <svg viewBox="0 0 48 48" fill="none" style="width:48px;height:48px;color:var(--text-muted)">
+              <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 4"/>
+              <path d="M24 15v9M24 28h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <p>Aucun utilisateur trouvé</p>
+            <button class="usr-btn usr-btn-primary" (click)="goToAdd()">Créer le premier</button>
+          </div>
+        </div>
+      </div>
+  
+      <!-- ─── Panneau de détail ─── -->
+      <div class="usr-detail-panel" *ngIf="showDetail() && selectedUser() as user">
+  
+        <!-- Header panneau -->
+        <div class="usr-detail-header">
+          <div class="usr-detail-avatar-wrap">
+            <div *ngIf="!user.photoUrl" class="usr-detail-avatar"
+                 [style.background]="getAvatarColor(user)">
+              {{ getInitiales(user) }}
+            </div>
+            <img *ngIf="user.photoUrl" [src]="user.photoUrl" class="usr-detail-avatar-img">
+            <div class="usr-detail-status" [class.active]="user.actif"></div>
+          </div>
+          <div class="usr-detail-identity">
+            <h2 class="usr-detail-nom">{{ user.nomComplet }}</h2>
+            <p class="usr-detail-email">{{ user.email }}</p>
+            <div class="usr-detail-badges">
+              <span class="usr-tag" *ngIf="user.profilNom">{{ user.profilNom }}</span>
+              <span class="usr-status-label" [class.actif]="user.actif">
+                {{ user.actif ? 'Actif' : 'Inactif' }}
+              </span>
+            </div>
+          </div>
+          <button class="usr-close-btn" (click)="closeDetail()">
+            <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
+              <path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+  
+        <!-- Onglets -->
+        <div class="usr-detail-tabs">
+          <button class="usr-dtab" [class.active]="detailTab()==='infos'"    (click)="detailTab.set('infos')">Informations</button>
+          <button class="usr-dtab" [class.active]="detailTab()==='groupes'"  (click)="detailTab.set('groupes')">Groupes ({{ userGroupes().length }})</button>
+          <button class="usr-dtab" [class.active]="detailTab()==='securite'" (click)="detailTab.set('securite')">Sécurité</button>
+        </div>
+  
+        <!-- ── TAB: INFOS ── -->
+        <div *ngIf="detailTab()==='infos'" class="usr-detail-body">
+          <div class="usr-form-grid">
+            <div class="usr-field">
+              <label class="usr-label">Prénom</label>
+              <input [(ngModel)]="editForm().prenom" [ngModelOptions]="{standalone:true}" class="usr-input" placeholder="Prénom">
+            </div>
+            <div class="usr-field">
+              <label class="usr-label">Nom</label>
+              <input [(ngModel)]="editForm().nom" [ngModelOptions]="{standalone:true}" class="usr-input" placeholder="Nom">
+            </div>
+            <div class="usr-field usr-field-full">
+              <label class="usr-label">Téléphone</label>
+              <input [(ngModel)]="editForm().telephone" [ngModelOptions]="{standalone:true}" class="usr-input" placeholder="Téléphone">
+            </div>
+            <div class="usr-field">
+              <label class="usr-label">Poste</label>
+              <input [(ngModel)]="editForm().poste" [ngModelOptions]="{standalone:true}" class="usr-input" placeholder="Poste">
+            </div>
+            <div class="usr-field">
+              <label class="usr-label">Département</label>
+              <input [(ngModel)]="editForm().departement" [ngModelOptions]="{standalone:true}" class="usr-input" placeholder="Département">
+            </div>
+            <div class="usr-field usr-field-full">
+              <label class="usr-label">Adresse</label>
+              <input [(ngModel)]="editForm().adresse" [ngModelOptions]="{standalone:true}" class="usr-input" placeholder="Adresse">
+            </div>
+            <div class="usr-field">
+              <label class="usr-label">Profil</label>
+              <select [(ngModel)]="editForm().profilId" [ngModelOptions]="{standalone:true}" class="usr-select-field">
+                <option [ngValue]="null">— Sélectionner —</option>
+                <option *ngFor="let p of profils()" [ngValue]="p.id">{{ p.nom }}</option>
+              </select>
+            </div>
+            <div class="usr-field">
+              <label class="usr-label">Fin de contrat</label>
+              <input type="date" [(ngModel)]="editForm().dateFinContrat" [ngModelOptions]="{standalone:true}" class="usr-input">
+            </div>
+          </div>
+  
+          <!-- Infos lecture seule -->
+          <div class="usr-readonly-section">
+            <div class="usr-info-row" *ngIf="user.dateEmbauche">
+              <span class="usr-info-key">Date embauche</span>
+              <span class="usr-info-val">{{ user.dateEmbauche | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="usr-info-row">
+              <span class="usr-info-key">Keycloak ID</span>
+              <span class="usr-info-val usr-info-mono">{{ user.keycloakId }}</span>
+            </div>
+            <div class="usr-info-row">
+              <span class="usr-info-key">Créé le</span>
+              <span class="usr-info-val">{{ user.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          </div>
+  
+          <div class="usr-detail-footer">
+            <button class="usr-btn usr-btn-ghost" (click)="toggleActif(user)">
+              {{ user.actif ? 'Désactiver' : 'Activer' }}
+            </button>
+            <button class="usr-btn usr-btn-danger-sm" (click)="deleteUser(user)">
+              Supprimer
+            </button>
+            <button class="usr-btn usr-btn-primary" (click)="saveUser()" [disabled]="saving()">
+              <div class="usr-spinner-sm" *ngIf="saving()"></div>
+              {{ saving() ? 'Enregistrement...' : 'Enregistrer' }}
+            </button>
+          </div>
+        </div>
+  
+        <!-- ── TAB: GROUPES ── -->
+        <div *ngIf="detailTab()==='groupes'" class="usr-detail-body">
+          <div *ngIf="userGroupes().length > 0" class="usr-groupes-list">
+            <div *ngFor="let g of userGroupes()" class="usr-groupe-item">
+              <div class="usr-groupe-dot" [style.background]="g.couleur || '#6366f1'"></div>
+              <div class="usr-groupe-info">
+                <span class="usr-groupe-nom">{{ g.nom }}</span>
+                <span class="usr-groupe-members">{{ g.nombreMembres }} membre(s)</span>
+                <span class="usr-groupe-lead" *ngIf="g.teamLeadId === user.id">
+                  ⭐ Team Lead
+                </span>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="userGroupes().length === 0" class="usr-empty-tab">
+            <p>Cet utilisateur n'appartient à aucun groupe</p>
+          </div>
+        </div>
+  
+        <!-- ── TAB: SÉCURITÉ ── -->
+        <div *ngIf="detailTab()==='securite'" class="usr-detail-body">
+          <div class="usr-security-section">
+            <h4 class="usr-security-title">Mot de passe</h4>
+            <p class="usr-security-desc">
+              Envoyer un email de réinitialisation de mot de passe à <strong>{{ user.email }}</strong>
+            </p>
+            <button class="usr-btn usr-btn-warning" (click)="resetPassword(user)">
+              <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px">
+                <path d="M1 4v4h4M15 12v-4h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M13.5 5A6 6 0 1014 11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              Réinitialiser le mot de passe
+            </button>
+          </div>
+  
+          <div class="usr-security-section">
+            <h4 class="usr-security-title">Compte</h4>
+            <p class="usr-security-desc">
+              {{ user.actif ? 'Le compte est actuellement actif.' : 'Le compte est actuellement désactivé.' }}
+            </p>
+            <button class="usr-btn" [class.usr-btn-warning]="user.actif" [class.usr-btn-success]="!user.actif"
+                    (click)="toggleActif(user)">
+              {{ user.actif ? '🔒 Désactiver le compte' : '🔓 Réactiver le compte' }}
+            </button>
+          </div>
+  
+          <div class="usr-security-section usr-security-danger">
+            <h4 class="usr-security-title usr-danger-title">Zone dangereuse</h4>
+            <p class="usr-security-desc">La suppression est définitive et ne peut pas être annulée.</p>
+            <button class="usr-btn usr-btn-danger-sm" (click)="deleteUser(user)">
+              🗑 Supprimer définitivement
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
