@@ -10,11 +10,12 @@ import { ApprobationFeuilleTempsComponent } from './approbation-feuille-temps/ap
 import { ProfilPermissionsComponent } from './admin/profil-permissions/profil-permissions.component';
 
 import { ClientsComponent } from './admin/clients/clients.component';
-  import { ProjetsComponent  } from './admin/projets/projets.component';
-  import { UsersComponent }  from './users/users.component';
-  import { GroupsComponent } from './groups/groups.component';
+import { ProjetsComponent  } from './admin/projets/projets.component';
+import { UsersComponent }  from './users/users.component';
+import { GroupsComponent } from './groups/groups.component';
  
- 
+import { ActivitesGlobalComponent } from './activites-global-component/activites-global-component.component';
+
   
 const routes: Routes = [
   { path: 'home', component: HomeComponent },
@@ -27,7 +28,8 @@ const routes: Routes = [
   { path: 'clients', component: ClientsComponent },
   { path: 'projets', component: ProjetsComponent  },
   { path: 'users',  component: UsersComponent  },
-  { path: 'groups', component: GroupsComponent }
+  { path: 'groups', component: GroupsComponent },
+  { path: 'activites',component: ActivitesGlobalComponent}
 
 ];
 

@@ -28,12 +28,22 @@ export class GroupsComponent implements OnInit {
   utilisateurs = signal<Utilisateur[]>([]);
 
   // ── State ──
-  loading       = signal(true);
-  search        = signal('');
+  loading        = signal(true);
+  search         = signal('');
   selectedGroupe = signal<Groupe | null>(null);
   showModal      = signal(false);
   editingGroupe  = signal<Groupe | null>(null);
   saving         = signal(false);
+
+  // ── Sélection ──
+  selectedIds = signal<Set<number>>(new Set());
+
+  // ── Pagination ──
+  pageSize    = signal(10);
+  currentPage = signal(1);
+
+  // ── Menu dropdown ──
+  openMenuId = signal<number | null>(null);
 
   // ── Formulaire ──
   form = signal<GroupeRequest>({
@@ -47,6 +57,7 @@ export class GroupsComponent implements OnInit {
     '#10b981','#06b6d4','#3b82f6','#64748b'
   ];
 
+  // ── Computed : filtrage ──
   filteredGroupes = computed(() => {
     const q = this.search().toLowerCase();
     if (!q) return this.groupes();
@@ -56,16 +67,50 @@ export class GroupsComponent implements OnInit {
     );
   });
 
-  // Membres sélectionnés dans le formulaire (pour affichage)
+  // ── Computed : pagination ──
+  totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredGroupes().length / this.pageSize()))
+  );
+
+  pagesArray = computed(() =>
+    Array.from({ length: this.totalPages() }, (_, i) => i + 1)
+  );
+
+  pagedGroupes = computed(() => {
+    const list  = this.filteredGroupes();
+    const start = (this.currentPage() - 1) * this.pageSize();
+    return list.slice(start, start + this.pageSize());
+  });
+
+  // ── Computed : sélection ──
+  allPageSelected = computed(() => {
+    const paged = this.pagedGroupes();
+    if (paged.length === 0) return false;
+    return paged.every(g => this.selectedIds().has(g.id));
+  });
+
+  somePageSelected = computed(() => {
+    const paged = this.pagedGroupes();
+    return paged.some(g => this.selectedIds().has(g.id)) && !this.allPageSelected();
+  });
+
+  selectedCount = computed(() => this.selectedIds().size);
+
+  // ── Computed : membres formulaire ──
   membresSelectionnes = computed(() => {
     const ids = this.form().membresIds || [];
     return this.utilisateurs().filter(u => ids.includes(u.id));
   });
 
-  // Utilisateurs pas encore dans le groupe en cours d'édition
   utilisateursDispo = computed(() => {
     const ids = new Set(this.form().membresIds || []);
     return this.utilisateurs().filter(u => !ids.has(u.id));
+  });
+
+  // ── Computed : total membres unique ──
+  totalMembres = computed(() => {
+    const ids = new Set(this.groupes().flatMap(g => g.membres?.map(m => m.id) || []));
+    return ids.size;
   });
 
   ngOnInit(): void { this.loadAll(); }
@@ -82,10 +127,8 @@ export class GroupsComponent implements OnInit {
   }
 
   selectGroupe(g: Groupe): void {
-    // Charger le détail avec membres
-    this.groupeSvc.getById(g.id).subscribe({
-      next: d => this.selectedGroupe.set(d)
-    });
+    this.groupeSvc.getById(g.id).subscribe({ next: d => this.selectedGroupe.set(d) });
+    this.openMenuId.set(null);
   }
 
   // ── CRUD ──
@@ -103,6 +146,7 @@ export class GroupsComponent implements OnInit {
       membresIds: g.membres?.map(m => m.id) || []
     });
     this.showModal.set(true);
+    this.openMenuId.set(null);
   }
 
   save(): void {
@@ -110,9 +154,7 @@ export class GroupsComponent implements OnInit {
     if (!f.nom?.trim()) { this.ui.warning('Le nom du groupe est obligatoire.'); return; }
     this.saving.set(true);
     const editing = this.editingGroupe();
-    const obs = editing
-      ? this.groupeSvc.update(editing.id, f)
-      : this.groupeSvc.create(f);
+    const obs = editing ? this.groupeSvc.update(editing.id, f) : this.groupeSvc.create(f);
     obs.subscribe({
       next: () => {
         this.ui.success(editing ? 'Groupe mis à jour.' : 'Groupe créé.');
@@ -143,12 +185,14 @@ export class GroupsComponent implements OnInit {
         });
       }
     });
+    this.openMenuId.set(null);
   }
 
   closeModal(): void { this.showModal.set(false); this.editingGroupe.set(null); }
 
-  // ── Membres dans le formulaire ──
+  // ── Membres formulaire ──
   addMembreToForm(userId: number): void {
+    if (!userId) return;
     const current = this.form().membresIds || [];
     if (!current.includes(userId)) {
       this.form.set({ ...this.form(), membresIds: [...current, userId] });
@@ -158,7 +202,6 @@ export class GroupsComponent implements OnInit {
   removeMembreFromForm(userId: number): void {
     const current = this.form().membresIds || [];
     this.form.set({ ...this.form(), membresIds: current.filter(id => id !== userId) });
-    // Si le teamLead est retiré, le reset
     if (this.form().teamLeadId === userId) {
       this.form.set({ ...this.form(), teamLeadId: undefined });
     }
@@ -168,7 +211,6 @@ export class GroupsComponent implements OnInit {
     this.form.set({ ...this.form(), teamLeadId: userId });
   }
 
-  // ── Retirer un membre du groupe sélectionné (en dehors du modal) ──
   removeMembre(membre: MembreInfo): void {
     const g = this.selectedGroupe();
     if (!g) return;
@@ -178,16 +220,49 @@ export class GroupsComponent implements OnInit {
       confirmLabel: 'Retirer', type: 'warning',
       onConfirm: () => {
         this.groupeSvc.removeMembre(g.id, membre.id).subscribe({
-          next: updated => {
-            this.ui.success('Membre retiré.');
-            this.selectedGroupe.set(updated);
-            this.loadAll();
-          },
+          next: updated => { this.ui.success('Membre retiré.'); this.selectedGroupe.set(updated); this.loadAll(); },
           error: (err: HttpErrorResponse) => this.ui.error(this.errorSvc.parse(err).message)
         });
       }
     });
   }
+
+  // ── Pagination ──
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) this.currentPage.set(page);
+  }
+
+  onPageSizeChange(size: number): void { this.pageSize.set(size); this.currentPage.set(1); }
+  resetPage(): void { this.currentPage.set(1); }
+  minVal(a: number, b: number): number { return Math.min(a, b); }
+
+  // ── Sélection ──
+  toggleSelectAll(): void {
+    const paged = this.pagedGroupes();
+    if (this.allPageSelected()) {
+      const s = new Set(this.selectedIds()); paged.forEach(g => s.delete(g.id)); this.selectedIds.set(s);
+    } else {
+      const s = new Set(this.selectedIds()); paged.forEach(g => s.add(g.id)); this.selectedIds.set(s);
+    }
+  }
+
+  toggleSelect(id: number, event: Event): void {
+    event.stopPropagation();
+    const s = new Set(this.selectedIds());
+    s.has(id) ? s.delete(id) : s.add(id);
+    this.selectedIds.set(s);
+  }
+
+  isSelected(id: number): boolean { return this.selectedIds().has(id); }
+  clearSelection(): void { this.selectedIds.set(new Set()); }
+
+  // ── Menu dropdown ──
+  toggleMenu(id: number, event: Event): void {
+    event.stopPropagation();
+    this.openMenuId.set(this.openMenuId() === id ? null : id);
+  }
+
+  closeMenu(): void { this.openMenuId.set(null); }
 
   // ── Helpers ──
   getInitiales(u: Utilisateur): string {
@@ -198,21 +273,17 @@ export class GroupsComponent implements OnInit {
     return `${(m.prenom || '?').charAt(0)}${(m.nom || '').charAt(0)}`.toUpperCase();
   }
 
-  getUserById(id: number): Utilisateur | undefined {
-    return this.utilisateurs().find(u => u.id === id);
-  }
-
-  isTeamLead(g: Groupe, membreId: number): boolean {
-    return g.teamLeadId === membreId;
-  }
+  isTeamLead(g: Groupe, membreId: number): boolean { return g.teamLeadId === membreId; }
 
   getAvatarColor(name: string): string {
     const colors = ['#6366f1','#8b5cf6','#c026d3','#ec4899','#10b981','#06b6d4','#f97316','#3b82f6'];
     return colors[(name || '').charCodeAt(0) % colors.length];
   }
 
-  totalMembres = computed(() => {
-    const ids = new Set(this.groupes().flatMap(g => g.membres?.map(m => m.id) || []));
-    return ids.size;
-  });
+  // ── Photo team lead ──
+  getTeamLeadPhoto(g: Groupe): string | null {
+    if (!g.teamLeadId || !g.membres) return null;
+    const lead = g.membres.find(m => m.id === g.teamLeadId);
+    return (lead as any)?.photoUrl || null;
+  }
 }

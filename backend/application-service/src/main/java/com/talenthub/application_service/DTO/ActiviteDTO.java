@@ -15,11 +15,10 @@ public class ActiviteDTO {
     private String numeroActivite;
     private String couleur;
 
-    // ✅ ID du statut (FK vers nomenclature-service)
+    // FK vers nomenclature-service (Long ID)
     private Long statutActiviteId;
 
-    // ✅ Libellé et couleur du statut — enrichis par le service via appel HTTP à nomenclature
-    // Ces champs sont null si l'enrichissement n'est pas fait (mode dégradé)
+    // Enrichis par ActiviteService.toDTO() via appel HTTP nomenclature-service
     private String statutLibelle;
     private String statutCouleur;
     private String statutCode;
@@ -33,9 +32,11 @@ public class ActiviteDTO {
     private boolean visible;
     private boolean facturable;
 
-    // Priorité et dates
+    // Priorité
     private int priorite;
-    private String prioriteLibelle; // enrichi en mémoire
+    private String prioriteLibelle;
+
+    // Dates
     private LocalDate dateEcheance;
     private LocalDate dateDebutReelle;
     private LocalDate dateFinReelle;
@@ -51,7 +52,7 @@ public class ActiviteDTO {
     private LocalDateTime dateCreation;
     private LocalDateTime dateMiseAJour;
 
-    // ✅ Constructeur depuis entité — sans enum, sans appel distant
+    // Constructeur depuis entité
     public ActiviteDTO(Activité a) {
         this.id                    = a.getId();
         this.nom                   = a.getNom();
@@ -59,6 +60,11 @@ public class ActiviteDTO {
         this.numeroActivite        = a.getNumeroActivite();
         this.couleur               = a.getCouleur();
         this.statutActiviteId      = a.getStatutActiviteId();
+        // ✅ FIX — Pas de libellé ici (enrichi dans toDTO) mais on met un défaut visible
+        // pour ne pas afficher "—" si l'enrichissement échoue
+        this.statutLibelle         = null; // sera enrichi dans toDTO
+        this.statutCouleur         = "#94a3b8"; // couleur neutre par défaut
+        this.statutCode            = "";
         this.budget                = a.getBudget();
         this.quotaHoraire          = a.getQuotaHoraire();
         this.typeBudget            = a.getTypeBudget();
@@ -71,16 +77,15 @@ public class ActiviteDTO {
         this.dateFinReelle         = a.getDateFinReelle();
         this.heuresEstimees        = a.getHeuresEstimees();
         this.heuresPassees         = a.getHeuresPassees();
-        this.projetId              = a.getProjet()      != null ? a.getProjet().getId()               : null;
-        this.projetNom             = a.getProjet()      != null ? a.getProjet().getNom()              : null;
-        this.utilisateurId         = a.getUtilisateur() != null ? a.getUtilisateur().getId()          : null;
-        this.utilisateurNomComplet = a.getUtilisateur() != null ? a.getUtilisateur().getNomComplet()  : null;
+        this.projetId              = a.getProjet()      != null ? a.getProjet().getId()              : null;
+        this.projetNom             = a.getProjet()      != null ? a.getProjet().getNom()             : null;
+        this.utilisateurId         = a.getUtilisateur() != null ? a.getUtilisateur().getId()         : null;
+        this.utilisateurNomComplet = a.getUtilisateur() != null ? a.getUtilisateur().getNomComplet() : null;
         this.creePar               = a.getCreePar();
         this.dateCreation          = a.getDateCreation();
         this.dateMiseAJour         = a.getDateMiseAJour();
     }
 
-    // Utilitaire statique — pas d'appel distant
     private static String resolvePriorite(int p) {
         return switch (p) {
             case 1  -> "Basse";

@@ -56,6 +56,8 @@ public class SecurityConfig {
                         .requestMatchers("/statuts-demande/**").permitAll()
                         .requestMatchers("/statuts-feuille-temps/**").permitAll()
                         .requestMatchers("/categories-entree/**").permitAll()
+                        .requestMatchers("/statut-activite/**").permitAll()
+
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .anyRequest().authenticated()
                 )

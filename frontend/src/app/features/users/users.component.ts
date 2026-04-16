@@ -34,22 +34,33 @@ export class UsersComponent implements OnInit {
   groupes = signal<Groupe[]>([]);
 
   // ── State ──
-  loading       = signal(true);
-  search        = signal('');
-  filterProfil  = signal('');
-  filterStatut  = signal<'tous' | 'actif' | 'inactif'>('tous');
-  selectedUser  = signal<Utilisateur | null>(null);
-  showDetail    = signal(false);
-  detailTab     = signal<'infos' | 'groupes' | 'securite'>('infos');
-  saving        = signal(false);
+  loading      = signal(true);
+  search       = signal('');
+  filterProfil = signal('');
+  filterStatut = signal<'tous' | 'actif' | 'inactif'>('tous');
+  selectedUser = signal<Utilisateur | null>(null);
+  showDetail   = signal(false);
+  detailTab    = signal<'infos' | 'groupes' | 'securite'>('infos');
+  saving       = signal(false);
 
-  // Formulaire édition
+  // ── Sélection ──
+  selectedIds = signal<Set<number>>(new Set());
+
+  // ── Pagination ──
+  pageSize    = signal(10);
+  currentPage = signal(1);
+
+  // ── Menu dropdown ──
+  openMenuId = signal<number | null>(null);
+
+  // ── Formulaire édition ──
   editForm = signal({
     nom: '', prenom: '', telephone: '', poste: '',
     departement: '', adresse: '', profilId: null as number | null,
     dateFinContrat: ''
   });
 
+  // ── Computed : filtrage ──
   filteredUsers = computed(() => {
     let list = this.users();
     const q = this.search().toLowerCase();
@@ -65,21 +76,50 @@ export class UsersComponent implements OnInit {
     return list;
   });
 
+  // ── Computed : pagination ──
+  totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredUsers().length / this.pageSize()))
+  );
+
+  pagesArray = computed(() =>
+    Array.from({ length: this.totalPages() }, (_, i) => i + 1)
+  );
+
+  pagedUsers = computed(() => {
+    const list  = this.filteredUsers();
+    const start = (this.currentPage() - 1) * this.pageSize();
+    return list.slice(start, start + this.pageSize());
+  });
+
+  // ── Computed : sélection ──
+  allPageSelected = computed(() => {
+    const paged = this.pagedUsers();
+    if (paged.length === 0) return false;
+    return paged.every(u => this.selectedIds().has(u.id));
+  });
+
+  somePageSelected = computed(() => {
+    const paged = this.pagedUsers();
+    return paged.some(u => this.selectedIds().has(u.id)) && !this.allPageSelected();
+  });
+
+  selectedCount = computed(() => this.selectedIds().size);
+
+  // ── Computed : groupes de l'user ──
   userGroupes = computed(() => {
     const u = this.selectedUser();
     if (!u) return [];
-    return this.groupes().filter(g =>
-      g.membres?.some(m => m.id === u.id)
-    );
+    return this.groupes().filter(g => g.membres?.some(m => m.id === u.id));
   });
 
-  // Stats
-  statsActifs   = computed(() => this.users().filter(u =>  u.actif).length);
-  statsInactifs = computed(() => this.users().filter(u => !u.actif).length);
+  // ── Stats + profils uniques ──
+  statsActifs    = computed(() => this.users().filter(u =>  u.actif).length);
+  statsInactifs  = computed(() => this.users().filter(u => !u.actif).length);
+  profilsUniques = computed(() =>
+    [...new Set(this.users().map(u => u.profilNom).filter(Boolean))]
+  );
 
-  ngOnInit(): void {
-    this.loadAll();
-  }
+  ngOnInit(): void { this.loadAll(); }
 
   loadAll(): void {
     this.loading.set(true);
@@ -91,12 +131,10 @@ export class UsersComponent implements OnInit {
     this.groupeSvc.getAll().subscribe({ next: d => this.groupes.set(d) });
   }
 
-  // ── Navigation vers création ──
-  goToAdd(): void {
-    this.router.navigate(['/add-user']);
-  }
+  // ── Navigation ──
+  goToAdd(): void { this.router.navigate(['/add-user']); }
 
-  // ── Ouvrir détail ──
+  // ── Détail ──
   openDetail(user: Utilisateur): void {
     this.selectedUser.set(user);
     this.detailTab.set('infos');
@@ -111,11 +149,12 @@ export class UsersComponent implements OnInit {
       dateFinContrat: user.dateFinContrat || ''
     });
     this.showDetail.set(true);
+    this.openMenuId.set(null);
   }
 
   closeDetail(): void { this.showDetail.set(false); this.selectedUser.set(null); }
 
-  // ── Sauvegarder modifications ──
+  // ── Sauvegarder ──
   saveUser(): void {
     const u = this.selectedUser();
     if (!u) return;
@@ -124,8 +163,7 @@ export class UsersComponent implements OnInit {
     this.userSvc.updateByAdmin(u.id, {
       nom: f.nom, prenom: f.prenom, telephone: f.telephone,
       poste: f.poste, departement: f.departement, adresse: f.adresse,
-      profilId: f.profilId,
-      dateFinContrat: f.dateFinContrat || null
+      profilId: f.profilId, dateFinContrat: f.dateFinContrat || null
     }).subscribe({
       next: (updated: Utilisateur) => {
         this.ui.success('Utilisateur mis à jour.');
@@ -150,7 +188,11 @@ export class UsersComponent implements OnInit {
       type: user.actif ? 'danger' : 'info',
       onConfirm: () => {
         this.userSvc.toggleActif(user.id).subscribe({
-          next: () => { this.ui.success(`Utilisateur ${user.actif ? 'désactivé' : 'activé'}.`); this.loadAll(); if (this.selectedUser()?.id === user.id) this.closeDetail(); },
+          next: () => {
+            this.ui.success(`Utilisateur ${user.actif ? 'désactivé' : 'activé'}.`);
+            this.loadAll();
+            if (this.selectedUser()?.id === user.id) this.closeDetail();
+          },
           error: (err: HttpErrorResponse) => this.ui.error(this.errorSvc.parse(err).message)
         });
       }
@@ -180,12 +222,49 @@ export class UsersComponent implements OnInit {
       confirmLabel: 'Envoyer', type: 'warning',
       onConfirm: () => {
         this.userSvc.resetPassword(user.id).subscribe({
-          next: () => this.ui.success('Email de réinitialisation envoyé.'),
+          next: () => this.ui.success('Email envoyé.'),
           error: (err: HttpErrorResponse) => this.ui.error(this.errorSvc.parse(err).message)
         });
       }
     });
   }
+
+  // ── Pagination ──
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) this.currentPage.set(page);
+  }
+
+  onPageSizeChange(size: number): void { this.pageSize.set(size); this.currentPage.set(1); }
+  resetPage(): void { this.currentPage.set(1); }
+  minVal(a: number, b: number): number { return Math.min(a, b); }
+
+  // ── Sélection ──
+  toggleSelectAll(): void {
+    const paged = this.pagedUsers();
+    if (this.allPageSelected()) {
+      const s = new Set(this.selectedIds()); paged.forEach(u => s.delete(u.id)); this.selectedIds.set(s);
+    } else {
+      const s = new Set(this.selectedIds()); paged.forEach(u => s.add(u.id)); this.selectedIds.set(s);
+    }
+  }
+
+  toggleSelect(id: number, event: Event): void {
+    event.stopPropagation();
+    const s = new Set(this.selectedIds());
+    s.has(id) ? s.delete(id) : s.add(id);
+    this.selectedIds.set(s);
+  }
+
+  isSelected(id: number): boolean { return this.selectedIds().has(id); }
+  clearSelection(): void { this.selectedIds.set(new Set()); }
+
+  // ── Menu dropdown ──
+  toggleMenu(id: number, event: Event): void {
+    event.stopPropagation();
+    this.openMenuId.set(this.openMenuId() === id ? null : id);
+  }
+
+  closeMenu(): void { this.openMenuId.set(null); }
 
   // ── Helpers ──
   getInitiales(u: Utilisateur): string {
@@ -194,9 +273,6 @@ export class UsersComponent implements OnInit {
 
   getAvatarColor(u: Utilisateur): string {
     const colors = ['#6366f1','#8b5cf6','#c026d3','#ec4899','#10b981','#06b6d4','#f97316','#3b82f6'];
-    const idx = (u.nom || '').charCodeAt(0) % colors.length;
-    return colors[idx];
+    return colors[(u.nom || '').charCodeAt(0) % colors.length];
   }
-
-  profilsUniques = computed(() => [...new Set(this.users().map(u => u.profilNom).filter(Boolean))]);
 }

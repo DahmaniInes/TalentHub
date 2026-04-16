@@ -5,7 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { StatutActivite } from '../shared/models/statut-activite.model';
 
-const NOMEN_BASE = 'http://localhost:8085/api';
+const NOMEN_BASE = 'http://localhost:8085/api/nomenclature';
 
 @Injectable({ providedIn: 'root' })
 export class StatutActiviteService {

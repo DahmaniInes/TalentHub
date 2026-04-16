@@ -1,58 +1,49 @@
-//export type StatutActivite = 'A_FAIRE' | 'EN_COURS' | 'EN_REVUE' | 'TERMINE' | 'BLOQUE' | 'ANNULE';
- 
+// src/app/shared/models/activite.model.ts
+
 export interface Activite {
-  id: number;
-  nom: string;
-  description?: string;
-  numeroActivite?: string;
-  couleur?: string;
-  // ✅ statutActiviteId = Long (FK vers nomenclature)
-  statutActiviteId: number;
-  // Enrichis par le backend via Feign
-  statutLibelle?: string;
-  statutCouleur?: string;
-  statutCode?: string;
-  // Finance
-  budget?: number;
-  quotaHoraire?: number;
-  typeBudget?: string;
-  // Flags
-  visible: boolean;
-  facturable: boolean;
-  // Priorité
-  priorite: number;
-  prioriteLibelle?: string;
-  // Dates
-  dateEcheance?: string;
-  dateDebutReelle?: string;
-  dateFinReelle?: string;
-  // Temps
-  heuresEstimees?: number;
-  heuresPassees?: number;
-  // Relations
-  projetId?: number;
-  projetNom?: string;
-  utilisateurId?: number;
+  id:                  number;
+  nom:                 string;
+  description?:        string;
+  numeroActivite?:     string;
+  couleur?:            string;
+  statutActiviteId:    number;
+  statutLibelle?:      string;   // enrichi par le backend
+  statutCouleur?:      string;   // enrichi par le backend
+  statutCode?:         string;
+  budget?:             number;
+  quotaHoraire?:       number;
+  typeBudget?:         string;
+  visible:             boolean;
+  facturable:          boolean;
+  priorite:            number;
+  prioriteLibelle?:    string;
+  dateEcheance?:       string;
+  dateDebutReelle?:    string;
+  dateFinReelle?:      string;
+  heuresEstimees?:     number;
+  heuresPassees?:      number;
+  projetId?:           number;    // null = activité globale
+  projetNom?:          string;
+  utilisateurId?:      number;
   utilisateurNomComplet?: string;
-  creePar?: string;
-  dateCreation?: string;
-  dateMiseAJour?: string;
+  creePar?:            string;
+  dateCreation?:       string;
+  dateMiseAJour?:      string;
 }
- 
+
 export interface ActiviteRequest {
-  nom: string;
-  description?: string;
-  couleur?: string;
-  statutActiviteId?: number;   // ✅ Long ID
-  budget?: number;
-  quotaHoraire?: number;
-  typeBudget?: string;
-  visible?: boolean;
-  facturable?: boolean;
-  priorite?: number;
-  dateEcheance?: string;
-  heuresEstimees?: number;
-  projetId?: number;
-  utilisateurId?: number;
-  creePar?: string;
+  nom:               string;
+  description?:      string;
+  couleur?:          string;
+  statutActiviteId?: number;
+  budget?:           number;
+  quotaHoraire?:     number;
+  typeBudget?:       string;
+  visible?:          boolean;
+  facturable?:       boolean;
+  priorite?:         number;
+  dateEcheance?:     string;
+  heuresEstimees?:   number;
+  projetId?:         number;     // null = activité globale
+  utilisateurId?:    number;
 }

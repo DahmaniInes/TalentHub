@@ -1,305 +1,319 @@
-<!-- clients.component.html -->
-<div class="cl-wrapper">
+<!-- clients.component.html — VERSION FINALE -->
+<div class="mx-page" (click)="closeMenu()">
 
-    <!-- HEADER -->
-    <div class="cl-header">
-      <div>
-        <h1 class="cl-title">
-          <svg viewBox="0 0 22 22" fill="none" class="cl-title-icon">
-            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"
-                  fill="currentColor"/>
-          </svg>
-          Clients
-        </h1>
-        <p class="cl-subtitle">{{ clients().length }} client(s) enregistré(s)</p>
-      </div>
-      <button class="cl-btn cl-btn-primary" (click)="openAdd()">
-        <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px">
-          <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
+  <!-- HEADER -->
+  <div class="mx-page-header">
+    <div class="mx-page-title-block">
+      <h1 class="mx-page-title">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+        Clients
+      </h1>
+      <p class="mx-page-subtitle">{{ clients().length }} client(s) enregistré(s)</p>
+    </div>
+    <div class="mx-page-actions">
+      <button class="mx-btn mx-btn-primary" (click)="openAdd()">
+        <svg viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         Nouveau client
       </button>
     </div>
-  
-    <!-- SEARCH -->
-    <div class="cl-search-bar">
-      <svg viewBox="0 0 16 16" fill="none" class="cl-search-icon">
-        <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.4"/>
-        <path d="m11 11 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="mx-toolbar">
+    <div class="mx-search">
+      <svg viewBox="0 0 14 14" fill="none" class="mx-search-icon">
+        <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/>
+        <path d="m10 10 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
       </svg>
-      <input [value]="search()" (input)="search.set($any($event.target).value)"
-             type="text" placeholder="Rechercher un client..."
-             class="cl-search-input">
+      <input [value]="search()"
+             (input)="search.set($any($event.target).value); resetPage()"
+             placeholder="Rechercher un client..." class="mx-search-input">
     </div>
-  
-    <!-- LOADING -->
-    <div *ngIf="loading()" class="cl-loading">
-      <div class="cl-spinner"></div>
-      <span>Chargement...</span>
-    </div>
-  
-    <!-- GRILLE CLIENTS -->
-    <div *ngIf="!loading()" class="cl-grid">
-  
-      <div *ngFor="let client of filteredClients()" class="cl-card">
-        <!-- Bande colorée -->
-        <div class="cl-card-band" [style.background]="getCouleurStyle(client.couleur)"></div>
-  
-        <!-- Header card -->
-        <div class="cl-card-header">
-          <div class="cl-card-avatar"
-               [style.background]="getCouleurStyle(client.couleur)">
-            {{ getInitiales(client.nom) }}
-          </div>
-          <div class="cl-card-info">
-            <h3 class="cl-card-nom">{{ client.nom }}</h3>
-            <p class="cl-card-societe">{{ client.nomSociete || client.contact || '—' }}</p>
-          </div>
-          <div class="cl-card-actions">
-            <button class="cl-icon-btn" (click)="openEdit(client)" title="Modifier">
-              <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
-                <path d="M9 2l3 3-7 7H2V9l7-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
-              </svg>
-            </button>
-            <button class="cl-icon-btn cl-icon-btn-danger" (click)="delete(client)" title="Supprimer">
-              <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
-                <path d="M2 3h10M5 3V2h4v1M4 3l.5 8h5L10 3" stroke="currentColor"
-                      stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-  
-        <!-- Body -->
-        <div class="cl-card-body">
-          <div class="cl-card-row" *ngIf="client.courriel">
-            <svg viewBox="0 0 16 16" fill="none" class="cl-row-icon">
-              <rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.3"/>
-              <path d="M1 6l7 4 7-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-            </svg>
-            <span>{{ client.courriel }}</span>
-          </div>
-          <div class="cl-card-row" *ngIf="client.telephone || client.mobile">
-            <svg viewBox="0 0 16 16" fill="none" class="cl-row-icon">
-              <path d="M3 2h2.5l1.2 3.2-1.6 1.2a8.1 8.1 0 004 4l1.2-1.6L13.8 10V12.5A1 1 0 0113 13.5C6.5 13.5 2.5 9.5 2.5 3A1 1 0 013 2z"
-                    stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
-            </svg>
-            <span>{{ client.telephone || client.mobile }}</span>
-          </div>
-          <div class="cl-card-row" *ngIf="client.ville || client.pays">
-            <svg viewBox="0 0 16 16" fill="none" class="cl-row-icon">
-              <path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6c0 3.5 4.5 8.5 4.5 8.5S12.5 9.5 12.5 6c0-2.5-2-4.5-4.5-4.5z"
-                    stroke="currentColor" stroke-width="1.3"/>
-              <circle cx="8" cy="6" r="1.5" stroke="currentColor" stroke-width="1.2"/>
-            </svg>
-            <span>{{ client.ville }}{{ client.pays ? ', ' + client.pays : '' }}</span>
-          </div>
-        </div>
-  
-        <!-- Footer -->
-        <div class="cl-card-footer">
-          <div class="cl-badge" [class.cl-badge-actif]="client.actif" [class.cl-badge-inactif]="!client.actif">
-            {{ client.actif ? 'Actif' : 'Inactif' }}
-          </div>
-          <div class="cl-badge cl-badge-neutral">{{ client.nombreProjets || 0 }} projet(s)</div>
-          <div class="cl-badge cl-badge-neutral" *ngIf="client.devise">{{ client.devise }}</div>
-        </div>
-      </div>
-  
-      <!-- Vide -->
-      <div *ngIf="filteredClients().length === 0" class="cl-empty">
-        <svg viewBox="0 0 48 48" fill="none" style="width:48px;height:48px;color:var(--text-muted)">
-          <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 4"/>
-          <path d="M24 15v9M24 28h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <p>Aucun client trouvé</p>
-      </div>
-    </div>
+    <div class="mx-toolbar-spacer"></div>
+    <span class="mx-count-chip">{{ filteredClients().length }} résultat(s)</span>
   </div>
-  
-  <!-- ══════════════ MODAL CLIENT ══════════════ -->
-  <div *ngIf="showModal()" class="cl-modal-backdrop" (click)="closeModal()">
-    <div class="cl-modal" (click)="$event.stopPropagation()">
-  
-      <div class="cl-modal-header">
-        <div class="cl-modal-icon-wrap">
-          <svg viewBox="0 0 20 20" fill="none">
-            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"
-                  fill="currentColor"/>
-          </svg>
-        </div>
-        <h3 class="cl-modal-title">{{ editingClient() ? 'Modifier le client' : 'Nouveau client' }}</h3>
-        <button class="cl-modal-close" (click)="closeModal()">
-          <svg viewBox="0 0 16 16" fill="none">
-            <path d="M4 4l8 8M12 4L4 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-          </svg>
-        </button>
-      </div>
-  
-      <!-- Onglets -->
-      <div class="cl-tabs">
-        <button class="cl-tab" [class.active]="activeTab()==='general'"   (click)="activeTab.set('general')">Général</button>
-        <button class="cl-tab" [class.active]="activeTab()==='contact'"   (click)="activeTab.set('contact')">Contact</button>
-        <button class="cl-tab" [class.active]="activeTab()==='finance'"   (click)="activeTab.set('finance')">Finance</button>
-        <button class="cl-tab" [class.active]="activeTab()==='adresse'"   (click)="activeTab.set('adresse')">Adresse</button>
-      </div>
-  
-      <div class="cl-modal-body">
-  
-        <!-- TAB: GÉNÉRAL -->
-        <ng-container *ngIf="activeTab()==='general'">
-          <div class="cl-field">
-            <label class="cl-label">Nom <span class="cl-required">*</span></label>
-            <input [(ngModel)]="form().nom" [ngModelOptions]="{standalone:true}"
-                   placeholder="Nom du client" class="cl-input">
-          </div>
-          <div class="cl-field">
-            <label class="cl-label">Description</label>
-            <textarea [(ngModel)]="form().description" [ngModelOptions]="{standalone:true}"
-                      rows="3" placeholder="Description..." class="cl-textarea"></textarea>
-          </div>
-          <div class="cl-grid-2">
-            <div class="cl-field">
-              <label class="cl-label">Compte</label>
-              <input [(ngModel)]="form().compte" [ngModelOptions]="{standalone:true}"
-                     placeholder="Ref comptable" class="cl-input">
-            </div>
-            <div class="cl-field">
-              <label class="cl-label">ID TVA</label>
-              <input [(ngModel)]="form().idTva" [ngModelOptions]="{standalone:true}"
-                     placeholder="TN12345678" class="cl-input">
-            </div>
-            <div class="cl-field">
-              <label class="cl-label">Devise</label>
-              <input [(ngModel)]="form().devise" [ngModelOptions]="{standalone:true}"
-                     placeholder="TND" class="cl-input cl-input-upper">
-            </div>
-            <div class="cl-field">
-              <label class="cl-label">Couleur</label>
-              <div class="cl-colors-row">
-                <button *ngFor="let c of COULEURS" type="button"
-                        class="cl-color-btn"
-                        [class.selected]="form().couleur === c"
-                        [style.background]="c"
-                        (click)="form().couleur = c"></button>
+
+  <!-- TABLEAU -->
+  <div class="mx-table-wrap">
+
+    <!-- Bulk bar -->
+    <div *ngIf="selectedCount() > 0" class="mx-bulk-bar">
+      <span class="mx-bulk-count">{{ selectedCount() }} sélectionné(s)</span>
+      <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="clearSelection()">Tout désélectionner</button>
+      <button class="mx-btn mx-btn-danger mx-btn-sm">Supprimer la sélection</button>
+    </div>
+
+    <div *ngIf="loading()" class="mx-loading"><div class="mx-spinner"></div> Chargement...</div>
+
+    <div *ngIf="!loading()" class="mx-table-scroll">
+      <table class="mx-table">
+        <thead>
+          <tr>
+            <th class="mx-checkbox-cell">
+              <input type="checkbox" class="mx-checkbox"
+                     [class.indeterminate]="somePageSelected()"
+                     [checked]="allPageSelected()"
+                     (change)="toggleSelectAll()">
+            </th>
+            <th>Client</th>
+            <th>Contact</th>
+            <th>Localisation</th>
+            <th>Devise</th>
+            <th>Projets</th>
+            <th>Statut</th>
+            <th style="width:44px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let client of pagedClients()"
+              [class.row-selected]="isSelected(client.id) || selectedClient()?.id === client.id"
+              (click)="openDetail(client)">
+
+            <td class="mx-checkbox-cell" (click)="$event.stopPropagation()">
+              <input type="checkbox" class="mx-checkbox"
+                     [checked]="isSelected(client.id)"
+                     (change)="toggleSelect(client.id, $event)">
+            </td>
+
+            <td>
+              <div class="mx-cell-main">
+                <div class="mx-avatar" [style.background]="getCouleurStyle(client.couleur)">
+                  {{ getInitiales(client.nom) }}
+                </div>
+                <div class="mx-cell-info">
+                  <span class="mx-cell-name">{{ client.nom }}</span>
+                  <span class="mx-cell-sub" *ngIf="client.nomSociete">{{ client.nomSociete }}</span>
+                </div>
               </div>
-            </div>
-          </div>
-          <div class="cl-flags-row">
-            <label class="cl-toggle-row">
-              <input type="checkbox" [(ngModel)]="form().visible" [ngModelOptions]="{standalone:true}" class="sr-only">
-              <div class="cl-toggle" [class.on]="form().visible"><div class="cl-toggle-knob"></div></div>
-              <span>Visible</span>
-            </label>
-            <label class="cl-toggle-row">
-              <input type="checkbox" [(ngModel)]="form().facturable" [ngModelOptions]="{standalone:true}" class="sr-only">
-              <div class="cl-toggle" [class.on]="form().facturable"><div class="cl-toggle-knob"></div></div>
-              <span>Facturable</span>
-            </label>
-            <label class="cl-toggle-row">
-              <input type="checkbox" [(ngModel)]="form().actif" [ngModelOptions]="{standalone:true}" class="sr-only">
-              <div class="cl-toggle" [class.on]="form().actif"><div class="cl-toggle-knob"></div></div>
-              <span>Actif</span>
-            </label>
-          </div>
-        </ng-container>
-  
-        <!-- TAB: CONTACT -->
-        <ng-container *ngIf="activeTab()==='contact'">
-          <div class="cl-field">
-            <label class="cl-label">Contact principal</label>
-            <input [(ngModel)]="form().contact" [ngModelOptions]="{standalone:true}"
-                   placeholder="Nom du contact" class="cl-input">
-          </div>
-          <div class="cl-field">
-            <label class="cl-label">Courriel</label>
-            <input type="email" [(ngModel)]="form().courriel" [ngModelOptions]="{standalone:true}"
-                   placeholder="contact@exemple.com" class="cl-input">
-          </div>
-          <div class="cl-field">
-            <label class="cl-label">Page d'accueil</label>
-            <input [(ngModel)]="form().pageAccueil" [ngModelOptions]="{standalone:true}"
-                   placeholder="https://exemple.com" class="cl-input">
-          </div>
-          <div class="cl-grid-3">
-            <div class="cl-field">
-              <label class="cl-label">Mobile</label>
-              <input [(ngModel)]="form().mobile" [ngModelOptions]="{standalone:true}"
-                     placeholder="+216 XX XXX XXX" class="cl-input">
-            </div>
-            <div class="cl-field">
-              <label class="cl-label">Téléphone</label>
-              <input [(ngModel)]="form().telephone" [ngModelOptions]="{standalone:true}"
-                     placeholder="71 XXX XXX" class="cl-input">
-            </div>
-            <div class="cl-field">
-              <label class="cl-label">Fax</label>
-              <input [(ngModel)]="form().fax" [ngModelOptions]="{standalone:true}"
-                     placeholder="71 XXX XXX" class="cl-input">
-            </div>
-          </div>
-        </ng-container>
-  
-        <!-- TAB: FINANCE -->
-        <ng-container *ngIf="activeTab()==='finance'">
-          <div class="cl-grid-2">
-            <div class="cl-field">
-              <label class="cl-label">Budget</label>
-              <input type="number" [(ngModel)]="form().budget" [ngModelOptions]="{standalone:true}"
-                     placeholder="0.00" class="cl-input">
-            </div>
-            <div class="cl-field">
-              <label class="cl-label">Quota horaire (h)</label>
-              <input type="number" [(ngModel)]="form().quotaHoraire" [ngModelOptions]="{standalone:true}"
-                     placeholder="0" class="cl-input">
-            </div>
-          </div>
-          <div class="cl-field">
-            <label class="cl-label">Type de budget</label>
-            <select [(ngModel)]="form().typeBudget" [ngModelOptions]="{standalone:true}" class="cl-select">
-              <option *ngFor="let t of TYPE_BUDGETS" [value]="t">{{ t }}</option>
-            </select>
-          </div>
-        </ng-container>
-  
-        <!-- TAB: ADRESSE -->
-        <ng-container *ngIf="activeTab()==='adresse'">
-          <div class="cl-field">
-            <label class="cl-label">Nom de la société</label>
-            <input [(ngModel)]="form().nomSociete" [ngModelOptions]="{standalone:true}"
-                   placeholder="Entreprise SARL" class="cl-input">
-          </div>
-          <div class="cl-grid-2">
-            <div class="cl-field">
-              <label class="cl-label">Code postal</label>
-              <input [(ngModel)]="form().codePostal" [ngModelOptions]="{standalone:true}"
-                     placeholder="1000" class="cl-input">
-            </div>
-            <div class="cl-field">
-              <label class="cl-label">Ville</label>
-              <input [(ngModel)]="form().ville" [ngModelOptions]="{standalone:true}"
-                     placeholder="Tunis" class="cl-input">
-            </div>
-            <div class="cl-field">
-              <label class="cl-label">Pays</label>
-              <input [(ngModel)]="form().pays" [ngModelOptions]="{standalone:true}"
-                     placeholder="Tunisie" class="cl-input">
-            </div>
-            <div class="cl-field">
-              <label class="cl-label">Fuseau horaire</label>
-              <input [(ngModel)]="form().fuseauHoraire" [ngModelOptions]="{standalone:true}"
-                     placeholder="Africa/Tunis" class="cl-input">
-            </div>
-          </div>
-        </ng-container>
-  
+            </td>
+
+            <td class="muted">
+              <span *ngIf="client.courriel" style="display:block">{{ client.courriel }}</span>
+              <span *ngIf="client.telephone || client.mobile" style="font-size:.68rem">{{ client.telephone || client.mobile }}</span>
+            </td>
+
+            <td class="muted">
+              {{ (client.ville || '') + (client.pays ? (client.ville ? ', ' : '') + client.pays : '') || '—' }}
+            </td>
+
+            <td>
+              <span *ngIf="client.devise" class="mx-badge mx-badge-neutral">{{ client.devise }}</span>
+              <span *ngIf="!client.devise" class="muted">—</span>
+            </td>
+
+            <td class="center">
+              <span class="mx-badge mx-badge-blue">{{ client.nombreProjets || 0 }}</span>
+            </td>
+
+            <td>
+              <span class="mx-badge" [class.mx-badge-actif]="client.actif" [class.mx-badge-inactif]="!client.actif">
+                {{ client.actif ? 'Actif' : 'Inactif' }}
+              </span>
+            </td>
+
+            <!-- Dropdown 3 points — toujours visible -->
+            <td class="mx-actions-cell" (click)="$event.stopPropagation()">
+              <div class="mx-actions-wrap">
+                <button class="mx-dots-btn" (click)="toggleMenu(client.id, $event)">
+                  <svg viewBox="0 0 4 16" fill="currentColor" style="width:4px;height:16px">
+                    <circle cx="2" cy="2" r="1.5"/><circle cx="2" cy="8" r="1.5"/><circle cx="2" cy="14" r="1.5"/>
+                  </svg>
+                </button>
+                <div *ngIf="openMenuId() === client.id" class="mx-dropdown">
+                  <button class="mx-dropdown-item" (click)="openDetail(client); closeMenu()">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M7 2H3a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V7M10 1l3 3-6 6H4V7l6-6z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+                    Voir le détail
+                  </button>
+                  <button class="mx-dropdown-item" (click)="openEdit(client); closeMenu()">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M9 2l3 3-7 7H2V9l7-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+                    Modifier
+                  </button>
+                  <div class="mx-dropdown-divider"></div>
+                  <button class="mx-dropdown-item danger" (click)="delete(client); closeMenu()">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M2 3h10M5 3V2h4v1M4 3l.5 8h5L10 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="filteredClients().length === 0" class="mx-empty">
+        <svg class="mx-empty-icon" viewBox="0 0 48 48" fill="none" style="width:40px;height:40px">
+          <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+          <path d="M24 16v8M24 28h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <p class="mx-empty-title">Aucun client trouvé</p>
+        <button class="mx-btn mx-btn-primary" style="margin-top:6px" (click)="openAdd()">Créer le premier client</button>
       </div>
-  
-      <div class="cl-modal-footer">
-        <button class="cl-btn cl-btn-ghost" (click)="closeModal()">Annuler</button>
-        <button class="cl-btn cl-btn-primary" (click)="save()">
-          {{ editingClient() ? 'Enregistrer' : 'Créer' }}
+    </div>
+
+    <!-- PAGINATION -->
+    <div *ngIf="!loading() && filteredClients().length > 0" class="mx-pagination">
+      <div class="mx-pagination-info">
+        Affichage
+        <strong>{{ (currentPage() - 1) * pageSize() + 1 }}–{{ minVal(currentPage() * pageSize(), filteredClients().length) }}</strong>
+        sur <strong>{{ filteredClients().length }}</strong>
+        <select class="mx-page-size-select" style="margin-left:8px"
+                [value]="pageSize()" (change)="onPageSizeChange(+$any($event.target).value)">
+          <option value="10">10 / page</option>
+          <option value="25">25 / page</option>
+          <option value="50">50 / page</option>
+        </select>
+      </div>
+      <div class="mx-pagination-controls">
+        <button class="mx-page-btn" [disabled]="currentPage() === 1" (click)="goToPage(1)">
+          <svg viewBox="0 0 12 12" fill="none"><path d="M9 9L5 6l4-3M4 3v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="mx-page-btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">
+          <svg viewBox="0 0 12 12" fill="none"><path d="M8 9L4 6l4-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <ng-container *ngFor="let p of pagesArray()">
+          <button *ngIf="p === 1 || p === totalPages() || (p >= currentPage() - 1 && p <= currentPage() + 1)"
+                  class="mx-page-btn" [class.active]="p === currentPage()" (click)="goToPage(p)">{{ p }}</button>
+          <span *ngIf="p === currentPage() - 2 && p > 1"
+                style="color:var(--text-muted);padding:0 2px;line-height:30px">…</span>
+          <span *ngIf="p === currentPage() + 2 && p < totalPages()"
+                style="color:var(--text-muted);padding:0 2px;line-height:30px">…</span>
+        </ng-container>
+        <button class="mx-page-btn" [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">
+          <svg viewBox="0 0 12 12" fill="none"><path d="M4 3l4 3-4 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="mx-page-btn" [disabled]="currentPage() === totalPages()" (click)="goToPage(totalPages())">
+          <svg viewBox="0 0 12 12" fill="none"><path d="M3 9l4-3-4-3M8 3v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
     </div>
   </div>
+</div>
+
+<!-- ════ SLIDE-OVER DÉTAIL CLIENT ════ -->
+<div *ngIf="selectedClient()" class="mx-overlay" (click)="selectedClient.set(null)"></div>
+<div *ngIf="selectedClient() as client" class="mx-slideover">
+  <div class="mx-so-header">
+    <div class="mx-so-avatar" [style.background]="getCouleurStyle(client.couleur)">{{ getInitiales(client.nom) }}</div>
+    <div class="mx-so-title-block">
+      <p class="mx-so-name">{{ client.nom }}</p>
+      <p class="mx-so-sub">{{ client.nomSociete || client.courriel || '—' }}</p>
+      <div class="mx-so-badges">
+        <span class="mx-badge" [class.mx-badge-actif]="client.actif" [class.mx-badge-inactif]="!client.actif">{{ client.actif ? 'Actif' : 'Inactif' }}</span>
+        <span *ngIf="client.devise" class="mx-badge mx-badge-neutral">{{ client.devise }}</span>
+      </div>
+    </div>
+    <button class="mx-so-close" (click)="selectedClient.set(null)">
+      <svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="mx-so-body">
+    <div>
+      <p class="mx-so-section-title">Coordonnées</p>
+      <div class="mx-info-list">
+        <div class="mx-info-row" *ngIf="client.contact"><span class="mx-info-key">Contact</span><span class="mx-info-val">{{ client.contact }}</span></div>
+        <div class="mx-info-row" *ngIf="client.courriel"><span class="mx-info-key">Email</span><span class="mx-info-val">{{ client.courriel }}</span></div>
+        <div class="mx-info-row" *ngIf="client.telephone"><span class="mx-info-key">Téléphone</span><span class="mx-info-val">{{ client.telephone }}</span></div>
+        <div class="mx-info-row" *ngIf="client.mobile"><span class="mx-info-key">Mobile</span><span class="mx-info-val">{{ client.mobile }}</span></div>
+        <div class="mx-info-row" *ngIf="client.pageAccueil"><span class="mx-info-key">Site web</span><span class="mx-info-val">{{ client.pageAccueil }}</span></div>
+      </div>
+    </div>
+    <div>
+      <p class="mx-so-section-title">Adresse</p>
+      <div class="mx-info-list">
+        <div class="mx-info-row" *ngIf="client.nomSociete"><span class="mx-info-key">Société</span><span class="mx-info-val">{{ client.nomSociete }}</span></div>
+        <div class="mx-info-row" *ngIf="client.ville || client.pays"><span class="mx-info-key">Ville / Pays</span><span class="mx-info-val">{{ client.ville }}{{ client.pays ? ', '+client.pays : '' }}</span></div>
+        <div class="mx-info-row" *ngIf="client.codePostal"><span class="mx-info-key">Code postal</span><span class="mx-info-val">{{ client.codePostal }}</span></div>
+      </div>
+    </div>
+    <div>
+      <p class="mx-so-section-title">Finance</p>
+      <div class="mx-info-list">
+        <div class="mx-info-row" *ngIf="client.budget"><span class="mx-info-key">Budget</span><span class="mx-info-val">{{ client.budget | number:'1.0-0' }} {{ client.devise }}</span></div>
+        <div class="mx-info-row" *ngIf="client.quotaHoraire"><span class="mx-info-key">Quota horaire</span><span class="mx-info-val">{{ client.quotaHoraire }} h</span></div>
+        <div class="mx-info-row" *ngIf="client.idTva"><span class="mx-info-key">ID TVA</span><span class="mx-info-val mx-info-val-mono">{{ client.idTva }}</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="mx-so-footer">
+    <button class="mx-btn mx-btn-ghost" (click)="selectedClient.set(null)">Fermer</button>
+    <button class="mx-btn mx-btn-ghost" (click)="openEdit(client)">
+      <svg viewBox="0 0 14 14" fill="none" style="width:11px;height:11px"><path d="M9 2l3 3-7 7H2V9l7-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+      Modifier
+    </button>
+  </div>
+</div>
+
+<!-- ════ MODAL CLIENT ════ -->
+<div *ngIf="showModal()" class="mx-modal-backdrop" (click)="closeModal()">
+  <div class="mx-modal" style="max-width:540px;padding:0;overflow:hidden;max-height:90vh;display:flex;flex-direction:column"
+       (click)="$event.stopPropagation()">
+    <div style="display:flex;align-items:center;gap:12px;padding:18px 20px 14px;border-bottom:1px solid var(--border-color);flex-shrink:0">
+      <div style="width:34px;height:34px;border-radius:9px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent)">
+        <svg viewBox="0 0 18 18" fill="currentColor" style="width:16px;height:16px"><path d="M9 5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zM15 5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zM11.3 14.5c.03-.27.05-.55.05-.5a5.5 5.5 0 00-1.1-3.4A4 4 0 0116 14v.5h-4.7zM5 9a4 4 0 014 4v.5H1V13a4 4 0 014-4z"/></svg>
+      </div>
+      <span style="flex:1;font-size:.9375rem;font-weight:700;color:var(--text-primary)">{{ editingClient() ? 'Modifier le client' : 'Nouveau client' }}</span>
+      <button class="mx-so-close" (click)="closeModal()">
+        <svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div class="mx-tabs" style="flex-shrink:0">
+      <button class="mx-tab" [class.active]="activeTab()==='general'" (click)="activeTab.set('general')">Général</button>
+      <button class="mx-tab" [class.active]="activeTab()==='contact'" (click)="activeTab.set('contact')">Contact</button>
+      <button class="mx-tab" [class.active]="activeTab()==='finance'" (click)="activeTab.set('finance')">Finance</button>
+      <button class="mx-tab" [class.active]="activeTab()==='adresse'" (click)="activeTab.set('adresse')">Adresse</button>
+    </div>
+
+    <div style="padding:18px 20px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1">
+      <ng-container *ngIf="activeTab()==='general'">
+        <div class="mx-field"><label class="mx-field-label">Nom <span style="color:#ef4444">*</span></label><input [(ngModel)]="form().nom" [ngModelOptions]="{standalone:true}" placeholder="Nom du client" class="mx-field-input"></div>
+        <div class="mx-field"><label class="mx-field-label">Description</label><textarea [(ngModel)]="form().description" [ngModelOptions]="{standalone:true}" rows="2" class="mx-field-textarea"></textarea></div>
+        <div class="mx-so-grid">
+          <div class="mx-field"><label class="mx-field-label">Compte</label><input [(ngModel)]="form().compte" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+          <div class="mx-field"><label class="mx-field-label">ID TVA</label><input [(ngModel)]="form().idTva" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+          <div class="mx-field"><label class="mx-field-label">Devise</label><input [(ngModel)]="form().devise" [ngModelOptions]="{standalone:true}" class="mx-field-input" style="text-transform:uppercase"></div>
+          <div class="mx-field"><label class="mx-field-label">Couleur</label><div class="mx-colors-row"><button *ngFor="let c of COULEURS" type="button" class="mx-color-btn" [class.selected]="form().couleur === c" [style.background]="c" (click)="form().couleur = c"></button></div></div>
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
+          <label class="mx-toggle-row"><input type="checkbox" [(ngModel)]="form().visible" [ngModelOptions]="{standalone:true}" style="display:none"><div class="mx-toggle" [class.on]="form().visible"><div class="mx-toggle-knob"></div></div><span>Visible</span></label>
+          <label class="mx-toggle-row"><input type="checkbox" [(ngModel)]="form().facturable" [ngModelOptions]="{standalone:true}" style="display:none"><div class="mx-toggle" [class.on]="form().facturable"><div class="mx-toggle-knob"></div></div><span>Facturable</span></label>
+          <label class="mx-toggle-row"><input type="checkbox" [(ngModel)]="form().actif" [ngModelOptions]="{standalone:true}" style="display:none"><div class="mx-toggle" [class.on]="form().actif"><div class="mx-toggle-knob"></div></div><span>Actif</span></label>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="activeTab()==='contact'">
+        <div class="mx-field"><label class="mx-field-label">Contact principal</label><input [(ngModel)]="form().contact" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        <div class="mx-field"><label class="mx-field-label">Courriel</label><input type="email" [(ngModel)]="form().courriel" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        <div class="mx-field"><label class="mx-field-label">Page d'accueil</label><input [(ngModel)]="form().pageAccueil" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        <div class="mx-so-grid">
+          <div class="mx-field"><label class="mx-field-label">Mobile</label><input [(ngModel)]="form().mobile" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+          <div class="mx-field"><label class="mx-field-label">Téléphone</label><input [(ngModel)]="form().telephone" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+          <div class="mx-field"><label class="mx-field-label">Fax</label><input [(ngModel)]="form().fax" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="activeTab()==='finance'">
+        <div class="mx-so-grid">
+          <div class="mx-field"><label class="mx-field-label">Budget</label><input type="number" [(ngModel)]="form().budget" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+          <div class="mx-field"><label class="mx-field-label">Quota horaire</label><input type="number" [(ngModel)]="form().quotaHoraire" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        </div>
+        <div class="mx-field"><label class="mx-field-label">Type de budget</label><select [(ngModel)]="form().typeBudget" [ngModelOptions]="{standalone:true}" class="mx-field-select"><option *ngFor="let t of TYPE_BUDGETS" [value]="t">{{ t }}</option></select></div>
+      </ng-container>
+
+      <ng-container *ngIf="activeTab()==='adresse'">
+        <div class="mx-field"><label class="mx-field-label">Nom de la société</label><input [(ngModel)]="form().nomSociete" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        <div class="mx-so-grid">
+          <div class="mx-field"><label class="mx-field-label">Code postal</label><input [(ngModel)]="form().codePostal" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+          <div class="mx-field"><label class="mx-field-label">Ville</label><input [(ngModel)]="form().ville" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+          <div class="mx-field"><label class="mx-field-label">Pays</label><input [(ngModel)]="form().pays" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+          <div class="mx-field"><label class="mx-field-label">Fuseau horaire</label><input [(ngModel)]="form().fuseauHoraire" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        </div>
+      </ng-container>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding:11px 20px;border-top:1px solid var(--border-color);background:var(--bg-hover);flex-shrink:0">
+      <button class="mx-btn mx-btn-ghost" (click)="closeModal()">Annuler</button>
+      <button class="mx-btn mx-btn-primary" (click)="save()">{{ editingClient() ? 'Enregistrer' : 'Créer' }}</button>
+    </div>
+  </div>
+</div>

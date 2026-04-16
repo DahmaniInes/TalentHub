@@ -79,6 +79,8 @@ public class SecurityConfig {
                         .requestMatchers("/membres-equipe/**").permitAll()
                         .requestMatchers("/activites/**").permitAll()
                         .requestMatchers("/groupes/**").permitAll()
+                        .requestMatchers("/activites/**").permitAll()
+
 
                         .anyRequest().authenticated()
                 )

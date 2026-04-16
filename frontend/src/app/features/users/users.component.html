@@ -1,301 +1,340 @@
-<!-- users.component.html -->
-<div class="usr-wrapper">
+<!-- users.component.html — VERSION FINALE -->
+<div class="mx-page" (click)="closeMenu()">
 
-    <!-- ═══ HEADER ═══ -->
-    <div class="usr-header">
-      <div>
-        <h1 class="usr-title">
-          <svg viewBox="0 0 22 22" fill="none" class="usr-title-icon">
-            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"
-                  fill="currentColor"/>
-          </svg>
-          Utilisateurs
-        </h1>
-        <p class="usr-subtitle">
-          {{ users().length }} utilisateur(s) ·
-          <span class="usr-badge-actif">{{ statsActifs() }} actifs</span>
-          <span class="usr-badge-inactif">{{ statsInactifs() }} inactifs</span>
-        </p>
-      </div>
-      <!-- ✅ Bouton navigue vers /add-user -->
-      <button class="usr-btn usr-btn-primary" (click)="goToAdd()">
-        <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px">
-          <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-        Ajouter un utilisateur
+  <!-- HEADER -->
+  <div class="mx-page-header">
+    <div class="mx-page-title-block">
+      <h1 class="mx-page-title">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+        Utilisateurs
+      </h1>
+      <p class="mx-page-subtitle">
+        {{ users().length }} utilisateur(s)
+        <span class="mx-badge mx-badge-actif">{{ statsActifs() }} actifs</span>
+        <span class="mx-badge mx-badge-inactif">{{ statsInactifs() }} inactifs</span>
+      </p>
+    </div>
+    <div class="mx-page-actions">
+      <button class="mx-btn mx-btn-primary" (click)="goToAdd()">
+        <svg viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Ajouter
       </button>
     </div>
-  
-    <!-- ═══ FILTRES ═══ -->
-    <div class="usr-filters">
-      <div class="usr-search-wrap">
-        <svg viewBox="0 0 16 16" fill="none" class="usr-search-icon">
-          <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.4"/>
-          <path d="m11 11 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-        </svg>
-        <input [value]="search()" (input)="search.set($any($event.target).value)"
-               type="text" placeholder="Rechercher par nom, email, poste..."
-               class="usr-search-input">
-      </div>
-  
-      <select [value]="filterStatut()" (change)="filterStatut.set($any($event.target).value)"
-              class="usr-select">
-        <option value="tous">Tous les statuts</option>
-        <option value="actif">Actifs</option>
-        <option value="inactif">Inactifs</option>
-      </select>
-  
-      <select [value]="filterProfil()" (change)="filterProfil.set($any($event.target).value)"
-              class="usr-select">
-        <option value="">Tous les profils</option>
-        <option *ngFor="let p of profilsUniques()" [value]="p">{{ p }}</option>
-      </select>
-  
-      <span class="usr-count-badge">{{ filteredUsers().length }} résultat(s)</span>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="mx-toolbar">
+    <div class="mx-search">
+      <svg viewBox="0 0 14 14" fill="none" class="mx-search-icon">
+        <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/>
+        <path d="m10 10 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      <input [value]="search()"
+             (input)="search.set($any($event.target).value); resetPage()"
+             placeholder="Nom, email, poste..." class="mx-search-input">
     </div>
-  
-    <!-- ═══ LOADING ═══ -->
-    <div *ngIf="loading()" class="usr-loading">
-      <div class="usr-spinner"></div>
-      <span>Chargement des utilisateurs...</span>
+    <select [value]="filterStatut()"
+            (change)="filterStatut.set($any($event.target).value); resetPage()"
+            class="mx-filter-select">
+      <option value="tous">Tous les statuts</option>
+      <option value="actif">Actifs</option>
+      <option value="inactif">Inactifs</option>
+    </select>
+    <select [value]="filterProfil()"
+            (change)="filterProfil.set($any($event.target).value); resetPage()"
+            class="mx-filter-select">
+      <option value="">Tous les profils</option>
+      <option *ngFor="let p of profilsUniques()" [value]="p">{{ p }}</option>
+    </select>
+    <div class="mx-toolbar-spacer"></div>
+    <span class="mx-count-chip">{{ filteredUsers().length }} résultat(s)</span>
+  </div>
+
+  <!-- TABLEAU -->
+  <div class="mx-table-wrap">
+
+    <!-- Barre bulk -->
+    <div *ngIf="selectedCount() > 0" class="mx-bulk-bar">
+      <span class="mx-bulk-count">{{ selectedCount() }} sélectionné(s)</span>
+      <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="clearSelection()">Tout désélectionner</button>
+      <button class="mx-btn mx-btn-danger mx-btn-sm">Supprimer la sélection</button>
     </div>
-  
-    <!-- ═══ GRILLE MATRICIELLE ═══ -->
-    <div *ngIf="!loading()" class="usr-layout" [class.usr-layout-detail]="showDetail()">
-  
-      <!-- ─── Matrice users ─── -->
-      <div class="usr-grid-col">
-        <div class="usr-grid">
-  
-          <!-- Card user -->
-          <div *ngFor="let user of filteredUsers()"
-               class="usr-card"
-               [class.selected]="selectedUser()?.id === user.id"
-               [class.inactive]="!user.actif"
-               (click)="openDetail(user)">
-  
-            <!-- Bande couleur en haut -->
-            <div class="usr-card-band" [style.background]="getAvatarColor(user)"></div>
-  
-            <!-- Avatar -->
-            <div class="usr-card-avatar-wrap">
-              <div *ngIf="!user.photoUrl" class="usr-avatar"
-                   [style.background]="getAvatarColor(user)">
-                {{ getInitiales(user) }}
+
+    <div *ngIf="loading()" class="mx-loading"><div class="mx-spinner"></div> Chargement...</div>
+
+    <div *ngIf="!loading()" class="mx-table-scroll">
+      <table class="mx-table">
+        <thead>
+          <tr>
+            <!-- Checkbox select-all -->
+            <th class="mx-checkbox-cell">
+              <input type="checkbox" class="mx-checkbox"
+                     [class.indeterminate]="somePageSelected()"
+                     [checked]="allPageSelected()"
+                     (change)="toggleSelectAll()">
+            </th>
+            <th>Utilisateur</th>
+            <th>Poste / Département</th>
+            <th>Profil</th>
+            <th>Statut</th>
+            <th>Embauche</th>
+            <th style="width:44px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of pagedUsers()"
+              [class.row-selected]="isSelected(user.id) || selectedUser()?.id === user.id"
+              [class.row-inactive]="!user.actif"
+              (click)="openDetail(user)">
+
+            <!-- Checkbox ligne -->
+            <td class="mx-checkbox-cell" (click)="$event.stopPropagation()">
+              <input type="checkbox" class="mx-checkbox"
+                     [checked]="isSelected(user.id)"
+                     (change)="toggleSelect(user.id, $event)">
+            </td>
+
+            <td>
+              <div class="mx-cell-main">
+                <div class="mx-avatar with-dot" [class.active]="user.actif" [style.background]="getAvatarColor(user)">
+                  <img *ngIf="user.photoUrl" [src]="user.photoUrl">
+                  <span *ngIf="!user.photoUrl">{{ getInitiales(user) }}</span>
+                </div>
+                <div class="mx-cell-info">
+                  <span class="mx-cell-name">{{ user.nomComplet }}</span>
+                  <span class="mx-cell-sub">{{ user.email }}</span>
+                </div>
               </div>
-              <img *ngIf="user.photoUrl" [src]="user.photoUrl" [alt]="user.nomComplet"
-                   class="usr-avatar-img">
-              <!-- Indicateur actif/inactif -->
-              <div class="usr-status-dot" [class.active]="user.actif"
-                   [title]="user.actif ? 'Actif' : 'Inactif'"></div>
-            </div>
-  
-            <!-- Infos -->
-            <div class="usr-card-body">
-              <h3 class="usr-card-nom">{{ user.nomComplet }}</h3>
-              <p class="usr-card-email">{{ user.email }}</p>
-              <p class="usr-card-poste" *ngIf="user.poste">{{ user.poste }}</p>
-              <div class="usr-card-tags">
-                <span class="usr-tag" *ngIf="user.profilNom">{{ user.profilNom }}</span>
-                <span class="usr-tag usr-tag-dept" *ngIf="user.departement">{{ user.departement }}</span>
-              </div>
-            </div>
-  
-            <!-- Actions rapides (visibles au hover) -->
-            <div class="usr-card-quick-actions" (click)="$event.stopPropagation()">
-              <button class="usr-quick-btn"
-                      [title]="user.actif ? 'Désactiver' : 'Activer'"
-                      (click)="toggleActif(user)">
-                <svg *ngIf="user.actif" viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
-                  <circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.3"/>
-                  <path d="M5 9l2-2 2 2M7 7V4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <svg *ngIf="!user.actif" viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
-                  <circle cx="7" cy="7" r="6" stroke="#10b981" stroke-width="1.3"/>
-                  <path d="M4.5 7l2 2 3-3" stroke="#10b981" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
-              <button class="usr-quick-btn usr-quick-danger" title="Supprimer" (click)="deleteUser(user)">
-                <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
-                  <path d="M2 3h10M5 3V2h4v1M4 3l.5 8h5L10 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-  
-          <!-- Vide -->
-          <div *ngIf="filteredUsers().length === 0" class="usr-empty">
-            <svg viewBox="0 0 48 48" fill="none" style="width:48px;height:48px;color:var(--text-muted)">
-              <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 4"/>
-              <path d="M24 15v9M24 28h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            <p>Aucun utilisateur trouvé</p>
-            <button class="usr-btn usr-btn-primary" (click)="goToAdd()">Créer le premier</button>
-          </div>
-        </div>
-      </div>
-  
-      <!-- ─── Panneau de détail ─── -->
-      <div class="usr-detail-panel" *ngIf="showDetail() && selectedUser() as user">
-  
-        <!-- Header panneau -->
-        <div class="usr-detail-header">
-          <div class="usr-detail-avatar-wrap">
-            <div *ngIf="!user.photoUrl" class="usr-detail-avatar"
-                 [style.background]="getAvatarColor(user)">
-              {{ getInitiales(user) }}
-            </div>
-            <img *ngIf="user.photoUrl" [src]="user.photoUrl" class="usr-detail-avatar-img">
-            <div class="usr-detail-status" [class.active]="user.actif"></div>
-          </div>
-          <div class="usr-detail-identity">
-            <h2 class="usr-detail-nom">{{ user.nomComplet }}</h2>
-            <p class="usr-detail-email">{{ user.email }}</p>
-            <div class="usr-detail-badges">
-              <span class="usr-tag" *ngIf="user.profilNom">{{ user.profilNom }}</span>
-              <span class="usr-status-label" [class.actif]="user.actif">
+            </td>
+
+            <td class="muted">
+              <span>{{ user.poste || '—' }}</span>
+              <span *ngIf="user.departement" style="color:var(--text-muted);font-size:.68rem;display:block">{{ user.departement }}</span>
+            </td>
+
+            <td>
+              <span *ngIf="user.profilNom" class="mx-badge mx-badge-accent">{{ user.profilNom }}</span>
+              <span *ngIf="!user.profilNom" class="muted">—</span>
+            </td>
+
+            <td>
+              <span class="mx-badge" [class.mx-badge-actif]="user.actif" [class.mx-badge-inactif]="!user.actif">
                 {{ user.actif ? 'Actif' : 'Inactif' }}
               </span>
-            </div>
-          </div>
-          <button class="usr-close-btn" (click)="closeDetail()">
-            <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
-              <path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-          </button>
-        </div>
-  
-        <!-- Onglets -->
-        <div class="usr-detail-tabs">
-          <button class="usr-dtab" [class.active]="detailTab()==='infos'"    (click)="detailTab.set('infos')">Informations</button>
-          <button class="usr-dtab" [class.active]="detailTab()==='groupes'"  (click)="detailTab.set('groupes')">Groupes ({{ userGroupes().length }})</button>
-          <button class="usr-dtab" [class.active]="detailTab()==='securite'" (click)="detailTab.set('securite')">Sécurité</button>
-        </div>
-  
-        <!-- ── TAB: INFOS ── -->
-        <div *ngIf="detailTab()==='infos'" class="usr-detail-body">
-          <div class="usr-form-grid">
-            <div class="usr-field">
-              <label class="usr-label">Prénom</label>
-              <input [(ngModel)]="editForm().prenom" [ngModelOptions]="{standalone:true}" class="usr-input" placeholder="Prénom">
-            </div>
-            <div class="usr-field">
-              <label class="usr-label">Nom</label>
-              <input [(ngModel)]="editForm().nom" [ngModelOptions]="{standalone:true}" class="usr-input" placeholder="Nom">
-            </div>
-            <div class="usr-field usr-field-full">
-              <label class="usr-label">Téléphone</label>
-              <input [(ngModel)]="editForm().telephone" [ngModelOptions]="{standalone:true}" class="usr-input" placeholder="Téléphone">
-            </div>
-            <div class="usr-field">
-              <label class="usr-label">Poste</label>
-              <input [(ngModel)]="editForm().poste" [ngModelOptions]="{standalone:true}" class="usr-input" placeholder="Poste">
-            </div>
-            <div class="usr-field">
-              <label class="usr-label">Département</label>
-              <input [(ngModel)]="editForm().departement" [ngModelOptions]="{standalone:true}" class="usr-input" placeholder="Département">
-            </div>
-            <div class="usr-field usr-field-full">
-              <label class="usr-label">Adresse</label>
-              <input [(ngModel)]="editForm().adresse" [ngModelOptions]="{standalone:true}" class="usr-input" placeholder="Adresse">
-            </div>
-            <div class="usr-field">
-              <label class="usr-label">Profil</label>
-              <select [(ngModel)]="editForm().profilId" [ngModelOptions]="{standalone:true}" class="usr-select-field">
-                <option [ngValue]="null">— Sélectionner —</option>
-                <option *ngFor="let p of profils()" [ngValue]="p.id">{{ p.nom }}</option>
-              </select>
-            </div>
-            <div class="usr-field">
-              <label class="usr-label">Fin de contrat</label>
-              <input type="date" [(ngModel)]="editForm().dateFinContrat" [ngModelOptions]="{standalone:true}" class="usr-input">
-            </div>
-          </div>
-  
-          <!-- Infos lecture seule -->
-          <div class="usr-readonly-section">
-            <div class="usr-info-row" *ngIf="user.dateEmbauche">
-              <span class="usr-info-key">Date embauche</span>
-              <span class="usr-info-val">{{ user.dateEmbauche | date:'dd/MM/yyyy' }}</span>
-            </div>
-            <div class="usr-info-row">
-              <span class="usr-info-key">Keycloak ID</span>
-              <span class="usr-info-val usr-info-mono">{{ user.keycloakId }}</span>
-            </div>
-            <div class="usr-info-row">
-              <span class="usr-info-key">Créé le</span>
-              <span class="usr-info-val">{{ user.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
-            </div>
-          </div>
-  
-          <div class="usr-detail-footer">
-            <button class="usr-btn usr-btn-ghost" (click)="toggleActif(user)">
-              {{ user.actif ? 'Désactiver' : 'Activer' }}
-            </button>
-            <button class="usr-btn usr-btn-danger-sm" (click)="deleteUser(user)">
-              Supprimer
-            </button>
-            <button class="usr-btn usr-btn-primary" (click)="saveUser()" [disabled]="saving()">
-              <div class="usr-spinner-sm" *ngIf="saving()"></div>
-              {{ saving() ? 'Enregistrement...' : 'Enregistrer' }}
-            </button>
-          </div>
-        </div>
-  
-        <!-- ── TAB: GROUPES ── -->
-        <div *ngIf="detailTab()==='groupes'" class="usr-detail-body">
-          <div *ngIf="userGroupes().length > 0" class="usr-groupes-list">
-            <div *ngFor="let g of userGroupes()" class="usr-groupe-item">
-              <div class="usr-groupe-dot" [style.background]="g.couleur || '#6366f1'"></div>
-              <div class="usr-groupe-info">
-                <span class="usr-groupe-nom">{{ g.nom }}</span>
-                <span class="usr-groupe-members">{{ g.nombreMembres }} membre(s)</span>
-                <span class="usr-groupe-lead" *ngIf="g.teamLeadId === user.id">
-                  ⭐ Team Lead
-                </span>
+            </td>
+
+            <td class="muted">{{ user.dateEmbauche ? (user.dateEmbauche | date:'dd/MM/yyyy') : '—' }}</td>
+
+            <!-- Dropdown 3 points — toujours visible -->
+            <td class="mx-actions-cell" (click)="$event.stopPropagation()">
+              <div class="mx-actions-wrap">
+                <button class="mx-dots-btn" (click)="toggleMenu(user.id, $event)" title="Actions">
+                  <svg viewBox="0 0 4 16" fill="currentColor" style="width:4px;height:16px">
+                    <circle cx="2" cy="2" r="1.5"/><circle cx="2" cy="8" r="1.5"/><circle cx="2" cy="14" r="1.5"/>
+                  </svg>
+                </button>
+                <div *ngIf="openMenuId() === user.id" class="mx-dropdown">
+                  <button class="mx-dropdown-item" (click)="openDetail(user); closeMenu()">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M7 2H3a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V7M10 1l3 3-6 6H4V7l6-6z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+                    Voir le détail
+                  </button>
+                  <button class="mx-dropdown-item warning" (click)="resetPassword(user); closeMenu()">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M1 4v3h3M13 10v-3h-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 5A5 5 0 1012 9.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    Réinitialiser MDP
+                  </button>
+                  <button class="mx-dropdown-item"
+                          [class.warning]="user.actif" [class.success]="!user.actif"
+                          (click)="toggleActif(user); closeMenu()">
+                    <svg *ngIf="user.actif" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 9l2-2 2 2M7 7V4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <svg *ngIf="!user.actif" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    {{ user.actif ? 'Désactiver' : 'Activer' }}
+                  </button>
+                  <div class="mx-dropdown-divider"></div>
+                  <button class="mx-dropdown-item danger" (click)="deleteUser(user); closeMenu()">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M2 3h10M5 3V2h4v1M4 3l.5 8h5L10 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Supprimer
+                  </button>
+                </div>
               </div>
-            </div>
-          </div>
-          <div *ngIf="userGroupes().length === 0" class="usr-empty-tab">
-            <p>Cet utilisateur n'appartient à aucun groupe</p>
-          </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="filteredUsers().length === 0" class="mx-empty">
+        <svg class="mx-empty-icon" viewBox="0 0 48 48" fill="none" style="width:40px;height:40px">
+          <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+          <path d="M24 16v8M24 28h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <p class="mx-empty-title">Aucun utilisateur trouvé</p>
+        <p class="mx-empty-sub">Modifiez vos filtres ou ajoutez un utilisateur</p>
+        <button class="mx-btn mx-btn-primary" style="margin-top:4px" (click)="goToAdd()">Ajouter un utilisateur</button>
+      </div>
+    </div>
+
+    <!-- PAGINATION -->
+    <div *ngIf="!loading() && filteredUsers().length > 0" class="mx-pagination">
+      <div class="mx-pagination-info">
+        Affichage
+        <strong>{{ (currentPage() - 1) * pageSize() + 1 }}–{{ minVal(currentPage() * pageSize(), filteredUsers().length) }}</strong>
+        sur <strong>{{ filteredUsers().length }}</strong>
+        <select class="mx-page-size-select" style="margin-left:8px"
+                [value]="pageSize()" (change)="onPageSizeChange(+$any($event.target).value)">
+          <option value="10">10 / page</option>
+          <option value="25">25 / page</option>
+          <option value="50">50 / page</option>
+        </select>
+      </div>
+      <div class="mx-pagination-controls">
+        <button class="mx-page-btn" [disabled]="currentPage() === 1" (click)="goToPage(1)">
+          <svg viewBox="0 0 12 12" fill="none"><path d="M9 9L5 6l4-3M4 3v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="mx-page-btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">
+          <svg viewBox="0 0 12 12" fill="none"><path d="M8 9L4 6l4-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <ng-container *ngFor="let p of pagesArray()">
+          <button *ngIf="p === 1 || p === totalPages() || (p >= currentPage() - 1 && p <= currentPage() + 1)"
+                  class="mx-page-btn" [class.active]="p === currentPage()" (click)="goToPage(p)">{{ p }}</button>
+          <span *ngIf="p === currentPage() - 2 && p > 1"
+                style="color:var(--text-muted);padding:0 2px;font-size:.8rem;line-height:30px">…</span>
+          <span *ngIf="p === currentPage() + 2 && p < totalPages()"
+                style="color:var(--text-muted);padding:0 2px;font-size:.8rem;line-height:30px">…</span>
+        </ng-container>
+        <button class="mx-page-btn" [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">
+          <svg viewBox="0 0 12 12" fill="none"><path d="M4 3l4 3-4 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="mx-page-btn" [disabled]="currentPage() === totalPages()" (click)="goToPage(totalPages())">
+          <svg viewBox="0 0 12 12" fill="none"><path d="M3 9l4-3-4-3M8 3v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ SLIDE-OVER DÉTAIL ════ -->
+<div *ngIf="showDetail()" class="mx-overlay" (click)="closeDetail()"></div>
+<div *ngIf="showDetail() && selectedUser() as user" class="mx-slideover">
+
+  <div class="mx-so-header">
+    <div class="mx-so-avatar" [style.background]="getAvatarColor(user)">
+      <img *ngIf="user.photoUrl" [src]="user.photoUrl">
+      <span *ngIf="!user.photoUrl">{{ getInitiales(user) }}</span>
+    </div>
+    <div class="mx-so-title-block">
+      <p class="mx-so-name">{{ user.nomComplet }}</p>
+      <p class="mx-so-sub">{{ user.email }}</p>
+      <div class="mx-so-badges">
+        <span *ngIf="user.profilNom" class="mx-badge mx-badge-accent">{{ user.profilNom }}</span>
+        <span class="mx-badge" [class.mx-badge-actif]="user.actif" [class.mx-badge-inactif]="!user.actif">
+          {{ user.actif ? 'Actif' : 'Inactif' }}
+        </span>
+      </div>
+    </div>
+    <button class="mx-so-close" (click)="closeDetail()">
+      <svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <div class="mx-so-tabs">
+    <button class="mx-so-tab" [class.active]="detailTab()==='infos'"    (click)="detailTab.set('infos')">Informations</button>
+    <button class="mx-so-tab" [class.active]="detailTab()==='groupes'"  (click)="detailTab.set('groupes')">Groupes ({{ userGroupes().length }})</button>
+    <button class="mx-so-tab" [class.active]="detailTab()==='securite'" (click)="detailTab.set('securite')">Sécurité</button>
+  </div>
+
+  <!-- TAB INFOS -->
+  <div *ngIf="detailTab()==='infos'" class="mx-so-body">
+    <div class="mx-so-grid">
+      <div class="mx-field"><label class="mx-field-label">Prénom</label><input [(ngModel)]="editForm().prenom" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+      <div class="mx-field"><label class="mx-field-label">Nom</label><input [(ngModel)]="editForm().nom" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+      <div class="mx-field mx-so-full"><label class="mx-field-label">Téléphone</label><input [(ngModel)]="editForm().telephone" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+      <div class="mx-field"><label class="mx-field-label">Poste</label><input [(ngModel)]="editForm().poste" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+      <div class="mx-field"><label class="mx-field-label">Département</label><input [(ngModel)]="editForm().departement" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+      <div class="mx-field mx-so-full"><label class="mx-field-label">Adresse</label><input [(ngModel)]="editForm().adresse" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+      <div class="mx-field">
+        <label class="mx-field-label">Profil</label>
+        <select [(ngModel)]="editForm().profilId" [ngModelOptions]="{standalone:true}" class="mx-field-select">
+          <option [ngValue]="null">— Sélectionner —</option>
+          <option *ngFor="let p of profils()" [ngValue]="p.id">{{ p.nom }}</option>
+        </select>
+      </div>
+      <div class="mx-field"><label class="mx-field-label">Fin de contrat</label><input type="date" [(ngModel)]="editForm().dateFinContrat" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+    </div>
+    <div class="mx-divider"></div>
+    <div>
+      <p class="mx-so-section-title">Informations système</p>
+      <div class="mx-info-list">
+        <div class="mx-info-row" *ngIf="user.dateEmbauche">
+          <span class="mx-info-key">Date embauche</span>
+          <span class="mx-info-val">{{ user.dateEmbauche | date:'dd/MM/yyyy' }}</span>
         </div>
-  
-        <!-- ── TAB: SÉCURITÉ ── -->
-        <div *ngIf="detailTab()==='securite'" class="usr-detail-body">
-          <div class="usr-security-section">
-            <h4 class="usr-security-title">Mot de passe</h4>
-            <p class="usr-security-desc">
-              Envoyer un email de réinitialisation de mot de passe à <strong>{{ user.email }}</strong>
-            </p>
-            <button class="usr-btn usr-btn-warning" (click)="resetPassword(user)">
-              <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px">
-                <path d="M1 4v4h4M15 12v-4h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M13.5 5A6 6 0 1014 11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              </svg>
-              Réinitialiser le mot de passe
-            </button>
-          </div>
-  
-          <div class="usr-security-section">
-            <h4 class="usr-security-title">Compte</h4>
-            <p class="usr-security-desc">
-              {{ user.actif ? 'Le compte est actuellement actif.' : 'Le compte est actuellement désactivé.' }}
-            </p>
-            <button class="usr-btn" [class.usr-btn-warning]="user.actif" [class.usr-btn-success]="!user.actif"
-                    (click)="toggleActif(user)">
-              {{ user.actif ? '🔒 Désactiver le compte' : '🔓 Réactiver le compte' }}
-            </button>
-          </div>
-  
-          <div class="usr-security-section usr-security-danger">
-            <h4 class="usr-security-title usr-danger-title">Zone dangereuse</h4>
-            <p class="usr-security-desc">La suppression est définitive et ne peut pas être annulée.</p>
-            <button class="usr-btn usr-btn-danger-sm" (click)="deleteUser(user)">
-              🗑 Supprimer définitivement
-            </button>
-          </div>
+        <div class="mx-info-row">
+          <span class="mx-info-key">Keycloak ID</span>
+          <span class="mx-info-val mx-info-val-mono">{{ user.keycloakId }}</span>
+        </div>
+        <div class="mx-info-row">
+          <span class="mx-info-key">Créé le</span>
+          <span class="mx-info-val">{{ user.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- TAB GROUPES -->
+  <div *ngIf="detailTab()==='groupes'" class="mx-so-body">
+    <div *ngIf="userGroupes().length > 0" class="mx-membre-list">
+      <div *ngFor="let g of userGroupes()" class="mx-membre-item">
+        <div class="mx-avatar" style="border-radius:8px" [style.background]="g.couleur || '#6366f1'">
+          <svg viewBox="0 0 14 14" fill="white" style="width:12px;height:12px">
+            <path d="M7 4a2 2 0 11-4 0 2 2 0 014 0zM12 4a2 2 0 11-4 0 2 2 0 014 0zM8.5 11.5c.033-.22.05-.445.05-.5a4.5 4.5 0 00-1-2.8A3 3 0 0113 11v.5h-4.5zM4 9a3 3 0 013 3v.5H1V12a3 3 0 013-3z"/>
+          </svg>
+        </div>
+        <div class="mx-membre-info">
+          <span class="mx-membre-nom">{{ g.nom }}</span>
+          <span class="mx-membre-sub">{{ g.nombreMembres }} membre(s){{ g.teamLeadId === user.id ? ' · ⭐ Team Lead' : '' }}</span>
+        </div>
+        <span class="mx-badge" [class.mx-badge-actif]="g.actif" [class.mx-badge-inactif]="!g.actif">
+          {{ g.actif ? 'Actif' : 'Inactif' }}
+        </span>
+      </div>
+    </div>
+    <div *ngIf="userGroupes().length === 0" class="mx-empty">
+      <p class="mx-empty-title">Aucun groupe</p>
+      <p class="mx-empty-sub">Cet utilisateur n'appartient à aucun groupe</p>
+    </div>
+  </div>
+
+  <!-- TAB SÉCURITÉ -->
+  <div *ngIf="detailTab()==='securite'" class="mx-so-body">
+    <div>
+      <p class="mx-so-section-title">Mot de passe</p>
+      <p style="font-size:.76rem;color:var(--text-muted);margin:0 0 10px;line-height:1.5">
+        Envoyer un email de réinitialisation à <strong style="color:var(--text-secondary)">{{ user.email }}</strong>
+      </p>
+      <button class="mx-btn mx-btn-warning" (click)="resetPassword(user)">Réinitialiser le mot de passe</button>
+    </div>
+    <div class="mx-divider"></div>
+    <div>
+      <p class="mx-so-section-title">Compte</p>
+      <p style="font-size:.76rem;color:var(--text-muted);margin:0 0 10px;line-height:1.5">
+        {{ user.actif ? 'Le compte est actuellement actif.' : 'Le compte est désactivé.' }}
+      </p>
+      <button class="mx-btn" [class.mx-btn-warning]="user.actif" [class.mx-btn-success]="!user.actif" (click)="toggleActif(user)">
+        {{ user.actif ? '🔒 Désactiver le compte' : '🔓 Réactiver le compte' }}
+      </button>
+    </div>
+    <div class="mx-divider"></div>
+    <div class="mx-danger-zone">
+      <p class="mx-danger-title">Zone dangereuse</p>
+      <p class="mx-danger-desc">La suppression est définitive et ne peut pas être annulée.</p>
+      <button class="mx-btn mx-btn-danger" (click)="deleteUser(user)">🗑 Supprimer définitivement</button>
+    </div>
+  </div>
+
+  <div *ngIf="detailTab()==='infos'" class="mx-so-footer">
+    <button class="mx-btn mx-btn-ghost" (click)="closeDetail()">Annuler</button>
+    <button class="mx-btn mx-btn-primary" (click)="saveUser()" [disabled]="saving()">
+      <div *ngIf="saving()" class="mx-spinner-sm"></div>
+      {{ saving() ? 'Enregistrement...' : 'Enregistrer' }}
+    </button>
+  </div>
+</div>

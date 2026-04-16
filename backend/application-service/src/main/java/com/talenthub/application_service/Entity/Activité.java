@@ -3,7 +3,6 @@ package com.talenthub.application_service.Entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -11,7 +10,9 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "activites")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter @Setter  @AllArgsConstructor
+@Builder(toBuilder = true)  // ← Ajouter toBuilder = true
+
 public class Activité {
 
     @Id
@@ -26,17 +27,16 @@ public class Activité {
     private String description;
 
     @Column(name = "numero_activite", length = 50)
-    private String numeroActivite;   // ex: "ACT-001"
+    private String numeroActivite;
 
     @Column(length = 7)
-    private String couleur;          // ex: "#10b981"
+    private String couleur;
 
-    // ✅ FK vers nomenclature-service.StatutActivité (Long ID uniquement)
-    // Pas d'@ManyToOne cross-microservice — on stocke juste l'ID
-    @NotNull
+
+
     @Column(name = "statut_activite_id", nullable = false)
-    @Builder.Default
-    private Long statutActiviteId = 1L; // 1 = À faire par défaut
+   // @Builder.Default
+    private Long statutActiviteId = 1L;
 
     // ── Finance ──
     @Column(name = "budget")
@@ -45,7 +45,6 @@ public class Activité {
     @Column(name = "quota_horaire")
     private Double quotaHoraire;
 
-    // MENSUEL | TRIMESTRIEL | ANNUEL | ILLIMITE
     @Column(name = "type_budget", length = 20)
     @Builder.Default
     private String typeBudget = "ILLIMITE";
@@ -60,7 +59,6 @@ public class Activité {
     private boolean facturable = true;
 
     // ── Priorité ──
-    // 1=Basse | 2=Normale | 3=Haute | 4=Urgente
     @Column(nullable = false)
     @Builder.Default
     private int priorite = 2;
@@ -104,6 +102,10 @@ public class Activité {
 
     @PrePersist
     protected void onCreate() {
+        // ✅ FIX 2 — Garantir que statutActiviteId n'est jamais null à la persistance
+        if (this.statutActiviteId == null) {
+            this.statutActiviteId = 1L;
+        }
         this.dateCreation  = LocalDateTime.now();
         this.dateMiseAJour = LocalDateTime.now();
     }
@@ -112,4 +114,17 @@ public class Activité {
     protected void onUpdate() {
         this.dateMiseAJour = LocalDateTime.now();
     }
+
+
+
+    public Activité() {
+        this.statutActiviteId = 1L;
+        this.typeBudget = "ILLIMITE";
+        this.visible = true;
+        this.facturable = true;
+        this.priorite = 2;
+        this.heuresPassees = 0.0;
+    }
+
+
 }

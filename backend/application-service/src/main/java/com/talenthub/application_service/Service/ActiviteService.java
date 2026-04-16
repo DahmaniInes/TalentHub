@@ -9,14 +9,21 @@ import com.talenthub.application_service.Repository.ActiviteRepository;
 import com.talenthub.application_service.Repository.ProjetRepository;
 import com.talenthub.application_service.Repository.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ActiviteService {
@@ -24,13 +31,20 @@ public class ActiviteService {
     private final ActiviteRepository    activiteRepo;
     private final ProjetRepository      projetRepo;
     private final UtilisateurRepository utilisateurRepo;
-    private final RestTemplate          restTemplate;   // déclaré dans un @Bean ci-dessous
+    private final RestTemplate          restTemplate;
 
-    // URL du nomenclature-service (via gateway ou direct)
-    @Value("${nomenclature.service.url:http://localhost:8085/api}")
+    // ✅ URL directe vers le nomenclature-service (sans passer par la gateway)
+    // Si votre nomenclature-service tourne sur le port 8083 par exemple,
+    // mettez la bonne URL. La valeur par défaut essaie via Eureka lb://
+    @Value("${nomenclature.service.url:http://localhost:8083/api}")
     private String nomenclatureUrl;
 
+    // ✅ Cache en mémoire des statuts pour éviter N appels HTTP par requête
+    // Map<statutId, Map<"libelle"|"couleur"|"code", valeur>>
+    private final Map<Long, Map<String, Object>> statutsCache = new ConcurrentHashMap<>();
+
     // ── Lecture ──
+
     @Transactional(readOnly = true)
     public List<Activité> getByProjet(Long projetId) {
         return activiteRepo.findByProjetIdOrderByNumeroActivite(projetId);
@@ -52,35 +66,108 @@ public class ActiviteService {
                 .orElseThrow(() -> new RuntimeException("Activité non trouvée: " + id));
     }
 
-    // ── Enrichissement DTO avec libellé statut depuis nomenclature-service ──
+    @Transactional(readOnly = true)
+    public List<ActiviteDTO> getAllFiltered(
+            Long projetId, Long statutId, Long utilisateurId,
+            Integer priorite, boolean globalesUniquement) {
+        // ✅ Charger le cache statuts une seule fois pour toute la liste
+        refreshStatutsCache();
+        List<Activité> list = activiteRepo.findAllFiltered(
+                projetId, statutId, utilisateurId, priorite, globalesUniquement);
+        return list.stream().map(this::toDTO).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ActiviteDTO> getGlobales() {
+        refreshStatutsCache();
+        return activiteRepo.findGlobales().stream().map(this::toDTO).toList();
+    }
+
+    // ✅ FIX PRINCIPAL — Enrichissement du statut depuis le cache (pas N appels HTTP)
     public ActiviteDTO toDTO(Activité a) {
         ActiviteDTO dto = new ActiviteDTO(a);
-        try {
-            // Appel HTTP simple — pas de Feign, pas de fallback
-            String url = nomenclatureUrl + "/statut-activite/" + a.getStatutActiviteId();
-            @SuppressWarnings("unchecked")
-            Map<String, Object> statut = restTemplate.getForObject(url, Map.class);
+        if (a.getStatutActiviteId() != null) {
+            Map<String, Object> statut = getStatutFromCacheOrFetch(a.getStatutActiviteId());
             if (statut != null) {
                 dto.setStatutLibelle(String.valueOf(statut.getOrDefault("libelle", "—")));
                 dto.setStatutCouleur(String.valueOf(statut.getOrDefault("couleur", "#94a3b8")));
                 dto.setStatutCode(String.valueOf(statut.getOrDefault("code", "")));
+            } else {
+                // Fallback : afficher l'ID si le service est indisponible
+                dto.setStatutLibelle("Statut #" + a.getStatutActiviteId());
+                dto.setStatutCouleur("#94a3b8");
             }
-        } catch (Exception e) {
-            // Si nomenclature-service est indisponible, on laisse les champs null
-            // Le frontend gère l'absence de libellé
         }
         return dto;
+    }
+
+    // ── Cache helpers ──
+
+    private Map<String, Object> getStatutFromCacheOrFetch(Long statutId) {
+        if (statutsCache.containsKey(statutId)) {
+            return statutsCache.get(statutId);
+        }
+        return fetchStatutById(statutId);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> fetchStatutById(Long statutId) {
+        try {
+            String url = nomenclatureUrl + "/statut-activite/" + statutId;
+            Map<String, Object> statut = restTemplate.getForObject(url, Map.class);
+            if (statut != null) {
+                statutsCache.put(statutId, statut);
+            }
+            return statut;
+        } catch (Exception e) {
+            log.warn("Impossible de charger le statut {} depuis nomenclature-service: {}",
+                    statutId, e.getMessage());
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void refreshStatutsCache() {
+        try {
+            String url = nomenclatureUrl + "/statut-activite";
+            ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
+                    url, HttpMethod.GET, null,
+                    new ParameterizedTypeReference<List<Map<String, Object>>>() {});
+            if (response.getBody() != null) {
+                response.getBody().forEach(s -> {
+                    Object idObj = s.get("id");
+                    if (idObj != null) {
+                        Long id = Long.valueOf(idObj.toString());
+                        statutsCache.put(id, s);
+                    }
+                });
+                log.debug("Cache statuts rechargé: {} statuts", statutsCache.size());
+            }
+        } catch (Exception e) {
+            log.warn("Impossible de recharger le cache statuts: {}", e.getMessage());
+        }
+    }
+
+    // Vider le cache (utile après modification des statuts)
+    public void clearStatutsCache() {
+        statutsCache.clear();
     }
 
     // ── Création ──
     @Transactional
     public Activité create(Activité activite, Long projetId, Long utilisateurId) {
+        if (activite.getStatutActiviteId() == null) {
+            activite.setStatutActiviteId(1L);
+        }
         if (projetId != null) {
             Projet projet = projetRepo.findById(projetId)
                     .orElseThrow(() -> new RuntimeException("Projet non trouvé: " + projetId));
             activite.setProjet(projet);
             long count = activiteRepo.countByProjetId(projetId) + 1;
             activite.setNumeroActivite(String.format("ACT-%03d", count));
+        } else {
+            long count = activiteRepo.count() + 1;
+            activite.setNumeroActivite(String.format("GACT-%03d", count));
         }
         if (utilisateurId != null) {
             Utilisateur u = utilisateurRepo.findById(utilisateurId)
@@ -97,7 +184,9 @@ public class ActiviteService {
         existing.setNom(details.getNom());
         existing.setDescription(details.getDescription());
         existing.setCouleur(details.getCouleur());
-        existing.setStatutActiviteId(details.getStatutActiviteId());
+        if (details.getStatutActiviteId() != null) {
+            existing.setStatutActiviteId(details.getStatutActiviteId());
+        }
         existing.setBudget(details.getBudget());
         existing.setQuotaHoraire(details.getQuotaHoraire());
         existing.setTypeBudget(details.getTypeBudget());
@@ -117,11 +206,12 @@ public class ActiviteService {
         return activiteRepo.save(existing);
     }
 
-    // ── Changer statut ──
     @Transactional
     public Activité changerStatut(Long activiteId, Long nouveauStatutId) {
         Activité a = getById(activiteId);
-        a.setStatutActiviteId(nouveauStatutId);
+        if (nouveauStatutId != null) {
+            a.setStatutActiviteId(nouveauStatutId);
+        }
         return activiteRepo.save(a);
     }
 

@@ -4,6 +4,7 @@ package com.talenthub.nomenclature_service.Controller;
 import com.talenthub.nomenclature_service.Entity.StatutActivité;
 import com.talenthub.nomenclature_service.Repository.StatutActiviteRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,12 +13,22 @@ import java.util.List;
 @RestController
 @RequestMapping("/statut-activite")
 @RequiredArgsConstructor
+@Slf4j  // ← Ajouter Lombok @Slf4j
+
 public class StatutActiviteController {
     private final StatutActiviteRepository repo;
 
     @GetMapping
     public ResponseEntity<List<StatutActivité>> getAll() {
-        return ResponseEntity.ok(repo.findByActifTrueOrderByOrdre());
+        try {
+            log.info("Récupération des statuts actifs...");
+            List<StatutActivité> list = repo.findByActifTrueOrderByOrdre();
+            log.info("Nombre de statuts trouvés: {}", list.size());
+            return ResponseEntity.ok(list);
+        } catch (Exception e) {
+            log.error("Erreur lors de la récupération des statuts", e);
+            throw e; // Relancer pour voir l'erreur complète dans les logs
+        }
     }
 
     @GetMapping("/{id}")

@@ -1,0 +1,401 @@
+<!-- activites-global.component.html -->
+<div class="mx-page" (click)="closeMenu()">
+
+  <!-- HEADER -->
+  <div class="mx-page-header">
+    <div class="mx-page-title-block">
+      <h1 class="mx-page-title">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" style="width:20px;height:20px">
+          <rect x="2" y="4" width="16" height="13" rx="2.5"/>
+          <path d="M6 1v3M14 1v3M2 9h16" stroke-linecap="round"/>
+        </svg>
+        Activités
+      </h1>
+      <p class="mx-page-subtitle">
+        {{ statsToutes() }} activité(s)
+        <span class="mx-badge mx-badge-accent">{{ statsProjet() }} liées à des projets</span>
+        <span class="mx-badge mx-badge-neutral">{{ statsGlobales() }} globales</span>
+      </p>
+    </div>
+    <div class="mx-page-actions">
+      <button class="mx-btn mx-btn-primary" (click)="openAdd()">
+        <svg viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Nouvelle activité
+      </button>
+    </div>
+  </div>
+
+  <!-- FILTRES VUE -->
+  <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+    <button class="mx-btn" style="font-size:.74rem"
+            [class.mx-btn-primary]="filterVue()==='toutes'"
+            [class.mx-btn-ghost]="filterVue()!=='toutes'"
+            (click)="filterVue.set('toutes'); resetPage()">
+      Toutes <span class="mx-badge" style="font-size:.58rem;padding:1px 5px;margin-left:3px"
+                   [style.background]="filterVue()==='toutes'?'rgba(255,255,255,.25)':''"
+                   [style.color]="filterVue()==='toutes'?'white':''"
+                   [class.mx-badge-neutral]="filterVue()!=='toutes'">{{ statsToutes() }}</span>
+    </button>
+    <button class="mx-btn" style="font-size:.74rem"
+            [class.mx-btn-primary]="filterVue()==='projet'"
+            [class.mx-btn-ghost]="filterVue()!=='projet'"
+            (click)="filterVue.set('projet'); resetPage()">
+      Liées à un projet <span class="mx-badge" style="font-size:.58rem;padding:1px 5px;margin-left:3px"
+                              [style.background]="filterVue()==='projet'?'rgba(255,255,255,.25)':''"
+                              [style.color]="filterVue()==='projet'?'white':''"
+                              [class.mx-badge-neutral]="filterVue()!=='projet'">{{ statsProjet() }}</span>
+    </button>
+    <button class="mx-btn" style="font-size:.74rem"
+            [class.mx-btn-primary]="filterVue()==='globales'"
+            [class.mx-btn-ghost]="filterVue()!=='globales'"
+            (click)="filterVue.set('globales'); resetPage()">
+      Globales <span class="mx-badge" style="font-size:.58rem;padding:1px 5px;margin-left:3px"
+                     [style.background]="filterVue()==='globales'?'rgba(255,255,255,.25)':''"
+                     [style.color]="filterVue()==='globales'?'white':''"
+                     [class.mx-badge-neutral]="filterVue()!=='globales'">{{ statsGlobales() }}</span>
+    </button>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="mx-toolbar">
+    <div class="mx-search">
+      <svg viewBox="0 0 14 14" fill="none" class="mx-search-icon">
+        <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/>
+        <path d="m10 10 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      <input [value]="search()" (input)="search.set($any($event.target).value); resetPage()"
+             placeholder="Nom, projet, assigné..." class="mx-search-input">
+    </div>
+    <select [value]="filterStatut()"
+            (change)="filterStatut.set($any($event.target).value===''?'':+$any($event.target).value); resetPage()"
+            class="mx-filter-select">
+      <option value="">Tous les statuts</option>
+      <option *ngFor="let s of statutsActivite()" [value]="s.id">{{ s.libelle }}</option>
+    </select>
+    <select [value]="filterPriorite()"
+            (change)="filterPriorite.set($any($event.target).value===''?'':+$any($event.target).value); resetPage()"
+            class="mx-filter-select">
+      <option value="">Toutes priorités</option>
+      <option *ngFor="let p of PRIORITES" [value]="p.value">{{ p.label }}</option>
+    </select>
+    <select *ngIf="filterVue() !== 'globales'"
+            [value]="filterProjet()"
+            (change)="filterProjet.set($any($event.target).value===''?'':+$any($event.target).value); resetPage()"
+            class="mx-filter-select">
+      <option value="">Tous les projets</option>
+      <option *ngFor="let p of projets()" [value]="p.id">{{ p.nom }}</option>
+    </select>
+    <div class="mx-toolbar-spacer"></div>
+    <span class="mx-count-chip">{{ filteredActivites().length }} résultat(s)</span>
+  </div>
+
+  <!-- TABLEAU -->
+  <div class="mx-table-wrap">
+
+    <!-- ✅ Bulk bar avec bouton delete fonctionnel -->
+    <div *ngIf="selectedCount() > 0" class="mx-bulk-bar">
+      <span class="mx-bulk-count">{{ selectedCount() }} sélectionnée(s)</span>
+      <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="clearSelection()">Tout désélectionner</button>
+      <button class="mx-btn mx-btn-danger mx-btn-sm" (click)="deleteBulk()">
+        Supprimer la sélection ({{ selectedCount() }})
+      </button>
+    </div>
+
+    <div *ngIf="loading()" class="mx-loading"><div class="mx-spinner"></div> Chargement...</div>
+
+    <div *ngIf="!loading()" class="mx-table-scroll">
+      <table class="mx-table">
+        <thead>
+          <tr>
+            <th class="mx-checkbox-cell">
+              <input type="checkbox" class="mx-checkbox"
+                     [class.indeterminate]="somePageSelected()"
+                     [checked]="allPageSelected()"
+                     (change)="toggleSelectAll()">
+            </th>
+            <th>Activité</th>
+            <th>Projet</th>
+            <th>Statut</th>
+            <th>Priorité</th>
+            <th>Assigné à</th>
+            <th>Échéance</th>
+            <th>Heures</th>
+            <th style="width:44px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let a of pagedActivites()"
+              [class.row-selected]="isSelected(a.id) || selectedActivite()?.id === a.id"
+              (click)="openDetail(a)">
+
+            <td class="mx-checkbox-cell" (click)="$event.stopPropagation()">
+              <input type="checkbox" class="mx-checkbox" [checked]="isSelected(a.id)" (change)="toggleSelect(a.id, $event)">
+            </td>
+
+            <!-- Activité -->
+            <td>
+              <div class="mx-cell-main">
+                <div style="width:3px;height:32px;border-radius:3px;flex-shrink:0"
+                     [style.background]="a.couleur || '#94a3b8'"></div>
+                <div class="mx-cell-info">
+                  <span class="mx-cell-name">{{ a.nom }}</span>
+                  <span class="mx-cell-sub" style="font-family:'Courier New',monospace">
+                    {{ a.numeroActivite }}
+                    <span *ngIf="!a.projetId"
+                          style="display:inline-block;margin-left:4px;font-family:inherit;font-size:.57rem;background:rgba(139,92,246,.12);color:#8b5cf6;padding:0 5px;border-radius:4px;border:1px solid rgba(139,92,246,.25)">
+                      GLOBALE
+                    </span>
+                  </span>
+                </div>
+              </div>
+            </td>
+
+            <!-- Projet -->
+            <td>
+              <span *ngIf="a.projetNom" class="mx-badge mx-badge-neutral">{{ a.projetNom }}</span>
+              <span *ngIf="!a.projetNom" style="font-size:.7rem;color:var(--text-muted);font-style:italic">—</span>
+            </td>
+
+            <!-- ✅ Statut — affiché avec statutLibelle enrichi depuis nomenclature-service -->
+            <td>
+              <span class="mx-badge"
+                    [style.background]="(a.statutCouleur||'#94a3b8')+'18'"
+                    [style.color]="a.statutCouleur||'#94a3b8'"
+                    [style.border-color]="(a.statutCouleur||'#94a3b8')+'44'">
+                {{ a.statutLibelle || ('Statut #' + a.statutActiviteId) }}
+              </span>
+            </td>
+
+            <!-- Priorité -->
+            <td>
+              <div style="display:flex;align-items:center;gap:5px">
+                <div style="width:7px;height:7px;border-radius:50%;flex-shrink:0" [style.background]="getPrioriteCouleur(a.priorite)"></div>
+                <span style="font-size:.73rem;color:var(--text-secondary)">{{ getPrioriteLabel(a.priorite) }}</span>
+              </div>
+            </td>
+
+            <!-- Assigné à -->
+            <td class="muted">{{ a.utilisateurNomComplet || '—' }}</td>
+
+            <!-- Échéance -->
+            <td class="muted" style="font-size:.72rem;white-space:nowrap">
+              {{ a.dateEcheance ? (a.dateEcheance | date:'dd/MM/yy') : '—' }}
+            </td>
+
+            <!-- Heures -->
+            <td>
+              <span *ngIf="a.heuresEstimees" style="font-size:.73rem;color:var(--text-secondary)">
+                {{ a.heuresPassees || 0 }}h / {{ a.heuresEstimees }}h
+                <div style="height:3px;background:var(--bg-hover);border-radius:999px;margin-top:3px;width:60px;overflow:hidden">
+                  <div style="height:100%;border-radius:999px;background:var(--accent)"
+                       [style.width.%]="Math.min(100, ((a.heuresPassees||0) / a.heuresEstimees) * 100)"></div>
+                </div>
+              </span>
+              <span *ngIf="!a.heuresEstimees" class="muted">—</span>
+            </td>
+
+            <!-- ✅ Dropdown 3 points — SEULEMENT Voir détail, Modifier, Supprimer -->
+            <td class="mx-actions-cell" (click)="$event.stopPropagation()">
+              <div class="mx-actions-wrap">
+                <button class="mx-dots-btn" (click)="toggleMenu(a.id, $event)">
+                  <svg viewBox="0 0 4 16" fill="currentColor" style="width:4px;height:16px">
+                    <circle cx="2" cy="2" r="1.5"/><circle cx="2" cy="8" r="1.5"/><circle cx="2" cy="14" r="1.5"/>
+                  </svg>
+                </button>
+                <div *ngIf="openMenuId() === a.id" class="mx-dropdown">
+                  <button class="mx-dropdown-item" (click)="openDetail(a); closeMenu()">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M7 2H3a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V7M10 1l3 3-6 6H4V7l6-6z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+                    Voir le détail
+                  </button>
+                  <button class="mx-dropdown-item" (click)="openEdit(a); closeMenu()">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M9 2l3 3-7 7H2V9l7-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+                    Modifier
+                  </button>
+                  <div class="mx-dropdown-divider"></div>
+                  <button class="mx-dropdown-item danger" (click)="delete(a); closeMenu()">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M2 3h10M5 3V2h4v1M4 3l.5 8h5L10 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="filteredActivites().length === 0" class="mx-empty">
+        <p class="mx-empty-title">Aucune activité trouvée</p>
+        <p class="mx-empty-sub">Modifiez vos filtres ou créez une nouvelle activité</p>
+        <button class="mx-btn mx-btn-primary" style="margin-top:4px" (click)="openAdd()">Créer une activité</button>
+      </div>
+    </div>
+
+    <!-- PAGINATION -->
+    <div *ngIf="!loading() && filteredActivites().length > 0" class="mx-pagination">
+      <div class="mx-pagination-info">
+        <strong>{{ (currentPage()-1)*pageSize()+1 }}–{{ minVal(currentPage()*pageSize(), filteredActivites().length) }}</strong>
+        sur <strong>{{ filteredActivites().length }}</strong>
+        <select class="mx-page-size-select" style="margin-left:8px" [value]="pageSize()" (change)="onPageSizeChange(+$any($event.target).value)">
+          <option value="10">10</option><option value="15">15</option><option value="25">25</option><option value="50">50</option>
+        </select>
+      </div>
+      <div class="mx-pagination-controls">
+        <button class="mx-page-btn" [disabled]="currentPage()===1" (click)="goToPage(1)"><svg viewBox="0 0 12 12" fill="none"><path d="M9 9L5 6l4-3M4 3v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="mx-page-btn" [disabled]="currentPage()===1" (click)="goToPage(currentPage()-1)"><svg viewBox="0 0 12 12" fill="none"><path d="M8 9L4 6l4-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <ng-container *ngFor="let p of pagesArray()">
+          <button *ngIf="p===1||p===totalPages()||(p>=currentPage()-1&&p<=currentPage()+1)"
+                  class="mx-page-btn" [class.active]="p===currentPage()" (click)="goToPage(p)">{{ p }}</button>
+          <span *ngIf="p===currentPage()-2&&p>1" style="color:var(--text-muted);line-height:30px">…</span>
+          <span *ngIf="p===currentPage()+2&&p<totalPages()" style="color:var(--text-muted);line-height:30px">…</span>
+        </ng-container>
+        <button class="mx-page-btn" [disabled]="currentPage()===totalPages()" (click)="goToPage(currentPage()+1)"><svg viewBox="0 0 12 12" fill="none"><path d="M4 3l4 3-4 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="mx-page-btn" [disabled]="currentPage()===totalPages()" (click)="goToPage(totalPages())"><svg viewBox="0 0 12 12" fill="none"><path d="M3 9l4-3-4-3M8 3v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ SLIDE-OVER DÉTAIL ════ -->
+<div *ngIf="selectedActivite()" class="mx-overlay" (click)="selectedActivite.set(null)"></div>
+<div *ngIf="selectedActivite() as a" class="mx-slideover">
+  <div class="mx-so-header">
+    <div class="mx-so-avatar" [style.background]="a.couleur || '#94a3b8'">
+      <svg viewBox="0 0 14 14" fill="white" style="width:14px;height:14px">
+        <rect x="1.5" y="1.5" width="11" height="11" rx="1.5" stroke="white" stroke-width="1.2" fill="none"/>
+        <path d="M4 5h6M4 7.5h6M4 10h4" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="mx-so-title-block">
+      <p class="mx-so-name">{{ a.nom }}</p>
+      <p class="mx-so-sub">
+        {{ a.numeroActivite }}
+        <span *ngIf="a.projetNom"> · {{ a.projetNom }}</span>
+        <span *ngIf="!a.projetId" style="color:#8b5cf6"> · GLOBALE</span>
+      </p>
+      <div class="mx-so-badges">
+        <span class="mx-badge" [style.background]="(a.statutCouleur||'#94a3b8')+'18'" [style.color]="a.statutCouleur||'#94a3b8'" [style.border-color]="(a.statutCouleur||'#94a3b8')+'44'">
+          {{ a.statutLibelle || ('Statut #' + a.statutActiviteId) }}
+        </span>
+        <span class="mx-badge" [style.background]="getPrioriteCouleur(a.priorite)+'18'" [style.color]="getPrioriteCouleur(a.priorite)" [style.border-color]="getPrioriteCouleur(a.priorite)+'44'">
+          {{ getPrioriteLabel(a.priorite) }}
+        </span>
+      </div>
+    </div>
+    <button class="mx-so-close" (click)="selectedActivite.set(null)">
+      <svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <div class="mx-so-body">
+    <div *ngIf="a.description">
+      <p class="mx-so-section-title">Description</p>
+      <p style="font-size:.78rem;color:var(--text-secondary);line-height:1.6;margin:0">{{ a.description }}</p>
+    </div>
+
+    <!-- ✅ Changer statut depuis le slide-over -->
+    <div>
+      <p class="mx-so-section-title">Changer le statut</p>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <button *ngFor="let s of statutsActivite()" type="button"
+                (click)="changerStatut(a, s.id)"
+                style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:7px;font-size:.73rem;font-weight:600;cursor:pointer;font-family:inherit;border:1.5px solid;transition:all .12s"
+                [style.background]="s.id===a.statutActiviteId ? (s.couleur||'#94a3b8')+'22' : 'var(--bg-hover)'"
+                [style.color]="s.id===a.statutActiviteId ? (s.couleur||'#94a3b8') : 'var(--text-muted)'"
+                [style.border-color]="s.id===a.statutActiviteId ? (s.couleur||'#94a3b8')+'66' : 'var(--border-color)'">
+          <span style="width:7px;height:7px;border-radius:50%;flex-shrink:0;display:inline-block" [style.background]="s.couleur||'#94a3b8'"></span>
+          {{ s.libelle }}
+        </button>
+      </div>
+    </div>
+
+    <div>
+      <p class="mx-so-section-title">Informations</p>
+      <div class="mx-info-list">
+        <div class="mx-info-row" *ngIf="a.projetNom"><span class="mx-info-key">Projet</span><span class="mx-info-val">{{ a.projetNom }}</span></div>
+        <div class="mx-info-row" *ngIf="!a.projetId"><span class="mx-info-key">Type</span><span class="mx-info-val" style="color:#8b5cf6">Activité globale</span></div>
+        <div class="mx-info-row" *ngIf="a.utilisateurNomComplet"><span class="mx-info-key">Assigné à</span><span class="mx-info-val">{{ a.utilisateurNomComplet }}</span></div>
+        <div class="mx-info-row" *ngIf="a.dateEcheance"><span class="mx-info-key">Échéance</span><span class="mx-info-val">{{ a.dateEcheance | date:'dd/MM/yyyy' }}</span></div>
+        <div class="mx-info-row" *ngIf="a.heuresEstimees"><span class="mx-info-key">Heures</span><span class="mx-info-val">{{ a.heuresPassees || 0 }} h / {{ a.heuresEstimees }} h</span></div>
+        <div class="mx-info-row" *ngIf="a.budget"><span class="mx-info-key">Budget</span><span class="mx-info-val">{{ a.budget | number:'1.0-0' }}</span></div>
+        <div class="mx-info-row"><span class="mx-info-key">Créé le</span><span class="mx-info-val">{{ a.dateCreation | date:'dd/MM/yyyy HH:mm' }}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mx-so-footer">
+    <button class="mx-btn mx-btn-ghost" (click)="selectedActivite.set(null)">Fermer</button>
+    <button class="mx-btn mx-btn-ghost" (click)="openEdit(a)">
+      <svg viewBox="0 0 14 14" fill="none" style="width:11px;height:11px"><path d="M9 2l3 3-7 7H2V9l7-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+      Modifier
+    </button>
+  </div>
+</div>
+
+<!-- ════ MODAL ACTIVITÉ ════ -->
+<div *ngIf="showModal()" class="mx-modal-backdrop" (click)="closeModal()">
+  <div class="mx-modal" style="max-width:520px;padding:0;overflow:hidden;max-height:90vh;display:flex;flex-direction:column" (click)="$event.stopPropagation()">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 18px 12px;border-bottom:1px solid var(--border-color);flex-shrink:0">
+      <div style="width:34px;height:34px;border-radius:9px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 5h6M5 8h6M5 11h4" stroke-linecap="round"/></svg>
+      </div>
+      <span style="flex:1;font-size:.9375rem;font-weight:700;color:var(--text-primary)">
+        {{ editingActivite() ? 'Modifier l\'activité' : 'Nouvelle activité' }}
+      </span>
+      <button class="mx-so-close" (click)="closeModal()"><svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    </div>
+
+    <div style="padding:16px 18px;display:flex;flex-direction:column;gap:11px;overflow-y:auto;flex:1">
+      <div class="mx-field"><label class="mx-field-label">Nom <span style="color:#ef4444">*</span></label><input [(ngModel)]="form().nom" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+      <div class="mx-field"><label class="mx-field-label">Description</label><textarea [(ngModel)]="form().description" [ngModelOptions]="{standalone:true}" rows="2" class="mx-field-textarea"></textarea></div>
+
+      <div class="mx-so-grid">
+        <!-- ✅ Statut dans le formulaire (pour modifier le statut via Modifier) -->
+        <div class="mx-field">
+          <label class="mx-field-label">Statut</label>
+          <select [(ngModel)]="form().statutActiviteId" [ngModelOptions]="{standalone:true}" class="mx-field-select">
+            <option *ngFor="let s of statutsActivite()" [ngValue]="s.id">{{ s.libelle }}</option>
+          </select>
+        </div>
+        <div class="mx-field">
+          <label class="mx-field-label">Priorité</label>
+          <select [(ngModel)]="form().priorite" [ngModelOptions]="{standalone:true}" class="mx-field-select">
+            <option *ngFor="let p of PRIORITES" [ngValue]="p.value">{{ p.label }}</option>
+          </select>
+        </div>
+
+        <!-- Projet associé (optionnel) -->
+        <div class="mx-field mx-so-full">
+          <label class="mx-field-label">Projet associé <span style="font-size:.6rem;background:rgba(139,92,246,.1);color:#8b5cf6;padding:1px 5px;border-radius:4px;margin-left:4px">Optionnel</span></label>
+          <select [(ngModel)]="formProjetId" [ngModelOptions]="{standalone:true}" class="mx-field-select">
+            <option [ngValue]="null">— Aucun (activité globale) —</option>
+            <option *ngFor="let p of projets()" [ngValue]="p.id">{{ p.nom }}</option>
+          </select>
+        </div>
+
+        <!-- Assigné -->
+        <div class="mx-field">
+          <label class="mx-field-label">Assigné à</label>
+          <select [(ngModel)]="form().utilisateurId" [ngModelOptions]="{standalone:true}" class="mx-field-select">
+            <option [ngValue]="undefined">— Non assigné —</option>
+            <option *ngFor="let u of utilisateurs()" [ngValue]="u.id">{{ u.prenom }} {{ u.nom }}</option>
+          </select>
+        </div>
+        <div class="mx-field"><label class="mx-field-label">Date d'échéance</label><input type="date" [(ngModel)]="form().dateEcheance" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        <div class="mx-field"><label class="mx-field-label">Budget</label><input type="number" [(ngModel)]="form().budget" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        <div class="mx-field"><label class="mx-field-label">Heures estimées</label><input type="number" [(ngModel)]="form().heuresEstimees" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+      </div>
+
+      <div class="mx-field"><label class="mx-field-label">Couleur</label><div class="mx-colors-row"><button *ngFor="let c of COULEURS" type="button" class="mx-color-btn" [class.selected]="form().couleur===c" [style.background]="c" (click)="form().couleur=c"></button></div></div>
+
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <label class="mx-toggle-row"><input type="checkbox" [(ngModel)]="form().visible" [ngModelOptions]="{standalone:true}" style="display:none"><div class="mx-toggle" [class.on]="form().visible"><div class="mx-toggle-knob"></div></div><span>Visible</span></label>
+        <label class="mx-toggle-row"><input type="checkbox" [(ngModel)]="form().facturable" [ngModelOptions]="{standalone:true}" style="display:none"><div class="mx-toggle" [class.on]="form().facturable"><div class="mx-toggle-knob"></div></div><span>Facturable</span></label>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding:10px 18px;border-top:1px solid var(--border-color);background:var(--bg-hover);flex-shrink:0">
+      <button class="mx-btn mx-btn-ghost" (click)="closeModal()">Annuler</button>
+      <button class="mx-btn mx-btn-primary" (click)="save()">{{ editingActivite() ? 'Enregistrer' : 'Créer' }}</button>
+    </div>
+  </div>
+</div>
