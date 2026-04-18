@@ -1,0 +1,201 @@
+<!-- approbation-feuille-temps.component.html — CORRIGÉ -->
+<div class="mx-page">
+
+  <!-- Header -->
+  <div class="mx-page-header">
+    <div class="mx-page-title-block">
+      <h1 class="mx-page-title">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" style="width:20px;height:20px">
+          <path d="M2 8l4 4 8-8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Approbations
+      </h1>
+      <p class="mx-page-subtitle">{{ filteredFeuilles().length }} feuille(s)</p>
+    </div>
+  </div>
+
+  <!-- Filtres -->
+  <div class="mx-toolbar">
+    <div class="mx-search">
+      <svg viewBox="0 0 14 14" fill="none" class="mx-search-icon"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="m10 10 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      <input [value]="searchText()" (input)="searchText.set($any($event.target).value)" placeholder="Rechercher..." class="mx-search-input">
+    </div>
+    <select class="mx-filter-select" [value]="filterStatut()" (change)="filterStatut.set($any($event.target).value)">
+      <option value="TOUS">Tous les statuts</option>
+      <option value="SOUMISE">Soumises</option>
+      <option value="VALIDEE">Validées</option>
+      <option value="REJETEE">Rejetées</option>
+    </select>
+  </div>
+
+  <div *ngIf="loading()" class="mx-loading"><div class="mx-spinner"></div> Chargement...</div>
+
+  <!-- Liste -->
+  <div *ngIf="!loading()" style="display:flex;flex-direction:column;gap:10px">
+
+    <div *ngFor="let ft of filteredFeuilles()"
+         class="ft-history-card"
+         style="cursor:pointer"
+         (click)="ouvrirDetail(ft)">
+      <div class="ft-hcard-stripe" [class]="'ft-stripe-' + statutColor(ft.statut)"></div>
+      <div class="ft-hcard-body">
+        <div class="ft-hcard-top">
+          <div class="ft-hcard-left">
+            <span class="ft-week-pill">
+              <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px"><rect x="1" y="2" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 6h12M4.5 1v2.5M9.5 1v2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              {{ ft.semaineDu | date:'dd/MM' }} – {{ ft.semaineAu | date:'dd/MM/yyyy' }}
+            </span>
+            <span style="font-size:.8rem;font-weight:600;color:var(--text-primary)">{{ ft.utilisateurNom || 'Utilisateur #' + ft.utilisateurId }}</span>
+            <span class="ft-status-badge" [class]="'ft-status-' + statutColor(ft.statut)">
+              {{ statutIcon(ft.statut) }} {{ statutLabel(ft.statut) }}
+            </span>
+          </div>
+          <div class="ft-hcard-actions" (click)="$event.stopPropagation()">
+            <button *ngIf="ft.statut === 'SOUMISE'" class="ft-action-btn ft-action-submit" (click)="valider(ft)">
+              <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px"><path d="M2 7l4 4 6-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Valider
+            </button>
+            <button *ngIf="ft.statut === 'SOUMISE'" class="ft-action-btn ft-action-delete" (click)="ouvrirRejet(ft)">
+              <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+              Rejeter
+            </button>
+          </div>
+        </div>
+
+        <div class="ft-hcard-chips">
+          <div class="ft-chip ft-chip-normal">
+            <svg viewBox="0 0 12 12" fill="none" style="width:11px;height:11px"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.2"/><path d="M6 3.5v2.5l1.5 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            {{ fmt(ft.minutesTravaillees) }}
+          </div>
+          <div *ngIf="ft.minutesSupplementaires > 0" class="ft-chip ft-chip-supp">
+            +{{ fmt(ft.minutesSupplementaires) }} suppl.
+          </div>
+          <div style="font-size:.7rem;color:var(--text-muted)">{{ ft.lignes?.length || 0 }} entrée(s)</div>
+        </div>
+
+        <div *ngIf="ft.commentaireValideur" class="ft-hcard-comment"
+             [class.ft-comment-ok]="ft.statut === 'VALIDEE'"
+             [class.ft-comment-ko]="ft.statut === 'REJETEE'">
+          <span>{{ ft.statut === 'VALIDEE' ? '✓' : '✗' }}</span>
+          <span>{{ ft.commentaireValideur }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="filteredFeuilles().length === 0" class="mx-empty">
+      <p class="mx-empty-title">Aucune feuille</p>
+      <p class="mx-empty-sub">Aucune feuille ne correspond aux filtres sélectionnés.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE-OVER DÉTAIL -->
+<div *ngIf="feuilleDetail() && !showRejetModal()" class="mx-overlay" (click)="fermerDetail()"></div>
+<div *ngIf="feuilleDetail() as ft" class="mx-slideover" [style.display]="showRejetModal() ? 'none' : ''">
+  <div class="mx-so-header">
+    <div>
+      <p class="mx-so-name">{{ ft.utilisateurNom || 'Utilisateur' }}</p>
+      <p class="mx-so-sub">Semaine du {{ ft.semaineDu | date:'dd/MM/yyyy' }} au {{ ft.semaineAu | date:'dd/MM/yyyy' }}</p>
+      <span class="ft-status-badge" [class]="'ft-status-' + statutColor(ft.statut)">
+        {{ statutIcon(ft.statut) }} {{ statutLabel(ft.statut) }}
+      </span>
+    </div>
+    <button class="mx-so-close" (click)="fermerDetail()">
+      <svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <div class="mx-so-body">
+    <!-- Résumé heures -->
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+      <div style="background:var(--bg-hover);border-radius:8px;padding:10px 14px;text-align:center;min-width:80px">
+        <p style="font-size:.65rem;color:var(--text-muted);margin:0;font-weight:700;text-transform:uppercase">Heures</p>
+        <p style="font-size:1.1rem;font-weight:800;color:var(--text-primary);margin:4px 0 0">{{ fmt(ft.minutesTravaillees) }}</p>
+      </div>
+      <div *ngIf="ft.minutesSupplementaires > 0" style="background:rgba(16,185,129,.08);border-radius:8px;padding:10px 14px;text-align:center;min-width:80px">
+        <p style="font-size:.65rem;color:#10b981;margin:0;font-weight:700;text-transform:uppercase">Suppl.</p>
+        <p style="font-size:1.1rem;font-weight:800;color:#10b981;margin:4px 0 0">+{{ fmt(ft.minutesSupplementaires) }}</p>
+      </div>
+    </div>
+
+    <!-- Détail lignes -->
+    <p class="mx-so-section-title">Entrées ({{ ft.lignes?.length || 0 }})</p>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div *ngFor="let l of (ft.lignes || [])"
+           style="display:flex;align-items:center;gap:10px;background:var(--bg-hover);border-radius:7px;padding:8px 10px;border:1px solid var(--border-color)">
+        <!-- Date -->
+        <div style="min-width:48px;font-size:.72rem;font-weight:700;color:var(--text-secondary)">
+          {{ l.date | date:'dd/MM' }}
+        </div>
+        <!-- Point couleur projet -->
+        <div style="width:8px;height:8px;border-radius:50%;background:#6366f1;flex-shrink:0"></div>
+        <!-- Projet / Activité -->
+        <div style="flex:1;min-width:0">
+          <p style="margin:0;font-size:.77rem;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+            {{ l.projetNom || '— Sans projet —' }}
+          </p>
+          <p *ngIf="l.activiteNom" style="margin:0;font-size:.65rem;color:var(--text-muted)">{{ l.activiteNom }}</p>
+        </div>
+        <!-- Horaires -->
+        <div *ngIf="l.heureDebut" style="font-size:.7rem;color:var(--text-muted);white-space:nowrap">
+          {{ l.heureDebut }} – {{ l.heureFin }}
+        </div>
+        <!-- Durée -->
+        <div style="font-size:.77rem;font-weight:700;color:var(--text-primary);white-space:nowrap">
+          {{ fmt(l.minutesTravaillees) }}
+          <span *ngIf="l.minutesSupplementaires > 0" style="color:#10b981;font-size:.65rem"> +{{ fmt(l.minutesSupplementaires) }}</span>
+        </div>
+      </div>
+
+      <div *ngIf="!ft.lignes || ft.lignes.length === 0" style="font-size:.77rem;color:var(--text-muted);text-align:center;padding:16px">
+        Aucune entrée.
+      </div>
+    </div>
+
+    <!-- Commentaire employé -->
+    <div *ngIf="ft.commentaireEmploye" style="margin-top:14px">
+      <p class="mx-so-section-title">Commentaire de l'employé</p>
+      <p style="font-size:.78rem;color:var(--text-secondary);background:var(--bg-hover);padding:8px 10px;border-radius:7px;margin:0">{{ ft.commentaireEmploye }}</p>
+    </div>
+
+    <!-- Commentaire valideur -->
+    <div *ngIf="ft.commentaireValideur" style="margin-top:10px">
+      <p class="mx-so-section-title">Commentaire du valideur</p>
+      <p style="font-size:.78rem;background:var(--bg-hover);padding:8px 10px;border-radius:7px;margin:0"
+         [style.color]="ft.statut === 'REJETEE' ? '#ef4444' : '#10b981'">
+        {{ ft.commentaireValideur }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div *ngIf="ft.statut === 'SOUMISE'" style="padding:12px 18px;border-top:1px solid var(--border-color);background:var(--bg-hover);display:flex;gap:8px;flex-shrink:0">
+    <button class="mx-btn mx-btn-primary" style="flex:1;justify-content:center" (click)="valider(ft)">
+      <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px"><path d="M2 7l4 4 6-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Valider
+    </button>
+    <button class="mx-btn mx-btn-ghost" style="flex:1;justify-content:center;border-color:#ef4444;color:#ef4444" (click)="ouvrirRejet(ft)">
+      Rejeter
+    </button>
+  </div>
+</div>
+
+<!-- MODAL REJET -->
+<div *ngIf="showRejetModal()" class="mx-modal-backdrop" (click)="showRejetModal.set(false)">
+  <div class="mx-modal" style="max-width:420px;padding:0;overflow:hidden" (click)="$event.stopPropagation()">
+    <div style="display:flex;align-items:center;gap:10px;padding:14px 16px 10px;border-bottom:1px solid var(--border-color)">
+      <span style="font-size:.9rem;font-weight:700;color:var(--text-primary)">Rejeter la feuille</span>
+      <button class="mx-so-close" style="margin-left:auto" (click)="showRejetModal.set(false)">
+        <svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div style="padding:14px 16px">
+      <label class="mx-field-label">Motif de rejet <span style="color:#ef4444">*</span></label>
+      <textarea [(ngModel)]="motifRejet" rows="3" class="mx-field-textarea" placeholder="Expliquez la raison du rejet..." style="width:100%"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding:10px 16px;border-top:1px solid var(--border-color);background:var(--bg-hover)">
+      <button class="mx-btn mx-btn-ghost" (click)="showRejetModal.set(false)">Annuler</button>
+      <button class="mx-btn mx-btn-primary" style="background:#ef4444;border-color:#ef4444" (click)="confirmerRejet()">Confirmer le rejet</button>
+    </div>
+  </div>
+</div>

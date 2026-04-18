@@ -1,3 +1,4 @@
+// src/main/java/com/talenthub/application_service/DTO/LigneFeuilleTempsDTO.java
 package com.talenthub.application_service.DTO;
 
 import com.talenthub.application_service.Entity.LigneFeuilleTemps;
@@ -6,29 +7,43 @@ import java.time.LocalDate;
 
 @Getter
 public class LigneFeuilleTempsDTO {
-    private final Long id;
+
+    private final Long      id;
     private final LocalDate date;
-    private final String categorieCode;
+
+    // ✅ Nouveaux champs — remplacent categorieCode
+    private final Long   projetId;
+    private final String projetNom;
+    private final Long   activiteId;
+    private final String activiteNom;
+    private final Long   clientId;
+    private final String clientNom;
+
     private final String heureDebut;
     private final String heureFin;
-    private final int minutesNormales;
-    private final int minutesSupplementaires;
-    private final int minutesAbsence;
+
+    // ✅ minutesNormales → minutesTravaillees, minutesAbsence supprimé
+    private final int    minutesTravaillees;
+    private final int    minutesSupplementaires;
     private final String commentaire;
-    private final int totalMinutes;
+    private final int    totalMinutes;
+    private final boolean estWeekend;
 
     public LigneFeuilleTempsDTO(LigneFeuilleTemps l) {
-        this.id = l.getId();
-        this.date = l.getDate();
-        this.categorieCode = l.getCategorieCode();
-        this.heureDebut = l.getHeureDebut();
-        this.heureFin = l.getHeureFin();
-        this.minutesNormales = l.getMinutesNormales();
+        this.id                     = l.getId();
+        this.date                   = l.getDate();
+        this.projetId               = l.getProjetId();
+        this.projetNom              = l.getProjetNom();
+        this.activiteId             = l.getActiviteId();
+        this.activiteNom            = l.getActiviteNom();
+        this.clientId               = l.getClientId();
+        this.clientNom              = l.getClientNom();
+        this.heureDebut             = l.getHeureDebut();
+        this.heureFin               = l.getHeureFin();
+        this.minutesTravaillees     = l.getMinutesTravaillees();
         this.minutesSupplementaires = l.getMinutesSupplementaires();
-        this.minutesAbsence = l.getMinutesAbsence();
-        this.commentaire = l.getCommentaire();
-        this.totalMinutes = l.getMinutesNormales()
-                + l.getMinutesSupplementaires()
-                + l.getMinutesAbsence();
+        this.commentaire            = l.getCommentaire();
+        this.totalMinutes           = l.getMinutesTravaillees() + l.getMinutesSupplementaires();
+        this.estWeekend             = l.isEstWeekend();
     }
 }

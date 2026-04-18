@@ -877,3 +877,97 @@
   background: rgba(239,68,68,0.1);
   color: #ef4444;
 }
+
+
+
+
+/* ══════════════════════════════════════════════════════════
+   AJOUTER À LA FIN de layout.component.css
+   Styles sous-menu "Suivi du temps" — MÊME style que .nav-item
+══════════════════════════════════════════════════════════ */
+
+.nav-group { display: flex; flex-direction: column; }
+
+/* ✅ Bouton toggle — copie exacte de .nav-item + border:none */
+.nav-group-btn {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  color: #a8b8d8;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  cursor: pointer;
+  position: relative;
+  white-space: nowrap;
+  overflow: hidden;
+  letter-spacing: 0.7px;
+  background: none;
+  border: none;        /* ← override button default */
+  width: 100%;
+  text-align: left;
+  transition: background-color 0.2s, color 0.2s;
+}
+.nav-group-btn:hover { color: #ffffff; background: rgba(255,255,255,0.07); }
+.nav-group-btn.active { color: #c026d3; font-weight: 600; }
+:root:not(.dark) .nav-group-btn { color: #475569; }
+:root:not(.dark) .nav-group-btn:hover { color: #0f172a; background: rgba(0,0,0,.04); }
+:root:not(.dark) .nav-group-btn.active { color: var(--accent); }
+
+/* Chevron caché en mode collapsed */
+.sidebar.collapsed .nav-group-chevron { display: none; }
+
+/* Sous-menu — fermé par défaut */
+.nav-submenu {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.22s;
+  opacity: 0;
+  padding-left: 36px;   /* aligné sous le texte du bouton parent */
+}
+.nav-submenu-open { max-height: 320px; opacity: 1; }
+
+/* Masquer sous-menu en mode collapsed */
+.sidebar.collapsed .nav-submenu { display: none; }
+
+/* Items du sous-menu */
+.nav-subitem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px 7px 6px;
+  border-radius: 7px;
+  color: #7a8fa8;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 400;
+  transition: background-color 0.14s, color 0.14s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.nav-subitem:hover { color: #e2e8f0; background: rgba(255,255,255,0.06); }
+.nav-subitem.active {
+  color: #c026d3;
+  font-weight: 600;
+  background: rgba(192,38,211,0.1);
+}
+
+/* Icône dans le sous-menu */
+.nav-sub-icon {
+  width: 13px; height: 13px;
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity 0.12s;
+}
+.nav-subitem:hover .nav-sub-icon,
+.nav-subitem.active .nav-sub-icon { opacity: 1; }
+
+/* Light mode */
+:root:not(.dark) .nav-subitem { color: #64748b; }
+:root:not(.dark) .nav-subitem:hover { color: #1e293b; background: rgba(0,0,0,.04); }
+:root:not(.dark) .nav-subitem.active { color: var(--accent); background: rgba(192,38,211,0.07); }

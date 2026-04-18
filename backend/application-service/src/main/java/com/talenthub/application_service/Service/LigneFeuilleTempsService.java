@@ -1,3 +1,4 @@
+// src/main/java/com/talenthub/application_service/Service/LigneFeuilleTempsService.java
 package com.talenthub.application_service.Service;
 
 import com.talenthub.application_service.Entity.LigneFeuilleTemps;
@@ -40,15 +41,20 @@ public class LigneFeuilleTempsService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Ligne feuille de temps non trouvée avec id: " + id));
 
-        // ✅ Noms corrects correspondant à l'entité LigneFeuilleTemps
+        // ✅ Nouveaux champs — categorieCode/minutesNormales/minutesAbsence supprimés
         ligne.setDate(details.getDate());
-        ligne.setCategorieCode(details.getCategorieCode());  // anciennement typeJour
-        ligne.setHeureDebut(details.getHeureDebut());        // anciennement heureArrivee
-        ligne.setHeureFin(details.getHeureFin());            // anciennement heureDepart
-        ligne.setMinutesNormales(details.getMinutesNormales());       // anciennement heuresTravaillees
-        ligne.setMinutesSupplementaires(details.getMinutesSupplementaires()); // anciennement heuresSup
-        ligne.setMinutesAbsence(details.getMinutesAbsence());
+        ligne.setProjetId(details.getProjetId());
+        ligne.setProjetNom(details.getProjetNom());
+        ligne.setActiviteId(details.getActiviteId());
+        ligne.setActiviteNom(details.getActiviteNom());
+        ligne.setClientId(details.getClientId());
+        ligne.setClientNom(details.getClientNom());
+        ligne.setHeureDebut(details.getHeureDebut());
+        ligne.setHeureFin(details.getHeureFin());
+        ligne.setMinutesTravaillees(details.getMinutesTravaillees());
+        ligne.setMinutesSupplementaires(details.getMinutesSupplementaires());
         ligne.setCommentaire(details.getCommentaire());
+        ligne.setEstWeekend(details.isEstWeekend());
 
         return repository.save(ligne);
     }

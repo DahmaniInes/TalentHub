@@ -1,28 +1,40 @@
-export type StatutFT = 'BROUILLON' | 'SOUMISE' | 'VALIDEE' | 'REJETEE';
-export type CategorieFT = 'TRAVAIL' | 'CONGE' | 'MALADIE' | 'FERIE' | 'AUTRE';
+// src/app/shared/models/feuille-temps.model.ts
 
+export type StatutFT = 'BROUILLON' | 'SOUMISE' | 'VALIDEE' | 'REJETEE';
+
+// ─── Ligne (entrée de temps par projet/activité/jour) ───
 export interface LigneFeuilleTemps {
   id?: number;
-  date: string;            // "YYYY-MM-DD"
-  categorieCode: CategorieFT;
-  heureDebut?: string;     // "08:00"
-  heureFin?: string;       // "17:00"
-  minutesNormales: number;
+  date: string;              // "YYYY-MM-DD"
+
+  projetId?: number;
+  projetNom?: string;
+  activiteId?: number;
+  activiteNom?: string;
+  clientId?: number;
+  clientNom?: string;
+
+  heureDebut?: string;       // "08:00"
+  heureFin?: string;         // "17:00"
+
+  minutesTravaillees: number;
   minutesSupplementaires: number;
-  minutesAbsence: number;
+
   commentaire?: string;
-  totalMinutes?: number;   // calculé par le backend
+  estWeekend?: boolean;
 }
 
+// ─── Feuille de temps ───
 export interface FeuilleTemps {
   id: number;
   utilisateurId: number;
-  utilisateurNom: string;
-  semaineDu: string;
-  semaineAu: string;
+  utilisateurNom?: string;
+  semaineDu: string;         // "YYYY-MM-DD" (lundi)
+  semaineAu: string;         // "YYYY-MM-DD" (vendredi ou samedi)
   minutesTravaillees: number;
   minutesSupplementaires: number;
-  minutesAbsence: number;
+  minutesAbsence?: number;
+  heuresTravaillees?: number;
   statut: StatutFT;
   commentaireEmploye?: string;
   commentaireValideur?: string;
@@ -33,14 +45,52 @@ export interface FeuilleTemps {
   lignes: LigneFeuilleTemps[];
 }
 
+// ─── Request ───
+export interface LigneFeuilleTempsRequest {
+  date: string;
+  projetId?: number;
+  projetNom?: string;
+  activiteId?: number;
+  activiteNom?: string;
+  clientId?: number;
+  clientNom?: string;
+  heureDebut?: string;
+  heureFin?: string;
+  minutesTravaillees: number;
+  minutesSupplementaires: number;
+  commentaire?: string;
+  estWeekend?: boolean;
+}
+
 export interface FeuilleTempsRequest {
   utilisateurId: number;
   semaineDu: string;
   semaineAu: string;
-  minutesTravaillees: number;
-  minutesSupplementaires: number;
-  minutesAbsence: number;
+  minutesTravaillees?: number;
+  minutesSupplementaires?: number;
   statut?: string;
   commentaireEmploye?: string;
-  lignes: LigneFeuilleTemps[];
+  lignes: LigneFeuilleTempsRequest[];
+}
+
+// ─── Vue matrice Ma Semaine ───
+export interface MatriceLigne {
+  rowId: string;             // uuid temporaire pour identifier la ligne
+  projetId?: number;
+  projetNom?: string;
+  activiteId?: number;
+  activiteNom?: string;
+  clientId?: number;
+  clientNom?: string;
+  // Jours : lundi(0) → samedi(5)
+  jours: {
+    [dateStr: string]: {    // "YYYY-MM-DD"
+      minutes: number;
+      minutesSupp: number;
+      heureDebut: string;
+      heureFin: string;
+      commentaire: string;
+      estWeekend: boolean;
+    };
+  };
 }

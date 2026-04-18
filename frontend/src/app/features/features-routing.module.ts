@@ -6,7 +6,7 @@ import {DashboardComponent} from './dashboard/dashboard.component';
 import {UserCreationComponent} from './admin/user-creation/user-creation.component';
 import { FeuilleTempsComponent } from './feuille-temps/feuille-temps.component';   // ← Correction ici
 import { DemandeComponent } from './demande/demande.component';   // ← Correction ici
-import { ApprobationFeuilleTempsComponent } from './approbation-feuille-temps/approbation-feuille-temps.component';
+import { ApprobationFeuilleTempsComponent } from './feuille-temps/approbation-feuille-temps/approbation-feuille-temps.component';
 import { ProfilPermissionsComponent } from './admin/profil-permissions/profil-permissions.component';
 
 import { ClientsComponent } from './admin/clients/clients.component';
@@ -21,7 +21,7 @@ const routes: Routes = [
   { path: 'home', component: HomeComponent },
   { path: 'dashboard', component: DashboardComponent },
   { path: 'add-user', component: UserCreationComponent },
-  { path: 'FeuilleTempsComponent', component: FeuilleTempsComponent } ,  // ← Nom correct
+  { path: 'feuille-temps', component: FeuilleTempsComponent } ,  // ← Nom correct
   { path: 'Demande', component: DemandeComponent },   // ← Nom correct
   { path: 'approbations-ft', component: ApprobationFeuilleTempsComponent },
   { path: 'admin/profil-permissions',component: ProfilPermissionsComponent},

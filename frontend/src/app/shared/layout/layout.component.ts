@@ -8,6 +8,7 @@ import { Utilisateur } from '../../shared/models/utilisateur.model';
 import { AppNotification } from '../../shared/models/notification.model';
 import { Subscription } from 'rxjs';
 import { ToastModalComponent } from '../components/toast-modal-component/toast-modal-component.component';
+import { NavigationEnd } from '@angular/router';
 
 @Component({
   selector: 'app-layout',
@@ -23,6 +24,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   sidebarCollapsed = false;
   showUserMenu = false;
   showNotifPanel = false;  // ✅ Panel notifications
+  ftMenuOpen = false;
 
   currentUser = signal<Utilisateur | null>(null);
 
@@ -30,7 +32,6 @@ export class LayoutComponent implements OnInit, OnDestroy {
   private userService      = inject(UserService);
   private router           = inject(Router);
   readonly notifService    = inject(NotificationService); // public pour le template
-
   private sub = new Subscription();
 
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
@@ -48,6 +49,15 @@ export class LayoutComponent implements OnInit, OnDestroy {
       });
     }
     this.loadCurrentUser();
+    if (this.isRouteActive('/feuille-temps')) {
+          this.ftMenuOpen = true;
+       }
+       this.router.events.subscribe(evt => {
+          if (evt instanceof NavigationEnd) {
+            if (evt.url.startsWith('/feuille-temps')) this.ftMenuOpen = true;
+          }
+        });
+
   }
 
   ngOnDestroy(): void {
@@ -169,5 +179,15 @@ export class LayoutComponent implements OnInit, OnDestroy {
     img.style.display = 'none';
     const fallback = img.parentElement?.querySelector('.logo-icon-fallback') as HTMLElement;
     if (fallback) fallback.style.display = 'flex';
+  }
+
+
+
+  toggleFTMenu(): void {
+    this.ftMenuOpen = !this.ftMenuOpen;
+  }
+   
+  isRouteActive(path: string): boolean {
+    return typeof window !== 'undefined' && window.location.pathname.startsWith(path);
   }
 }

@@ -1,28 +1,26 @@
+// src/main/java/com/talenthub/application_service/DTO/LigneFeuilleTempsRequest.java
 package com.talenthub.application_service.DTO;
 
-import lombok.*;
-
+import lombok.Data;
 import java.time.LocalDate;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Data
 public class LigneFeuilleTempsRequest {
-
     private LocalDate date;
 
-    // TRAVAIL | CONGE | MALADIE | FERIE | AUTRE
-    private String categorieCode;
+    private Long   projetId;
+    private String projetNom;
+    private Long   activiteId;
+    private String activiteNom;
+    private Long   clientId;
+    private String clientNom;
 
-    private String heureDebut;   // "08:00"
-    private String heureFin;     // "17:00"
+    private String heureDebut;
+    private String heureFin;
 
-    // ✅ En minutes
-    private int minutesNormales;
+    private int minutesTravaillees;
     private int minutesSupplementaires;
-    private int minutesAbsence;
 
-    private String commentaire;
+    private String  commentaire;
+    private boolean estWeekend;
 }

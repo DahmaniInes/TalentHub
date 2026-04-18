@@ -73,21 +73,92 @@
         </a>
         
         
-        <a routerLink="/FeuilleTempsComponent" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
-          <span class="nav-icon">
-            
-            <svg width="800px" height="800px" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-              <path d="M3.95706 1.45712L1.45706 3.95712L0.0428467 2.54291L2.54285 0.0429077L3.95706 1.45712Z" fill="currentColor"/>
-              <path fill-rule="evenodd" clip-rule="evenodd" d="M14.4999 8.50003C14.4999 9.80523 14.1152 11.0206 13.453 12.0389L15.707 14.2929L14.2928 15.7071L12.1163 13.5307C10.9954 14.449 9.56199 15 7.99986 15C6.43776 15 5.00436 14.449 3.88344 13.5307L1.70701 15.7071L0.2928 14.2929L2.54678 12.0389C1.88457 11.0206 1.49986 9.80525 1.49986 8.50003C1.49986 4.91018 4.41001 2.00003 7.99986 2.00003C11.5897 2.00003 14.4999 4.91018 14.4999 8.50003ZM6.99995 5V9.41421L9.29285 11.7071L10.7071 10.2929L8.99995 8.58579V5H6.99995Z" fill="currentColor"/>
-              <path d="M14.5428 3.95714L12.0428 1.45714L13.457 0.0429222L15.957 2.54292L14.5428 3.95714Z" fill="currentColor"/>
-              </svg>   
-          
-          </span>
-          <span class="nav-label">Feuilles temps</span>
-          <span class="nav-tooltip">Feuilles temps</span>
-        </a>
 
+
+
+
+
+
+
+
+
+<div class="nav-group">
+  <!-- ✅ Même style exact que nav-item : font-weight, opacity, gap, padding -->
+  <button class="nav-item nav-group-btn"
+          [class.active]="isRouteActive('/feuille-temps')"
+          (click)="toggleFTMenu()">
+    <span class="nav-icon">
+      <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.95706 1.45712L1.45706 3.95712L0.0428467 2.54291L2.54285 0.0429077L3.95706 1.45712Z"/>
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M14.4999 8.50003C14.4999 9.80523 14.1152 11.0206 13.453 12.0389L15.707 14.2929L14.2928 15.7071L12.1163 13.5307C10.9954 14.449 9.56199 15 7.99986 15C6.43776 15 5.00436 14.449 3.88344 13.5307L1.70701 15.7071L0.2928 14.2929L2.54678 12.0389C1.88457 11.0206 1.49986 9.80525 1.49986 8.50003C1.49986 4.91018 4.41001 2.00003 7.99986 2.00003C11.5897 2.00003 14.4999 4.91018 14.4999 8.50003ZM6.99995 5V9.41421L9.29285 11.7071L10.7071 10.2929L8.99995 8.58579V5H6.99995Z"/>
+        <path d="M14.5428 3.95714L12.0428 1.45714L13.457 0.0429222L15.957 2.54292L14.5428 3.95714Z"/>
+      </svg>
+    </span>
+    <span class="nav-label">Suivi du temps</span>
+    <svg class="nav-group-chevron"
+         [style.transform]="ftMenuOpen ? 'rotate(180deg)' : 'rotate(0)'"
+         viewBox="0 0 12 12" fill="none"
+         style="width:10px;height:10px;margin-left:auto;flex-shrink:0;transition:transform .22s;opacity:.55">
+      <path d="M2.5 4.5l3.5 3.5 3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span class="nav-tooltip">Suivi du temps</span>
+  </button>
+
+  <!-- Sous-menu animé -->
+  <div class="nav-submenu" [class.nav-submenu-open]="ftMenuOpen">
+
+    <a routerLink="/feuille-temps" [queryParams]="{page:'semaine'}"
+       class="nav-subitem" (click)="closeSidebar()">
+      <svg class="nav-sub-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+        <rect x="1" y="2" width="12" height="11" rx="1.5"/>
+        <path d="M1 6h12M4 1v2.5M10 1v2.5" stroke-linecap="round"/>
+      </svg>
+      <span class="nav-label">Ma semaine</span>
+    </a>
+
+    <a routerLink="/feuille-temps" [queryParams]="{page:'entrees'}"
+       class="nav-subitem" (click)="closeSidebar()">
+      <svg class="nav-sub-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+        <path d="M2 3.5h10M2 7h10M2 10.5h6" stroke-linecap="round"/>
+      </svg>
+      <span class="nav-label">Mes entrées</span>
+    </a>
+
+    <a routerLink="/feuille-temps" [queryParams]="{page:'calendrier'}"
+       class="nav-subitem" (click)="closeSidebar()">
+      <svg class="nav-sub-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+        <circle cx="7" cy="7" r="6"/>
+        <path d="M7 3.5V7l2.5 2" stroke-linecap="round"/>
+      </svg>
+      <span class="nav-label">Calendrier</span>
+    </a>
+
+    <a routerLink="/feuille-temps" [queryParams]="{page:'fiches'}"
+       class="nav-subitem" (click)="closeSidebar()">
+      <svg class="nav-sub-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+        <path d="M2 1.5h10a.5.5 0 01.5.5v10a.5.5 0 01-.5.5H2a.5.5 0 01-.5-.5V2a.5.5 0 01.5-.5z"/>
+        <path d="M4 5h6M4 7.5h6M4 10h3.5" stroke-linecap="round"/>
+      </svg>
+      <span class="nav-label">Fiches de temps</span>
+    </a>
+
+    <a routerLink="/feuille-temps" [queryParams]="{page:'centre'}"
+       class="nav-subitem" (click)="closeSidebar()">
+      <svg class="nav-sub-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+        <path d="M7 1L1.5 4v6L7 13l5.5-3V4L7 1z"/>
+        <path d="M7 1v12M1.5 4l5.5 3 5.5-3" stroke-linecap="round"/>
+      </svg>
+      <span class="nav-label">Centre de données</span>
+    </a>
+
+  </div>
+</div>
        
+
+
+
+
+
 
 
         <a routerLink="/add-user" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">

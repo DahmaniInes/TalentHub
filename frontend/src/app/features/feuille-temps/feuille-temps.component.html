@@ -1,407 +1,45 @@
-<!-- feuille-temps.component.html -->
-<div class="min-h-screen p-6" style="background: var(--bg-primary)">
-  <div class="max-w-6xl mx-auto">
+<!-- feuille-temps.component.html — NOUVEAU (remplace l'ancien) -->
+<div style="display:flex;flex-direction:column;height:100%">
 
-    <!-- ═══ VUE LISTE ═══ -->
-    <ng-container *ngIf="activeView() === 'liste'">
+  <!-- ── Navigation 4 onglets ── -->
+  <nav class="ft-nav-tabs">
+    <button class="ft-nav-tab" [class.active]="page()==='semaine'" (click)="page.set('semaine')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:15px;height:15px">
+        <rect x="1" y="2" width="14" height="13" rx="2"/>
+        <path d="M1 7h14M5 1v3M11 1v3" stroke-linecap="round"/>
+      </svg>
+      Ma semaine
+    </button>
 
-      <!-- Header -->
-      <div class="ft-page-header">
-        <div>
-          <h1 class="ft-page-title">Feuilles de temps</h1>
-          <p class="ft-page-subtitle">{{ currentUser()?.nomComplet || '' }} — Suivi hebdomadaire</p>
-        </div>
-        <div class="ft-header-actions">
-          <button *ngIf="estApprobateur()" class="fc-btn fc-btn-secondary" (click)="ouvrirApprobations()">
-            <svg viewBox="0 0 16 16" fill="none" style="width:15px;height:15px">
-              <path d="M2 8l4 4 8-8" stroke="currentColor" stroke-width="1.8"
-                    stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Approbations
-            <span *ngIf="badgeApprobations() > 0" class="ft-appro-badge">{{ badgeApprobations() }}</span>
-          </button>
-          <button class="fc-btn fc-btn-primary" (click)="ouvrirNouvelleSaisie()">
-            <svg viewBox="0 0 16 16" fill="none" style="width:15px;height:15px">
-              <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            Nouvelle feuille
-          </button>
-        </div>
-      </div>
+    <button class="ft-nav-tab" [class.active]="page()==='entrees'" (click)="page.set('entrees')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:15px;height:15px">
+        <path d="M2 4h12M2 8h12M2 12h8" stroke-linecap="round"/>
+      </svg>
+      Mes entrées
+    </button>
 
-      <!-- Stat Cards -->
-      <div class="ft-stats-grid">
-        <div class="ft-stat-card ft-stat-total">
-          <div class="ft-stat-icon-wrap">
-            <svg viewBox="0 0 20 20" fill="currentColor" style="width:20px;height:20px">
-              <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
-            </svg>
-          </div>
-          <div>
-            <p class="ft-stat-label">Total feuilles</p>
-            <p class="ft-stat-value">{{ feuilles().length }}</p>
-          </div>
-        </div>
+    <button class="ft-nav-tab" [class.active]="page()==='calendrier'" (click)="page.set('calendrier')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:15px;height:15px">
+        <circle cx="8" cy="8" r="7"/>
+        <path d="M8 4v4l3 2" stroke-linecap="round"/>
+      </svg>
+      Calendrier
+    </button>
 
-        <div class="ft-stat-card ft-stat-heures">
-          <div class="ft-stat-icon-wrap">
-            <svg viewBox="0 0 20 20" fill="currentColor" style="width:20px;height:20px">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
-            </svg>
-          </div>
-          <div>
-            <p class="ft-stat-label">Heures totales</p>
-            <p class="ft-stat-value">{{ formatMin(totalMinutesTravailles()) }}</p>
-          </div>
-        </div>
+    <button class="ft-nav-tab" [class.active]="page()==='fiches'" (click)="page.set('fiches')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:15px;height:15px">
+        <path d="M3 2h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/>
+        <path d="M5 6h6M5 9h6M5 12h3" stroke-linecap="round"/>
+      </svg>
+      Fiches de temps
+    </button>
+  </nav>
 
-        <div class="ft-stat-card ft-stat-attente">
-          <div class="ft-stat-icon-wrap">
-            <svg viewBox="0 0 20 20" fill="currentColor" style="width:20px;height:20px">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-5a1 1 0 112 0v1a1 1 0 11-2 0v-1zm0-8a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-.586l-.707-.707V5z" clip-rule="evenodd"/>
-            </svg>
-          </div>
-          <div>
-            <p class="ft-stat-label">En attente</p>
-            <p class="ft-stat-value">{{ countSoumises() }}</p>
-          </div>
-        </div>
-
-        <div class="ft-stat-card ft-stat-validee">
-          <div class="ft-stat-icon-wrap">
-            <svg viewBox="0 0 20 20" fill="currentColor" style="width:20px;height:20px">
-              <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-            </svg>
-          </div>
-          <div>
-            <p class="ft-stat-label">Validées</p>
-            <p class="ft-stat-value">{{ countValidees() }}</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Filtres -->
-      <div class="ft-filtres-bar">
-        <button class="ft-filtre-pill" [class.active]="filterStatut() === 'TOUS'"
-                (click)="filterStatut.set('TOUS')">
-          Toutes <span class="ft-filtre-count">{{ feuilles().length }}</span>
-        </button>
-        <button class="ft-filtre-pill" [class.active]="filterStatut() === 'BROUILLON'"
-                (click)="filterStatut.set('BROUILLON')">
-          ✏️ Brouillons <span class="ft-filtre-count">{{ countByStatut('BROUILLON') }}</span>
-        </button>
-        <button class="ft-filtre-pill" [class.active]="filterStatut() === 'SOUMISE'"
-                (click)="filterStatut.set('SOUMISE')">
-          ⏳ Soumises <span class="ft-filtre-count">{{ countByStatut('SOUMISE') }}</span>
-        </button>
-        <button class="ft-filtre-pill" [class.active]="filterStatut() === 'VALIDEE'"
-                (click)="filterStatut.set('VALIDEE')">
-          ✅ Validées <span class="ft-filtre-count">{{ countByStatut('VALIDEE') }}</span>
-        </button>
-        <button class="ft-filtre-pill" [class.active]="filterStatut() === 'REJETEE'"
-                (click)="filterStatut.set('REJETEE')">
-          ❌ Rejetées <span class="ft-filtre-count">{{ countByStatut('REJETEE') }}</span>
-        </button>
-      </div>
-
-      <!-- Loading -->
-      <div *ngIf="loading() && feuilles().length === 0" class="ft-empty-state">
-        <div class="fc-spinner" style="width:32px;height:32px;border-width:3px;
-             border-color: rgba(0,0,0,0.1); border-top-color: var(--accent)"></div>
-        <p>Chargement...</p>
-      </div>
-
-      <!-- Vide -->
-      <div *ngIf="!loading() && filteredFeuilles().length === 0" class="ft-empty-state">
-        <div class="ft-empty-icon">📋</div>
-        <p class="ft-empty-title">Aucune feuille de temps</p>
-        <p class="ft-empty-sub">Commencez par saisir vos heures de la semaine.</p>
-        <button class="fc-btn fc-btn-primary mt-4" (click)="ouvrirNouvelleSaisie()">
-          Saisir mes heures
-        </button>
-      </div>
-
-      <!-- Liste feuilles -->
-      <div class="ft-cards-list" *ngIf="filteredFeuilles().length > 0">
-        <div *ngFor="let ft of filteredFeuilles()"
-             class="ft-history-card"
-             [class.ft-hcard-validee]="ft.statut === 'VALIDEE'"
-             [class.ft-hcard-rejetee]="ft.statut === 'REJETEE'"
-             [class.ft-hcard-soumise]="ft.statut === 'SOUMISE'"
-             [class.ft-hcard-brouillon]="ft.statut === 'BROUILLON'">
-
-          <!-- Bande colorée latérale -->
-          <div class="ft-hcard-stripe ft-stripe-{{ statutColor(ft.statut) }}"></div>
-
-          <div class="ft-hcard-body">
-            <!-- Ligne 1 : semaine + badge statut + actions -->
-            <div class="ft-hcard-top">
-              <div class="ft-hcard-left">
-                <div class="ft-week-pill">
-                  <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
-                    <rect x="1" y="2" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
-                    <path d="M1 6h12M4.5 1v2.5M9.5 1v2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-                  </svg>
-                  <span>{{ ft.semaineDu | date:'dd/MM' }} – {{ ft.semaineAu | date:'dd/MM/yyyy' }}</span>
-                </div>
-                <span class="ft-status-badge ft-status-{{ statutColor(ft.statut) }}">
-                  {{ statutIcon(ft.statut) }} {{ statutLabel(ft.statut) }}
-                </span>
-              </div>
-
-              <div class="ft-hcard-actions">
-                <button *ngIf="peutSoumettre(ft)" class="ft-action-btn ft-action-submit"
-                        (click)="$event.stopPropagation(); soumettre(ft)" title="Soumettre">
-                  <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
-                    <path d="M7 2l5 5-5 5M2 7h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  Soumettre
-                </button>
-
-                <button *ngIf="peutAnnulerSoumission(ft)" class="ft-action-btn ft-action-cancel"
-                        (click)="$event.stopPropagation(); annulerSoumission(ft)" title="Annuler la soumission">
-                  <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
-                    <path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-                  </svg>
-                </button>
-
-                <button *ngIf="peutModifier(ft)" class="ft-action-btn ft-action-edit"
-                        (click)="$event.stopPropagation(); ouvrirEditionSaisie(ft)" title="Modifier">
-                  <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
-                    <path d="M9 2l3 3-7 7H2V9l7-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
-                  </svg>
-                </button>
-
-                <button *ngIf="peutSupprimer(ft)" class="ft-action-btn ft-action-delete"
-                        (click)="$event.stopPropagation(); delete(ft)" title="Supprimer">
-                  <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
-                    <path d="M2 3h10M5 3V2h4v1M4 3l.5 8h5L10 3" stroke="currentColor"
-                          stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <!-- Ligne 2 : chips heures -->
-            <div class="ft-hcard-chips">
-              <div class="ft-chip ft-chip-normal">
-                <svg viewBox="0 0 12 12" fill="none" style="width:11px;height:11px">
-                  <circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.2"/>
-                  <path d="M6 3.5v2.5l1.5 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-                </svg>
-                {{ formatMin(ft.minutesTravaillees) }}
-              </div>
-              <div *ngIf="ft.minutesSupplementaires > 0" class="ft-chip ft-chip-supp">
-                +{{ formatMin(ft.minutesSupplementaires) }} suppl.
-              </div>
-              <div *ngIf="ft.minutesAbsence > 0" class="ft-chip ft-chip-abs">
-                {{ formatMin(ft.minutesAbsence) }} abs.
-              </div>
-            </div>
-
-            <!-- Ligne 3 : progression -->
-            <div class="ft-progress-row" *ngIf="ft.minutesTravaillees > 0">
-              <div class="ft-progress-track">
-                <div class="ft-progress-fill ft-progress-{{ statutColor(ft.statut) }}"
-                     [style.width.%]="getPct(ft.minutesTravaillees, 2400)"></div>
-              </div>
-              <span class="ft-progress-pct">{{ getPct(ft.minutesTravaillees, 2400) }}% de 40h</span>
-            </div>
-
-            <!-- Ligne 4 : lignes catégories -->
-            <div *ngIf="ft.lignes && ft.lignes.length > 0" class="ft-hcard-lignes">
-              <div *ngFor="let l of ft.lignes" class="ft-ligne-chip"
-                   [style.borderColor]="getCatCouleur(l.categorieCode) + '60'"
-                   [style.background]="getCatCouleur(l.categorieCode) + '10'">
-                <span class="ft-ligne-dot" [style.background]="getCatCouleur(l.categorieCode)"></span>
-                <span style="font-size:10px; color: var(--text-muted)">{{ formatDate(l.date) }}</span>
-                <span style="font-size:10px; font-weight:600" [style.color]="getCatCouleur(l.categorieCode)">
-                  {{ getCatLabel(l.categorieCode) }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Commentaire valideur -->
-            <div *ngIf="ft.commentaireValideur" class="ft-hcard-comment"
-                 [class.ft-comment-ok]="ft.statut === 'VALIDEE'"
-                 [class.ft-comment-ko]="ft.statut === 'REJETEE'">
-              <span>{{ ft.statut === 'VALIDEE' ? '✓' : '✗' }}</span>
-              <span>{{ ft.commentaireValideur }}</span>
-              <span *ngIf="ft.dateValidation" class="ft-comment-date">
-                — {{ ft.dateValidation | date:'dd/MM HH:mm' }}
-              </span>
-            </div>
-
-            <!-- Bannière read-only -->
-            <div *ngIf="ft.statut === 'SOUMISE'" class="ft-readonly-banner ft-banner-blue">
-              🔒 En cours de validation — modifications non autorisées
-            </div>
-            <div *ngIf="ft.statut === 'VALIDEE'" class="ft-readonly-banner ft-banner-green">
-              ✅ Validée — feuille clôturée
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </ng-container>
-
-    <!-- ═══ VUE SAISIE ═══ -->
-    <ng-container *ngIf="activeView() === 'saisie'">
-
-      <div class="ft-saisie-header">
-        <button class="fc-btn fc-btn-secondary fc-btn-sm" (click)="retourListe()">
-          <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
-            <path d="M9 2L5 7l4 5" stroke="currentColor" stroke-width="1.6"
-                  stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          Retour
-        </button>
-        <div>
-          <h1 class="ft-page-title">
-            {{ editingFeuille() ? 'Modifier la feuille' : 'Nouvelle feuille de temps' }}
-          </h1>
-          <p class="ft-page-subtitle">{{ currentUser()?.nomComplet || '' }}</p>
-        </div>
-      </div>
-
-      <div class="ft-semaine-selector">
-        <label class="fc-label">Semaine du :</label>
-        <input type="date" [value]="semaineCourante()"
-               (change)="onSemaineChange($event)"
-               class="fc-input" style="width: auto; min-width: 160px">
-        <span style="color: var(--text-muted); font-size: 0.82rem">
-          {{ semaineCourante() | date:'dd/MM' }} →
-          {{ semaineCourante() | date:'dd/MM' }}
-        </span>
-      </div>
-
-      <div class="ft-tableau-wrap">
-        <table class="ft-tableau">
-          <thead>
-            <tr>
-              <th class="ft-th ft-th-date">Date</th>
-              <th class="ft-th ft-th-cat">Catégorie</th>
-              <th class="ft-th">Début</th>
-              <th class="ft-th">Fin</th>
-              <th class="ft-th ft-th-min">Normales</th>
-              <th class="ft-th ft-th-min">Suppl.</th>
-              <th class="ft-th ft-th-min">Absence</th>
-              <th class="ft-th ft-th-total">Total</th>
-              <th class="ft-th">Note</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let ligne of lignesSaisie(); let i = index" class="ft-tr">
-              <td class="ft-td">
-                <div class="ft-date-cell">
-                  <span class="ft-jour">{{ jourDeSemaine(ligne.date) }}</span>
-                  <span class="ft-date-num">{{ formatDate(ligne.date) }}</span>
-                </div>
-              </td>
-              <td class="ft-td">
-                <select class="ft-select-cat"
-                        [value]="ligne.categorieCode"
-                        (change)="onSelectChange($event, i, 'categorieCode')"
-                        [style.borderColor]="getCatCouleur(ligne.categorieCode)"
-                        [style.color]="getCatCouleur(ligne.categorieCode)">
-                  <option *ngFor="let cat of categories" [value]="cat.code"
-                          [style.color]="cat.couleur">
-                    {{ cat.icon }} {{ cat.label }}
-                  </option>
-                </select>
-              </td>
-              <td class="ft-td">
-                <input type="time" [value]="ligne.heureDebut"
-                       [disabled]="ligne.categorieCode !== 'TRAVAIL' && ligne.categorieCode !== 'AUTRE'"
-                       (change)="onInputChange($event, i, 'heureDebut')"
-                       class="ft-input-time"
-                       [class.ft-disabled]="ligne.categorieCode !== 'TRAVAIL' && ligne.categorieCode !== 'AUTRE'">
-              </td>
-              <td class="ft-td">
-                <input type="time" [value]="ligne.heureFin"
-                       [disabled]="ligne.categorieCode !== 'TRAVAIL' && ligne.categorieCode !== 'AUTRE'"
-                       (change)="onInputChange($event, i, 'heureFin')"
-                       class="ft-input-time"
-                       [class.ft-disabled]="ligne.categorieCode !== 'TRAVAIL' && ligne.categorieCode !== 'AUTRE'">
-              </td>
-              <td class="ft-td">
-                <div class="ft-min-cell">
-                  <input type="number" min="0" max="960" step="15" [value]="ligne.minutesNormales"
-                         (change)="onInputChange($event, i, 'minutesNormales', true)"
-                         class="ft-input-num">
-                  <span class="ft-min-label">{{ formatMin(ligne.minutesNormales) }}</span>
-                </div>
-              </td>
-              <td class="ft-td">
-                <div class="ft-min-cell">
-                  <input type="number" min="0" max="480" step="15"
-                         [value]="ligne.minutesSupplementaires"
-                         (change)="onInputChange($event, i, 'minutesSupplementaires', true)"
-                         class="ft-input-num ft-input-supp">
-                  <span class="ft-min-label" *ngIf="ligne.minutesSupplementaires > 0"
-                        style="color: #10b981">
-                    {{ formatMin(ligne.minutesSupplementaires) }}
-                  </span>
-                </div>
-              </td>
-              <td class="ft-td">
-                <div class="ft-min-cell">
-                  <input type="number" min="0" max="960" step="15" [value]="ligne.minutesAbsence"
-                         (change)="onInputChange($event, i, 'minutesAbsence', true)"
-                         class="ft-input-num ft-input-absence">
-                  <span class="ft-min-label" *ngIf="ligne.minutesAbsence > 0"
-                        style="color: #ef4444">
-                    {{ formatMin(ligne.minutesAbsence) }}
-                  </span>
-                </div>
-              </td>
-              <td class="ft-td ft-td-total">
-                <span class="ft-total-badge">{{ formatMin(totalLigne(ligne)) }}</span>
-              </td>
-              <td class="ft-td">
-                <input type="text" [value]="ligne.commentaire || ''"
-                       (change)="onInputChange($event, i, 'commentaire')"
-                       placeholder="Note..." class="ft-input-note">
-              </td>
-            </tr>
-          </tbody>
-          <tfoot>
-            <tr class="ft-tr-total">
-              <td colspan="4" class="ft-td ft-tfoot-label">Total semaine</td>
-              <td class="ft-td ft-tfoot-val">{{ formatMin(totalNormalesSemaine) }}</td>
-              <td class="ft-td ft-tfoot-val" style="color: #10b981">{{ formatMin(totalSuppSemaine) }}</td>
-              <td class="ft-td ft-tfoot-val" style="color: #ef4444">{{ formatMin(totalAbsenceSemaine) }}</td>
-              <td class="ft-td ft-tfoot-total">{{ formatMin(totalSemaineMinutes()) }}</td>
-              <td class="ft-td"></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-
-      <div class="fc-group mt-4">
-        <label class="fc-label">Commentaire général</label>
-        <textarea [(ngModel)]="commentaireGlobal" rows="2"
-                  class="fc-textarea" placeholder="Remarques pour cette semaine..."></textarea>
-      </div>
-
-      <div class="ft-saisie-actions">
-        <button class="fc-btn fc-btn-secondary" (click)="retourListe()">Annuler</button>
-        <div class="flex gap-3">
-          <button class="fc-btn fc-btn-ghost" (click)="sauvegarder(false)" [disabled]="loading()">
-            <div class="fc-spinner" *ngIf="loading()"></div>
-            💾 Brouillon
-          </button>
-          <button class="fc-btn fc-btn-primary" (click)="sauvegarder(true)" [disabled]="loading()">
-            <div class="fc-spinner" *ngIf="loading()"></div>
-            <svg *ngIf="!loading()" viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
-              <path d="M2 7l4 4 6-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Soumettre pour validation
-          </button>
-        </div>
-      </div>
-
-    </ng-container>
-
+  <!-- ── Contenu de la page active ── -->
+  <div style="flex:1;overflow:auto">
+    <app-ma-semaine      *ngIf="page()==='semaine'"></app-ma-semaine>
+    <app-mes-entrees     *ngIf="page()==='entrees'"></app-mes-entrees>
+    <app-calendrier-ft   *ngIf="page()==='calendrier'"></app-calendrier-ft>
+    <app-fiches-de-temps *ngIf="page()==='fiches'"></app-fiches-de-temps>
   </div>
 </div>

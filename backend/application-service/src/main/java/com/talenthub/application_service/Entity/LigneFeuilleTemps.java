@@ -1,3 +1,4 @@
+// src/main/java/com/talenthub/application_service/Entity/LigneFeuilleTemps.java
 package com.talenthub.application_service.Entity;
 
 import jakarta.persistence.*;
@@ -6,7 +7,11 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "lignes_feuille_temps")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class LigneFeuilleTemps {
 
     @Id
@@ -20,30 +25,46 @@ public class LigneFeuilleTemps {
     @Column(nullable = false)
     private LocalDate date;
 
-    // Référence vers CategorieEntree du nomenclature-service
-    // TRAVAIL | CONGE | MALADIE | FERIE | AUTRE
-    @Column(name = "categorie_code", nullable = false, length = 50)
-    private String categorieCode;
+    // ─── Référence projet/activité (remplace categorieCode) ───
+    @Column(name = "projet_id")
+    private Long projetId;
 
+    @Column(name = "projet_nom", length = 200)
+    private String projetNom;
+
+    @Column(name = "activite_id")
+    private Long activiteId;
+
+    @Column(name = "activite_nom", length = 200)
+    private String activiteNom;
+
+    @Column(name = "client_id")
+    private Long clientId;
+
+    @Column(name = "client_nom", length = 200)
+    private String clientNom;
+
+    // ─── Horaires ───
     @Column(name = "heure_debut", length = 10)
-    private String heureDebut; // "08:00"
+    private String heureDebut;   // "08:00"
 
     @Column(name = "heure_fin", length = 10)
-    private String heureFin;   // "17:00"
+    private String heureFin;     // "17:00"
 
-    // Stockage en minutes
-    @Column(name = "minutes_normales")
+    // ─── Durée en minutes ───
+    @Column(name = "minutes_travaillees")
     @Builder.Default
-    private int minutesNormales = 0;
+    private int minutesTravaillees = 0;
 
     @Column(name = "minutes_supplementaires")
     @Builder.Default
     private int minutesSupplementaires = 0;
 
-    @Column(name = "minutes_absence")
-    @Builder.Default
-    private int minutesAbsence = 0;
-
-    @Column(length = 255)
+    @Column(length = 500)
     private String commentaire;
+
+    // ─── Weekend flag ───
+    @Column(name = "est_weekend")
+    @Builder.Default
+    private boolean estWeekend = false;
 }

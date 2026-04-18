@@ -1,0 +1,173 @@
+/* ma-semaine.component.css */
+
+.ms-page { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; min-height: 100%; }
+
+/* ── Header ── */
+.ms-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+
+.ms-week-nav { display: flex; align-items: center; gap: 10px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 6px 10px; }
+
+.ms-nav-arrow { width: 28px; height: 28px; border-radius: 7px; border: none; background: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; transition: background .12s, color .12s; }
+.ms-nav-arrow:hover { background: var(--bg-hover); color: var(--text-primary); }
+.ms-nav-arrow svg { width: 12px; height: 12px; }
+
+.ms-week-info { display: flex; flex-direction: column; align-items: center; min-width: 160px; }
+.ms-week-range { font-size: .86rem; font-weight: 700; color: var(--text-primary); }
+.ms-week-total { font-size: .65rem; color: var(--accent); font-weight: 600; margin-top: 1px; }
+
+/* Statut */
+.ms-statut { font-size: .7rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; border: 1px solid; }
+.ms-statut-BROUILLON { background: rgba(100,116,139,.1); color: #64748b; border-color: rgba(100,116,139,.2); }
+.ms-statut-SOUMISE   { background: rgba(59,130,246,.1);  color: #3b82f6; border-color: rgba(59,130,246,.2); }
+.ms-statut-VALIDEE   { background: rgba(16,185,129,.1);  color: #10b981; border-color: rgba(16,185,129,.2); }
+.ms-statut-REJETEE   { background: rgba(239,68,68,.1);   color: #ef4444; border-color: rgba(239,68,68,.2); }
+
+/* Bannières */
+.ms-banner { padding: 9px 14px; border-radius: 8px; font-size: .76rem; font-weight: 500; border: 1px solid; }
+.ms-banner-blue  { background: rgba(59,130,246,.08);  color: #3b82f6; border-color: rgba(59,130,246,.2); }
+.ms-banner-green { background: rgba(16,185,129,.08);  color: #10b981; border-color: rgba(16,185,129,.2); }
+.ms-banner-red   { background: rgba(239,68,68,.08);   color: #ef4444; border-color: rgba(239,68,68,.2); }
+
+/* Loading */
+.ms-loading { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 60px; color: var(--text-muted); }
+.ms-spinner { width: 18px; height: 18px; border: 2px solid var(--border-color); border-top-color: var(--accent); border-radius: 50%; animation: msSpin .65s linear infinite; }
+@keyframes msSpin { to { transform: rotate(360deg); } }
+
+/* ── Carte tableau ── */
+.ms-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; flex: 1; }
+.ms-scroll { overflow-x: auto; }
+
+/* ── Tableau ── */
+.ms-table { width: 100%; border-collapse: collapse; font-size: .79rem; min-width: 700px; }
+
+/* En-têtes */
+.ms-th-col {
+  background: var(--bg-hover); border-bottom: 2px solid var(--border-color);
+  padding: 10px 10px; text-align: left; font-size: .63rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted);
+  white-space: nowrap;
+}
+.ms-th-projet  { min-width: 170px; width: 190px; }
+.ms-th-act     { min-width: 150px; width: 170px; border-right: 1px solid var(--border-color); }
+.ms-th-jour    { min-width: 70px; width: 78px; padding: 0; background: var(--bg-hover); border-bottom: 2px solid var(--border-color); border-left: 1px solid var(--border-color); text-align: center; }
+.ms-th-jour.ms-we { background: rgba(148,163,184,.08); }
+.ms-th-total   { min-width: 58px; width: 65px; background: var(--bg-hover); border-bottom: 2px solid var(--border-color); border-left: 2px solid var(--border-color); text-align: center; font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); padding: 10px 4px; }
+
+.ms-jour-head { display: flex; flex-direction: column; align-items: center; padding: 7px 4px 3px; gap: 2px; }
+.ms-jour-nom  { font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); }
+.ms-jour-num  { font-size: .8rem; font-weight: 800; color: var(--text-secondary); line-height: 1; padding: 2px 6px; border-radius: 50%; }
+.ms-jour-num.ms-today { background: var(--accent); color: white; }
+.ms-jour-col-total { font-size: .58rem; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 1px 5px; border-radius: 3px; margin: 2px auto 5px; display: inline-block; }
+
+/* Lignes */
+.ms-table tbody tr { border-bottom: 1px solid var(--border-color); }
+.ms-table tbody tr:last-child { border-bottom: none; }
+.ms-table tbody tr:hover { background: rgba(0,0,0,.01); }
+.dark .ms-table tbody tr:hover { background: rgba(255,255,255,.01); }
+
+/* Cellules projet/activité */
+.ms-td-col { padding: 7px 8px; vertical-align: middle; background: var(--bg-card); }
+.ms-td-act { border-right: 1px solid var(--border-color); }
+
+.ms-select {
+  width: 100%; border: 1px solid var(--border-color); border-radius: 6px;
+  padding: 5px 7px; font-size: .75rem; background: var(--bg-input);
+  color: var(--text-primary); font-family: inherit; outline: none; cursor: pointer;
+  transition: border-color .12s;
+}
+.ms-select:focus { border-color: var(--accent); }
+.ms-select:disabled { opacity: .5; cursor: default; }
+.ms-client { display: block; font-size: .6rem; color: var(--text-muted); margin-top: 3px; }
+
+/* Cellules jours */
+.ms-td-jour { padding: 5px 3px; border-left: 1px solid var(--border-color); text-align: center; vertical-align: middle; }
+.ms-td-jour.ms-we { background: rgba(148,163,184,.04); }
+
+.ms-cell { display: flex; align-items: center; gap: 2px; justify-content: center; }
+
+/* ✅ Input durée — 0:00 initial */
+.ms-input {
+  width: 36px; border: none;
+  border-bottom: 1.5px solid var(--border-color);
+  background: transparent; text-align: center;
+  font-family: 'Courier New', monospace; font-size: .77rem; font-weight: 600;
+  color: var(--text-muted); padding: 2px 1px 1px; outline: none;
+  transition: border-color .12s, color .12s;
+}
+.ms-input:focus { border-bottom-color: var(--accent); color: var(--text-primary); }
+.ms-input:disabled { cursor: default; opacity: .4; }
+.ms-input.ms-we-input { background: rgba(148,163,184,.04); }
+.ms-input.ms-has-val  { color: var(--text-primary); border-bottom-color: var(--accent); }
+.ms-input::placeholder { color: var(--text-muted); opacity: .45; font-size: .72rem; }
+
+/* ✅ Bouton commentaire bulle */
+.ms-comment-btn {
+  width: 15px; height: 15px; border: none; background: none; cursor: pointer;
+  color: var(--text-muted); display: flex; align-items: center; justify-content: center;
+  border-radius: 3px; padding: 0; flex-shrink: 0; transition: color .12s, background .12s;
+}
+.ms-comment-btn svg { width: 9px; height: 9px; }
+.ms-comment-btn:hover { color: var(--accent); background: var(--accent-soft); }
+.ms-comment-btn.ms-has-comment { color: var(--accent); }
+
+/* Total ligne */
+.ms-td-total { padding: 5px 6px; border-left: 2px solid var(--border-color); text-align: center; vertical-align: middle; }
+.ms-row-total { font-size: .69rem; color: var(--text-muted); font-weight: 500; }
+.ms-row-total-ok { color: var(--accent); font-weight: 700; }
+
+/* Footer total */
+.ms-tfoot { background: var(--bg-hover); border-top: 2px solid var(--border-color); }
+.ms-tfoot-label { padding: 9px 10px; font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); text-align: right; }
+.ms-tfoot-val { padding: 9px 3px; text-align: center; font-size: .72rem; font-weight: 700; color: var(--text-primary); border-left: 1px solid var(--border-color); }
+.ms-tfoot-val.ms-we { background: rgba(148,163,184,.05); }
+.ms-tfoot-empty { color: var(--text-muted); font-weight: 400; }
+.ms-tfoot-grand { padding: 9px 6px; text-align: center; font-size: .8rem; font-weight: 800; color: var(--accent); border-left: 2px solid var(--border-color); }
+
+/* ── Barre actions ── */
+.ms-actions {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-top: 1px solid var(--border-color);
+  background: var(--bg-hover); flex-wrap: wrap; gap: 8px;
+}
+.ms-actions-left, .ms-actions-right { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+
+.ms-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 13px; border-radius: 7px; font-size: .74rem; font-weight: 600;
+  cursor: pointer; border: 1px solid transparent; font-family: inherit;
+  white-space: nowrap; transition: all .14s;
+}
+.ms-btn:disabled { opacity: .45; cursor: not-allowed; }
+.ms-btn svg { width: 11px; height: 11px; flex-shrink: 0; }
+
+.ms-btn-add    { background: var(--accent-soft); color: var(--accent); border-color: rgba(192,38,211,.2); }
+.ms-btn-add:hover:not(:disabled) { background: var(--accent); color: white; }
+.ms-btn-remove { background: rgba(239,68,68,.07); color: #ef4444; border-color: rgba(239,68,68,.15); }
+.ms-btn-remove:hover:not(:disabled) { background: rgba(239,68,68,.15); }
+.ms-btn-reset  { background: var(--bg-card); color: var(--text-secondary); border-color: var(--border-color); }
+.ms-btn-reset:hover:not(:disabled) { background: var(--bg-hover); }
+.ms-btn-ghost  { background: var(--bg-card); color: var(--text-secondary); border-color: var(--border-color); }
+.ms-btn-ghost:hover:not(:disabled) { background: var(--bg-hover); }
+.ms-btn-save   { background: rgba(16,185,129,.1); color: #10b981; border-color: rgba(16,185,129,.2); }
+.ms-btn-save:hover:not(:disabled) { background: #10b981; color: white; }
+.ms-btn-submit { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: white; border: none; box-shadow: 0 2px 8px var(--accent-soft); }
+.ms-btn-submit:hover:not(:disabled) { opacity: .88; }
+
+/* ── Modal commentaire ── */
+.ms-modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.4); backdrop-filter: blur(4px); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; animation: msFadeIn .15s ease; }
+@keyframes msFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.ms-modal { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; width: 360px; max-width: 100%; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.2); animation: msModalIn .2s cubic-bezier(.34,1.56,.64,1); }
+@keyframes msModalIn { from { opacity:0; transform:scale(.93) translateY(8px); } to { opacity:1; transform:scale(1) translateY(0); } }
+
+.ms-modal-head { display: flex; align-items: center; gap: 8px; padding: 12px 14px 10px; border-bottom: 1px solid var(--border-color); font-size: .82rem; font-weight: 700; color: var(--text-primary); }
+.ms-modal-head span { flex: 1; }
+.ms-modal-x { width: 22px; height: 22px; border-radius: 5px; border: none; background: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; }
+.ms-modal-x:hover { background: var(--bg-hover); }
+.ms-modal-x svg { width: 10px; height: 10px; }
+.ms-modal-body { padding: 12px 14px; }
+.ms-modal-area { width: 100%; border: 1px solid var(--border-color); border-radius: 7px; padding: 8px 10px; font-size: .78rem; background: var(--bg-input); color: var(--text-primary); font-family: inherit; outline: none; resize: vertical; min-height: 75px; transition: border-color .12s; }
+.ms-modal-area:focus { border-color: var(--accent); }
+.ms-modal-foot { display: flex; gap: 8px; justify-content: flex-end; padding: 9px 14px; border-top: 1px solid var(--border-color); background: var(--bg-hover); }
+
+.ms-spin { width: 11px; height: 11px; border: 2px solid rgba(255,255,255,.3); border-top-color: white; border-radius: 50%; animation: msSpin .65s linear infinite; }

@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+/* À ajouter dans styles.css */
+@import './app/features/feuille-temps/feuille-temps-pages.css';
 /* ============================================================
    1. CSS VARIABLES GLOBALES — Light & Dark
    Utilisées par TOUS les composants via var(--nom)
