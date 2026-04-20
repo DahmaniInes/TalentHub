@@ -1,401 +1,489 @@
-<!-- activites-global.component.html -->
-<div class="mx-page" (click)="closeMenu()">
-
-  <!-- HEADER -->
-  <div class="mx-page-header">
-    <div class="mx-page-title-block">
-      <h1 class="mx-page-title">
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" style="width:20px;height:20px">
-          <rect x="2" y="4" width="16" height="13" rx="2.5"/>
-          <path d="M6 1v3M14 1v3M2 9h16" stroke-linecap="round"/>
-        </svg>
-        Activités
-      </h1>
-      <p class="mx-page-subtitle">
-        {{ statsToutes() }} activité(s)
-        <span class="mx-badge mx-badge-accent">{{ statsProjet() }} liées à des projets</span>
-        <span class="mx-badge mx-badge-neutral">{{ statsGlobales() }} globales</span>
-      </p>
+<!-- activites-global.component.html — Style dt-* identique users/groups -->
+<div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh" (click)="closeMenu()">
+  <div class="dt-wrap">
+  
+    <!-- ══ HEADER ══ -->
+    <div class="dt-header">
+      <div>
+        <h1 class="dt-title">
+          <!-- ✅ SVG identique sidebar activités -->
+          <svg class="dt-title-icon" viewBox="0 0 491.5 491.5" fill="currentColor">
+            <path d="M348.1,245.7c-67.8,0-122.9,55.1-122.9,122.9s55.1,122.9,122.9,122.9S471,436.4,471,368.6S415.9,245.7,348.1,245.7z
+               M403.5,362.6l-41,41c-4,4-9.2,6-14.5,6c-5.2,0-10.5-2-14.5-6L313,383.1c-8-8-8-21,0-29s21-8,29,0l6,6l26.5-26.5c8-8,21-8,29,0
+              C411.5,341.7,411.5,354.6,403.5,362.6z"/>
+            <path d="M385.3,41h-57.7v-9.8c0-17.2-14-31.2-31.2-31.2H154c-17.2,0-31.2,14-31.2,31.2v9.7H65.2c-24.7,0-44.7,20.1-44.7,44.7
+              v361.1c0,24.7,20.1,44.7,44.7,44.7h174.9c-34.2-29.9-55.8-73.8-55.8-122.8h-81.9c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5
+              h81.9c1.8,0,3.4,0.6,5.1,1c3.8-14.9,9.5-29,17-42h-83.6c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5h102.4
+              c4.1,0,7.7,1.5,10.9,3.6c29.3-27.5,68.6-44.6,112-44.6c29.9,0,57.8,8.2,81.9,22.2V85.7C430,61,409.9,41,385.3,41z M163.8,184.3
+              h-41c-11.3,0-20.5-9.2-20.5-20.5c0-11.3,9.2-20.5,20.5-20.5h41c11.3,0,20.5,9.2,20.5,20.5C184.3,175.1,175.1,184.3,163.8,184.3z
+               M163.8,81.9v-41h122.9v41H163.8z M327.6,184.3h-81.9c-11.3,0-20.5-9.2-20.5-20.5c0-11.3,9.2-20.5,20.5-20.5h81.9
+              c11.3,0,20.5,9.2,20.5,20.5C348.1,175.1,338.9,184.3,327.6,184.3z"/>
+          </svg>
+          Activités
+        </h1>
+  
+        <div class="dt-header-stats">
+          <span class="dt-badge dt-badge-accent" style="font-size:.66rem;padding:3px 9px">
+            <span class="dt-badge-dot"></span>{{ statsToutes() }} total
+          </span>
+          <span class="dt-badge dt-badge-pending" style="font-size:.66rem;padding:3px 9px">
+            <span class="dt-badge-dot"></span>{{ statsProjet() }} liées projets
+          </span>
+          <span class="dt-badge dt-badge-default" style="font-size:.66rem;padding:3px 9px">
+            <span class="dt-badge-dot"></span>{{ statsGlobales() }} globales
+          </span>
+        </div>
+      </div>
+  
+      <div class="dt-header-actions">
+        <!-- Toggle vue -->
+        <div style="display:flex;gap:3px;background:var(--bg-input);border:1px solid var(--dt-border);border-radius:7px;padding:3px">
+          <button *ngFor="let v of [['toutes','Toutes'],['projet','Projets'],['globales','Globales']]"
+                  style="padding:4px 11px;border-radius:5px;border:none;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .12s;white-space:nowrap"
+                  [style.background]="filterVue()===v[0]?'var(--dt-bg)':'transparent'"
+                  [style.color]="filterVue()===v[0]?'var(--accent)':'var(--dt-text-sub)'"
+                  (click)="filterVue.set($any(v[0])); resetPage()">{{ v[1] }}</button>
+        </div>
+  
+        <!-- Recherche -->
+        <div class="dt-search-bar">
+          <svg class="dt-search-icon" viewBox="0 0 14 14" fill="none">
+            <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.4"/>
+            <path d="m10 10 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+          <input class="dt-search-input"
+                 [value]="search()"
+                 (input)="search.set($any($event.target).value); resetPage()"
+                 placeholder="Rechercher...">
+        </div>
+  
+        <!-- Filtre statut -->
+        <select class="dt-filter-select"
+                [value]="filterStatut()"
+                (change)="filterStatut.set($any($event.target).value===''?'':+$any($event.target).value); resetPage()">
+          <option value="">Tous les statuts</option>
+          <option *ngFor="let s of statutsActivite()" [value]="s.id">{{ s.libelle }}</option>
+        </select>
+  
+        <!-- Filtre priorité -->
+        <select class="dt-filter-select"
+                [value]="filterPriorite()"
+                (change)="filterPriorite.set($any($event.target).value===''?'':+$any($event.target).value); resetPage()">
+          <option value="">Priorités</option>
+          <option *ngFor="let p of PRIORITES" [value]="p.value">{{ p.label }}</option>
+        </select>
+  
+        <button class="dt-btn-create" (click)="openAdd()">
+          <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+            <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+          </svg>
+          Nouvelle activité
+        </button>
+      </div>
     </div>
-    <div class="mx-page-actions">
-      <button class="mx-btn mx-btn-primary" (click)="openAdd()">
-        <svg viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        Nouvelle activité
-      </button>
+  
+    <!-- Bulk bar -->
+    <div *ngIf="selectedCount() > 0" class="dt-bulk-bar">
+      <span class="dt-bulk-count">{{ selectedCount() }} sélectionnée(s)</span>
+      <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="clearSelection()">Annuler</button>
+      <button class="mx-btn mx-btn-danger mx-btn-sm" (click)="deleteBulk()">Supprimer ({{ selectedCount() }})</button>
     </div>
-  </div>
-
-  <!-- FILTRES VUE -->
-  <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
-    <button class="mx-btn" style="font-size:.74rem"
-            [class.mx-btn-primary]="filterVue()==='toutes'"
-            [class.mx-btn-ghost]="filterVue()!=='toutes'"
-            (click)="filterVue.set('toutes'); resetPage()">
-      Toutes <span class="mx-badge" style="font-size:.58rem;padding:1px 5px;margin-left:3px"
-                   [style.background]="filterVue()==='toutes'?'rgba(255,255,255,.25)':''"
-                   [style.color]="filterVue()==='toutes'?'white':''"
-                   [class.mx-badge-neutral]="filterVue()!=='toutes'">{{ statsToutes() }}</span>
-    </button>
-    <button class="mx-btn" style="font-size:.74rem"
-            [class.mx-btn-primary]="filterVue()==='projet'"
-            [class.mx-btn-ghost]="filterVue()!=='projet'"
-            (click)="filterVue.set('projet'); resetPage()">
-      Liées à un projet <span class="mx-badge" style="font-size:.58rem;padding:1px 5px;margin-left:3px"
-                              [style.background]="filterVue()==='projet'?'rgba(255,255,255,.25)':''"
-                              [style.color]="filterVue()==='projet'?'white':''"
-                              [class.mx-badge-neutral]="filterVue()!=='projet'">{{ statsProjet() }}</span>
-    </button>
-    <button class="mx-btn" style="font-size:.74rem"
-            [class.mx-btn-primary]="filterVue()==='globales'"
-            [class.mx-btn-ghost]="filterVue()!=='globales'"
-            (click)="filterVue.set('globales'); resetPage()">
-      Globales <span class="mx-badge" style="font-size:.58rem;padding:1px 5px;margin-left:3px"
-                     [style.background]="filterVue()==='globales'?'rgba(255,255,255,.25)':''"
-                     [style.color]="filterVue()==='globales'?'white':''"
-                     [class.mx-badge-neutral]="filterVue()!=='globales'">{{ statsGlobales() }}</span>
-    </button>
-  </div>
-
-  <!-- TOOLBAR -->
-  <div class="mx-toolbar">
-    <div class="mx-search">
-      <svg viewBox="0 0 14 14" fill="none" class="mx-search-icon">
-        <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/>
-        <path d="m10 10 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-      </svg>
-      <input [value]="search()" (input)="search.set($any($event.target).value); resetPage()"
-             placeholder="Nom, projet, assigné..." class="mx-search-input">
-    </div>
-    <select [value]="filterStatut()"
-            (change)="filterStatut.set($any($event.target).value===''?'':+$any($event.target).value); resetPage()"
-            class="mx-filter-select">
-      <option value="">Tous les statuts</option>
-      <option *ngFor="let s of statutsActivite()" [value]="s.id">{{ s.libelle }}</option>
-    </select>
-    <select [value]="filterPriorite()"
-            (change)="filterPriorite.set($any($event.target).value===''?'':+$any($event.target).value); resetPage()"
-            class="mx-filter-select">
-      <option value="">Toutes priorités</option>
-      <option *ngFor="let p of PRIORITES" [value]="p.value">{{ p.label }}</option>
-    </select>
-    <select *ngIf="filterVue() !== 'globales'"
-            [value]="filterProjet()"
-            (change)="filterProjet.set($any($event.target).value===''?'':+$any($event.target).value); resetPage()"
-            class="mx-filter-select">
-      <option value="">Tous les projets</option>
-      <option *ngFor="let p of projets()" [value]="p.id">{{ p.nom }}</option>
-    </select>
-    <div class="mx-toolbar-spacer"></div>
-    <span class="mx-count-chip">{{ filteredActivites().length }} résultat(s)</span>
-  </div>
-
-  <!-- TABLEAU -->
-  <div class="mx-table-wrap">
-
-    <!-- ✅ Bulk bar avec bouton delete fonctionnel -->
-    <div *ngIf="selectedCount() > 0" class="mx-bulk-bar">
-      <span class="mx-bulk-count">{{ selectedCount() }} sélectionnée(s)</span>
-      <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="clearSelection()">Tout désélectionner</button>
-      <button class="mx-btn mx-btn-danger mx-btn-sm" (click)="deleteBulk()">
-        Supprimer la sélection ({{ selectedCount() }})
-      </button>
-    </div>
-
-    <div *ngIf="loading()" class="mx-loading"><div class="mx-spinner"></div> Chargement...</div>
-
-    <div *ngIf="!loading()" class="mx-table-scroll">
-      <table class="mx-table">
+  
+    <!-- Loading -->
+    <div *ngIf="loading()" class="dt-loading"><div class="dt-spinner"></div> Chargement...</div>
+  
+    <!-- ══ TABLEAU ══ -->
+    <div *ngIf="!loading()" class="dt-scroll">
+      <table class="dt-table">
         <thead>
           <tr>
-            <th class="mx-checkbox-cell">
-              <input type="checkbox" class="mx-checkbox"
+            <th class="dt-th dt-th-cb">
+              <input type="checkbox" class="dt-checkbox"
                      [class.indeterminate]="somePageSelected()"
                      [checked]="allPageSelected()"
                      (change)="toggleSelectAll()">
             </th>
-            <th>Activité</th>
-            <th>Projet</th>
-            <th>Statut</th>
-            <th>Priorité</th>
-            <th>Assigné à</th>
-            <th>Échéance</th>
-            <th>Heures</th>
-            <th style="width:44px"></th>
+  
+            <!-- Activité -->
+            <th class="dt-th" style="min-width:200px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 491.5 491.5" fill="currentColor">
+                  <path d="M348.1,245.7c-67.8,0-122.9,55.1-122.9,122.9s55.1,122.9,122.9,122.9S471,436.4,471,368.6S415.9,245.7,348.1,245.7z M403.5,362.6l-41,41c-4,4-9.2,6-14.5,6c-5.2,0-10.5-2-14.5-6L313,383.1c-8-8-8-21,0-29s21-8,29,0l6,6l26.5-26.5c8-8,21-8,29,0 C411.5,341.7,411.5,354.6,403.5,362.6z"/>
+                  <path d="M385.3,41h-57.7v-9.8c0-17.2-14-31.2-31.2-31.2H154c-17.2,0-31.2,14-31.2,31.2v9.7H65.2c-24.7,0-44.7,20.1-44.7,44.7 v361.1c0,24.7,20.1,44.7,44.7,44.7h174.9c-34.2-29.9-55.8-73.8-55.8-122.8h-81.9c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5 h81.9c1.8,0,3.4,0.6,5.1,1c3.8-14.9,9.5-29,17-42h-83.6c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5h102.4 c4.1,0,7.7,1.5,10.9,3.6c29.3-27.5,68.6-44.6,112-44.6c29.9,0,57.8,8.2,81.9,22.2V85.7C430,61,409.9,41,385.3,41z M163.8,184.3 h-41c-11.3,0-20.5-9.2-20.5-20.5c0-11.3,9.2-20.5,20.5-20.5h41c11.3,0,20.5,9.2,20.5,20.5C184.3,175.1,175.1,184.3,163.8,184.3z M163.8,81.9v-41h122.9v41H163.8z M327.6,184.3h-81.9c-11.3,0-20.5-9.2-20.5-20.5c0-11.3,9.2-20.5,20.5-20.5h81.9 c11.3,0,20.5,9.2,20.5,20.5C348.1,175.1,338.9,184.3,327.6,184.3z"/>
+                </svg>
+                Activité
+              </div>
+            </th>
+  
+            <!-- Statut -->
+            <th class="dt-th" style="min-width:130px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+                  <circle cx="7" cy="7" r="5.5"/>
+                  <path d="M4.5 7l2 2 3-3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Statut
+              </div>
+            </th>
+  
+            <!-- Priorité -->
+            <th class="dt-th" style="min-width:100px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+                  <path d="M2 2l10 5-10 5V2z" stroke-linejoin="round"/>
+                </svg>
+                Priorité
+              </div>
+            </th>
+  
+            <!-- Assigné à -->
+            <th class="dt-th" style="min-width:190px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="currentColor">
+                  <path d="M7 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm-4 6a4 4 0 118 0H3z"/>
+                </svg>
+                Assigné à
+              </div>
+            </th>
+  
+            <!-- Progression -->
+            <th class="dt-th" style="min-width:140px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+                  <rect x="1" y="5" width="12" height="4" rx="2"/>
+                  <rect x="1" y="5" width="7" height="4" rx="2" fill="currentColor" stroke="none" style="opacity:.5"/>
+                </svg>
+                Progression
+              </div>
+            </th>
+  
+            <!-- Échéance -->
+            <th class="dt-th" style="min-width:105px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
+                  <rect x="1" y="2" width="12" height="11" rx="1.5"/>
+                  <path d="M1 6h12M4.5 1v2M9.5 1v2" stroke-linecap="round"/>
+                </svg>
+                Échéance
+              </div>
+            </th>
+  
+            <!-- Projet -->
+            <th class="dt-th" style="min-width:120px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 52 52" fill="currentColor">
+                  <path d="M39.3,26.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9V25c0-1,0.9-1.9,1.9-1.9h22.9c1,0,1.9,0.9,1.9,1.9v1.9H39.3z M35.5,38.3c0,1-0.9,1.9-1.9,1.9h-19c-1,0-1.9-0.9-1.9-1.9v-1.9c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9H35.5z M12.7,13.5c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9C12.7,15.4,12.7,13.5,12.7,13.5z M41.2,4H10.8C7.6,4,5,6.6,5,9.7v32.4c0,3.1,2.6,5.7,5.7,5.7h30.5c3.1,0,5.7-2.6,5.7-5.7V9.7C47,6.6,44.4,4,41.2,4z"/>
+                </svg>
+                Projet
+              </div>
+            </th>
+  
+            <th class="dt-th dt-th-actions"></th>
           </tr>
         </thead>
+  
         <tbody>
           <tr *ngFor="let a of pagedActivites()"
-              [class.row-selected]="isSelected(a.id) || selectedActivite()?.id === a.id"
+              class="dt-tr"
+              [class.dt-tr-selected]="isSelected(a.id)"
               (click)="openDetail(a)">
-
-            <td class="mx-checkbox-cell" (click)="$event.stopPropagation()">
-              <input type="checkbox" class="mx-checkbox" [checked]="isSelected(a.id)" (change)="toggleSelect(a.id, $event)">
+  
+            <!-- Checkbox -->
+            <td class="dt-td dt-td-cb" (click)="$event.stopPropagation()">
+              <input type="checkbox" class="dt-checkbox"
+                     [class.dt-checkbox-active]="isSelected(a.id)"
+                     [checked]="isSelected(a.id)"
+                     (change)="toggleSelect(a.id, $event)">
             </td>
-
-            <!-- Activité -->
-            <td>
-              <div class="mx-cell-main">
-                <div style="width:3px;height:32px;border-radius:3px;flex-shrink:0"
-                     [style.background]="a.couleur || '#94a3b8'"></div>
-                <div class="mx-cell-info">
-                  <span class="mx-cell-name">{{ a.nom }}</span>
-                  <span class="mx-cell-sub" style="font-family:'Courier New',monospace">
+  
+            <!-- Activité : barre couleur + nom + numéro -->
+            <td class="dt-td">
+              <div class="dt-cell-with-avatar">
+                <div style="width:3px;height:36px;border-radius:3px;flex-shrink:0"
+                     [style.background]="a.couleur||'#94a3b8'"></div>
+                <div class="dt-cell-user">
+                  <span class="dt-cell-name">{{ a.nom }}</span>
+                  <span class="dt-cell-sub" style="font-family:'Courier New',monospace">
                     {{ a.numeroActivite }}
                     <span *ngIf="!a.projetId"
-                          style="display:inline-block;margin-left:4px;font-family:inherit;font-size:.57rem;background:rgba(139,92,246,.12);color:#8b5cf6;padding:0 5px;border-radius:4px;border:1px solid rgba(139,92,246,.25)">
+                          style="display:inline-block;margin-left:4px;font-family:inherit;font-size:.55rem;background:rgba(139,92,246,.12);color:#8b5cf6;padding:0 5px;border-radius:4px;border:1px solid rgba(139,92,246,.25)">
                       GLOBALE
                     </span>
                   </span>
                 </div>
               </div>
             </td>
-
-            <!-- Projet -->
-            <td>
-              <span *ngIf="a.projetNom" class="mx-badge mx-badge-neutral">{{ a.projetNom }}</span>
-              <span *ngIf="!a.projetNom" style="font-size:.7rem;color:var(--text-muted);font-style:italic">—</span>
-            </td>
-
-            <!-- ✅ Statut — affiché avec statutLibelle enrichi depuis nomenclature-service -->
-            <td>
-              <span class="mx-badge"
+  
+            <!-- ✅ Statut RÉEL : libellé texte, jamais "Statut #N" -->
+            <td class="dt-td">
+              <span class="dt-badge"
                     [style.background]="(a.statutCouleur||'#94a3b8')+'18'"
                     [style.color]="a.statutCouleur||'#94a3b8'"
-                    [style.border-color]="(a.statutCouleur||'#94a3b8')+'44'">
-                {{ a.statutLibelle || ('Statut #' + a.statutActiviteId) }}
+                    [style.border-color]="(a.statutCouleur||'#94a3b8')+'55'">
+                <span class="dt-badge-dot" [style.background]="a.statutCouleur||'#94a3b8'"></span>
+                {{ getStatutLibelle(a.statutActiviteId) }}
               </span>
             </td>
-
+  
             <!-- Priorité -->
-            <td>
+            <td class="dt-td">
               <div style="display:flex;align-items:center;gap:5px">
-                <div style="width:7px;height:7px;border-radius:50%;flex-shrink:0" [style.background]="getPrioriteCouleur(a.priorite)"></div>
-                <span style="font-size:.73rem;color:var(--text-secondary)">{{ getPrioriteLabel(a.priorite) }}</span>
+                <div style="width:7px;height:7px;border-radius:50%;flex-shrink:0"
+                     [style.background]="getPrioriteCouleur(a.priorite)"></div>
+                <span class="dt-cell-text">{{ getPrioriteLabel(a.priorite) }}</span>
               </div>
             </td>
-
-            <!-- Assigné à -->
-            <td class="muted">{{ a.utilisateurNomComplet || '—' }}</td>
-
-            <!-- Échéance -->
-            <td class="muted" style="font-size:.72rem;white-space:nowrap">
-              {{ a.dateEcheance ? (a.dateEcheance | date:'dd/MM/yy') : '—' }}
-            </td>
-
-            <!-- Heures -->
-            <td>
-              <span *ngIf="a.heuresEstimees" style="font-size:.73rem;color:var(--text-secondary)">
-                {{ a.heuresPassees || 0 }}h / {{ a.heuresEstimees }}h
-                <div style="height:3px;background:var(--bg-hover);border-radius:999px;margin-top:3px;width:60px;overflow:hidden">
-                  <div style="height:100%;border-radius:999px;background:var(--accent)"
-                       [style.width.%]="Math.min(100, ((a.heuresPassees||0) / a.heuresEstimees) * 100)"></div>
+  
+            <!-- ✅ Assigné à : avatar rond + nom + email (comme users) -->
+            <td class="dt-td">
+              <div *ngIf="a.utilisateurNomComplet" class="dt-cell-with-avatar">
+                <div class="dt-avatar" [style.background]="getAvatarColor(a.utilisateurNomComplet)">
+                  {{ getInitiales(a.utilisateurNomComplet) }}
                 </div>
-              </span>
-              <span *ngIf="!a.heuresEstimees" class="muted">—</span>
+                <div class="dt-cell-user">
+                  <span class="dt-cell-name">{{ a.utilisateurNomComplet }}</span>
+                  <span class="dt-cell-sub">{{ getUtilisateurEmail(a.utilisateurId) }}</span>
+                </div>
+              </div>
+              <span *ngIf="!a.utilisateurNomComplet" class="dt-cell-muted">—</span>
             </td>
-
-            <!-- ✅ Dropdown 3 points — SEULEMENT Voir détail, Modifier, Supprimer -->
-            <td class="mx-actions-cell" (click)="$event.stopPropagation()">
-              <div class="mx-actions-wrap">
-                <button class="mx-dots-btn" (click)="toggleMenu(a.id, $event)">
-                  <svg viewBox="0 0 4 16" fill="currentColor" style="width:4px;height:16px">
-                    <circle cx="2" cy="2" r="1.5"/><circle cx="2" cy="8" r="1.5"/><circle cx="2" cy="14" r="1.5"/>
+  
+            <!-- ✅ Barre de progression heures -->
+            <td class="dt-td">
+              <div *ngIf="a.heuresEstimees && a.heuresEstimees > 0">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                  <span class="dt-cell-sub" style="font-size:.69rem">
+                    {{ a.heuresPassees || 0 }}h / {{ a.heuresEstimees }}h
+                  </span>
+                  <span style="font-size:.68rem;font-weight:700"
+                        [style.color]="getProgressCouleur(a.heuresPassees, a.heuresEstimees)">
+                    {{ getProgressPct(a.heuresPassees, a.heuresEstimees) }}%
+                  </span>
+                </div>
+                <div style="height:5px;background:var(--bg-hover);border-radius:999px;width:100%;max-width:110px;overflow:hidden">
+                  <div style="height:100%;border-radius:999px;transition:width .3s"
+                       [style.background]="getProgressCouleur(a.heuresPassees, a.heuresEstimees)"
+                       [style.width.%]="getProgressPct(a.heuresPassees, a.heuresEstimees)">
+                  </div>
+                </div>
+              </div>
+              <span *ngIf="!a.heuresEstimees" class="dt-cell-muted">—</span>
+            </td>
+  
+            <!-- Échéance -->
+            <td class="dt-td">
+              <span class="dt-cell-muted">{{ a.dateEcheance ? fmtDate(a.dateEcheance) : '—' }}</span>
+            </td>
+  
+            <!-- Projet -->
+            <td class="dt-td">
+              <span *ngIf="a.projetNom" class="dt-badge dt-badge-default">{{ a.projetNom }}</span>
+              <span *ngIf="!a.projetNom" class="dt-cell-muted" style="font-style:italic;font-size:.71rem">Globale</span>
+            </td>
+  
+            <!-- Actions inline -->
+            <td class="dt-td dt-td-actions" (click)="$event.stopPropagation()">
+              <div class="dt-td-actions-wrap">
+                <button class="dt-action-btn dt-action-edit" (click)="openEdit(a)" title="Modifier">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
                   </svg>
                 </button>
-                <div *ngIf="openMenuId() === a.id" class="mx-dropdown">
-                  <button class="mx-dropdown-item" (click)="openDetail(a); closeMenu()">
-                    <svg viewBox="0 0 14 14" fill="none"><path d="M7 2H3a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V7M10 1l3 3-6 6H4V7l6-6z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
-                    Voir le détail
-                  </button>
-                  <button class="mx-dropdown-item" (click)="openEdit(a); closeMenu()">
-                    <svg viewBox="0 0 14 14" fill="none"><path d="M9 2l3 3-7 7H2V9l7-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
-                    Modifier
-                  </button>
-                  <div class="mx-dropdown-divider"></div>
-                  <button class="mx-dropdown-item danger" (click)="delete(a); closeMenu()">
-                    <svg viewBox="0 0 14 14" fill="none"><path d="M2 3h10M5 3V2h4v1M4 3l.5 8h5L10 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    Supprimer
-                  </button>
-                </div>
+                <button class="dt-action-btn dt-action-del" (click)="delete(a)" title="Supprimer">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                  </svg>
+                </button>
               </div>
             </td>
           </tr>
         </tbody>
       </table>
-
-      <div *ngIf="filteredActivites().length === 0" class="mx-empty">
-        <p class="mx-empty-title">Aucune activité trouvée</p>
-        <p class="mx-empty-sub">Modifiez vos filtres ou créez une nouvelle activité</p>
-        <button class="mx-btn mx-btn-primary" style="margin-top:4px" (click)="openAdd()">Créer une activité</button>
+  
+      <!-- Vide -->
+      <div *ngIf="filteredActivites().length === 0" class="dt-empty">
+        <svg class="dt-empty-icon" viewBox="0 0 48 48" fill="none" style="width:38px;height:38px">
+          <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+          <path d="M24 16v8M24 28h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <p class="dt-empty-title">Aucune activité trouvée</p>
+        <p class="dt-empty-sub">Modifiez vos filtres ou créez une activité</p>
+        <button class="dt-btn-create" style="margin-top:12px" (click)="openAdd()">Nouvelle activité</button>
       </div>
     </div>
-
-    <!-- PAGINATION -->
-    <div *ngIf="!loading() && filteredActivites().length > 0" class="mx-pagination">
-      <div class="mx-pagination-info">
+  
+    <!-- ══ FOOTER PAGINATION ══ -->
+    <div *ngIf="!loading() && filteredActivites().length > 0" class="dt-footer">
+      <div class="dt-count-info">
         <strong>{{ (currentPage()-1)*pageSize()+1 }}–{{ minVal(currentPage()*pageSize(), filteredActivites().length) }}</strong>
-        sur <strong>{{ filteredActivites().length }}</strong>
-        <select class="mx-page-size-select" style="margin-left:8px" [value]="pageSize()" (change)="onPageSizeChange(+$any($event.target).value)">
-          <option value="10">10</option><option value="15">15</option><option value="25">25</option><option value="50">50</option>
+        of <strong>{{ filteredActivites().length }}</strong>
+        <select style="margin-left:10px;border:1px solid var(--dt-border);border-radius:6px;padding:3px 8px;font-size:.71rem;background:var(--dt-bg);color:var(--dt-text-sub);font-family:inherit;outline:none;cursor:pointer"
+                [value]="pageSize()" (change)="onPageSizeChange(+$any($event.target).value)">
+          <option value="10">10</option><option value="15">15</option><option value="25">25</option>
         </select>
       </div>
-      <div class="mx-pagination-controls">
-        <button class="mx-page-btn" [disabled]="currentPage()===1" (click)="goToPage(1)"><svg viewBox="0 0 12 12" fill="none"><path d="M9 9L5 6l4-3M4 3v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <button class="mx-page-btn" [disabled]="currentPage()===1" (click)="goToPage(currentPage()-1)"><svg viewBox="0 0 12 12" fill="none"><path d="M8 9L4 6l4-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <div class="dt-pagination">
+        <button class="dt-page-arrow" [disabled]="currentPage()===1" (click)="goToPage(currentPage()-1)">
+          <svg viewBox="0 0 14 14" fill="none"><path d="M9 2L5 7l4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
         <ng-container *ngFor="let p of pagesArray()">
           <button *ngIf="p===1||p===totalPages()||(p>=currentPage()-1&&p<=currentPage()+1)"
-                  class="mx-page-btn" [class.active]="p===currentPage()" (click)="goToPage(p)">{{ p }}</button>
-          <span *ngIf="p===currentPage()-2&&p>1" style="color:var(--text-muted);line-height:30px">…</span>
-          <span *ngIf="p===currentPage()+2&&p<totalPages()" style="color:var(--text-muted);line-height:30px">…</span>
+                  class="dt-page-btn" [class.dt-page-btn-active]="p===currentPage()" (click)="goToPage(p)">{{ p }}</button>
+          <span *ngIf="p===currentPage()-2&&p>1" style="color:var(--dt-text-head);padding:0 4px;font-size:.75rem;line-height:30px">…</span>
+          <span *ngIf="p===currentPage()+2&&p<totalPages()" style="color:var(--dt-text-head);padding:0 4px;font-size:.75rem;line-height:30px">…</span>
         </ng-container>
-        <button class="mx-page-btn" [disabled]="currentPage()===totalPages()" (click)="goToPage(currentPage()+1)"><svg viewBox="0 0 12 12" fill="none"><path d="M4 3l4 3-4 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <button class="mx-page-btn" [disabled]="currentPage()===totalPages()" (click)="goToPage(totalPages())"><svg viewBox="0 0 12 12" fill="none"><path d="M3 9l4-3-4-3M8 3v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════ SLIDE-OVER DÉTAIL ════ -->
-<div *ngIf="selectedActivite()" class="mx-overlay" (click)="selectedActivite.set(null)"></div>
-<div *ngIf="selectedActivite() as a" class="mx-slideover">
-  <div class="mx-so-header">
-    <div class="mx-so-avatar" [style.background]="a.couleur || '#94a3b8'">
-      <svg viewBox="0 0 14 14" fill="white" style="width:14px;height:14px">
-        <rect x="1.5" y="1.5" width="11" height="11" rx="1.5" stroke="white" stroke-width="1.2" fill="none"/>
-        <path d="M4 5h6M4 7.5h6M4 10h4" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
-      </svg>
-    </div>
-    <div class="mx-so-title-block">
-      <p class="mx-so-name">{{ a.nom }}</p>
-      <p class="mx-so-sub">
-        {{ a.numeroActivite }}
-        <span *ngIf="a.projetNom"> · {{ a.projetNom }}</span>
-        <span *ngIf="!a.projetId" style="color:#8b5cf6"> · GLOBALE</span>
-      </p>
-      <div class="mx-so-badges">
-        <span class="mx-badge" [style.background]="(a.statutCouleur||'#94a3b8')+'18'" [style.color]="a.statutCouleur||'#94a3b8'" [style.border-color]="(a.statutCouleur||'#94a3b8')+'44'">
-          {{ a.statutLibelle || ('Statut #' + a.statutActiviteId) }}
-        </span>
-        <span class="mx-badge" [style.background]="getPrioriteCouleur(a.priorite)+'18'" [style.color]="getPrioriteCouleur(a.priorite)" [style.border-color]="getPrioriteCouleur(a.priorite)+'44'">
-          {{ getPrioriteLabel(a.priorite) }}
-        </span>
-      </div>
-    </div>
-    <button class="mx-so-close" (click)="selectedActivite.set(null)">
-      <svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-    </button>
-  </div>
-
-  <div class="mx-so-body">
-    <div *ngIf="a.description">
-      <p class="mx-so-section-title">Description</p>
-      <p style="font-size:.78rem;color:var(--text-secondary);line-height:1.6;margin:0">{{ a.description }}</p>
-    </div>
-
-    <!-- ✅ Changer statut depuis le slide-over -->
-    <div>
-      <p class="mx-so-section-title">Changer le statut</p>
-      <div style="display:flex;flex-wrap:wrap;gap:6px">
-        <button *ngFor="let s of statutsActivite()" type="button"
-                (click)="changerStatut(a, s.id)"
-                style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:7px;font-size:.73rem;font-weight:600;cursor:pointer;font-family:inherit;border:1.5px solid;transition:all .12s"
-                [style.background]="s.id===a.statutActiviteId ? (s.couleur||'#94a3b8')+'22' : 'var(--bg-hover)'"
-                [style.color]="s.id===a.statutActiviteId ? (s.couleur||'#94a3b8') : 'var(--text-muted)'"
-                [style.border-color]="s.id===a.statutActiviteId ? (s.couleur||'#94a3b8')+'66' : 'var(--border-color)'">
-          <span style="width:7px;height:7px;border-radius:50%;flex-shrink:0;display:inline-block" [style.background]="s.couleur||'#94a3b8'"></span>
-          {{ s.libelle }}
+        <button class="dt-page-arrow" [disabled]="currentPage()===totalPages()" (click)="goToPage(currentPage()+1)">
+          <svg viewBox="0 0 14 14" fill="none"><path d="M5 2l4 5-4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
     </div>
-
-    <div>
-      <p class="mx-so-section-title">Informations</p>
-      <div class="mx-info-list">
-        <div class="mx-info-row" *ngIf="a.projetNom"><span class="mx-info-key">Projet</span><span class="mx-info-val">{{ a.projetNom }}</span></div>
-        <div class="mx-info-row" *ngIf="!a.projetId"><span class="mx-info-key">Type</span><span class="mx-info-val" style="color:#8b5cf6">Activité globale</span></div>
-        <div class="mx-info-row" *ngIf="a.utilisateurNomComplet"><span class="mx-info-key">Assigné à</span><span class="mx-info-val">{{ a.utilisateurNomComplet }}</span></div>
-        <div class="mx-info-row" *ngIf="a.dateEcheance"><span class="mx-info-key">Échéance</span><span class="mx-info-val">{{ a.dateEcheance | date:'dd/MM/yyyy' }}</span></div>
-        <div class="mx-info-row" *ngIf="a.heuresEstimees"><span class="mx-info-key">Heures</span><span class="mx-info-val">{{ a.heuresPassees || 0 }} h / {{ a.heuresEstimees }} h</span></div>
-        <div class="mx-info-row" *ngIf="a.budget"><span class="mx-info-key">Budget</span><span class="mx-info-val">{{ a.budget | number:'1.0-0' }}</span></div>
-        <div class="mx-info-row"><span class="mx-info-key">Créé le</span><span class="mx-info-val">{{ a.dateCreation | date:'dd/MM/yyyy HH:mm' }}</span></div>
+  
+  </div><!-- /.dt-wrap -->
+  </div>
+  
+  <!-- ════ SLIDE-OVER DÉTAIL ════ -->
+  <div *ngIf="selectedActivite()" class="mx-overlay" (click)="selectedActivite.set(null)"></div>
+  <div *ngIf="selectedActivite() as a" class="mx-slideover">
+    <div class="mx-so-header">
+      <div class="dt-avatar" [style.background]="a.couleur||'#94a3b8'"
+           style="width:44px;height:44px;border-radius:11px">
+        <svg viewBox="0 0 491.5 491.5" fill="white" style="width:20px;height:20px">
+          <path d="M348.1,245.7c-67.8,0-122.9,55.1-122.9,122.9s55.1,122.9,122.9,122.9S471,436.4,471,368.6S415.9,245.7,348.1,245.7z M403.5,362.6l-41,41c-4,4-9.2,6-14.5,6c-5.2,0-10.5-2-14.5-6L313,383.1c-8-8-8-21,0-29s21-8,29,0l6,6l26.5-26.5c8-8,21-8,29,0 C411.5,341.7,411.5,354.6,403.5,362.6z"/>
+          <path d="M385.3,41h-57.7v-9.8c0-17.2-14-31.2-31.2-31.2H154c-17.2,0-31.2,14-31.2,31.2v9.7H65.2c-24.7,0-44.7,20.1-44.7,44.7 v361.1c0,24.7,20.1,44.7,44.7,44.7h174.9c-34.2-29.9-55.8-73.8-55.8-122.8h-81.9c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5 h81.9c1.8,0,3.4,0.6,5.1,1c3.8-14.9,9.5-29,17-42h-83.6c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5h102.4 c4.1,0,7.7,1.5,10.9,3.6c29.3-27.5,68.6-44.6,112-44.6c29.9,0,57.8,8.2,81.9,22.2V85.7C430,61,409.9,41,385.3,41z"/>
+        </svg>
+      </div>
+      <div class="mx-so-title-block">
+        <p class="mx-so-name">{{ a.nom }}</p>
+        <p class="mx-so-sub">{{ a.numeroActivite }}<span *ngIf="a.projetNom"> · {{ a.projetNom }}</span><span *ngIf="!a.projetId" style="color:#8b5cf6"> · GLOBALE</span></p>
+        <div class="mx-so-badges">
+          <span class="dt-badge" style="font-size:.62rem"
+                [style.background]="(a.statutCouleur||'#94a3b8')+'18'"
+                [style.color]="a.statutCouleur||'#94a3b8'"
+                [style.border-color]="(a.statutCouleur||'#94a3b8')+'55'">
+            <span class="dt-badge-dot" [style.background]="a.statutCouleur||'#94a3b8'"></span>
+            {{ getStatutLibelle(a.statutActiviteId) }}
+          </span>
+          <span class="dt-badge" style="font-size:.62rem"
+                [style.background]="getPrioriteCouleur(a.priorite)+'18'"
+                [style.color]="getPrioriteCouleur(a.priorite)"
+                [style.border-color]="getPrioriteCouleur(a.priorite)+'44'">
+            {{ getPrioriteLabel(a.priorite) }}
+          </span>
+        </div>
+      </div>
+      <button class="mx-so-close" (click)="selectedActivite.set(null)">
+        <svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  
+    <div class="mx-so-tabs">
+      <button class="mx-so-tab" [class.active]="detailTab()==='infos'" (click)="detailTab.set('infos')">Informations</button>
+      <button class="mx-so-tab" [class.active]="detailTab()==='statut'" (click)="detailTab.set('statut')">Changer statut</button>
+    </div>
+  
+    <!-- TAB INFOS -->
+    <div *ngIf="detailTab()==='infos'" class="mx-so-body">
+      <div *ngIf="a.description">
+        <p class="mx-so-section-title">Description</p>
+        <p style="font-size:.78rem;color:var(--text-secondary);line-height:1.6;margin:0">{{ a.description }}</p>
+      </div>
+  
+      <!-- Progression heures dans le slide-over -->
+      <div *ngIf="a.heuresEstimees && a.heuresEstimees > 0">
+        <p class="mx-so-section-title">Progression</p>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+          <span style="font-size:.8rem;font-weight:600;color:var(--text-primary)">{{ a.heuresPassees||0 }}h / {{ a.heuresEstimees }}h</span>
+          <span style="font-size:.75rem;font-weight:700" [style.color]="getProgressCouleur(a.heuresPassees,a.heuresEstimees)">
+            {{ getProgressPct(a.heuresPassees,a.heuresEstimees) }}%
+          </span>
+        </div>
+        <div style="height:7px;background:var(--bg-hover);border-radius:999px;overflow:hidden">
+          <div style="height:100%;border-radius:999px;transition:width .3s"
+               [style.background]="getProgressCouleur(a.heuresPassees,a.heuresEstimees)"
+               [style.width.%]="getProgressPct(a.heuresPassees,a.heuresEstimees)"></div>
+        </div>
+      </div>
+  
+      <div>
+        <p class="mx-so-section-title">Informations</p>
+        <div class="mx-info-list">
+          <div class="mx-info-row" *ngIf="a.projetNom"><span class="mx-info-key">Projet</span><span class="mx-info-val">{{ a.projetNom }}</span></div>
+          <div class="mx-info-row" *ngIf="!a.projetId"><span class="mx-info-key">Type</span><span class="mx-info-val" style="color:#8b5cf6">Globale</span></div>
+          <div class="mx-info-row" *ngIf="a.utilisateurNomComplet">
+            <span class="mx-info-key">Assigné à</span>
+            <span class="mx-info-val">
+              {{ a.utilisateurNomComplet }}
+              <span style="display:block;font-size:.68rem;color:var(--text-muted);font-weight:400">{{ getUtilisateurEmail(a.utilisateurId) }}</span>
+            </span>
+          </div>
+          <div class="mx-info-row" *ngIf="a.dateEcheance"><span class="mx-info-key">Échéance</span><span class="mx-info-val">{{ fmtDate(a.dateEcheance) }}</span></div>
+          <div class="mx-info-row" *ngIf="a.heuresEstimees"><span class="mx-info-key">Heures</span><span class="mx-info-val">{{ a.heuresPassees||0 }}h / {{ a.heuresEstimees }}h</span></div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- TAB CHANGER STATUT -->
+    <div *ngIf="detailTab()==='statut'" class="mx-so-body">
+      <p class="mx-so-section-title">Sélectionner un statut</p>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button *ngFor="let s of statutsActivite()" type="button"
+                (click)="changerStatut(a, s.id)"
+                style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit;border:1.5px solid;transition:all .12s;text-align:left"
+                [style.background]="s.id===a.statutActiviteId?(s.couleur||'#94a3b8')+'22':'var(--bg-hover)'"
+                [style.color]="s.id===a.statutActiviteId?(s.couleur||'#94a3b8'):'var(--text-secondary)'"
+                [style.border-color]="s.id===a.statutActiviteId?(s.couleur||'#94a3b8')+'77':'var(--border-color)'">
+          <span style="width:10px;height:10px;border-radius:50%;flex-shrink:0;display:inline-block"
+                [style.background]="s.couleur||'#94a3b8'"></span>
+          {{ s.libelle }}
+          <svg *ngIf="s.id===a.statutActiviteId" viewBox="0 0 14 14" fill="none" style="width:13px;height:13px;margin-left:auto;flex-shrink:0">
+            <path d="M2.5 7l3.5 3.5 5.5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  
+    <div class="mx-so-footer">
+      <button class="mx-btn mx-btn-ghost" (click)="selectedActivite.set(null)">Fermer</button>
+      <button class="mx-btn mx-btn-primary" (click)="openEdit(a)">
+        <svg viewBox="0 0 14 14" fill="none" style="width:11px;height:11px"><path d="M9 2l3 3-7 7H2V9l7-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+        Modifier
+      </button>
+    </div>
+  </div>
+  
+  <!-- ════ MODAL ACTIVITÉ ════ -->
+  <div *ngIf="showModal()" class="mx-modal-backdrop" (click)="closeModal()">
+    <div class="mx-modal" style="max-width:520px;padding:0;overflow:hidden;max-height:90vh;display:flex;flex-direction:column" (click)="$event.stopPropagation()">
+      <div style="display:flex;align-items:center;gap:12px;padding:16px 18px 12px;border-bottom:1px solid var(--border-color);flex-shrink:0">
+        <div style="width:34px;height:34px;border-radius:9px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent)">
+          <svg viewBox="0 0 491.5 491.5" fill="currentColor" style="width:16px;height:16px">
+            <path d="M348.1,245.7c-67.8,0-122.9,55.1-122.9,122.9s55.1,122.9,122.9,122.9S471,436.4,471,368.6S415.9,245.7,348.1,245.7z M403.5,362.6l-41,41c-4,4-9.2,6-14.5,6c-5.2,0-10.5-2-14.5-6L313,383.1c-8-8-8-21,0-29s21-8,29,0l6,6l26.5-26.5c8-8,21-8,29,0 C411.5,341.7,411.5,354.6,403.5,362.6z"/>
+            <path d="M385.3,41h-57.7v-9.8c0-17.2-14-31.2-31.2-31.2H154c-17.2,0-31.2,14-31.2,31.2v9.7H65.2c-24.7,0-44.7,20.1-44.7,44.7 v361.1c0,24.7,20.1,44.7,44.7,44.7h174.9c-34.2-29.9-55.8-73.8-55.8-122.8h-81.9c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5 h81.9c1.8,0,3.4,0.6,5.1,1c3.8-14.9,9.5-29,17-42h-83.6c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5h102.4 c4.1,0,7.7,1.5,10.9,3.6c29.3-27.5,68.6-44.6,112-44.6c29.9,0,57.8,8.2,81.9,22.2V85.7C430,61,409.9,41,385.3,41z"/>
+          </svg>
+        </div>
+        <span style="flex:1;font-size:.9rem;font-weight:700;color:var(--text-primary)">{{ editingActivite() ? 'Modifier l\'activité' : 'Nouvelle activité' }}</span>
+        <button class="mx-so-close" (click)="closeModal()"><svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+      </div>
+      <div style="padding:16px 18px;display:flex;flex-direction:column;gap:11px;overflow-y:auto;flex:1">
+        <div class="mx-field"><label class="mx-field-label">Nom <span style="color:#ef4444">*</span></label><input [(ngModel)]="form().nom" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        <div class="mx-field"><label class="mx-field-label">Description</label><textarea [(ngModel)]="form().description" [ngModelOptions]="{standalone:true}" rows="2" class="mx-field-textarea"></textarea></div>
+        <div class="mx-so-grid">
+          <div class="mx-field"><label class="mx-field-label">Statut</label><select [(ngModel)]="form().statutActiviteId" [ngModelOptions]="{standalone:true}" class="mx-field-select"><option *ngFor="let s of statutsActivite()" [ngValue]="s.id">{{ s.libelle }}</option></select></div>
+          <div class="mx-field"><label class="mx-field-label">Priorité</label><select [(ngModel)]="form().priorite" [ngModelOptions]="{standalone:true}" class="mx-field-select"><option *ngFor="let p of PRIORITES" [ngValue]="p.value">{{ p.label }}</option></select></div>
+          <div class="mx-field mx-so-full"><label class="mx-field-label">Projet <span style="font-size:.6rem;color:#8b5cf6;background:rgba(139,92,246,.1);padding:1px 5px;border-radius:4px;margin-left:3px">Optionnel</span></label><select [(ngModel)]="formProjetId" [ngModelOptions]="{standalone:true}" class="mx-field-select"><option [ngValue]="null">— Aucun (globale) —</option><option *ngFor="let p of projets()" [ngValue]="p.id">{{ p.nom }}</option></select></div>
+          <div class="mx-field"><label class="mx-field-label">Assigné à</label><select [(ngModel)]="form().utilisateurId" [ngModelOptions]="{standalone:true}" class="mx-field-select"><option [ngValue]="undefined">— Non assigné —</option><option *ngFor="let u of utilisateurs()" [ngValue]="u.id">{{ u.prenom }} {{ u.nom }}</option></select></div>
+          <div class="mx-field"><label class="mx-field-label">Échéance</label><input type="date" [(ngModel)]="form().dateEcheance" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+          <div class="mx-field"><label class="mx-field-label">Heures estimées</label><input type="number" [(ngModel)]="form().heuresEstimees" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        </div>
+        <div class="mx-field"><label class="mx-field-label">Couleur</label><div class="mx-colors-row"><button *ngFor="let c of COULEURS" type="button" class="mx-color-btn" [class.selected]="form().couleur===c" [style.background]="c" (click)="form().couleur=c"></button></div></div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap">
+          <label class="mx-toggle-row"><input type="checkbox" [(ngModel)]="form().visible" [ngModelOptions]="{standalone:true}" style="display:none"><div class="mx-toggle" [class.on]="form().visible"><div class="mx-toggle-knob"></div></div><span>Visible</span></label>
+          <label class="mx-toggle-row"><input type="checkbox" [(ngModel)]="form().facturable" [ngModelOptions]="{standalone:true}" style="display:none"><div class="mx-toggle" [class.on]="form().facturable"><div class="mx-toggle-knob"></div></div><span>Facturable</span></label>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;padding:10px 18px;border-top:1px solid var(--border-color);background:var(--bg-hover);flex-shrink:0">
+        <button class="mx-btn mx-btn-ghost" (click)="closeModal()">Annuler</button>
+        <button class="dt-btn-create" (click)="save()" style="height:36px;padding:0 16px;font-size:.78rem">{{ editingActivite() ? 'Enregistrer' : 'Créer' }}</button>
       </div>
     </div>
   </div>
-
-  <div class="mx-so-footer">
-    <button class="mx-btn mx-btn-ghost" (click)="selectedActivite.set(null)">Fermer</button>
-    <button class="mx-btn mx-btn-ghost" (click)="openEdit(a)">
-      <svg viewBox="0 0 14 14" fill="none" style="width:11px;height:11px"><path d="M9 2l3 3-7 7H2V9l7-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
-      Modifier
-    </button>
-  </div>
-</div>
-
-<!-- ════ MODAL ACTIVITÉ ════ -->
-<div *ngIf="showModal()" class="mx-modal-backdrop" (click)="closeModal()">
-  <div class="mx-modal" style="max-width:520px;padding:0;overflow:hidden;max-height:90vh;display:flex;flex-direction:column" (click)="$event.stopPropagation()">
-    <div style="display:flex;align-items:center;gap:12px;padding:16px 18px 12px;border-bottom:1px solid var(--border-color);flex-shrink:0">
-      <div style="width:34px;height:34px;border-radius:9px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent)">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 5h6M5 8h6M5 11h4" stroke-linecap="round"/></svg>
-      </div>
-      <span style="flex:1;font-size:.9375rem;font-weight:700;color:var(--text-primary)">
-        {{ editingActivite() ? 'Modifier l\'activité' : 'Nouvelle activité' }}
-      </span>
-      <button class="mx-so-close" (click)="closeModal()"><svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
-    </div>
-
-    <div style="padding:16px 18px;display:flex;flex-direction:column;gap:11px;overflow-y:auto;flex:1">
-      <div class="mx-field"><label class="mx-field-label">Nom <span style="color:#ef4444">*</span></label><input [(ngModel)]="form().nom" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-      <div class="mx-field"><label class="mx-field-label">Description</label><textarea [(ngModel)]="form().description" [ngModelOptions]="{standalone:true}" rows="2" class="mx-field-textarea"></textarea></div>
-
-      <div class="mx-so-grid">
-        <!-- ✅ Statut dans le formulaire (pour modifier le statut via Modifier) -->
-        <div class="mx-field">
-          <label class="mx-field-label">Statut</label>
-          <select [(ngModel)]="form().statutActiviteId" [ngModelOptions]="{standalone:true}" class="mx-field-select">
-            <option *ngFor="let s of statutsActivite()" [ngValue]="s.id">{{ s.libelle }}</option>
-          </select>
-        </div>
-        <div class="mx-field">
-          <label class="mx-field-label">Priorité</label>
-          <select [(ngModel)]="form().priorite" [ngModelOptions]="{standalone:true}" class="mx-field-select">
-            <option *ngFor="let p of PRIORITES" [ngValue]="p.value">{{ p.label }}</option>
-          </select>
-        </div>
-
-        <!-- Projet associé (optionnel) -->
-        <div class="mx-field mx-so-full">
-          <label class="mx-field-label">Projet associé <span style="font-size:.6rem;background:rgba(139,92,246,.1);color:#8b5cf6;padding:1px 5px;border-radius:4px;margin-left:4px">Optionnel</span></label>
-          <select [(ngModel)]="formProjetId" [ngModelOptions]="{standalone:true}" class="mx-field-select">
-            <option [ngValue]="null">— Aucun (activité globale) —</option>
-            <option *ngFor="let p of projets()" [ngValue]="p.id">{{ p.nom }}</option>
-          </select>
-        </div>
-
-        <!-- Assigné -->
-        <div class="mx-field">
-          <label class="mx-field-label">Assigné à</label>
-          <select [(ngModel)]="form().utilisateurId" [ngModelOptions]="{standalone:true}" class="mx-field-select">
-            <option [ngValue]="undefined">— Non assigné —</option>
-            <option *ngFor="let u of utilisateurs()" [ngValue]="u.id">{{ u.prenom }} {{ u.nom }}</option>
-          </select>
-        </div>
-        <div class="mx-field"><label class="mx-field-label">Date d'échéance</label><input type="date" [(ngModel)]="form().dateEcheance" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-        <div class="mx-field"><label class="mx-field-label">Budget</label><input type="number" [(ngModel)]="form().budget" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-        <div class="mx-field"><label class="mx-field-label">Heures estimées</label><input type="number" [(ngModel)]="form().heuresEstimees" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-      </div>
-
-      <div class="mx-field"><label class="mx-field-label">Couleur</label><div class="mx-colors-row"><button *ngFor="let c of COULEURS" type="button" class="mx-color-btn" [class.selected]="form().couleur===c" [style.background]="c" (click)="form().couleur=c"></button></div></div>
-
-      <div style="display:flex;gap:16px;flex-wrap:wrap">
-        <label class="mx-toggle-row"><input type="checkbox" [(ngModel)]="form().visible" [ngModelOptions]="{standalone:true}" style="display:none"><div class="mx-toggle" [class.on]="form().visible"><div class="mx-toggle-knob"></div></div><span>Visible</span></label>
-        <label class="mx-toggle-row"><input type="checkbox" [(ngModel)]="form().facturable" [ngModelOptions]="{standalone:true}" style="display:none"><div class="mx-toggle" [class.on]="form().facturable"><div class="mx-toggle-knob"></div></div><span>Facturable</span></label>
-      </div>
-    </div>
-
-    <div style="display:flex;gap:8px;justify-content:flex-end;padding:10px 18px;border-top:1px solid var(--border-color);background:var(--bg-hover);flex-shrink:0">
-      <button class="mx-btn mx-btn-ghost" (click)="closeModal()">Annuler</button>
-      <button class="mx-btn mx-btn-primary" (click)="save()">{{ editingActivite() ? 'Enregistrer' : 'Créer' }}</button>
-    </div>
-  </div>
-</div>

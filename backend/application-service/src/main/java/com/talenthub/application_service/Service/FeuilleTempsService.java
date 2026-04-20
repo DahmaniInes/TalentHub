@@ -25,11 +25,11 @@ import java.util.Optional;
 @Transactional
 public class FeuilleTempsService {
 
-    private final FeuilleTempsRepository       repository;
-    private final UtilisateurRepository        utilisateurRepository;
-    private final LigneFeuilleTempsRepository  ligneRepository;
-    private final NotificationService          notificationService;
-    private final ProfilPermissionRepository   profilPermissionRepository;
+    private final FeuilleTempsRepository      repository;
+    private final UtilisateurRepository       utilisateurRepository;
+    private final LigneFeuilleTempsRepository ligneRepository;
+    private final NotificationService         notificationService;
+    private final ProfilPermissionRepository  profilPermissionRepository;
 
     public FeuilleTempsService(
             FeuilleTempsRepository repository,
@@ -37,50 +37,40 @@ public class FeuilleTempsService {
             LigneFeuilleTempsRepository ligneRepository,
             NotificationService notificationService,
             ProfilPermissionRepository profilPermissionRepository) {
-        this.repository                 = repository;
-        this.utilisateurRepository      = utilisateurRepository;
-        this.ligneRepository            = ligneRepository;
-        this.notificationService        = notificationService;
+        this.repository                = repository;
+        this.utilisateurRepository     = utilisateurRepository;
+        this.ligneRepository           = ligneRepository;
+        this.notificationService       = notificationService;
         this.profilPermissionRepository = profilPermissionRepository;
     }
 
-    // ── Lecture ──
-    public List<FeuilleTemps> getAllFeuillesTemps() { return repository.findAll(); }
-
-    public Optional<FeuilleTemps> getFeuilleTempsById(Long id) { return repository.findById(id); }
+    public List<FeuilleTemps> getAllFeuillesTemps()              { return repository.findAll(); }
+    public Optional<FeuilleTemps> getFeuilleTempsById(Long id)  { return repository.findById(id); }
+    public List<FeuilleTemps> getByStatut(String statut)        { return repository.findByStatut(statut); }
+    public List<FeuilleTemps> getFeuillesSoumises()             { return repository.findByStatut("SOUMISE"); }
+    public List<FeuilleTemps> getPourApprobation()              { return repository.findByStatutIn(List.of("SOUMISE","VALIDEE","REJETEE")); }
 
     public List<FeuilleTemps> getByUtilisateur(Long utilisateurId) {
         return repository.findByUtilisateurIdOrderBySemaineDuDesc(utilisateurId);
     }
 
-    public List<FeuilleTemps> getByStatut(String statut) { return repository.findByStatut(statut); }
-
-    public List<FeuilleTemps> getFeuillesSoumises() { return repository.findByStatut("SOUMISE"); }
-
-    public List<FeuilleTemps> getPourApprobation() {
-        return repository.findByStatutIn(List.of("SOUMISE", "VALIDEE", "REJETEE"));
-    }
-
-    // ── Créer ──
+    // ─── Créer ───────────────────────────────────────────────────────────────
     public FeuilleTemps create(FeuilleTempsRequest req) {
         Utilisateur utilisateur = utilisateurRepository.findById(req.getUtilisateurId())
                 .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé: " + req.getUtilisateurId()));
 
-        repository.findByUtilisateurIdAndSemaineDu(req.getUtilisateurId(), req.getSemaineDu())
+        // ✅ Vérifier doublon sur la semaine du LUNDI (pas la date de la ligne)
+        LocalDate lundiSemaine = toLundi(req.getSemaineDu());
+        repository.findByUtilisateurIdAndSemaineDu(req.getUtilisateurId(), lundiSemaine)
                 .ifPresent(e -> { throw new DuplicateResourceException("Une feuille existe déjà pour cette semaine."); });
 
-        // Calculer les totaux depuis les lignes si non fournis
-        int totalTravaillees = req.getMinutesTravaillees();
-        int totalSupp        = req.getMinutesSupplementaires();
-        if (req.getLignes() != null && !req.getLignes().isEmpty()) {
-            totalTravaillees = req.getLignes().stream().mapToInt(LigneFeuilleTempsRequest::getMinutesTravaillees).sum();
-            totalSupp        = req.getLignes().stream().mapToInt(LigneFeuilleTempsRequest::getMinutesSupplementaires).sum();
-        }
+        int totalTravaillees = calculerTotalTravaillees(req);
+        int totalSupp        = calculerTotalSupp(req);
 
         FeuilleTemps ft = FeuilleTemps.builder()
                 .utilisateur(utilisateur)
-                .semaineDu(req.getSemaineDu())
-                .semaineAu(req.getSemaineAu())
+                .semaineDu(lundiSemaine)
+                .semaineAu(lundiSemaine.plusDays(4))   // vendredi
                 .heuresTravaillees(totalTravaillees / 60.0)
                 .heuresSupplementaires(totalSupp / 60.0)
                 .heuresAbsence(0)
@@ -89,11 +79,13 @@ public class FeuilleTempsService {
                 .build();
 
         FeuilleTemps saved = repository.save(ft);
-        if (req.getLignes() != null) saveLignes(saved, req.getLignes());
-        return saved;
+        if (req.getLignes() != null && !req.getLignes().isEmpty()) {
+            saveLignes(saved, req.getLignes());
+        }
+        return repository.findById(saved.getId()).orElse(saved);
     }
 
-    // ── Modifier ──
+    // ─── Modifier ────────────────────────────────────────────────────────────
     public FeuilleTemps update(Long id, FeuilleTempsRequest req) {
         FeuilleTemps ft = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Feuille non trouvée: " + id));
@@ -102,28 +94,36 @@ public class FeuilleTempsService {
             throw new RuntimeException("Seules les feuilles en brouillon ou rejetées peuvent être modifiées.");
         }
 
-        int totalTravaillees = req.getMinutesTravaillees();
-        int totalSupp        = req.getMinutesSupplementaires();
-        if (req.getLignes() != null && !req.getLignes().isEmpty()) {
-            totalTravaillees = req.getLignes().stream().mapToInt(LigneFeuilleTempsRequest::getMinutesTravaillees).sum();
-            totalSupp        = req.getLignes().stream().mapToInt(LigneFeuilleTempsRequest::getMinutesSupplementaires).sum();
-        }
+        // ✅ FIX PRINCIPAL : on garde TOUJOURS semaineDu/semaineAu existants
+        //    On ne les écrase PAS avec ce que le frontend envoie (qui peut être
+        //    la date d'une ligne, pas forcément le lundi)
+        // semaineDu et semaineAu ne changent jamais lors d'un update
 
-        ft.setSemaineDu(req.getSemaineDu());
-        ft.setSemaineAu(req.getSemaineAu());
+        int totalTravaillees = calculerTotalTravaillees(req);
+        int totalSupp        = calculerTotalSupp(req);
+
         ft.setHeuresTravaillees(totalTravaillees / 60.0);
         ft.setHeuresSupplementaires(totalSupp / 60.0);
-        ft.setCommentaireEmploye(req.getCommentaireEmploye());
-        if (req.getStatut() != null) ft.setStatut(req.getStatut());
+        if (req.getCommentaireEmploye() != null) {
+            ft.setCommentaireEmploye(req.getCommentaireEmploye());
+        }
+        // ✅ Ne pas changer le statut si non fourni, et ne pas autoriser
+        //    un changement via update (seulement via soumettre/valider/rejeter)
+        // on ignore req.getStatut() ici volontairement
 
         if (req.getLignes() != null) {
             ligneRepository.deleteByFeuilleTempsId(ft.getId());
-            saveLignes(ft, req.getLignes());
+            if (!req.getLignes().isEmpty()) {
+                saveLignes(ft, req.getLignes());
+            }
         }
-        return repository.save(ft);
+
+        FeuilleTemps saved = repository.save(ft);
+        // ✅ Reload pour avoir les lignes fraîches
+        return repository.findById(saved.getId()).orElse(saved);
     }
 
-    // ── Soumettre ──
+    // ─── Soumettre ───────────────────────────────────────────────────────────
     public FeuilleTemps soumettre(Long id) {
         FeuilleTemps ft = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Feuille non trouvée: " + id));
@@ -141,7 +141,7 @@ public class FeuilleTempsService {
         return saved;
     }
 
-    // ── Annuler soumission ──
+    // ─── Annuler soumission ──────────────────────────────────────────────────
     public FeuilleTemps annulerSoumission(Long id) {
         FeuilleTemps ft = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Feuille non trouvée: " + id));
@@ -152,7 +152,7 @@ public class FeuilleTempsService {
         return repository.save(ft);
     }
 
-    // ── Valider ──
+    // ─── Valider ─────────────────────────────────────────────────────────────
     public FeuilleTemps valider(Long id, String valideurKeycloakId, String commentaire) {
         FeuilleTemps ft = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Feuille non trouvée: " + id));
@@ -176,7 +176,7 @@ public class FeuilleTempsService {
         return saved;
     }
 
-    // ── Rejeter ──
+    // ─── Rejeter ─────────────────────────────────────────────────────────────
     public FeuilleTemps rejeter(Long id, String valideurKeycloakId, String commentaire) {
         FeuilleTemps ft = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Feuille non trouvée: " + id));
@@ -201,7 +201,7 @@ public class FeuilleTempsService {
         return saved;
     }
 
-    // ── Supprimer ──
+    // ─── Supprimer ───────────────────────────────────────────────────────────
     public void delete(Long id) {
         FeuilleTemps ft = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Feuille non trouvée: " + id));
@@ -211,11 +211,38 @@ public class FeuilleTempsService {
         repository.deleteById(id);
     }
 
-    // ── Enregistrer les lignes ──
+    // ─── Helpers privés ──────────────────────────────────────────────────────
+
+    /**
+     * ✅ FIX CLÉ : convertit n'importe quelle date en lundi de sa semaine.
+     * Si le frontend envoie un mercredi comme semaineDu, on calcule le lundi.
+     */
+    private LocalDate toLundi(LocalDate date) {
+        if (date == null) return LocalDate.now();
+        int dayOfWeek = date.getDayOfWeek().getValue(); // 1=lundi, 7=dimanche
+        return date.minusDays(dayOfWeek - 1);
+    }
+
+    private int calculerTotalTravaillees(FeuilleTempsRequest req) {
+        if (req.getLignes() != null && !req.getLignes().isEmpty()) {
+            return req.getLignes().stream()
+                    .mapToInt(LigneFeuilleTempsRequest::getMinutesTravaillees).sum();
+        }
+        return req.getMinutesTravaillees();
+    }
+
+    private int calculerTotalSupp(FeuilleTempsRequest req) {
+        if (req.getLignes() != null && !req.getLignes().isEmpty()) {
+            return req.getLignes().stream()
+                    .mapToInt(LigneFeuilleTempsRequest::getMinutesSupplementaires).sum();
+        }
+        return req.getMinutesSupplementaires();
+    }
+
     private void saveLignes(FeuilleTemps ft, List<LigneFeuilleTempsRequest> reqs) {
         reqs.forEach(r -> {
-            // Calculer les minutes depuis heureDebut/heureFin si non fournies
             int minutes = r.getMinutesTravaillees();
+            // Calculer depuis heureDebut/heureFin si minutes non fournies
             if (minutes == 0 && r.getHeureDebut() != null && r.getHeureFin() != null
                     && !r.getHeureDebut().isBlank() && !r.getHeureFin().isBlank()) {
                 try {

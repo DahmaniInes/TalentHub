@@ -462,4 +462,32 @@ export class ProjetsComponent implements OnInit {
   getStatutLabel(s: string): string { return ({ PLANIFIE:'Planifié', EN_COURS:'En cours', SUSPENDU:'Suspendu', TERMINE:'Terminé', ANNULE:'Annulé' } as any)[s] || s; }
   getPrioriteCouleur(p: number): string { return ['','#10b981','#3b82f6','#f97316','#ef4444'][p] || '#3b82f6'; }
   getActivitesByStatut(id: number): Activite[] { return this.activites().filter(a => a.statutActiviteId === id); }
+
+
+
+
+  // ── Stats computed ──
+statsEnCours  = computed(() => this.projets().filter(p => p.statut === 'EN_COURS').length);
+statsPlanifies = computed(() => this.projets().filter(p => p.statut === 'PLANIFIE').length);
+statsTermines  = computed(() => this.projets().filter(p => p.statut === 'TERMINE').length);
+ 
+// ── Couleur barre avancement ──
+getAvancementCouleur(avancement?: number): string {
+  const pct = avancement || 0;
+  if (pct >= 100) return '#10b981';
+  if (pct >= 60)  return '#3b82f6';
+  if (pct >= 30)  return '#f97316';
+  return '#94a3b8';
+}
+ 
+// ── Format date "20 Avr, 2026" ──
+fmtDate(d?: string | Date): string {
+  if (!d) return '—';
+  const date = typeof d === 'string' ? new Date(d) : d;
+  if (isNaN(date.getTime())) return '—';
+  const MOIS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+  return `${String(date.getDate()).padStart(2,'0')} ${MOIS[date.getMonth()]}, ${date.getFullYear()}`;
+}
+
+
 }

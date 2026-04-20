@@ -880,16 +880,23 @@
 
 
 
-
 /* ══════════════════════════════════════════════════════════
    AJOUTER À LA FIN de layout.component.css
-   Styles sous-menu "Suivi du temps" — MÊME style que .nav-item
+   Styles sous-menu Suivi du temps — IDENTIQUE à .nav-item
 ══════════════════════════════════════════════════════════ */
 
+/* Groupe conteneur */
 .nav-group { display: flex; flex-direction: column; }
 
-/* ✅ Bouton toggle — copie exacte de .nav-item + border:none */
+/* ── Bouton toggle parent ──
+   Copie exacte de .nav-item + border:none pour <button> */
 .nav-group-btn {
+  /* Réinitialisation bouton */
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  /* Même styles que .nav-item */
   display: flex;
   align-items: center;
   gap: 11px;
@@ -904,70 +911,58 @@
   white-space: nowrap;
   overflow: hidden;
   letter-spacing: 0.7px;
-  background: none;
-  border: none;        /* ← override button default */
-  width: 100%;
-  text-align: left;
   transition: background-color 0.2s, color 0.2s;
 }
 .nav-group-btn:hover { color: #ffffff; background: rgba(255,255,255,0.07); }
 .nav-group-btn.active { color: #c026d3; font-weight: 600; }
+
+/* Light mode */
 :root:not(.dark) .nav-group-btn { color: #475569; }
 :root:not(.dark) .nav-group-btn:hover { color: #0f172a; background: rgba(0,0,0,.04); }
 :root:not(.dark) .nav-group-btn.active { color: var(--accent); }
 
-/* Chevron caché en mode collapsed */
-.sidebar.collapsed .nav-group-chevron { display: none; }
+/* Chevron */
+.nav-sub-chevron {
+  width: 11px; height: 11px;
+  margin-left: auto; flex-shrink: 0;
+  opacity: 0.5;
+  transition: transform 0.22s ease, opacity 0.2s;
+}
+.nav-group-btn:hover .nav-sub-chevron,
+.nav-group-btn.active .nav-sub-chevron { opacity: 0.8; }
+.sidebar.collapsed .nav-sub-chevron { display: none; }
 
-/* Sous-menu — fermé par défaut */
+/* ── Sous-menu animé ── */
 .nav-submenu {
   display: flex;
   flex-direction: column;
-  gap: 1px;
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.22s;
   opacity: 0;
-  padding-left: 36px;   /* aligné sous le texte du bouton parent */
 }
-.nav-submenu-open { max-height: 320px; opacity: 1; }
+.nav-submenu-open {
+  max-height: 400px;
+  opacity: 1;
+}
 
-/* Masquer sous-menu en mode collapsed */
+/* Masquer en mode collapsed */
 .sidebar.collapsed .nav-submenu { display: none; }
 
-/* Items du sous-menu */
-.nav-subitem {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 10px 7px 6px;
-  border-radius: 7px;
-  color: #7a8fa8;
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 400;
-  transition: background-color 0.14s, color 0.14s;
-  white-space: nowrap;
-  overflow: hidden;
-}
-.nav-subitem:hover { color: #e2e8f0; background: rgba(255,255,255,0.06); }
-.nav-subitem.active {
-  color: #c026d3;
-  font-weight: 600;
-  background: rgba(192,38,211,0.1);
+/* ── Items du sous-menu — EXACTEMENT comme .nav-item ──
+   On utilise la classe .nav-subitem-full sur un <a class="nav-item nav-subitem-full">
+   pour hériter du style nav-item + ajouter l'indent */
+.nav-subitem-full {
+  padding-left: 22px !important; /* indent doux sous l'icône parent */
 }
 
-/* Icône dans le sous-menu */
-.nav-sub-icon {
-  width: 13px; height: 13px;
-  flex-shrink: 0;
-  opacity: 0.7;
-  transition: opacity 0.12s;
+/* Indicateur de page active dans le sous-menu */
+.nav-subitem-full.active {
+  color: #c026d3 !important;
+  font-weight: 600 !important;
+  background: rgba(192,38,211,0.1) !important;
 }
-.nav-subitem:hover .nav-sub-icon,
-.nav-subitem.active .nav-sub-icon { opacity: 1; }
-
-/* Light mode */
-:root:not(.dark) .nav-subitem { color: #64748b; }
-:root:not(.dark) .nav-subitem:hover { color: #1e293b; background: rgba(0,0,0,.04); }
-:root:not(.dark) .nav-subitem.active { color: var(--accent); background: rgba(192,38,211,0.07); }
+:root:not(.dark) .nav-subitem-full.active {
+  color: var(--accent) !important;
+  background: rgba(192,38,211,0.08) !important;
+}

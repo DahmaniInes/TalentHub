@@ -1,214 +1,336 @@
-<!-- users.component.html — VERSION FINALE -->
-<div class="mx-page" (click)="closeMenu()">
+<!-- users.component.html — Style Orders Status avec classes dt-* -->
+<div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh" (click)="closeMenu()">
 
-  <!-- HEADER -->
-  <div class="mx-page-header">
-    <div class="mx-page-title-block">
-      <h1 class="mx-page-title">
-        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
-        Utilisateurs
-      </h1>
-      <p class="mx-page-subtitle">
-        {{ users().length }} utilisateur(s)
-        <span class="mx-badge mx-badge-actif">{{ statsActifs() }} actifs</span>
-        <span class="mx-badge mx-badge-inactif">{{ statsInactifs() }} inactifs</span>
-      </p>
+  <div class="dt-wrap">
+
+    <!-- ══ HEADER ══ -->
+    <div class="dt-header">
+      <div>
+        <h1 class="dt-title">
+            <svg class="dt-title-icon"  fill="currentColor" width="800px" height="800px" viewBox="0 -64 640 640" xmlns="http://www.w3.org/2000/svg"><path d="M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0 96 57.3 96 128s57.3 128 128 128zm89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h274.9c-2.4-6.8-3.4-14-2.6-21.3l6.8-60.9 1.2-11.1 7.9-7.9 77.3-77.3c-24.5-27.7-60-45.5-99.9-45.5zm45.3 145.3l-6.8 61c-1.1 10.2 7.5 18.8 17.6 17.6l60.9-6.8 137.9-137.9-71.7-71.7-137.9 137.8zM633 268.9L595.1 231c-9.3-9.3-24.5-9.3-33.8 0l-37.8 37.8-4.1 4.1 71.8 71.7 41.8-41.8c9.3-9.4 9.3-24.5 0-33.9z"/></svg>          
+          Utilisateurs
+        </h1>
+        
+        
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap">
+
+
+          <span class="dt-badge dt-badge-accent" style="padding:3px 9px;font-size:.66rem">
+            <span class="dt-badge-dot"></span>{{ users().length }} Total
+          </span>
+
+          <span class="dt-badge dt-badge-delivered" style="padding:3px 9px;font-size:.66rem">
+            <span class="dt-badge-dot"></span>{{ statsActifs() }} Actifs
+          </span>
+
+          <span class="dt-badge dt-badge-canceled" style="padding:3px 9px;font-size:.66rem">
+            <span class="dt-badge-dot"></span>{{ statsInactifs() }} Inactifs
+          </span>
+        </div>
+      </div>
+
+      <div class="dt-header-actions">
+        <!-- Recherche -->
+        <div class="dt-search-bar">
+          <svg class="dt-search-icon" viewBox="0 0 14 14" fill="none">
+            <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.4"/>
+            <path d="m10 10 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+          <input class="dt-search-input"
+                 [value]="search()"
+                 (input)="search.set($any($event.target).value); resetPage()"
+                 placeholder="Rechercher...">
+        </div>
+
+        <!-- Filtre statut -->
+        <select style="height:38px;border:1px solid var(--accent);border-radius:8px;padding:0 10px;font-size:.78rem;background:var(--bg-input);color:var(--dt-text);font-family:Space Vacation, sans-serif;outline:none;cursor:pointer"
+                [value]="filterStatut()"
+                (change)="filterStatut.set($any($event.target).value); resetPage()">
+          <option value="tous">Tous les statuts</option>
+          <option value="actif">Actifs</option>
+          <option value="inactif">Inactifs</option>
+        </select>
+
+        <!-- Filtre profil -->
+        <select style="height:38px;border:1px solid var(--accent);border-radius:8px;padding:0 10px;font-size:.78rem;background:var(--bg-input);color:var(--dt-text);font-family:Space Vacation, sans-serif;outline:none;cursor:pointer"
+                [value]="filterProfil()"
+                (change)="filterProfil.set($any($event.target).value); resetPage()">
+          <option value="">Tous les profils</option>
+          <option *ngFor="let p of profilsUniques()" [value]="p">{{ p }}</option>
+        </select>
+
+        <!-- Bouton créer -->
+        <button class="dt-btn-create" (click)="goToAdd()">
+          <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
+            <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Ajouter
+        </button>
+      </div>
     </div>
-    <div class="mx-page-actions">
-      <button class="mx-btn mx-btn-primary" (click)="goToAdd()">
-        <svg viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        Ajouter
-      </button>
-    </div>
-  </div>
 
-  <!-- TOOLBAR -->
-  <div class="mx-toolbar">
-    <div class="mx-search">
-      <svg viewBox="0 0 14 14" fill="none" class="mx-search-icon">
-        <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/>
-        <path d="m10 10 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-      </svg>
-      <input [value]="search()"
-             (input)="search.set($any($event.target).value); resetPage()"
-             placeholder="Nom, email, poste..." class="mx-search-input">
-    </div>
-    <select [value]="filterStatut()"
-            (change)="filterStatut.set($any($event.target).value); resetPage()"
-            class="mx-filter-select">
-      <option value="tous">Tous les statuts</option>
-      <option value="actif">Actifs</option>
-      <option value="inactif">Inactifs</option>
-    </select>
-    <select [value]="filterProfil()"
-            (change)="filterProfil.set($any($event.target).value); resetPage()"
-            class="mx-filter-select">
-      <option value="">Tous les profils</option>
-      <option *ngFor="let p of profilsUniques()" [value]="p">{{ p }}</option>
-    </select>
-    <div class="mx-toolbar-spacer"></div>
-    <span class="mx-count-chip">{{ filteredUsers().length }} résultat(s)</span>
-  </div>
-
-  <!-- TABLEAU -->
-  <div class="mx-table-wrap">
-
-    <!-- Barre bulk -->
-    <div *ngIf="selectedCount() > 0" class="mx-bulk-bar">
-      <span class="mx-bulk-count">{{ selectedCount() }} sélectionné(s)</span>
-      <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="clearSelection()">Tout désélectionner</button>
-      <button class="mx-btn mx-btn-danger mx-btn-sm">Supprimer la sélection</button>
+    <!-- Barre bulk sélection -->
+    <div *ngIf="selectedIds().size > 0" class="dt-bulk-bar">
+      <span class="dt-bulk-count">{{ selectedIds().size }} sélectionné(s)</span>
+      <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="clearSelection()">Désélectionner</button>
+      <button class="mx-btn mx-btn-danger mx-btn-sm">Supprimer</button>
     </div>
 
-    <div *ngIf="loading()" class="mx-loading"><div class="mx-spinner"></div> Chargement...</div>
+    <!-- Loading -->
+    <div *ngIf="loading()" class="dt-loading">
+      <div class="dt-spinner"></div> Chargement...
+    </div>
 
-    <div *ngIf="!loading()" class="mx-table-scroll">
-      <table class="mx-table">
+    <!-- ══ TABLEAU ══ -->
+    <div *ngIf="!loading()" class="dt-scroll">
+      <table class="dt-table">
         <thead>
           <tr>
-            <!-- Checkbox select-all -->
-            <th class="mx-checkbox-cell">
-              <input type="checkbox" class="mx-checkbox"
+            <th class="dt-th dt-th-cb">
+              <input type="checkbox" class="dt-checkbox"
                      [class.indeterminate]="somePageSelected()"
                      [checked]="allPageSelected()"
                      (change)="toggleSelectAll()">
             </th>
-            <th>Utilisateur</th>
-            <th>Poste / Département</th>
-            <th>Profil</th>
-            <th>Statut</th>
-            <th>Embauche</th>
-            <th style="width:44px"></th>
+
+
+            <th class="dt-th" style="min-width:210px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon"  viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8 7C9.65685 7 11 5.65685 11 4C11 2.34315 9.65685 1 8 1C6.34315 1 5 2.34315 5 4C5 5.65685 6.34315 7 8 7Z" fill="#000000"/>
+                  <path d="M14 12C14 10.3431 12.6569 9 11 9H5C3.34315 9 2 10.3431 2 12V15H14V12Z" fill="#000000"/>
+                  </svg>
+                Utilisateur
+              </div>
+            </th>
+           
+            <!-- ✅ Colonne POSTE séparée -->
+<!-- ✅ Colonne POSTE avec icône dans le titre -->
+<th class="dt-th" style="min-width:140px">
+  <div class="dt-th-inner">
+    <svg class="dt-th-icon" viewBox="0 0 925 925" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M352.9,53.4H441.6c33.601,0,61.601,24,68,55.7H560.2C553.4,49.7,502.8,3.4,441.6,3.4H352.9
+        c-61.2,0-111.8,46.3-118.601,105.7H284.9C291.3,77.3,319.3,53.4,352.9,53.4z"/>
+      <path d="M127.2,322.4c71.8,46.4,167.7,72,270.1,72c102.4,0,198.2-25.6,270.101-72C732,280.7,769.5,226.8,774.1,169.7
+        C756.8,148,730.2,134.1,700.2,134.1H561h-50H283.6h-50H94.4c-29.9,0-56.6,13.9-73.9,35.6C25.1,226.8,62.6,280.6,127.2,322.4z"/>
+      <path d="M363.1,461.1c0,15.601,12.7,28.3,28.301,28.3H403.1c15.601,0,28.301-12.699,28.301-28.3v-22.6H363.1V461.1L363.1,461.1z"/>
+      <path d="M94.4,617.201h419.5V553.5c0-7.699,3.1-15,8.6-20.4L618.2,439c5.399-5.3,12.6-8.2,20.1-8.2h156.2V243
+        c-4.2,8.6-9,17.1-14.5,25.5c-21.5,32.9-52.2,62.3-91,87.4c-60.3,39-135.8,64.4-217.6,74.1v8.399V461
+        c0,37.701-30.601,68.3-68.301,68.3H391.4c-37.7,0-68.301-30.6-68.301-68.3V438.4V430c-81.8-9.601-157.3-35.101-217.6-74.1
+        c-38.8-25.1-69.5-54.5-91-87.4C9,260.1,4.2,251.6,0,243v279.8C0,574.9,42.3,617.201,94.4,617.201z"/>
+      <path d="M659.6,453.6c-13.399,0-26.5,5.5-36,15l-69.1,69.602c-9.5,9.6-14.7,22.199-14.7,35.699v43.301v12.5v12.5V870.9
+        c0,2.4,0.2,4.801,0.5,7.1c3.4,24.6,24.601,43.6,50.2,43.6h283.8c27.9,0,50.7-22.699,50.7-50.699V504.201
+        c0-24.5-17.4-44.901-40.5-49.601c-3.3-0.7-6.7-1-10.1-1h-54.9H807h-12.5H659.6L659.6,453.6z M819.5,503.6h54.8
+        c0.4,0,0.7,0.301,0.7,0.701V871c0,0.1,0,0.1,0,0.201c-0.1,0.299-0.3,0.5-0.6,0.5c0,0,0,0-0.101,0H590.5
+        c-0.4,0-0.7-0.301-0.7-0.701V642.201v-12.5v-12.5v-33h36.7c22.9,0,41.5-18.602,41.5-41.5V503.6h126.5H807H819.5L819.5,503.6z"/>
+      <path d="M750,617.301H641.1c-9.199,0-17.199,5-21.6,12.4c-2.2,3.699-3.4,7.898-3.4,12.5v0.1c0,13.799,11.2,25,25,25h182.7
+        c13.8,0,25-11.201,25-25c0-13.801-11.2-25-25-25h-50.7H750z"/>
+      <path d="M823.8,774.801H641.1c-13.8,0-25,11.199-25,25c0,13.799,11.2,25,25,25h182.7c13.8,0,25-11.201,25-25
+        C848.8,786,837.6,774.801,823.8,774.801z"/>
+      <path d="M823.8,696.1H641.1c-13.8,0-25,11.201-25,25c0,13.801,11.2,25,25,25h182.7c13.8,0,25-11.199,25-25
+        C848.8,707.301,837.6,696.1,823.8,696.1z"/>
+    </svg>
+    Poste
+  </div>
+</th>
+            <!-- ✅ Colonne DÉPARTEMENT séparée -->
+            <th class="dt-th" style="min-width:140px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 21h18M5 21V7l8-4 8 4v14M8 21v-9a2 2 0 012-2h4a2 2 0 012 2v9"/>
+                </svg>
+                Département
+              </div>
+            </th>
+
+            
+            <th class="dt-th" style="min-width:120px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                Profil
+              </div>
+            </th>
+            <th class="dt-th" style="min-width:120px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none">
+                  <rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.3"/>
+                  <path d="M4 7l2.5 2.5 3.5-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Statut
+              </div>
+            </th>
+
+           <th class="dt-th" style="min-width:110px">
+  <div class="dt-th-inner">
+    <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="2" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+      <path d="M1 6h12M4.5 1v2M9.5 1v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    </svg>
+    Embauche
+  </div>
+</th>
+
+
+            <!-- Actions (vide — boutons dans chaque ligne) -->
+            <th class="dt-th dt-th-actions"></th>
           </tr>
         </thead>
+
         <tbody>
           <tr *ngFor="let user of pagedUsers()"
-              [class.row-selected]="isSelected(user.id) || selectedUser()?.id === user.id"
-              [class.row-inactive]="!user.actif"
+              class="dt-tr"
               (click)="openDetail(user)">
 
-            <!-- Checkbox ligne -->
-            <td class="mx-checkbox-cell" (click)="$event.stopPropagation()">
-              <input type="checkbox" class="mx-checkbox"
-                     [checked]="isSelected(user.id)"
-                     (change)="toggleSelect(user.id, $event)">
+
+            <!-- Checkbox -->
+            <td class="dt-td dt-td-cb" (click)="$event.stopPropagation()">
+              <input type="checkbox" 
+              class="dt-checkbox"
+              [class.dt-checkbox-active]="isSelected(user.id)"
+              [checked]="isSelected(user.id)"
+              (change)="toggleSelect(user.id, $event)">
             </td>
 
-            <td>
-              <div class="mx-cell-main">
-                <div class="mx-avatar with-dot" [class.active]="user.actif" [style.background]="getAvatarColor(user)">
+           
+
+            <!-- Utilisateur : avatar + nom + email -->
+            <td class="dt-td">
+              <div class="dt-cell-with-avatar">
+                <div class="dt-avatar" 
+                     [style.background]="getAvatarColor(user)">
                   <img *ngIf="user.photoUrl" [src]="user.photoUrl">
                   <span *ngIf="!user.photoUrl">{{ getInitiales(user) }}</span>
                 </div>
-                <div class="mx-cell-info">
-                  <span class="mx-cell-name">{{ user.nomComplet }}</span>
-                  <span class="mx-cell-sub">{{ user.email }}</span>
+                <div class="dt-cell-user">
+                  <span class="dt-cell-name">{{ user.nomComplet }}</span>
+                  <span class="dt-cell-sub">{{ user.email }}</span>
                 </div>
               </div>
             </td>
 
-            <td class="muted">
-              <span>{{ user.poste || '—' }}</span>
-              <span *ngIf="user.departement" style="color:var(--text-muted);font-size:.68rem;display:block">{{ user.departement }}</span>
+            <!-- ✅ Poste — colonne propre -->
+            <td class="dt-td">
+              <span class="dt-cell-text">{{ user.poste || '—' }}</span>
             </td>
 
-            <td>
-              <span *ngIf="user.profilNom" class="mx-badge mx-badge-accent">{{ user.profilNom }}</span>
-              <span *ngIf="!user.profilNom" class="muted">—</span>
+
+
+            
+            <!-- ✅ Département — colonne propre -->
+            <td class="dt-td">
+              <span class="dt-cell-muted">{{ user.departement || '—' }}</span>
             </td>
 
-            <td>
-              <span class="mx-badge" [class.mx-badge-actif]="user.actif" [class.mx-badge-inactif]="!user.actif">
+            <!-- Profil -->
+            <td class="dt-td">
+              <span *ngIf="user.profilNom" class="dt-badge dt-badge-accent">
+                <span class="dt-badge-dot"></span>{{ user.profilNom }}
+              </span>
+              <span *ngIf="!user.profilNom" class="dt-cell-muted">—</span>
+            </td>
+
+            <!-- Statut -->
+            <td class="dt-td">
+              <span class="dt-badge"
+                    [class.dt-badge-delivered]="user.actif"
+                    [class.dt-badge-canceled]="!user.actif">
+                <span class="dt-badge-dot"></span>
                 {{ user.actif ? 'Actif' : 'Inactif' }}
               </span>
             </td>
 
-            <td class="muted">{{ user.dateEmbauche ? (user.dateEmbauche | date:'dd/MM/yyyy') : '—' }}</td>
+            <!-- Date embauche -->
+            <td class="dt-td">
+              <span class="dt-cell-muted">
+                {{ user.dateEmbauche ? fmtDate(user.dateEmbauche) : '—' }}
+              </span>
+            </td>
 
-            <!-- Dropdown 3 points — toujours visible -->
-            <td class="mx-actions-cell" (click)="$event.stopPropagation()">
-              <div class="mx-actions-wrap">
-                <button class="mx-dots-btn" (click)="toggleMenu(user.id, $event)" title="Actions">
-                  <svg viewBox="0 0 4 16" fill="currentColor" style="width:4px;height:16px">
-                    <circle cx="2" cy="2" r="1.5"/><circle cx="2" cy="8" r="1.5"/><circle cx="2" cy="14" r="1.5"/>
+            <!-- ✅ Actions inline : crayon + poubelle (pas de menu 3 points) -->
+           
+           
+           
+            <td class="dt-td dt-td-actions" (click)="$event.stopPropagation()">
+              <div class="dt-td-actions-wrap" style="gap:0px"> <!-- gap réduit -->
+                <button class="dt-action-btn dt-action-edit" (click)="openDetail(user)" title="Modifier">
+                  <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
                   </svg>
                 </button>
-                <div *ngIf="openMenuId() === user.id" class="mx-dropdown">
-                  <button class="mx-dropdown-item" (click)="openDetail(user); closeMenu()">
-                    <svg viewBox="0 0 14 14" fill="none"><path d="M7 2H3a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V7M10 1l3 3-6 6H4V7l6-6z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
-                    Voir le détail
-                  </button>
-                  <button class="mx-dropdown-item warning" (click)="resetPassword(user); closeMenu()">
-                    <svg viewBox="0 0 14 14" fill="none"><path d="M1 4v3h3M13 10v-3h-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 5A5 5 0 1012 9.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-                    Réinitialiser MDP
-                  </button>
-                  <button class="mx-dropdown-item"
-                          [class.warning]="user.actif" [class.success]="!user.actif"
-                          (click)="toggleActif(user); closeMenu()">
-                    <svg *ngIf="user.actif" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 9l2-2 2 2M7 7V4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <svg *ngIf="!user.actif" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    {{ user.actif ? 'Désactiver' : 'Activer' }}
-                  </button>
-                  <div class="mx-dropdown-divider"></div>
-                  <button class="mx-dropdown-item danger" (click)="deleteUser(user); closeMenu()">
-                    <svg viewBox="0 0 14 14" fill="none"><path d="M2 3h10M5 3V2h4v1M4 3l.5 8h5L10 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    Supprimer
-                  </button>
-                </div>
+                <button class="dt-action-btn dt-action-del" (click)="deleteUser(user)" title="Supprimer">
+                  <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                  </svg>
+                </button>
               </div>
             </td>
+
+
+
+
+
           </tr>
         </tbody>
       </table>
 
-      <div *ngIf="filteredUsers().length === 0" class="mx-empty">
-        <svg class="mx-empty-icon" viewBox="0 0 48 48" fill="none" style="width:40px;height:40px">
+      <!-- Vide -->
+      <div *ngIf="filteredUsers().length === 0" class="dt-empty">
+        <svg class="dt-empty-icon" viewBox="0 0 48 48" fill="none" style="width:40px;height:40px">
           <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
           <path d="M24 16v8M24 28h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         </svg>
-        <p class="mx-empty-title">Aucun utilisateur trouvé</p>
-        <p class="mx-empty-sub">Modifiez vos filtres ou ajoutez un utilisateur</p>
-        <button class="mx-btn mx-btn-primary" style="margin-top:4px" (click)="goToAdd()">Ajouter un utilisateur</button>
+        <p class="dt-empty-title">Aucun utilisateur trouvé</p>
+        <p class="dt-empty-sub">Modifiez vos filtres ou ajoutez un utilisateur</p>
+        <button class="dt-btn-create" style="margin-top:12px" (click)="goToAdd()">Ajouter</button>
       </div>
     </div>
 
-    <!-- PAGINATION -->
-    <div *ngIf="!loading() && filteredUsers().length > 0" class="mx-pagination">
-      <div class="mx-pagination-info">
-        Affichage
-        <strong>{{ (currentPage() - 1) * pageSize() + 1 }}–{{ minVal(currentPage() * pageSize(), filteredUsers().length) }}</strong>
-        sur <strong>{{ filteredUsers().length }}</strong>
-        <select class="mx-page-size-select" style="margin-left:8px"
-                [value]="pageSize()" (change)="onPageSizeChange(+$any($event.target).value)">
+    <!-- ══ FOOTER PAGINATION ══ -->
+    <div *ngIf="!loading() && filteredUsers().length > 0" class="dt-footer">
+      <!-- "1-10 of 42" -->
+      <div class="dt-count-info">
+        <strong>{{ (currentPage()-1)*pageSize()+1 }}–{{ minVal(currentPage()*pageSize(), filteredUsers().length) }}</strong>
+        of <strong>{{ filteredUsers().length }}</strong>
+        <select style="margin-left:10px;border:1px solid var(--dt-border);border-radius:6px;padding:3px 8px;font-size:.71rem;background:var(--dt-bg);color:var(--dt-text-sub);font-family:Space Vacation, sans-serif;outline:none;cursor:pointer"
+                [value]="pageSize()"
+                (change)="onPageSizeChange(+$any($event.target).value)">
           <option value="10">10 / page</option>
           <option value="25">25 / page</option>
           <option value="50">50 / page</option>
         </select>
       </div>
-      <div class="mx-pagination-controls">
-        <button class="mx-page-btn" [disabled]="currentPage() === 1" (click)="goToPage(1)">
-          <svg viewBox="0 0 12 12" fill="none"><path d="M9 9L5 6l4-3M4 3v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+
+      <!-- Boutons pagination avec cercle violet -->
+      <div class="dt-pagination">
+        <button class="dt-page-arrow" [disabled]="currentPage()===1" (click)="goToPage(currentPage()-1)">
+          <svg viewBox="0 0 14 14" fill="none">
+            <path d="M9 2L5 7l4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </button>
-        <button class="mx-page-btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">
-          <svg viewBox="0 0 12 12" fill="none"><path d="M8 9L4 6l4-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
+
         <ng-container *ngFor="let p of pagesArray()">
-          <button *ngIf="p === 1 || p === totalPages() || (p >= currentPage() - 1 && p <= currentPage() + 1)"
-                  class="mx-page-btn" [class.active]="p === currentPage()" (click)="goToPage(p)">{{ p }}</button>
-          <span *ngIf="p === currentPage() - 2 && p > 1"
-                style="color:var(--text-muted);padding:0 2px;font-size:.8rem;line-height:30px">…</span>
-          <span *ngIf="p === currentPage() + 2 && p < totalPages()"
-                style="color:var(--text-muted);padding:0 2px;font-size:.8rem;line-height:30px">…</span>
+          <button *ngIf="p===1||p===totalPages()||(p>=currentPage()-1&&p<=currentPage()+1)"
+                  class="dt-page-btn"
+                  [class.dt-page-btn-active]="p===currentPage()"
+                  (click)="goToPage(p)">{{ p }}</button>
+          <span *ngIf="p===currentPage()-2&&p>1"
+                style="color:var(--dt-text-head);padding:0 4px;font-size:.75rem;line-height:34px">…</span>
+          <span *ngIf="p===currentPage()+2&&p<totalPages()"
+                style="color:var(--dt-text-head);padding:0 4px;font-size:.75rem;line-height:34px">…</span>
         </ng-container>
-        <button class="mx-page-btn" [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">
-          <svg viewBox="0 0 12 12" fill="none"><path d="M4 3l4 3-4 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-        <button class="mx-page-btn" [disabled]="currentPage() === totalPages()" (click)="goToPage(totalPages())">
-          <svg viewBox="0 0 12 12" fill="none"><path d="M3 9l4-3-4-3M8 3v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+
+        <button class="dt-page-arrow" [disabled]="currentPage()===totalPages()" (click)="goToPage(currentPage()+1)">
+          <svg viewBox="0 0 14 14" fill="none">
+            <path d="M5 2l4 5-4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </button>
       </div>
     </div>
-  </div>
+
+  </div><!-- /.dt-wrap -->
 </div>
 
 <!-- ════ SLIDE-OVER DÉTAIL ════ -->
@@ -216,7 +338,8 @@
 <div *ngIf="showDetail() && selectedUser() as user" class="mx-slideover">
 
   <div class="mx-so-header">
-    <div class="mx-so-avatar" [style.background]="getAvatarColor(user)">
+    <div class="dt-avatar" [style.background]="getAvatarColor(user)"
+         style="width:44px;height:44px;border-radius:11px;font-size:1rem;font-weight:800">
       <img *ngIf="user.photoUrl" [src]="user.photoUrl">
       <span *ngIf="!user.photoUrl">{{ getInitiales(user) }}</span>
     </div>
@@ -224,9 +347,13 @@
       <p class="mx-so-name">{{ user.nomComplet }}</p>
       <p class="mx-so-sub">{{ user.email }}</p>
       <div class="mx-so-badges">
-        <span *ngIf="user.profilNom" class="mx-badge mx-badge-accent">{{ user.profilNom }}</span>
-        <span class="mx-badge" [class.mx-badge-actif]="user.actif" [class.mx-badge-inactif]="!user.actif">
-          {{ user.actif ? 'Actif' : 'Inactif' }}
+        <span *ngIf="user.profilNom" class="dt-badge dt-badge-accent" style="font-size:.63rem">
+          <span class="dt-badge-dot"></span>{{ user.profilNom }}
+        </span>
+        <span class="dt-badge" style="font-size:.63rem"
+              [class.dt-badge-delivered]="user.actif"
+              [class.dt-badge-canceled]="!user.actif">
+          <span class="dt-badge-dot"></span>{{ user.actif ? 'Actif' : 'Inactif' }}
         </span>
       </div>
     </div>
@@ -265,7 +392,7 @@
       <div class="mx-info-list">
         <div class="mx-info-row" *ngIf="user.dateEmbauche">
           <span class="mx-info-key">Date embauche</span>
-          <span class="mx-info-val">{{ user.dateEmbauche | date:'dd/MM/yyyy' }}</span>
+          <span class="mx-info-val">{{ fmtDate(user.dateEmbauche)}}</span>
         </div>
         <div class="mx-info-row">
           <span class="mx-info-key">Keycloak ID</span>
@@ -283,23 +410,25 @@
   <div *ngIf="detailTab()==='groupes'" class="mx-so-body">
     <div *ngIf="userGroupes().length > 0" class="mx-membre-list">
       <div *ngFor="let g of userGroupes()" class="mx-membre-item">
-        <div class="mx-avatar" style="border-radius:8px" [style.background]="g.couleur || '#6366f1'">
+        <div class="dt-avatar" style="border-radius:8px;width:32px;height:32px;font-size:.66rem"
+             [style.background]="g.couleur || '#6366f1'">
           <svg viewBox="0 0 14 14" fill="white" style="width:12px;height:12px">
             <path d="M7 4a2 2 0 11-4 0 2 2 0 014 0zM12 4a2 2 0 11-4 0 2 2 0 014 0zM8.5 11.5c.033-.22.05-.445.05-.5a4.5 4.5 0 00-1-2.8A3 3 0 0113 11v.5h-4.5zM4 9a3 3 0 013 3v.5H1V12a3 3 0 013-3z"/>
           </svg>
         </div>
         <div class="mx-membre-info">
           <span class="mx-membre-nom">{{ g.nom }}</span>
-          <span class="mx-membre-sub">{{ g.nombreMembres }} membre(s){{ g.teamLeadId === user.id ? ' · ⭐ Team Lead' : '' }}</span>
+          <span class="mx-membre-sub">{{ g.nombreMembres }} membre(s)</span>
         </div>
-        <span class="mx-badge" [class.mx-badge-actif]="g.actif" [class.mx-badge-inactif]="!g.actif">
-          {{ g.actif ? 'Actif' : 'Inactif' }}
+        <span class="dt-badge" style="font-size:.63rem"
+              [class.dt-badge-delivered]="g.actif" [class.dt-badge-canceled]="!g.actif">
+          <span class="dt-badge-dot"></span>{{ g.actif ? 'Actif' : 'Inactif' }}
         </span>
       </div>
     </div>
-    <div *ngIf="userGroupes().length === 0" class="mx-empty">
-      <p class="mx-empty-title">Aucun groupe</p>
-      <p class="mx-empty-sub">Cet utilisateur n'appartient à aucun groupe</p>
+    <div *ngIf="userGroupes().length === 0" class="dt-empty" style="padding:30px">
+      <p class="dt-empty-title">Aucun groupe</p>
+      <p class="dt-empty-sub">Cet utilisateur n'appartient à aucun groupe</p>
     </div>
   </div>
 
@@ -308,24 +437,25 @@
     <div>
       <p class="mx-so-section-title">Mot de passe</p>
       <p style="font-size:.76rem;color:var(--text-muted);margin:0 0 10px;line-height:1.5">
-        Envoyer un email de réinitialisation à <strong style="color:var(--text-secondary)">{{ user.email }}</strong>
+        Envoyer un email à <strong style="color:var(--text-secondary)">{{ user.email }}</strong>
       </p>
       <button class="mx-btn mx-btn-warning" (click)="resetPassword(user)">Réinitialiser le mot de passe</button>
     </div>
     <div class="mx-divider"></div>
     <div>
       <p class="mx-so-section-title">Compte</p>
-      <p style="font-size:.76rem;color:var(--text-muted);margin:0 0 10px;line-height:1.5">
-        {{ user.actif ? 'Le compte est actuellement actif.' : 'Le compte est désactivé.' }}
+      <p style="font-size:.76rem;color:var(--text-muted);margin:0 0 10px">
+        {{ user.actif ? 'Le compte est actif.' : 'Le compte est désactivé.' }}
       </p>
-      <button class="mx-btn" [class.mx-btn-warning]="user.actif" [class.mx-btn-success]="!user.actif" (click)="toggleActif(user)">
-        {{ user.actif ? '🔒 Désactiver le compte' : '🔓 Réactiver le compte' }}
+      <button class="mx-btn" [class.mx-btn-warning]="user.actif" [class.mx-btn-success]="!user.actif"
+              (click)="toggleActif(user)">
+        {{ user.actif ? '🔒 Désactiver' : '🔓 Réactiver' }}
       </button>
     </div>
     <div class="mx-divider"></div>
     <div class="mx-danger-zone">
       <p class="mx-danger-title">Zone dangereuse</p>
-      <p class="mx-danger-desc">La suppression est définitive et ne peut pas être annulée.</p>
+      <p class="mx-danger-desc">La suppression est définitive et irréversible.</p>
       <button class="mx-btn mx-btn-danger" (click)="deleteUser(user)">🗑 Supprimer définitivement</button>
     </div>
   </div>

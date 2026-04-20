@@ -1,6 +1,6 @@
 // src/app/features/admin/groups/groups.component.ts
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, SlicePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GroupeService } from '../../services/groupe.service';
 import { UserService } from '../../services/user.service';
@@ -13,7 +13,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 @Component({
   selector: 'app-groups',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SlicePipe],
   templateUrl: './groups.component.html',
   styleUrls: ['./groups.component.css']
 })
@@ -30,7 +30,9 @@ export class GroupsComponent implements OnInit {
   // ── State ──
   loading        = signal(true);
   search         = signal('');
+  filterStatut   = signal<'tous' | 'actif' | 'inactif'>('tous');
   selectedGroupe = signal<Groupe | null>(null);
+  detailTab      = signal<'membres' | 'infos'>('membres');
   showModal      = signal(false);
   editingGroupe  = signal<Groupe | null>(null);
   saving         = signal(false);
@@ -59,12 +61,23 @@ export class GroupsComponent implements OnInit {
 
   // ── Computed : filtrage ──
   filteredGroupes = computed(() => {
+    let list = this.groupes();
     const q = this.search().toLowerCase();
-    if (!q) return this.groupes();
-    return this.groupes().filter(g =>
+    if (q) list = list.filter(g =>
       g.nom.toLowerCase().includes(q) ||
       (g.description || '').toLowerCase().includes(q)
     );
+    if (this.filterStatut() === 'actif')   list = list.filter(g => g.actif);
+    if (this.filterStatut() === 'inactif') list = list.filter(g => !g.actif);
+    return list;
+  });
+
+  totalActifs   = computed(() => this.groupes().filter(g => g.actif).length);
+  totalInactifs = computed(() => this.groupes().filter(g => !g.actif).length);
+
+  totalMembres = computed(() => {
+    const ids = new Set(this.groupes().flatMap(g => g.membres?.map(m => m.id) || []));
+    return ids.size;
   });
 
   // ── Computed : pagination ──
@@ -96,7 +109,6 @@ export class GroupsComponent implements OnInit {
 
   selectedCount = computed(() => this.selectedIds().size);
 
-  // ── Computed : membres formulaire ──
   membresSelectionnes = computed(() => {
     const ids = this.form().membresIds || [];
     return this.utilisateurs().filter(u => ids.includes(u.id));
@@ -105,12 +117,6 @@ export class GroupsComponent implements OnInit {
   utilisateursDispo = computed(() => {
     const ids = new Set(this.form().membresIds || []);
     return this.utilisateurs().filter(u => !ids.has(u.id));
-  });
-
-  // ── Computed : total membres unique ──
-  totalMembres = computed(() => {
-    const ids = new Set(this.groupes().flatMap(g => g.membres?.map(m => m.id) || []));
-    return ids.size;
   });
 
   ngOnInit(): void { this.loadAll(); }
@@ -127,7 +133,9 @@ export class GroupsComponent implements OnInit {
   }
 
   selectGroupe(g: Groupe): void {
-    this.groupeSvc.getById(g.id).subscribe({ next: d => this.selectedGroupe.set(d) });
+    this.groupeSvc.getById(g.id).subscribe({
+      next: d => { this.selectedGroupe.set(d); this.detailTab.set('membres'); }
+    });
     this.openMenuId.set(null);
   }
 
@@ -158,9 +166,7 @@ export class GroupsComponent implements OnInit {
     obs.subscribe({
       next: () => {
         this.ui.success(editing ? 'Groupe mis à jour.' : 'Groupe créé.');
-        this.closeModal();
-        this.saving.set(false);
-        this.loadAll();
+        this.closeModal(); this.saving.set(false); this.loadAll();
       },
       error: (err: HttpErrorResponse) => {
         this.ui.error(this.errorSvc.parse(err).message);
@@ -194,21 +200,19 @@ export class GroupsComponent implements OnInit {
   addMembreToForm(userId: number): void {
     if (!userId) return;
     const current = this.form().membresIds || [];
-    if (!current.includes(userId)) {
+    if (!current.includes(userId))
       this.form.set({ ...this.form(), membresIds: [...current, userId] });
-    }
   }
 
   removeMembreFromForm(userId: number): void {
     const current = this.form().membresIds || [];
     this.form.set({ ...this.form(), membresIds: current.filter(id => id !== userId) });
-    if (this.form().teamLeadId === userId) {
+    if (this.form().teamLeadId === userId)
       this.form.set({ ...this.form(), teamLeadId: undefined });
-    }
   }
 
   setTeamLeadInForm(userId: number): void {
-    this.form.set({ ...this.form(), teamLeadId: userId });
+    this.form.set({ ...this.form(), teamLeadId: this.form().teamLeadId === userId ? undefined : userId });
   }
 
   removeMembre(membre: MembreInfo): void {
@@ -231,7 +235,6 @@ export class GroupsComponent implements OnInit {
   goToPage(page: number): void {
     if (page >= 1 && page <= this.totalPages()) this.currentPage.set(page);
   }
-
   onPageSizeChange(size: number): void { this.pageSize.set(size); this.currentPage.set(1); }
   resetPage(): void { this.currentPage.set(1); }
   minVal(a: number, b: number): number { return Math.min(a, b); }
@@ -245,14 +248,12 @@ export class GroupsComponent implements OnInit {
       const s = new Set(this.selectedIds()); paged.forEach(g => s.add(g.id)); this.selectedIds.set(s);
     }
   }
-
   toggleSelect(id: number, event: Event): void {
     event.stopPropagation();
     const s = new Set(this.selectedIds());
     s.has(id) ? s.delete(id) : s.add(id);
     this.selectedIds.set(s);
   }
-
   isSelected(id: number): boolean { return this.selectedIds().has(id); }
   clearSelection(): void { this.selectedIds.set(new Set()); }
 
@@ -261,29 +262,43 @@ export class GroupsComponent implements OnInit {
     event.stopPropagation();
     this.openMenuId.set(this.openMenuId() === id ? null : id);
   }
-
   closeMenu(): void { this.openMenuId.set(null); }
 
   // ── Helpers ──
-  getInitiales(u: Utilisateur): string {
-    return `${(u.prenom || '?').charAt(0)}${(u.nom || '').charAt(0)}`.toUpperCase();
-  }
-
-  getMembreInitiales(m: MembreInfo): string {
-    return `${(m.prenom || '?').charAt(0)}${(m.nom || '').charAt(0)}`.toUpperCase();
-  }
-
   isTeamLead(g: Groupe, membreId: number): boolean { return g.teamLeadId === membreId; }
 
   getAvatarColor(name: string): string {
-    const colors = ['#6366f1','#8b5cf6','#c026d3','#ec4899','#10b981','#06b6d4','#f97316','#3b82f6'];
+    const colors = ['#c026d3'];
     return colors[(name || '').charCodeAt(0) % colors.length];
   }
 
-  // ── Photo team lead ──
+  getInitiales(u: Utilisateur): string {
+    return `${(u.prenom||'?').charAt(0)}${(u.nom||'').charAt(0)}`.toUpperCase();
+  }
+
+  getMembreInitiales(m: MembreInfo): string {
+    return `${(m.prenom||'?').charAt(0)}${(m.nom||'').charAt(0)}`.toUpperCase();
+  }
+
   getTeamLeadPhoto(g: Groupe): string | null {
     if (!g.teamLeadId || !g.membres) return null;
     const lead = g.membres.find(m => m.id === g.teamLeadId);
     return (lead as any)?.photoUrl || null;
+  }
+
+  // ✅ Email du team lead récupéré depuis la liste des utilisateurs
+  getTeamLeadEmail(g: Groupe): string {
+    if (!g.teamLeadId) return '';
+    const u = this.utilisateurs().find(u => u.id === g.teamLeadId);
+    return u?.email || '';
+  }
+
+  // ✅ Format date "20 Avr, 2026"
+  fmtDate(d?: string | Date): string {
+    if (!d) return '—';
+    const date = typeof d === 'string' ? new Date(d) : d;
+    if (isNaN(date.getTime())) return '—';
+    const MOIS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+    return `${String(date.getDate()).padStart(2,'0')} ${MOIS[date.getMonth()]}, ${date.getFullYear()}`;
   }
 }

@@ -272,7 +272,15 @@ export class UsersComponent implements OnInit {
   }
 
   getAvatarColor(u: Utilisateur): string {
-    const colors = ['#6366f1','#8b5cf6','#c026d3','#ec4899','#10b981','#06b6d4','#f97316','#3b82f6'];
+    const colors = ['#c026d3'];
     return colors[(u.nom || '').charCodeAt(0) % colors.length];
+  }
+
+
+  fmtDate(d?: string): string {
+    if (!d) return '—';
+    const date = new Date(d);
+    const mois = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+    return `${String(date.getDate()).padStart(2,'0')} ${mois[date.getMonth()]}, ${date.getFullYear()}`;
   }
 }

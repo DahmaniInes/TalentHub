@@ -1,7 +1,7 @@
-<!-- ma-semaine.component.html -->
+<!-- ma-semaine.component.html — V5 -->
 <div class="ms-page">
 
-  <!-- Header semaine -->
+  <!-- Header -->
   <div class="ms-header">
     <div class="ms-week-nav">
       <button class="ms-nav-arrow" (click)="semainePrec()">
@@ -9,67 +9,113 @@
       </button>
       <div class="ms-week-info">
         <span class="ms-week-range">{{ semaineLabelFR }}</span>
-        <span class="ms-week-total" *ngIf="totalSemaine() > 0">{{ fmt(totalSemaine()) }}</span>
+        <span class="ms-week-total" *ngIf="totalSemaine() > 0">{{ fmt(totalSemaine()) }} travaillées</span>
       </div>
       <button class="ms-nav-arrow" (click)="semaineSuiv()">
         <svg viewBox="0 0 12 12" fill="none"><path d="M4.5 2l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
-
     <div *ngIf="statutFeuille()" class="ms-statut" [class]="'ms-statut-' + statutFeuille()">
       {{ {BROUILLON:'✏️ Brouillon', SOUMISE:'⏳ En validation', VALIDEE:'✅ Validée', REJETEE:'❌ Rejetée'}[statutFeuille()!] }}
     </div>
   </div>
 
-  <!-- Bannières -->
+  <!-- Bannières statut -->
   <div *ngIf="statutFeuille() === 'SOUMISE'" class="ms-banner ms-banner-blue">🔒 Feuille soumise — en attente de validation.</div>
-  <div *ngIf="statutFeuille() === 'VALIDEE'" class="ms-banner ms-banner-green">✅ Feuille validée et clôturée.</div>
+  <div *ngIf="statutFeuille() === 'VALIDEE'" class="ms-banner ms-banner-green">✅ Validée et clôturée.</div>
   <div *ngIf="statutFeuille() === 'REJETEE'" class="ms-banner ms-banner-red">❌ Rejetée — {{ feuilleCourante()?.commentaireValideur || 'aucun motif.' }}</div>
+
+  <!-- Barre bulk sélection -->
+  <div *ngIf="selectedRows().size > 0" class="ms-bulk-bar">
+    <span class="ms-bulk-count">{{ selectedRows().size }} ligne(s) sélectionnée(s)</span>
+    <button class="ms-bulk-btn ms-bulk-reset" (click)="reinitialiser()">
+      <svg viewBox="0 0 12 12" fill="none"><path d="M1.5 6a4.5 4.5 0 105-4.47M1.5 2v4h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Réinitialiser
+    </button>
+    <button class="ms-bulk-btn ms-bulk-del" (click)="supprimerLignesSelectionnees()">
+      <svg viewBox="0 0 12 12" fill="none"><path d="M2 3h8M4 3V2h4v1M3 3l.5 7h5L9 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Supprimer
+    </button>
+    <button class="ms-btn ms-btn-ghost-sm" (click)="deselectAll()">Annuler</button>  </div>
 
   <div *ngIf="loading()" class="ms-loading"><div class="ms-spinner"></div> Chargement...</div>
 
-  <!-- Tableau -->
+  <!-- Tableau matrice -->
   <div *ngIf="!loading()" class="ms-card">
     <div class="ms-scroll">
       <table class="ms-table">
         <thead>
           <tr>
+            <th class="ms-th-cb">
+              <input type="checkbox" class="ms-checkbox"
+                     [checked]="allSelected()" (change)="toggleAll()">
+            </th>
             <th class="ms-th-col ms-th-projet">Projet</th>
             <th class="ms-th-col ms-th-act">Activité</th>
-            <th *ngFor="let date of datesSemaine()"
-                class="ms-th-jour" [class.ms-we]="isWE(date)">
-              <div class="ms-jour-head">
-                <span class="ms-jour-nom">{{ fmtJourNom(date) }}</span>
-                <span class="ms-jour-num" [class.ms-today]="isToday(date)">{{ fmtJourNum(date) }}</span>
-              </div>
-              <div class="ms-jour-col-total" *ngIf="totalParJour()[date] > 0">{{ fmt(totalParJour()[date]) }}</div>
+            <!-- ✅ En-têtes jours SANS heures travaillées -->
+            <th *ngFor="let date of datesSemaine()" class="ms-th-jour" [class.ms-we]="isWE(date)">
+              <span class="ms-jour-nom">{{ fmtJourNom(date) }}</span>
+              <span class="ms-jour-num" [class.ms-today]="isToday(date)">{{ fmtJourNum(date) }}</span>
             </th>
             <th class="ms-th-total">Total</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let ligne of lignesMatrice()">
-            <!-- Projet -->
-            <td class="ms-td-col">
-              <select class="ms-select" [value]="ligne.projetId ?? ''" [disabled]="!peutModifier()"
+          <tr *ngFor="let ligne of lignesMatrice()" [class.ms-tr-selected]="isRowSelected(ligne.rowId)">
+
+            <!-- Checkbox -->
+            <td class="ms-td-cb">
+              <input type="checkbox" class="ms-checkbox"
+                     [checked]="isRowSelected(ligne.rowId)"
+                     (change)="toggleRow(ligne.rowId)"
+                     [disabled]="!peutModifier()">
+            </td>
+
+            <!-- ✅ Projet select — la valeur sélectionnée s'affiche dans le select lui-même -->
+            <td class="ms-td-col ms-td-proj">
+              <select class="ms-select ms-select-proj"
+                      [value]="ligne.projetId ?? ''"
+                      [disabled]="!peutModifier()"
                       (change)="onProjetChange(ligne.rowId, $any($event.target).value)">
-                <option value="">— Projet —</option>
+                <option value="">— Choisir un projet —</option>
                 <option *ngFor="let p of projets()" [value]="p.id">{{ p.nom }}</option>
               </select>
-              <span *ngIf="ligne.clientNom" class="ms-client">{{ ligne.clientNom }}</span>
+              <!-- ✅ Message SEULEMENT si soumis et ligne a des heures mais pas de projet -->
+              <div *ngIf="submitted() && !ligne.projetId && getTotalLigne(ligne.rowId) > 0"
+                   class="ms-field-error">
+                ⚠️ Projet requis
+              </div>
             </td>
-            <!-- Activité -->
+
+            <!-- ✅ Activité select -->
             <td class="ms-td-col ms-td-act">
-              <select class="ms-select" [value]="ligne.activiteId ?? ''" [disabled]="!peutModifier() || !ligne.projetId"
+              <select class="ms-select ms-select-act"
+                      [value]="ligne.activiteId ?? ''"
+                      [disabled]="!peutModifier()"
                       (change)="onActiviteChange(ligne.rowId, $any($event.target).value)">
-                <option value="">— Activité —</option>
-                <option *ngFor="let a of getActivitesDuProjet(ligne.projetId)" [value]="a.id">{{ a.nom }}</option>
+                <option value="">— Choisir une activité —</option>
+                <!-- Activités du projet (si un projet est sélectionné) -->
+                <ng-container *ngIf="ligne.projetId && getActivitesDuProjet(ligne.projetId).length > 0">
+                  <optgroup label="Activités du projet">
+                    <option *ngFor="let a of getActivitesDuProjet(ligne.projetId)" [value]="a.id">{{ a.nom }}</option>
+                  </optgroup>
+                </ng-container>
+                <!-- Activités globales (toujours affichées) -->
+                <ng-container *ngIf="activitesGlobales().length > 0">
+                  <optgroup *ngIf="ligne.projetId && getActivitesDuProjet(ligne.projetId).length > 0" label="Activités globales">
+                    <option *ngFor="let a of activitesGlobales()" [value]="a.id">{{ a.nom }}</option>
+                  </optgroup>
+                  <ng-container *ngIf="!ligne.projetId || getActivitesDuProjet(ligne.projetId).length === 0">
+                    <option *ngFor="let a of activitesGlobales()" [value]="a.id">{{ a.nom }}</option>
+                  </ng-container>
+                </ng-container>
               </select>
             </td>
+
             <!-- Cellules jours -->
             <td *ngFor="let date of datesSemaine()" class="ms-td-jour" [class.ms-we]="isWE(date)">
               <div class="ms-cell">
-                <!-- ✅ Valeur initiale "" (placeholder 0:00), user tape 1:30 etc. -->
+                <!-- ✅ Valeur réelle "0:00", pas un placeholder — l'utilisateur clique et modifie -->
                 <input type="text"
                        class="ms-input"
                        [class.ms-we-input]="isWE(date)"
@@ -77,13 +123,12 @@
                        [disabled]="!peutModifier()"
                        [value]="formatCellDisplay(ligne, date)"
                        (change)="onDureeChange(ligne.rowId, date, $any($event.target).value)"
-                       (focus)="onCellFocus($event)"
-                       placeholder="0:00">
-                <!-- ✅ Icône commentaire pour chaque cellule -->
+                       (focus)="onCellFocus($event)">
+                <!-- ✅ Icône commentaire — colorée si commentaire existe -->
                 <button class="ms-comment-btn"
                         [class.ms-has-comment]="hasComment(ligne.rowId, date)"
                         (click)="ouvrirCommentaire(ligne.rowId, date)"
-                        [title]="hasComment(ligne.rowId, date) ? (ligne.jours[date]?.commentaire ?? '') : 'Ajouter un commentaire'">
+                        [title]="hasComment(ligne.rowId, date) ? ('Commentaire : ' + (ligne.jours[date]?.commentaire ?? '')) : 'Ajouter un commentaire'">
                   <svg viewBox="0 0 12 12" fill="none">
                     <path d="M1.5 1.5h9a.5.5 0 01.5.5v5a.5.5 0 01-.5.5H4L1.5 10V2a.5.5 0 01.5-.5z"
                           stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"
@@ -92,37 +137,41 @@
                 </button>
               </div>
             </td>
+
             <!-- Total ligne -->
             <td class="ms-td-total">
               <span class="ms-row-total" [class.ms-row-total-ok]="getTotalLigne(ligne.rowId) > 0">
-                {{ getTotalLigne(ligne.rowId) > 0 ? fmt(getTotalLigne(ligne.rowId)) : '—' }}
+                {{ fmt(getTotalLigne(ligne.rowId)) }}
               </span>
             </td>
           </tr>
         </tbody>
+        <!-- ✅ Footer totaux journaliers (seul endroit) -->
         <tfoot>
           <tr class="ms-tfoot">
-            <td class="ms-tfoot-label" colspan="2">Total journée</td>
+            <td class="ms-tfoot-empty" colspan="3"></td>
             <td *ngFor="let date of datesSemaine()" class="ms-tfoot-val" [class.ms-we]="isWE(date)">
-              <span *ngIf="totalParJour()[date] > 0">{{ fmt(totalParJour()[date]) }}</span>
-              <span *ngIf="!totalParJour()[date]" class="ms-tfoot-empty">—</span>
+              <span *ngIf="totalParJour()[date] > 0" class="ms-tfoot-num">{{ fmt(totalParJour()[date]) }}</span>
+              <span *ngIf="!totalParJour()[date]" class="ms-tfoot-dash">—</span>
             </td>
-            <td class="ms-tfoot-grand">{{ totalSemaine() > 0 ? fmt(totalSemaine()) : '—' }}</td>
+            <td class="ms-tfoot-grand">{{ fmt(totalSemaine()) }}</td>
           </tr>
         </tfoot>
       </table>
     </div>
 
-    <!-- ✅ Boutons bas du tableau -->
+    <!-- Boutons bas -->
     <div class="ms-actions">
       <div class="ms-actions-left">
         <button class="ms-btn ms-btn-add" [disabled]="!peutModifier()" (click)="ajouterLigne()">
-          <svg viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <svg viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
           Ajouter une ligne
         </button>
-        <button class="ms-btn ms-btn-remove" [disabled]="!peutModifier() || lignesMatrice().length <= 1" (click)="supprimerDerniereLigne()">
-          <svg viewBox="0 0 12 12" fill="none"><path d="M1 6h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-          Supprimer ligne
+        <button class="ms-btn ms-btn-remove"
+                [disabled]="!peutModifier() || (lignesMatrice().length <= 1 && selectedRows().size === 0)"
+                (click)="supprimerLignesSelectionnees()">
+          <svg viewBox="0 0 12 12" fill="none"><path d="M2 3h8M4 3V2h4v1M3 3l.5 7h5L9 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Supprimer{{ selectedRows().size > 0 ? ' (' + selectedRows().size + ')' : '' }}
         </button>
         <button class="ms-btn ms-btn-reset" [disabled]="!peutModifier()" (click)="reinitialiser()">
           <svg viewBox="0 0 12 12" fill="none"><path d="M1.5 6a4.5 4.5 0 105-4.47M1.5 2v4h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -130,9 +179,7 @@
         </button>
       </div>
       <div class="ms-actions-right">
-        <button *ngIf="statutFeuille() === 'SOUMISE'" class="ms-btn ms-btn-ghost" (click)="annulerSoumission()">
-          ↩ Retirer
-        </button>
+        <button *ngIf="statutFeuille() === 'SOUMISE'" class="ms-btn ms-btn-ghost" (click)="annulerSoumission()">↩ Retirer</button>
         <button class="ms-btn ms-btn-save" [disabled]="saving() || !peutModifier()" (click)="sauvegarder(false)">
           <div *ngIf="saving()" class="ms-spin"></div>
           <svg *ngIf="!saving()" viewBox="0 0 12 12" fill="none"><path d="M1.5 6.5l3 3 6-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -154,13 +201,16 @@
       <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px;color:var(--accent)">
         <path d="M1.5 1.5h9a.5.5 0 01.5.5v5a.5.5 0 01-.5.5H4L1.5 10V2a.5.5 0 01.5-.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
       </svg>
-      <span>Commentaire — {{ commentaireModal() ? fmtDateLabel(commentaireModal()!.date) : '' }}</span>
+      <span>{{ commentaireModal() ? fmtDateLabel(commentaireModal()!.date) : '' }}</span>
       <button class="ms-modal-x" (click)="commentaireModal.set(null)">
         <svg viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
       </button>
     </div>
     <div class="ms-modal-body">
-      <textarea [(ngModel)]="commentaireTexte" rows="3" class="ms-modal-area" placeholder="Commentaire sur cette activité ce jour..."></textarea>
+      <label class="ms-modal-label">Commentaire</label>
+      <textarea [(ngModel)]="commentaireTexte" rows="3" class="ms-modal-area"
+                placeholder="Note sur cette activité ce jour..."></textarea>
+      <p class="ms-modal-hint">💡 Le commentaire sera sauvegardé avec la feuille.</p>
     </div>
     <div class="ms-modal-foot">
       <button class="ms-btn ms-btn-ghost" (click)="commentaireModal.set(null)">Annuler</button>
