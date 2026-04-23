@@ -1,0 +1,36 @@
+/* ── Centre de données — classes spécifiques ── */
+
+/* Panneau filtre plus large */
+.cd-filter-panel {
+    width: 360px !important;
+  }
+  
+  /* Réutilisation des chips ft-* depuis fiches-de-temps.css */
+  /* Si ft-heures-chip et ft-supp-chip ne sont pas globaux,
+     les redéfinir ici : */
+  .ft-heures-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .76rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 6px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: 1px solid rgba(192,38,211,.2);
+    white-space: nowrap;
+  }
+  
+  .ft-supp-chip {
+    display: inline-flex;
+    align-items: center;
+    font-size: .74rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(16,185,129,.1);
+    color: #10b981;
+    border: 1px solid rgba(16,185,129,.2);
+    white-space: nowrap;
+  }

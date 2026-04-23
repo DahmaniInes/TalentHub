@@ -1,7 +1,7 @@
-<!-- ma-semaine.component.html — V5 -->
+<!-- ma-semaine.component.html — Style dt-* + fixes select + commentaires -->
 <div class="ms-page">
 
-  <!-- Header -->
+  <!-- ── Navigation semaine + statut (conservé comme version actuelle) ── -->
   <div class="ms-header">
     <div class="ms-week-nav">
       <button class="ms-nav-arrow" (click)="semainePrec()">
@@ -25,7 +25,7 @@
   <div *ngIf="statutFeuille() === 'VALIDEE'" class="ms-banner ms-banner-green">✅ Validée et clôturée.</div>
   <div *ngIf="statutFeuille() === 'REJETEE'" class="ms-banner ms-banner-red">❌ Rejetée — {{ feuilleCourante()?.commentaireValideur || 'aucun motif.' }}</div>
 
-  <!-- Barre bulk sélection -->
+  <!-- Barre bulk -->
   <div *ngIf="selectedRows().size > 0" class="ms-bulk-bar">
     <span class="ms-bulk-count">{{ selectedRows().size }} ligne(s) sélectionnée(s)</span>
     <button class="ms-bulk-btn ms-bulk-reset" (click)="reinitialiser()">
@@ -36,71 +36,98 @@
       <svg viewBox="0 0 12 12" fill="none"><path d="M2 3h8M4 3V2h4v1M3 3l.5 7h5L9 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Supprimer
     </button>
-    <button class="ms-btn ms-btn-ghost-sm" (click)="deselectAll()">Annuler</button>  </div>
+    <button class="ms-bulk-btn ms-bulk-cancel" (click)="deselectAll()">Annuler</button>
+  </div>
 
   <div *ngIf="loading()" class="ms-loading"><div class="ms-spinner"></div> Chargement...</div>
 
-  <!-- Tableau matrice -->
-  <div *ngIf="!loading()" class="ms-card">
-    <div class="ms-scroll">
-      <table class="ms-table">
+  <!-- ── Tableau matrice (style dt-*) ── -->
+  <div *ngIf="!loading()" class="dt-wrap" style="margin:0;border-radius:12px">
+    <div class="dt-scroll" style="overflow-x:auto">
+      <table class="dt-table ms-table">
         <thead>
           <tr>
-            <th class="ms-th-cb">
-              <input type="checkbox" class="ms-checkbox"
+            <!-- Checkbox -->
+            <th class="dt-th dt-th-cb" style="width:38px">
+              <input type="checkbox" class="dt-checkbox"
                      [checked]="allSelected()" (change)="toggleAll()">
             </th>
-            <th class="ms-th-col ms-th-projet">Projet</th>
-            <th class="ms-th-col ms-th-act">Activité</th>
-            <!-- ✅ En-têtes jours SANS heures travaillées -->
-            <th *ngFor="let date of datesSemaine()" class="ms-th-jour" [class.ms-we]="isWE(date)">
+
+            <!-- Projet -->
+            <th class="dt-th" style="min-width:180px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 52 52" fill="currentColor">
+                  <path d="M39.3,26.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9V25c0-1,0.9-1.9,1.9-1.9h22.9c1,0,1.9,0.9,1.9,1.9v1.9H39.3z M35.5,38.3c0,1-0.9,1.9-1.9,1.9h-19c-1,0-1.9-0.9-1.9-1.9v-1.9c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9H35.5z M12.7,13.5c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9C12.7,15.4,12.7,13.5,12.7,13.5z M41.2,4H10.8C7.6,4,5,6.6,5,9.7v32.4c0,3.1,2.6,5.7,5.7,5.7h30.5c3.1,0,5.7-2.6,5.7-5.7V9.7C47,6.6,44.4,4,41.2,4z"/>
+                </svg>
+                Projet
+              </div>
+            </th>
+
+            <!-- Activité -->
+            <th class="dt-th" style="min-width:160px;border-right:1px solid var(--dt-border)">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 491.5 491.5" fill="currentColor">
+                  <path d="M348.1,245.7c-67.8,0-122.9,55.1-122.9,122.9s55.1,122.9,122.9,122.9S471,436.4,471,368.6S415.9,245.7,348.1,245.7z M403.5,362.6l-41,41c-4,4-9.2,6-14.5,6c-5.2,0-10.5-2-14.5-6L313,383.1c-8-8-8-21,0-29s21-8,29,0l6,6l26.5-26.5c8-8,21-8,29,0 C411.5,341.7,411.5,354.6,403.5,362.6z"/>
+                  <path d="M385.3,41h-57.7v-9.8c0-17.2-14-31.2-31.2-31.2H154c-17.2,0-31.2,14-31.2,31.2v9.7H65.2c-24.7,0-44.7,20.1-44.7,44.7 v361.1c0,24.7,20.1,44.7,44.7,44.7h174.9c-34.2-29.9-55.8-73.8-55.8-122.8h-81.9c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5 h81.9c1.8,0,3.4,0.6,5.1,1c3.8-14.9,9.5-29,17-42h-83.6c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5h102.4 c4.1,0,7.7,1.5,10.9,3.6c29.3-27.5,68.6-44.6,112-44.6c29.9,0,57.8,8.2,81.9,22.2V85.7C430,61,409.9,41,385.3,41z M163.8,81.9v-41h122.9v41H163.8z"/>
+                </svg>
+                Activité
+              </div>
+            </th>
+
+            <!-- En-têtes jours -->
+            <th *ngFor="let date of datesSemaine()" class="dt-th ms-th-jour" [class.ms-we]="isWE(date)"
+                style="min-width:70px;text-align:center;border-left:1px solid var(--dt-border)">
               <span class="ms-jour-nom">{{ fmtJourNom(date) }}</span>
               <span class="ms-jour-num" [class.ms-today]="isToday(date)">{{ fmtJourNum(date) }}</span>
             </th>
-            <th class="ms-th-total">Total</th>
+
+            <!-- Total -->
+            <th class="dt-th" style="min-width:58px;text-align:center;border-left:2px solid var(--dt-border)">Total</th>
           </tr>
         </thead>
+
         <tbody>
-          <tr *ngFor="let ligne of lignesMatrice()" [class.ms-tr-selected]="isRowSelected(ligne.rowId)">
+          <tr *ngFor="let ligne of lignesMatrice()" class="dt-tr" [class.dt-tr-selected]="isRowSelected(ligne.rowId)">
 
             <!-- Checkbox -->
-            <td class="ms-td-cb">
-              <input type="checkbox" class="ms-checkbox"
+            <td class="dt-td dt-td-cb" (click)="$event.stopPropagation()">
+              <input type="checkbox" class="dt-checkbox"
+                     [class.dt-checkbox-active]="isRowSelected(ligne.rowId)"
                      [checked]="isRowSelected(ligne.rowId)"
                      (change)="toggleRow(ligne.rowId)"
                      [disabled]="!peutModifier()">
             </td>
 
-            <!-- ✅ Projet select — la valeur sélectionnée s'affiche dans le select lui-même -->
-            <td class="ms-td-col ms-td-proj">
+            <!-- ✅ Projet select avec [(ngModel)] — la valeur sélectionnée s'affiche bien -->
+            <td class="dt-td" style="padding:8px 10px;vertical-align:middle">
               <select class="ms-select ms-select-proj"
-                      [value]="ligne.projetId ?? ''"
+                      [ngModel]="ligne.projetId ?? ''"
                       [disabled]="!peutModifier()"
-                      (change)="onProjetChange(ligne.rowId, $any($event.target).value)">
+                      (ngModelChange)="onProjetChange(ligne.rowId, $event)">
                 <option value="">— Choisir un projet —</option>
                 <option *ngFor="let p of projets()" [value]="p.id">{{ p.nom }}</option>
               </select>
-              <!-- ✅ Message SEULEMENT si soumis et ligne a des heures mais pas de projet -->
+              <!-- Message erreur seulement après tentative de soumission -->
               <div *ngIf="submitted() && !ligne.projetId && getTotalLigne(ligne.rowId) > 0"
                    class="ms-field-error">
                 ⚠️ Projet requis
               </div>
             </td>
 
-            <!-- ✅ Activité select -->
-            <td class="ms-td-col ms-td-act">
+            <!-- ✅ Activité select avec [(ngModel)] -->
+            <td class="dt-td" style="padding:8px 10px;vertical-align:middle;border-right:1px solid var(--dt-border)">
               <select class="ms-select ms-select-act"
-                      [value]="ligne.activiteId ?? ''"
+                      [ngModel]="ligne.activiteId ?? ''"
                       [disabled]="!peutModifier()"
-                      (change)="onActiviteChange(ligne.rowId, $any($event.target).value)">
+                      (ngModelChange)="onActiviteChange(ligne.rowId, $event)">
                 <option value="">— Choisir une activité —</option>
-                <!-- Activités du projet (si un projet est sélectionné) -->
+                <!-- Activités du projet -->
                 <ng-container *ngIf="ligne.projetId && getActivitesDuProjet(ligne.projetId).length > 0">
                   <optgroup label="Activités du projet">
                     <option *ngFor="let a of getActivitesDuProjet(ligne.projetId)" [value]="a.id">{{ a.nom }}</option>
                   </optgroup>
                 </ng-container>
-                <!-- Activités globales (toujours affichées) -->
+                <!-- Activités globales -->
                 <ng-container *ngIf="activitesGlobales().length > 0">
                   <optgroup *ngIf="ligne.projetId && getActivitesDuProjet(ligne.projetId).length > 0" label="Activités globales">
                     <option *ngFor="let a of activitesGlobales()" [value]="a.id">{{ a.nom }}</option>
@@ -113,9 +140,10 @@
             </td>
 
             <!-- Cellules jours -->
-            <td *ngFor="let date of datesSemaine()" class="ms-td-jour" [class.ms-we]="isWE(date)">
+            <td *ngFor="let date of datesSemaine()"
+                class="dt-td ms-td-jour" [class.ms-we]="isWE(date)"
+                style="padding:5px 3px;text-align:center;vertical-align:middle;border-left:1px solid var(--dt-border)">
               <div class="ms-cell">
-                <!-- ✅ Valeur réelle "0:00", pas un placeholder — l'utilisateur clique et modifie -->
                 <input type="text"
                        class="ms-input"
                        [class.ms-we-input]="isWE(date)"
@@ -124,11 +152,11 @@
                        [value]="formatCellDisplay(ligne, date)"
                        (change)="onDureeChange(ligne.rowId, date, $any($event.target).value)"
                        (focus)="onCellFocus($event)">
-                <!-- ✅ Icône commentaire — colorée si commentaire existe -->
+                <!-- Icône commentaire -->
                 <button class="ms-comment-btn"
                         [class.ms-has-comment]="hasComment(ligne.rowId, date)"
                         (click)="ouvrirCommentaire(ligne.rowId, date)"
-                        [title]="hasComment(ligne.rowId, date) ? ('Commentaire : ' + (ligne.jours[date]?.commentaire ?? '')) : 'Ajouter un commentaire'">
+                        [title]="hasComment(ligne.rowId, date) ? 'Commentaire : ' + (ligne.jours[date]?.commentaire ?? '') : 'Ajouter un commentaire'">
                   <svg viewBox="0 0 12 12" fill="none">
                     <path d="M1.5 1.5h9a.5.5 0 01.5.5v5a.5.5 0 01-.5.5H4L1.5 10V2a.5.5 0 01.5-.5z"
                           stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"
@@ -139,32 +167,39 @@
             </td>
 
             <!-- Total ligne -->
-            <td class="ms-td-total">
+            <td class="dt-td" style="text-align:center;border-left:2px solid var(--dt-border);padding:5px 6px;vertical-align:middle">
               <span class="ms-row-total" [class.ms-row-total-ok]="getTotalLigne(ligne.rowId) > 0">
                 {{ fmt(getTotalLigne(ligne.rowId)) }}
               </span>
             </td>
           </tr>
         </tbody>
-        <!-- ✅ Footer totaux journaliers (seul endroit) -->
+
+        <!-- Footer totaux journaliers -->
         <tfoot>
           <tr class="ms-tfoot">
-            <td class="ms-tfoot-empty" colspan="3"></td>
-            <td *ngFor="let date of datesSemaine()" class="ms-tfoot-val" [class.ms-we]="isWE(date)">
+            <td colspan="3" class="ms-tfoot-empty"></td>
+            <td *ngFor="let date of datesSemaine()" class="ms-tfoot-val" [class.ms-we]="isWE(date)"
+                style="border-left:1px solid var(--dt-border)">
               <span *ngIf="totalParJour()[date] > 0" class="ms-tfoot-num">{{ fmt(totalParJour()[date]) }}</span>
               <span *ngIf="!totalParJour()[date]" class="ms-tfoot-dash">—</span>
             </td>
-            <td class="ms-tfoot-grand">{{ fmt(totalSemaine()) }}</td>
+            <td class="ms-tfoot-grand" style="border-left:2px solid var(--dt-border)">
+              {{ fmt(totalSemaine()) }}
+            </td>
           </tr>
         </tfoot>
       </table>
     </div>
 
-    <!-- Boutons bas -->
+    <!-- ── Actions ── -->
     <div class="ms-actions">
       <div class="ms-actions-left">
-        <button class="ms-btn ms-btn-add" [disabled]="!peutModifier()" (click)="ajouterLigne()">
-          <svg viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <button class="dt-btn-create" style="padding:7px 14px;font-size:.74rem;border-radius:7px"
+                [disabled]="!peutModifier()" (click)="ajouterLigne()">
+          <svg viewBox="0 0 12 12" fill="none" style="width:11px;height:11px">
+            <path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
           Ajouter une ligne
         </button>
         <button class="ms-btn ms-btn-remove"
@@ -191,7 +226,8 @@
         </button>
       </div>
     </div>
-  </div>
+  </div><!-- /.dt-wrap -->
+
 </div>
 
 <!-- Modal commentaire -->
@@ -210,7 +246,7 @@
       <label class="ms-modal-label">Commentaire</label>
       <textarea [(ngModel)]="commentaireTexte" rows="3" class="ms-modal-area"
                 placeholder="Note sur cette activité ce jour..."></textarea>
-      <p class="ms-modal-hint">💡 Le commentaire sera sauvegardé avec la feuille.</p>
+      <p class="ms-modal-hint">💡 Le commentaire sera sauvegardé automatiquement.</p>
     </div>
     <div class="ms-modal-foot">
       <button class="ms-btn ms-btn-ghost" (click)="commentaireModal.set(null)">Annuler</button>

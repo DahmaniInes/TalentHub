@@ -183,4 +183,15 @@ export class ClientsComponent implements OnInit {
 
   getInitiales(nom: string): string { return (nom||'').split(' ').slice(0,2).map(w=>w.charAt(0).toUpperCase()).join(''); }
   getCouleurStyle(couleur?: string): string { return couleur || '#6366f1'; }
+
+
+
+
+  cleanUrl(url: string): string {
+    if (!url) return '';
+    return url
+      .replace(/^https?:\/\//, '')
+      .replace(/\/$/, '');
+  }
+  
 }

@@ -252,4 +252,36 @@ export class ActivitesGlobalComponent implements OnInit {
     const MOIS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
     return `${String(date.getDate()).padStart(2,'0')} ${MOIS[date.getMonth()]}, ${date.getFullYear()}`;
   }
+  filterPanelOpen = signal(false);
+
+
+
+  activeFiltersCount = computed(() =>
+    [this.filterStatut() ? '1':'', this.filterPriorite() ? '1':'', this.filterProjet() ? '1':'', this.search()]
+      .filter(v => !!v).length
+  );
+  
+  resetFilters(): void {
+    this.filterStatut.set('');
+    this.filterPriorite.set('');
+    this.filterProjet.set('');
+    this.search.set('');
+    this.resetPage();
+  }
+  
+  // Couleur sémantique selon le libellé du statut
+  getStatutBadgeClass(id?: number): string {
+    const libelle = this.getStatutLibelle(id).toLowerCase();
+    if (libelle.includes('cours'))   return 'dt-badge dt-status-encours';
+    if (libelle.includes('bloqu'))   return 'dt-badge dt-status-bloque';
+    if (libelle.includes('planif'))  return 'dt-badge dt-status-planifie';
+    if (libelle.includes('termin') || libelle.includes('clôtur')) return 'dt-badge dt-status-termine';
+    if (libelle.includes('attend') || libelle.includes('pause'))  return 'dt-badge dt-status-attente';
+    if (libelle.includes('annul'))   return 'dt-badge dt-status-annule';
+    return 'dt-badge dt-badge-default';
+  }
+
+
+
+ 
 }

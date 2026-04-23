@@ -953,14 +953,14 @@
    On utilise la classe .nav-subitem-full sur un <a class="nav-item nav-subitem-full">
    pour hériter du style nav-item + ajouter l'indent */
 .nav-subitem-full {
-  padding-left: 22px !important; /* indent doux sous l'icône parent */
+  padding-left: 38px !important; /* indent doux sous l'icône parent */
 }
 
 /* Indicateur de page active dans le sous-menu */
 .nav-subitem-full.active {
   color: #c026d3 !important;
   font-weight: 600 !important;
-  background: rgba(192,38,211,0.1) !important;
+  /*background: rgba(192,38,211,0.1) !important;*/
 }
 :root:not(.dark) .nav-subitem-full.active {
   color: var(--accent) !important;

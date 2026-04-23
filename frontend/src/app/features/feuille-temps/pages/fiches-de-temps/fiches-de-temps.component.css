@@ -1,0 +1,45 @@
+/* ── Chips spécifiques fiches-de-temps ── */
+.ft-heures-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .76rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 6px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: 1px solid rgba(192,38,211,.2);
+    white-space: nowrap;
+  }
+  
+  .ft-supp-chip {
+    display: inline-flex;
+    align-items: center;
+    font-size: .74rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(16,185,129,.1);
+    color: #10b981;
+    border: 1px solid rgba(16,185,129,.2);
+    white-space: nowrap;
+  }
+  
+  .ft-lignes-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 7px;
+    border-radius: 6px;
+    font-size: .72rem;
+    font-weight: 700;
+    background: var(--bg-hover);
+    color: var(--dt-text-sub);
+    border: 1px solid var(--dt-border);
+  }
+
+
+  

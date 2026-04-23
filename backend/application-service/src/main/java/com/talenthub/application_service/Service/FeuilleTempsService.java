@@ -1,4 +1,5 @@
 // src/main/java/com/talenthub/application_service/Service/FeuilleTempsService.java
+// ✅ FIX : saveLignes() inclut categorieCode = "PROJET" par défaut
 package com.talenthub.application_service.Service;
 
 import com.talenthub.application_service.DTO.FeuilleTempsRequest;
@@ -59,7 +60,6 @@ public class FeuilleTempsService {
         Utilisateur utilisateur = utilisateurRepository.findById(req.getUtilisateurId())
                 .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé: " + req.getUtilisateurId()));
 
-        // ✅ Vérifier doublon sur la semaine du LUNDI (pas la date de la ligne)
         LocalDate lundiSemaine = toLundi(req.getSemaineDu());
         repository.findByUtilisateurIdAndSemaineDu(req.getUtilisateurId(), lundiSemaine)
                 .ifPresent(e -> { throw new DuplicateResourceException("Une feuille existe déjà pour cette semaine."); });
@@ -70,7 +70,7 @@ public class FeuilleTempsService {
         FeuilleTemps ft = FeuilleTemps.builder()
                 .utilisateur(utilisateur)
                 .semaineDu(lundiSemaine)
-                .semaineAu(lundiSemaine.plusDays(4))   // vendredi
+                .semaineAu(lundiSemaine.plusDays(4))
                 .heuresTravaillees(totalTravaillees / 60.0)
                 .heuresSupplementaires(totalSupp / 60.0)
                 .heuresAbsence(0)
@@ -94,11 +94,7 @@ public class FeuilleTempsService {
             throw new RuntimeException("Seules les feuilles en brouillon ou rejetées peuvent être modifiées.");
         }
 
-        // ✅ FIX PRINCIPAL : on garde TOUJOURS semaineDu/semaineAu existants
-        //    On ne les écrase PAS avec ce que le frontend envoie (qui peut être
-        //    la date d'une ligne, pas forcément le lundi)
-        // semaineDu et semaineAu ne changent jamais lors d'un update
-
+        // ✅ FIX : semaineDu/semaineAu ne changent JAMAIS lors d'un update
         int totalTravaillees = calculerTotalTravaillees(req);
         int totalSupp        = calculerTotalSupp(req);
 
@@ -107,9 +103,6 @@ public class FeuilleTempsService {
         if (req.getCommentaireEmploye() != null) {
             ft.setCommentaireEmploye(req.getCommentaireEmploye());
         }
-        // ✅ Ne pas changer le statut si non fourni, et ne pas autoriser
-        //    un changement via update (seulement via soumettre/valider/rejeter)
-        // on ignore req.getStatut() ici volontairement
 
         if (req.getLignes() != null) {
             ligneRepository.deleteByFeuilleTempsId(ft.getId());
@@ -119,7 +112,6 @@ public class FeuilleTempsService {
         }
 
         FeuilleTemps saved = repository.save(ft);
-        // ✅ Reload pour avoir les lignes fraîches
         return repository.findById(saved.getId()).orElse(saved);
     }
 
@@ -213,13 +205,9 @@ public class FeuilleTempsService {
 
     // ─── Helpers privés ──────────────────────────────────────────────────────
 
-    /**
-     * ✅ FIX CLÉ : convertit n'importe quelle date en lundi de sa semaine.
-     * Si le frontend envoie un mercredi comme semaineDu, on calcule le lundi.
-     */
     private LocalDate toLundi(LocalDate date) {
         if (date == null) return LocalDate.now();
-        int dayOfWeek = date.getDayOfWeek().getValue(); // 1=lundi, 7=dimanche
+        int dayOfWeek = date.getDayOfWeek().getValue();
         return date.minusDays(dayOfWeek - 1);
     }
 
@@ -239,6 +227,8 @@ public class FeuilleTempsService {
         return req.getMinutesSupplementaires();
     }
 
+    // ✅ FIX CRITIQUE : categorieCode mis à "PROJET" par défaut
+    // pour éviter la violation NOT NULL de l'ancienne colonne
     private void saveLignes(FeuilleTemps ft, List<LigneFeuilleTempsRequest> reqs) {
         reqs.forEach(r -> {
             int minutes = r.getMinutesTravaillees();
@@ -254,9 +244,18 @@ public class FeuilleTempsService {
                 } catch (Exception ignored) {}
             }
 
+            // ✅ Déduire categorieCode depuis les données disponibles
+            String categorieCode = "PROJET";
+            if (r.getProjetId() == null && r.getActiviteId() != null) {
+                categorieCode = "ACTIVITE";
+            } else if (r.getProjetId() == null && r.getActiviteId() == null) {
+                categorieCode = "AUTRE";
+            }
+
             LigneFeuilleTemps ligne = LigneFeuilleTemps.builder()
                     .feuilleTemps(ft)
                     .date(r.getDate())
+                    .categorieCode(categorieCode)   // ✅ TOUJOURS fourni
                     .projetId(r.getProjetId())
                     .projetNom(r.getProjetNom())
                     .activiteId(r.getActiviteId())

@@ -1,0 +1,236 @@
+/* ══════════════════════════════════════════════════════════════════
+   MES-ENTRÉES — Classes spécifiques
+   me-* : toolbar, filter panel, dropdown 3-points, time chips
+══════════════════════════════════════════════════════════════════ */
+
+/* ── Toolbar buttons (Filtres / Export) ── */
+.me-toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 38px;
+    padding: 0 14px;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: .80rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: all .15s;
+    position: relative;
+  }
+  .me-toolbar-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+  }
+  .me-toolbar-btn-active {
+    background: var(--accent-soft) !important;
+    border-color: var(--accent) !important;
+    color: var(--accent) !important;
+  }
+  .me-filter-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    font-size: .62rem;
+    font-weight: 800;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  
+  /* ── Panneau filtres avancés ── */
+  .me-filter-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 300px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.14);
+    z-index: 600;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    animation: mePanelIn .15s cubic-bezier(.4,0,.2,1);
+  }
+  .dark .me-filter-panel {
+    box-shadow: 0 12px 40px rgba(0,0,0,.45);
+  }
+  @keyframes mePanelIn {
+    from { opacity: 0; transform: translateY(-6px) scale(.97); }
+    to   { opacity: 1; transform: translateY(0)   scale(1);   }
+  }
+  .me-filter-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .me-filter-panel-title {
+    font-size: .75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: .3px;
+  }
+  .me-filter-reset {
+    font-size: .70rem;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid rgba(192,38,211,.2);
+    border-radius: 5px;
+    padding: 3px 9px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity .12s;
+  }
+  .me-filter-reset:hover { opacity: .75; }
+  .me-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .me-filter-label {
+    font-size: .65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--text-muted);
+  }
+  
+  /* ── Dropdown 3-points ── */
+  .me-3dot-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--dt-text-sub);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .12s;
+  }
+  .me-3dot-btn:hover:not(:disabled) {
+    background: var(--bg-hover);
+    border-color: var(--border-color);
+    color: var(--dt-text);
+  }
+  .me-3dot-btn:disabled {
+    cursor: not-allowed;
+  }
+  .me-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 5px);
+    min-width: 168px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.13);
+    z-index: 700;
+    overflow: hidden;
+    animation: meDdIn .13s cubic-bezier(.4,0,.2,1);
+  }
+  .dark .me-dropdown {
+    box-shadow: 0 8px 28px rgba(0,0,0,.45);
+  }
+  @keyframes meDdIn {
+    from { opacity: 0; transform: scale(.95) translateY(-4px); }
+    to   { opacity: 1; transform: scale(1)   translateY(0);   }
+  }
+  .me-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    padding: 9px 13px;
+    background: none;
+    border: none;
+    font-size: .78rem;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-family: inherit;
+    transition: background .1s;
+    white-space: nowrap;
+  }
+  .me-dropdown-item svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+    color: var(--text-muted);
+    transition: color .1s;
+  }
+  .me-dropdown-item:hover {
+    background: var(--bg-hover);
+  }
+  .me-dropdown-item:hover svg {
+    color: var(--text-secondary);
+  }
+  .me-dropdown-sep {
+    height: 1px;
+    background: var(--border-color);
+    margin: 3px 0;
+  }
+  .me-dropdown-danger {
+    color: #ef4444 !important;
+  }
+  .me-dropdown-danger svg {
+    color: #ef4444 !important;
+  }
+  .me-dropdown-danger:hover {
+    background: rgba(239,68,68,.08) !important;
+  }
+  
+  /* ── Time chips (cellules Début / Fin) ── */
+  .me-time-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .76rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    padding: 3px 9px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+  .me-time-start {
+    background: rgba(59,130,246,.1);
+    color: #3b82f6;
+    border: 1px solid rgba(59,130,246,.2);
+  }
+  .me-time-end {
+    background: rgba(16,185,129,.1);
+    color: #10b981;
+    border: 1px solid rgba(16,185,129,.2);
+  }
+  
+  /* ── Durée chip ── */
+  .me-duree-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .76rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 6px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: 1px solid rgba(192,38,211,.2);
+    white-space: nowrap;
+  }

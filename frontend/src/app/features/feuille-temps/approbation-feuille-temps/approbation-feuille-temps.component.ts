@@ -1,10 +1,4 @@
-// src/app/features/approbation-feuille-temps/approbation-feuille-temps.component.ts
-// ✅ Version corrigée — utilise les nouveaux champs du modèle LigneFeuilleTemps
-// Changements :
-//   - minutesNormales     → minutesTravaillees
-//   - minutesAbsence      → supprimé (n'existe plus)
-//   - categorieCode       → projetNom / activiteNom
-//   - CategorieFT         → supprimé
+// approbation-feuille-temps.component.ts - ajout countStatut
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -52,6 +46,15 @@ export class ApprobationFeuilleTempsComponent implements OnInit {
 
   readonly fmt = FeuilleTempsService.formatMinutes;
 
+  // ✅ Helper pour les stats dans le header
+  countStatut(statut: string): number {
+    return this.feuilles().filter(f => f.statut === statut).length;
+  }
+
+  statutLabel(s: string): string {
+    return ({ BROUILLON: 'Brouillon', SOUMISE: 'Soumise', VALIDEE: 'Validée', REJETEE: 'Rejetée' } as any)[s] ?? s;
+  }
+
   ngOnInit(): void {
     const kcId = this.keycloak.getKeycloakUserId();
     if (kcId) this.currentKcId.set(kcId);
@@ -66,10 +69,7 @@ export class ApprobationFeuilleTempsComponent implements OnInit {
     });
   }
 
-  ouvrirDetail(ft: FeuilleTemps): void {
-    this.feuilleDetail.set(ft);
-  }
-
+  ouvrirDetail(ft: FeuilleTemps): void { this.feuilleDetail.set(ft); }
   fermerDetail(): void { this.feuilleDetail.set(null); }
 
   valider(ft: FeuilleTemps): void {
@@ -111,18 +111,7 @@ export class ApprobationFeuilleTempsComponent implements OnInit {
     });
   }
 
-  // ✅ CORRIGÉ — utilise minutesTravaillees au lieu de minutesNormales + minutesAbsence
-  totalLigne(l: LigneFeuilleTemps): number {
-    return l.minutesTravaillees + l.minutesSupplementaires;
-  }
-
   statutColor(s: string): string {
     return ({ BROUILLON:'gray', SOUMISE:'blue', VALIDEE:'green', REJETEE:'red' } as any)[s] ?? 'gray';
-  }
-  statutLabel(s: string): string {
-    return ({ BROUILLON:'Brouillon', SOUMISE:'Soumise', VALIDEE:'Validée', REJETEE:'Rejetée' } as any)[s] ?? s;
-  }
-  statutIcon(s: string): string {
-    return ({ BROUILLON:'✏️', SOUMISE:'⏳', VALIDEE:'✅', REJETEE:'❌' } as any)[s] ?? '📄';
   }
 }

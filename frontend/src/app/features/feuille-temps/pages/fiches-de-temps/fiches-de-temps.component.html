@@ -1,1 +1,470 @@
-<p>fiches-de-temps works!</p>
+<!-- fiches-de-temps.component.html -->
+<div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh"
+    (click)="closeAllMenus(); showFilterPanel.set(false)">
+    <div class="dt-wrap">
+
+        <!-- ══ HEADER ══ -->
+        <div class="dt-header">
+            <div>
+                <h1 class="dt-title">
+                    <svg class="dt-title-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+                        <path d="M4 4h12M4 8h12M4 12h8" stroke-linecap="round" />
+                        <circle cx="15" cy="15" r="3" stroke="currentColor" />
+                    </svg>
+                    Fiches de temps
+                </h1>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+                    <span class="dt-badge dt-badge-accent" style="font-size:.66rem;padding:3px 9px">
+                        <span class="dt-badge-dot"></span>{{ feuilles().length }} total
+                    </span>
+                    <span class="dt-badge dt-badge-pending" style="font-size:.66rem;padding:3px 9px;cursor:pointer"
+                        (click)="filterStatut.set('SOUMISE')">
+                        <span class="dt-badge-dot"></span>{{ countByStatut('SOUMISE') }} soumises
+                    </span>
+                    <span class="dt-badge dt-badge-delivered" style="font-size:.66rem;padding:3px 9px;cursor:pointer"
+                        (click)="filterStatut.set('VALIDEE')">
+                        <span class="dt-badge-dot"></span>{{ countByStatut('VALIDEE') }} validées
+                    </span>
+                    <span class="dt-badge dt-badge-canceled" style="font-size:.66rem;padding:3px 9px;cursor:pointer"
+                        (click)="filterStatut.set('REJETEE')">
+                        <span class="dt-badge-dot"></span>{{ countByStatut('REJETEE') }} rejetées
+                    </span>
+                </div>
+            </div>
+
+            <div class="dt-header-actions">
+
+                <!-- Recherche -->
+                <div class="dt-search-bar" style="min-width:210px">
+                    <svg class="dt-search-icon" viewBox="0 0 14 14" fill="none">
+                        <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.4" />
+                        <path d="m10 10 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                    </svg>
+                    <input class="dt-search-input" [value]="searchText()"
+                        (input)="searchText.set($any($event.target).value)" placeholder="Rechercher...">
+                </div>
+
+                <!-- Bouton filtres -->
+                <div style="position:relative" (click)="$event.stopPropagation()">
+                    <button class="me-toolbar-btn" [class.me-toolbar-btn-active]="hasFilters()"
+                        (click)="showFilterPanel.set(!showFilterPanel())">
+                        <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
+                            <path d="M1 3h12M3 7h8M5 11h4" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" />
+                        </svg>
+                        Filtres
+                        <span *ngIf="hasFilters()" class="me-filter-badge">{{ activeFiltersCount() }}</span>
+                    </button>
+
+                    <!-- Panneau filtres -->
+                    <div *ngIf="showFilterPanel()" class="me-filter-panel" (click)="$event.stopPropagation()">
+                        <div class="me-filter-panel-header">
+                            <span class="me-filter-panel-title">Filtres avancés</span>
+                            <button *ngIf="hasFilters()" class="me-filter-reset"
+                                (click)="resetFilters()">Réinitialiser</button>
+                        </div>
+
+                        <div class="me-filter-group">
+                            <label class="me-filter-label">Période</label>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                                <input type="date" class="mx-field-input" [value]="filterDateDu()"
+                                    (change)="filterDateDu.set($any($event.target).value)">
+                                <input type="date" class="mx-field-input" [value]="filterDateAu()"
+                                    (change)="filterDateAu.set($any($event.target).value)">
+                            </div>
+                        </div>
+
+                        <div class="me-filter-group">
+                            <label class="me-filter-label">Utilisateur</label>
+                            <select class="mx-field-select" [value]="filterUser()"
+                                (change)="filterUser.set($any($event.target).value)">
+                                <option value="">Tous les utilisateurs</option>
+                                <option *ngFor="let u of utilisateurs()" [value]="u.id">
+                                    {{ u.prenom }} {{ u.nom }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="me-filter-group">
+                            <label class="me-filter-label">Statut</label>
+                            <select class="mx-field-select" [value]="filterStatut()"
+                                (change)="filterStatut.set($any($event.target).value)">
+                                <option value="">Tous les statuts</option>
+                                <option value="BROUILLON">Brouillon</option>
+                                <option value="SOUMISE">Soumise</option>
+                                <option value="VALIDEE">Validée</option>
+                                <option value="REJETEE">Rejetée</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export -->
+                <button class="me-toolbar-btn" (click)="exportCSV()">
+                    <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
+                        <path d="M7 2v8M4 7l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    Export
+                </button>
+            </div>
+        </div>
+
+        <!-- Barre bulk -->
+        <div *ngIf="selectedIds().size > 0" class="dt-bulk-bar">
+            <span class="dt-bulk-count">{{ selectedIds().size }} sélectionnée(s)</span>
+            <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="clearSelection()">Annuler</button>
+            <button class="mx-btn mx-btn-danger mx-btn-sm" (click)="supprimerSelection()">
+                Supprimer ({{ selectedIds().size }})
+            </button>
+        </div>
+
+        <!-- Loading -->
+        <div *ngIf="loading()" class="dt-loading">
+            <div class="dt-spinner"></div> Chargement...
+        </div>
+
+        <!-- ══ TABLEAU ══ -->
+        <div *ngIf="!loading()" class="dt-scroll">
+            <table class="dt-table">
+                <thead>
+                    <tr>
+                        <!-- Checkbox -->
+                        <th class="dt-th dt-th-cb">
+                            <input type="checkbox" class="dt-checkbox" [class.indeterminate]="somePageSelected()"
+                                [checked]="allPageSelected()" (change)="toggleSelectAll()">
+                        </th>
+
+                        <!-- Utilisateur -->
+                        <th class="dt-th" style="min-width:200px">
+                            <div class="dt-th-inner">
+                                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="currentColor">
+                                    <path d="M7 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm-4 6a4 4 0 118 0H3z" />
+                                </svg>
+                                Utilisateur
+                            </div>
+                        </th>
+
+                        <!-- Semaine du -->
+                        <th class="dt-th" style="min-width:110px">
+                            <div class="dt-th-inner">
+                                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor"
+                                    stroke-width="1.3">
+                                    <rect x="1" y="2" width="12" height="11" rx="1.5" />
+                                    <path d="M1 6h12M4.5 1v2M9.5 1v2" stroke-linecap="round" />
+                                </svg>
+                                Semaine du
+                            </div>
+                        </th>
+
+                        <!-- Semaine au -->
+                        <th class="dt-th" style="min-width:110px">
+                            <div class="dt-th-inner">
+                                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor"
+                                    stroke-width="1.3">
+                                    <rect x="1" y="2" width="12" height="11" rx="1.5" />
+                                    <path d="M1 6h12M4.5 1v2M9.5 1v2" stroke-linecap="round" />
+                                </svg>
+                                Semaine au
+                            </div>
+                        </th>
+
+                        <!-- Heures -->
+                        <th class="dt-th" style="min-width:90px">
+                            <div class="dt-th-inner">
+                                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor"
+                                    stroke-width="1.3">
+                                    <circle cx="7" cy="7" r="5.5" />
+                                    <path d="M7 4v3l2 1.5" stroke-linecap="round" />
+                                </svg>
+                                Heures
+                            </div>
+                        </th>
+
+                        <!-- Suppl. -->
+                        <th class="dt-th" style="min-width:80px">
+                            <div class="dt-th-inner">
+                                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor"
+                                    stroke-width="1.3">
+                                    <path d="M7 2v10M2 7h10" stroke-linecap="round" />
+                                </svg>
+                                Suppl.
+                            </div>
+                        </th>
+
+                        <!-- Lignes -->
+                        <th class="dt-th" style="min-width:70px">
+                            <div class="dt-th-inner">
+                                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor"
+                                    stroke-width="1.3">
+                                    <path d="M2 4h10M2 7h10M2 10h6" stroke-linecap="round" />
+                                </svg>
+                                Lignes
+                            </div>
+                        </th>
+
+                        <!-- Statut -->
+                        <th class="dt-th" style="min-width:110px">
+                            <div class="dt-th-inner">
+                                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor"
+                                    stroke-width="1.4">
+                                    <circle cx="7" cy="7" r="5.5" />
+                                    <path d="M4.5 7l2 2 3-3" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                Statut
+                            </div>
+                        </th>
+
+                        <!-- Validé par -->
+                        <th class="dt-th" style="min-width:180px">
+                            <div class="dt-th-inner">
+                                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor"
+                                    stroke-width="1.3">
+                                    <path d="M9 2l3 3-7 7H2V9l7-7z" stroke-linejoin="round" />
+                                </svg>
+                                Validé par
+                            </div>
+                        </th>
+
+                        <!-- Actions -->
+                        <th class="dt-th dt-th-actions"></th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr *ngFor="let ft of pagedFeuilles()" class="dt-tr" [class.dt-tr-selected]="isSelected(ft.id)">
+
+                        <!-- Checkbox -->
+                        <td class="dt-td dt-td-cb" (click)="$event.stopPropagation()">
+                            <input type="checkbox" class="dt-checkbox" [class.dt-checkbox-active]="isSelected(ft.id)"
+                                [checked]="isSelected(ft.id)" (change)="toggleSelect(ft.id, $event)">
+                        </td>
+
+                        <!-- Utilisateur : avatar + nom + email -->
+                        <td class="dt-td">
+                            <div class="dt-cell-with-avatar">
+                                <div class="dt-avatar" style="background:var(--accent)">
+                                    <span>{{ getInitiales(ft.utilisateurNom) }}</span>
+                                </div>
+                                <div class="dt-cell-user">
+                                    <span class="dt-cell-name">
+                                        {{ ft.utilisateurNom || 'Utilisateur #' + ft.utilisateurId }}
+                                    </span>
+                                    <span class="dt-cell-sub">
+                                        {{ getUtilisateur(ft)?.email || '—' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Semaine du -->
+                        <td class="dt-td">
+                            <span class="dt-cell-text">{{ ft.semaineDu | date:'dd/MM/yyyy' }}</span>
+                        </td>
+
+                        <!-- Semaine au -->
+                        <td class="dt-td">
+                            <span class="dt-cell-muted">{{ ft.semaineAu | date:'dd/MM/yyyy' }}</span>
+                        </td>
+
+                        <!-- Heures -->
+                        <td class="dt-td">
+                            <span class="ft-heures-chip">
+                                <svg viewBox="0 0 10 10" fill="none" style="width:9px;height:9px">
+                                    <circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.2" />
+                                    <path d="M5 3v2l1.2 1" stroke="currentColor" stroke-width="1.1"
+                                        stroke-linecap="round" />
+                                </svg>
+                                {{ fmt(ft.minutesTravaillees) }}
+                            </span>
+                        </td>
+
+                        <!-- Suppl. -->
+                        <td class="dt-td">
+                            <span *ngIf="ft.minutesSupplementaires > 0" class="ft-supp-chip">
+                                +{{ fmt(ft.minutesSupplementaires) }}
+                            </span>
+                            <span *ngIf="ft.minutesSupplementaires === 0" class="dt-cell-muted">—</span>
+                        </td>
+
+                        <!-- Lignes -->
+                        <td class="dt-td">
+                            <span class="ft-lignes-chip">{{ ft.lignes?.length || 0 }}</span>
+                        </td>
+
+                        <!-- Statut -->
+                        <td class="dt-td">
+                            <span class="dt-badge" [class.dt-badge-default]="ft.statut === 'BROUILLON'"
+                                [class.dt-badge-pending]="ft.statut === 'SOUMISE'"
+                                [class.dt-badge-delivered]="ft.statut === 'VALIDEE'"
+                                [class.dt-badge-canceled]="ft.statut === 'REJETEE'">
+                                <span class="dt-badge-dot"></span>
+                                {{ {BROUILLON:'Brouillon', SOUMISE:'Soumise',
+                                VALIDEE:'Validée', REJETEE:'Rejetée'}[ft.statut] }}
+                            </span>
+                        </td>
+
+                        <!-- Validé par : avatar + nom + @email -->
+                        <td class="dt-td">
+                            <div *ngIf="ft.validePar; else noValideur" class="dt-cell-with-avatar">
+                                <div class="dt-avatar" style="background:var(--accent-2);
+                     width:28px;height:28px;font-size:.6rem">
+                                    <span>{{ getInitiales(getValideurNom(ft.validePar)) }}</span>
+                                </div>
+                                <div class="dt-cell-user">
+                                    <span class="dt-cell-name" style="font-size:.76rem">
+                                        {{ getValideurNom(ft.validePar) }}
+                                    </span>
+                                    <span class="dt-cell-sub" *ngIf="getValideurEmail(ft.validePar)">
+                                        {{ getValideurUsername(ft.validePar) }}
+                                    </span>
+                                </div>
+                            </div>
+                            <ng-template #noValideur>
+                                <span class="dt-cell-muted">—</span>
+                            </ng-template>
+                        </td>
+
+                        <!-- Actions 3-points -->
+                        <td class="dt-td dt-td-actions" (click)="$event.stopPropagation()">
+                            <div style="position:relative;display:flex;justify-content:center">
+                                <button class="me-3dot-btn dt-action-btn" (click)="toggleMenu(ft.id, $event)">
+                                    <svg viewBox="0 0 4 18" fill="currentColor" style="width:4px;height:18px">
+                                        <circle cx="2" cy="2" r="1.8" />
+                                        <circle cx="2" cy="9" r="1.8" />
+                                        <circle cx="2" cy="16" r="1.8" />
+                                    </svg>
+                                </button>
+
+                                <div *ngIf="openMenuId() === ft.id" class="me-dropdown">
+
+                                    <!-- Valider (seulement si SOUMISE) -->
+                                    <button *ngIf="ft.statut === 'SOUMISE'" class="me-dropdown-item"
+                                        style="color:#10b981" (click)="valider(ft); closeAllMenus()">
+                                        <svg viewBox="0 0 14 14" fill="none"
+                                            style="width:13px;height:13px;color:#10b981">
+                                            <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3" />
+                                            <path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.3"
+                                                stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                        Valider
+                                    </button>
+
+                                    <!-- Rejeter (seulement si SOUMISE) -->
+                                    <button *ngIf="ft.statut === 'SOUMISE'" class="me-dropdown-item"
+                                        style="color:#f59e0b" (click)="ouvrirRejet(ft); closeAllMenus()">
+                                        <svg viewBox="0 0 14 14" fill="none"
+                                            style="width:13px;height:13px;color:#f59e0b">
+                                            <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3" />
+                                            <path d="M5 5l4 4M9 5l-4 4" stroke="currentColor" stroke-width="1.3"
+                                                stroke-linecap="round" />
+                                        </svg>
+                                        Rejeter
+                                    </button>
+
+                                    <div *ngIf="ft.statut === 'SOUMISE'" class="me-dropdown-sep"></div>
+
+                                    <!-- Dupliquer -->
+                                    <button class="me-dropdown-item" (click)="dupliquerFiche(ft); closeAllMenus()">
+                                        <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
+                                            <rect x="4" y="4" width="9" height="9" rx="1.5" stroke="currentColor"
+                                                stroke-width="1.3" />
+                                            <path d="M4 10H2a1 1 0 01-1-1V2a1 1 0 011-1h7a1 1 0 011 1v2"
+                                                stroke="currentColor" stroke-width="1.3" />
+                                        </svg>
+                                        Dupliquer
+                                    </button>
+
+                                    <div class="me-dropdown-sep"></div>
+
+                                    <!-- Supprimer -->
+                                    <button class="me-dropdown-item me-dropdown-danger"
+                                        (click)="supprimerFiche(ft); closeAllMenus()">
+                                        <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
+                                            <path d="M2 3.5h10M5 3.5V2h4v1.5M4 3.5l.6 8.5h4.8L10 3.5"
+                                                stroke="currentColor" stroke-width="1.3" stroke-linecap="round"
+                                                stroke-linejoin="round" />
+                                        </svg>
+                                        Supprimer
+                                    </button>
+
+                                </div>
+                            </div>
+                        </td>
+
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- État vide -->
+            <div *ngIf="filteredFeuilles().length === 0" class="dt-empty">
+                <svg viewBox="0 0 48 48" fill="none" style="width:40px;height:40px;opacity:.4">
+                    <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3" />
+                    <path d="M24 16v8M24 28h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                </svg>
+                <p class="dt-empty-title">Aucune fiche trouvée</p>
+                <p class="dt-empty-sub">Modifiez vos filtres pour voir des résultats.</p>
+            </div>
+        </div>
+
+        <!-- Footer pagination -->
+        <div *ngIf="!loading() && filteredFeuilles().length > 0" class="dt-footer">
+            <div class="dt-count-info">
+                <strong>{{ (page()-1)*pageSize()+1 }}–{{ minVal(page()*pageSize(), filteredFeuilles().length) }}</strong>
+                <span> of </span>
+                <strong>{{ filteredFeuilles().length }}</strong>
+            </div>
+            <div class="dt-pagination">
+                <button class="dt-page-arrow" [disabled]="page() === 1" (click)="goToPage(page()-1)">
+                    <svg viewBox="0 0 14 14" fill="none">
+                        <path d="M9 2L5 7l4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </button>
+                <ng-container *ngFor="let p of pagesArray()">
+                    <button *ngIf="p===1 || p===totalPages() || (p>=page()-1 && p<=page()+1)" class="dt-page-btn"
+                        [class.dt-page-btn-active]="p === page()" (click)="goToPage(p)">{{ p }}</button>
+                    <span *ngIf="p===page()-2 && p>1"
+                        style="color:var(--dt-text-head);padding:0 4px;font-size:.75rem">…</span>
+                    <span *ngIf="p===page()+2 && p<totalPages()"
+                        style="color:var(--dt-text-head);padding:0 4px;font-size:.75rem">…</span>
+                </ng-container>
+                <button class="dt-page-arrow" [disabled]="page() === totalPages()" (click)="goToPage(page()+1)">
+                    <svg viewBox="0 0 14 14" fill="none">
+                        <path d="M5 2l4 5-4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════ MODAL REJET ════ -->
+<div *ngIf="rejetModal()" class="mx-modal-backdrop" (click)="rejetModal.set(null)">
+    <div class="mx-modal" (click)="$event.stopPropagation()">
+        <div class="mx-modal-icon-row">
+            <div class="mx-modal-icon warning">
+                <svg viewBox="0 0 14 14" fill="none">
+                    <path d="M7 2l5.5 10H1.5L7 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
+                    <path d="M7 6v3M7 10.5h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                </svg>
+            </div>
+            <h3 class="mx-modal-title">Rejeter la feuille</h3>
+        </div>
+        <p class="mx-modal-message">
+            Indiquez le motif du rejet. L'employé sera notifié.
+        </p>
+        <div class="mx-field" style="margin-bottom:16px">
+            <label class="mx-field-label">
+                Motif <span style="color:#ef4444">*</span>
+            </label>
+            <textarea [(ngModel)]="motifRejet" rows="3" class="mx-field-textarea"
+                placeholder="Expliquez la raison du rejet..."></textarea>
+        </div>
+        <div class="mx-modal-actions">
+            <button class="mx-btn mx-btn-ghost" (click)="rejetModal.set(null)">Annuler</button>
+            <button class="mx-btn mx-btn-danger" (click)="confirmerRejet()">Rejeter</button>
+        </div>
+    </div>
+</div>

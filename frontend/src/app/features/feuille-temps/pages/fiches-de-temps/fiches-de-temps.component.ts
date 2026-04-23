@@ -15,137 +15,8 @@ import { HttpErrorResponse }   from '@angular/common/http';
   selector: 'app-fiches-de-temps',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  template: `
-<div class="mx-page">
-  <div class="mx-page-header">
-    <div class="mx-page-title-block">
-      <h1 class="mx-page-title">
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" style="width:20px;height:20px"><path d="M4 4h12M4 8h12M4 12h8" stroke-linecap="round"/><circle cx="15" cy="15" r="3" stroke="currentColor"/></svg>
-        Fiches de temps
-      </h1>
-      <p class="mx-page-subtitle">{{ filteredFeuilles().length }} fiche(s)</p>
-    </div>
-    <div class="mx-page-actions">
-      <button class="mx-btn mx-btn-ghost" (click)="exportCSV()">
-        <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px"><path d="M7 2v8M4 7l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Exporter CSV
-      </button>
-    </div>
-  </div>
-
-  <!-- Filtres -->
-  <div class="mx-toolbar" style="flex-wrap:wrap;gap:6px">
-    <div class="mx-search">
-      <svg viewBox="0 0 14 14" fill="none" class="mx-search-icon"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="m10 10 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-      <input [value]="searchText()" (input)="searchText.set($any($event.target).value)" placeholder="Utilisateur, semaine..." class="mx-search-input">
-    </div>
-    <select class="mx-filter-select" [value]="filterStatut()" (change)="filterStatut.set($any($event.target).value)">
-      <option value="">Tous les statuts</option>
-      <option value="BROUILLON">Brouillon</option>
-      <option value="SOUMISE">Soumise</option>
-      <option value="VALIDEE">Validée</option>
-      <option value="REJETEE">Rejetée</option>
-    </select>
-    <select class="mx-filter-select" [value]="filterUser()" (change)="filterUser.set($any($event.target).value)">
-      <option value="">Tous les utilisateurs</option>
-      <option *ngFor="let u of utilisateurs()" [value]="u.id">{{ u.prenom }} {{ u.nom }}</option>
-    </select>
-    <input type="date" class="mx-filter-select" [value]="filterDateDu()" (change)="filterDateDu.set($any($event.target).value)">
-    <input type="date" class="mx-filter-select" [value]="filterDateAu()" (change)="filterDateAu.set($any($event.target).value)">
-    <button *ngIf="filterStatut() || filterUser() || filterDateDu() || searchText()" class="mx-btn mx-btn-ghost mx-btn-sm"
-            (click)="filterStatut.set(''); filterUser.set(''); filterDateDu.set(''); filterDateAu.set(''); searchText.set('')">
-      Réinitialiser
-    </button>
-  </div>
-
-  <!-- Résumé -->
-  <div style="display:flex;gap:12px;padding:8px 0;flex-wrap:wrap">
-    <div class="ft-stat-pill ft-stat-total">{{ feuilles().length }} total</div>
-    <div class="ft-stat-pill ft-stat-soumise" (click)="filterStatut.set('SOUMISE')">{{ countByStatut('SOUMISE') }} soumises</div>
-    <div class="ft-stat-pill ft-stat-validee" (click)="filterStatut.set('VALIDEE')">{{ countByStatut('VALIDEE') }} validées</div>
-    <div class="ft-stat-pill ft-stat-rejetee" (click)="filterStatut.set('REJETEE')">{{ countByStatut('REJETEE') }} rejetées</div>
-  </div>
-
-  <div *ngIf="loading()" class="mx-loading"><div class="mx-spinner"></div> Chargement...</div>
-
-  <!-- Tableau -->
-  <div *ngIf="!loading()" class="mx-table-wrap">
-    <div class="mx-table-scroll">
-      <table class="mx-table">
-        <thead>
-          <tr>
-            <th>Utilisateur</th>
-            <th>Semaine du</th>
-            <th>Semaine au</th>
-            <th>Heures</th>
-            <th>Suppl.</th>
-            <th>Lignes</th>
-            <th>Statut</th>
-            <th>Validé par</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let ft of pagedFeuilles()">
-            <td>
-              <div style="font-size:.78rem;font-weight:600;color:var(--text-primary)">{{ ft.utilisateurNom || 'Utilisateur #' + ft.utilisateurId }}</div>
-            </td>
-            <td style="font-size:.77rem;color:var(--text-secondary);white-space:nowrap">{{ ft.semaineDu | date:'dd/MM/yyyy' }}</td>
-            <td style="font-size:.77rem;color:var(--text-secondary);white-space:nowrap">{{ ft.semaineAu | date:'dd/MM/yyyy' }}</td>
-            <td style="font-size:.78rem;font-weight:600">{{ fmt(ft.minutesTravaillees) }}</td>
-            <td style="font-size:.75rem;color:#10b981">{{ ft.minutesSupplementaires > 0 ? '+' + fmt(ft.minutesSupplementaires) : '—' }}</td>
-            <td style="font-size:.75rem;color:var(--text-muted)">{{ ft.lignes?.length || 0 }}</td>
-            <td>
-              <span class="ft-statut-badge" [class]="'ft-statut-' + ft.statut.toLowerCase()">
-                {{ {BROUILLON:'✏️ Brouillon', SOUMISE:'⏳ Soumise', VALIDEE:'✅ Validée', REJETEE:'❌ Rejetée'}[ft.statut] }}
-              </span>
-            </td>
-            <td style="font-size:.72rem;color:var(--text-muted)">{{ ft.validePar ? ft.validePar.substring(0, 8) + '…' : '—' }}</td>
-            <td>
-              <div style="display:flex;gap:4px">
-                <button *ngIf="ft.statut === 'SOUMISE'" class="mx-btn mx-btn-primary mx-btn-sm" (click)="valider(ft)">Valider</button>
-                <button *ngIf="ft.statut === 'SOUMISE'" class="mx-btn mx-btn-ghost mx-btn-sm" (click)="ouvrirRejet(ft)">Rejeter</button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <div *ngIf="filteredFeuilles().length === 0" class="mx-empty">
-        <p class="mx-empty-title">Aucune fiche trouvée</p>
-      </div>
-    </div>
-
-    <!-- Pagination simple -->
-    <div *ngIf="filteredFeuilles().length > pageSize()" class="mx-pagination">
-      <div class="mx-pagination-info">
-        <strong>{{ (page()-1)*pageSize()+1 }}–{{ minVal(page()*pageSize(), filteredFeuilles().length) }}</strong>
-        / <strong>{{ filteredFeuilles().length }}</strong>
-      </div>
-      <div class="mx-pagination-controls">
-        <button class="mx-page-btn" [disabled]="page()===1" (click)="page.set(page()-1)">←</button>
-        <button class="mx-page-btn" [disabled]="page()*pageSize() >= filteredFeuilles().length" (click)="page.set(page()+1)">→</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal rejet -->
-<div *ngIf="rejetModal()" class="mx-modal-backdrop" (click)="rejetModal.set(null)">
-  <div class="mx-modal" style="max-width:420px;padding:0;overflow:hidden" (click)="$event.stopPropagation()">
-    <div style="padding:14px 16px 10px;border-bottom:1px solid var(--border-color)">
-      <span style="font-size:.88rem;font-weight:700">Rejeter la feuille</span>
-    </div>
-    <div style="padding:14px 16px">
-      <label class="mx-field-label">Motif de rejet <span style="color:#ef4444">*</span></label>
-      <textarea [(ngModel)]="motifRejet" rows="3" class="mx-field-textarea" placeholder="Expliquez la raison du rejet..."></textarea>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;padding:10px 16px;border-top:1px solid var(--border-color);background:var(--bg-hover)">
-      <button class="mx-btn mx-btn-ghost" (click)="rejetModal.set(null)">Annuler</button>
-      <button class="mx-btn mx-btn-danger" (click)="confirmerRejet()">Rejeter</button>
-    </div>
-  </div>
-</div>
-  `
+  templateUrl: './fiches-de-temps.component.html',
+  styleUrls: ['./fiches-de-temps.component.css']
 })
 export class FichesDeTempsComponent implements OnInit {
   private ftSvc    = inject(FeuilleTempsService);
@@ -157,21 +28,34 @@ export class FichesDeTempsComponent implements OnInit {
   feuilles     = signal<FeuilleTemps[]>([]);
   utilisateurs = signal<Utilisateur[]>([]);
   loading      = signal(false);
+  saving       = signal(false);
   currentKcId  = signal<string>('');
 
+  // ── Filtres ──────────────────────────────────────────────────
   filterStatut  = signal('');
   filterUser    = signal('');
   filterDateDu  = signal('');
   filterDateAu  = signal('');
   searchText    = signal('');
-  page          = signal(1);
-  pageSize      = signal(20);
+  showFilterPanel = signal(false);
 
-  rejetModal  = signal<FeuilleTemps | null>(null);
-  motifRejet  = '';
+  // ── Pagination ───────────────────────────────────────────────
+  page     = signal(1);
+  pageSize = signal(20);
+
+  // ── Sélection bulk ───────────────────────────────────────────
+  selectedIds = signal<Set<number>>(new Set());
+
+  // ── Menus 3-points ───────────────────────────────────────────
+  openMenuId = signal<number | null>(null);
+
+  // ── Modal rejet ──────────────────────────────────────────────
+  rejetModal = signal<FeuilleTemps | null>(null);
+  motifRejet = '';
 
   readonly fmt = FeuilleTempsService.formatMinutes;
 
+  // ── Computed ─────────────────────────────────────────────────
   filteredFeuilles = computed(() => {
     let list = this.feuilles();
     const q  = this.searchText().toLowerCase();
@@ -179,7 +63,10 @@ export class FichesDeTempsComponent implements OnInit {
     if (this.filterUser())   list = list.filter(f => f.utilisateurId === +this.filterUser());
     if (this.filterDateDu()) list = list.filter(f => f.semaineDu >= this.filterDateDu());
     if (this.filterDateAu()) list = list.filter(f => f.semaineDu <= this.filterDateAu());
-    if (q) list = list.filter(f => (f.utilisateurNom || '').toLowerCase().includes(q) || f.semaineDu.includes(q));
+    if (q) list = list.filter(f =>
+      (f.utilisateurNom || '').toLowerCase().includes(q) ||
+      f.semaineDu.includes(q)
+    );
     return list;
   });
 
@@ -188,28 +75,173 @@ export class FichesDeTempsComponent implements OnInit {
     return this.filteredFeuilles().slice(start, start + this.pageSize());
   });
 
-  countByStatut(s: string): number { return this.feuilles().filter(f => f.statut === s).length; }
-  minVal(a: number, b: number): number { return Math.min(a, b); }
+  totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredFeuilles().length / this.pageSize()))
+  );
 
+  pagesArray = computed(() =>
+    Array.from({ length: this.totalPages() }, (_, i) => i + 1)
+  );
+
+  hasFilters = computed(() =>
+    !!(this.filterStatut() || this.filterUser() ||
+       this.filterDateDu() || this.filterDateAu() || this.searchText())
+  );
+
+  activeFiltersCount = computed(() => {
+    let n = 0;
+    if (this.filterStatut()) n++;
+    if (this.filterUser())   n++;
+    if (this.filterDateDu() || this.filterDateAu()) n++;
+    return n;
+  });
+
+  allPageSelected = computed(() => {
+    const paged = this.pagedFeuilles();
+    if (paged.length === 0) return false;
+    return paged.every(f => this.selectedIds().has(f.id));
+  });
+
+  somePageSelected = computed(() => {
+    const paged = this.pagedFeuilles();
+    return paged.some(f => this.selectedIds().has(f.id)) && !this.allPageSelected();
+  });
+
+  // ── Lifecycle ────────────────────────────────────────────────
   ngOnInit(): void {
     const kcId = this.keycloak.getKeycloakUserId();
     if (kcId) this.currentKcId.set(kcId);
     this.loading.set(true);
     this.ftSvc.getAll().subscribe({
-      next: d => { this.feuilles.set(d.sort((a,b) => b.semaineDu.localeCompare(a.semaineDu))); this.loading.set(false); },
+      next: d => {
+        this.feuilles.set(d.sort((a, b) => b.semaineDu.localeCompare(a.semaineDu)));
+        this.loading.set(false);
+      },
       error: () => this.loading.set(false)
     });
     this.userSvc.getAllUsers().subscribe({ next: d => this.utilisateurs.set(d) });
   }
 
+  // ── Helpers ──────────────────────────────────────────────────
+  countByStatut(s: string): number {
+    return this.feuilles().filter(f => f.statut === s).length;
+  }
+
+  minVal(a: number, b: number): number { return Math.min(a, b); }
+
+  getUtilisateur(ft: FeuilleTemps): Utilisateur | undefined {
+    return this.utilisateurs().find(u => u.id === ft.utilisateurId);
+  }
+
+  getValideurNom(validePar?: string): string {
+    if (!validePar) return '—';
+    const u = this.utilisateurs().find(u => u.keycloakId === validePar);
+    return u ? u.nomComplet || `${u.prenom} ${u.nom}` : validePar.substring(0, 8) + '…';
+  }
+
+  getValideurEmail(validePar?: string): string {
+    if (!validePar) return '';
+    const u = this.utilisateurs().find(u => u.keycloakId === validePar);
+    return u?.email || '';
+  }
+
+  getInitiales(nom?: string): string {
+    if (!nom) return '?';
+    const parts = nom.trim().split(' ');
+    return parts.length >= 2
+      ? `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase()
+      : nom.substring(0, 2).toUpperCase();
+  }
+
+  getInitialesUser(u: Utilisateur): string {
+    return `${(u.prenom || '?').charAt(0)}${(u.nom || '').charAt(0)}`.toUpperCase();
+  }
+
+  resetFilters(): void {
+    this.filterStatut.set('');
+    this.filterUser.set('');
+    this.filterDateDu.set('');
+    this.filterDateAu.set('');
+    this.searchText.set('');
+  }
+
+  goToPage(p: number): void {
+    if (p >= 1 && p <= this.totalPages()) this.page.set(p);
+  }
+
+  closeAllMenus(): void { this.openMenuId.set(null); }
+
+  toggleMenu(id: number, event: MouseEvent): void {
+    event.stopPropagation();
+    this.openMenuId.set(this.openMenuId() === id ? null : id);
+  }
+
+  // ── Sélection ────────────────────────────────────────────────
+  isSelected(id: number): boolean { return this.selectedIds().has(id); }
+
+  toggleSelect(id: number, event: Event): void {
+    event.stopPropagation();
+    const s = new Set(this.selectedIds());
+    s.has(id) ? s.delete(id) : s.add(id);
+    this.selectedIds.set(s);
+  }
+
+  toggleSelectAll(): void {
+    const paged = this.pagedFeuilles();
+    if (this.allPageSelected()) {
+      const s = new Set(this.selectedIds());
+      paged.forEach(f => s.delete(f.id));
+      this.selectedIds.set(s);
+    } else {
+      const s = new Set(this.selectedIds());
+      paged.forEach(f => s.add(f.id));
+      this.selectedIds.set(s);
+    }
+  }
+
+  clearSelection(): void { this.selectedIds.set(new Set()); }
+
+  supprimerSelection(): void {
+    const ids = Array.from(this.selectedIds());
+    this.ui.confirm({
+      title: 'Supprimer les fiches',
+      message: `Supprimer ${ids.length} fiche(s) sélectionnée(s) ?`,
+      confirmLabel: 'Supprimer', type: 'danger',
+      onConfirm: () => {
+        let remaining = ids.length;
+        this.saving.set(true);
+        ids.forEach(id => {
+          this.ftSvc.delete(id).subscribe({
+            next: () => {
+              this.feuilles.update(fs => fs.filter(f => f.id !== id));
+              remaining--;
+              if (remaining === 0) {
+                this.clearSelection();
+                this.saving.set(false);
+                this.ui.success('Fiches supprimées.');
+              }
+            },
+            error: (err: HttpErrorResponse) => {
+              this.ui.error(this.errorSvc.parse(err).message);
+              remaining--;
+              if (remaining === 0) this.saving.set(false);
+            }
+          });
+        });
+      }
+    });
+  }
+
+  // ── Actions ──────────────────────────────────────────────────
   valider(ft: FeuilleTemps): void {
     this.ui.confirm({
-      title: 'Valider la feuille', message: `Valider la feuille du ${ft.semaineDu} ?`,
+      title: 'Valider la feuille',
+      message: `Valider la feuille du ${ft.semaineDu} ?`,
       confirmLabel: 'Valider', type: 'info',
       onConfirm: () => {
         this.ftSvc.valider(ft.id, this.currentKcId(), '').subscribe({
           next: updated => {
-            this.feuilles.update(fts => fts.map(f => f.id === updated.id ? updated : f));
+            this.feuilles.update(fs => fs.map(f => f.id === updated.id ? updated : f));
             this.ui.success('Feuille validée ✅');
           },
           error: (err: HttpErrorResponse) => this.ui.error(this.errorSvc.parse(err).message)
@@ -218,7 +250,10 @@ export class FichesDeTempsComponent implements OnInit {
     });
   }
 
-  ouvrirRejet(ft: FeuilleTemps): void { this.motifRejet = ''; this.rejetModal.set(ft); }
+  ouvrirRejet(ft: FeuilleTemps): void {
+    this.motifRejet = '';
+    this.rejetModal.set(ft);
+  }
 
   confirmerRejet(): void {
     const ft = this.rejetModal();
@@ -226,7 +261,7 @@ export class FichesDeTempsComponent implements OnInit {
     if (!this.motifRejet.trim()) { this.ui.warning('Le motif est obligatoire.'); return; }
     this.ftSvc.rejeter(ft.id, this.currentKcId(), this.motifRejet).subscribe({
       next: updated => {
-        this.feuilles.update(fts => fts.map(f => f.id === updated.id ? updated : f));
+        this.feuilles.update(fs => fs.map(f => f.id === updated.id ? updated : f));
         this.rejetModal.set(null);
         this.ui.success('Feuille rejetée.');
       },
@@ -234,20 +269,52 @@ export class FichesDeTempsComponent implements OnInit {
     });
   }
 
+  dupliquerFiche(ft: FeuilleTemps): void {
+    this.ui.warning('Fonctionnalité de duplication à implémenter.');
+  }
+
+  supprimerFiche(ft: FeuilleTemps): void {
+    this.ui.confirm({
+      title: 'Supprimer la fiche',
+      message: `Supprimer la fiche de la semaine du ${ft.semaineDu} ?`,
+      confirmLabel: 'Supprimer', type: 'danger',
+      onConfirm: () => {
+        this.ftSvc.delete(ft.id).subscribe({
+          next: () => {
+            this.feuilles.update(fs => fs.filter(f => f.id !== ft.id));
+            this.ui.success('Fiche supprimée.');
+          },
+          error: (err: HttpErrorResponse) => this.ui.error(this.errorSvc.parse(err).message)
+        });
+      }
+    });
+  }
+
   exportCSV(): void {
-    const header = ['Utilisateur', 'Semaine du', 'Semaine au', 'Heures', 'Suppl.', 'Lignes', 'Statut'];
-    const rows = this.filteredFeuilles().map(f => [
-      f.utilisateurNom || String(f.utilisateurId),
-      f.semaineDu, f.semaineAu,
-      this.fmt(f.minutesTravaillees),
-      this.fmt(f.minutesSupplementaires),
-      String(f.lignes?.length || 0),
-      f.statut
-    ]);
+    const header = ['Utilisateur', 'Email', 'Semaine du', 'Semaine au', 'Heures', 'Suppl.', 'Lignes', 'Statut'];
+    const rows = this.filteredFeuilles().map(f => {
+      const u = this.getUtilisateur(f);
+      return [
+        f.utilisateurNom || String(f.utilisateurId),
+        u?.email || '',
+        f.semaineDu, f.semaineAu,
+        this.fmt(f.minutesTravaillees),
+        this.fmt(f.minutesSupplementaires),
+        String(f.lignes?.length || 0),
+        f.statut
+      ];
+    });
     const csv = [header, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
     a.download = `fiches-temps-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
   }
+
+
+  getValideurUsername(validePar?: string): string {
+    const email = this.getValideurEmail(validePar);
+    if (!email) return '';
+    return '@' + email.split('@')[0];
+}
 }

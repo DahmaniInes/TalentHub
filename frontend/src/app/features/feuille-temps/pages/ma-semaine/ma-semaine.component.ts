@@ -34,13 +34,13 @@ export class MaSemaineComponent implements OnInit {
   readonly ui         = inject(UiService);
   private errorSvc    = inject(ErrorService);
 
-  currentUser     = signal<Utilisateur | null>(null);
-  projets         = signal<Projet[]>([]);
+  currentUser          = signal<Utilisateur | null>(null);
+  projets              = signal<Projet[]>([]);
   activitesGlobales    = signal<Activite[]>([]);
   activitesParProjet   = signal<Record<number, Activite[]>>({});
-  feuilleCourante = signal<FeuilleTemps | null>(null);
-  loading         = signal(false);
-  saving          = signal(false);
+  feuilleCourante      = signal<FeuilleTemps | null>(null);
+  loading              = signal(false);
+  saving               = signal(false);
 
   lundiCourant = signal<string>(FeuilleTempsService.getLundiSemaine());
   datesSemaine = computed(() => FeuilleTempsService.getDatesDesSemaine(this.lundiCourant()));
@@ -49,7 +49,6 @@ export class MaSemaineComponent implements OnInit {
   selectedRows     = signal<Set<string>>(new Set());
   commentaireModal = signal<{ rowId: string; date: string } | null>(null);
   commentaireTexte = '';
-  // ✅ Flag pour n'afficher les erreurs de validation QUE lors d'un submit
   submitted        = signal(false);
 
   readonly JOURS_NOMS = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
@@ -69,7 +68,7 @@ export class MaSemaineComponent implements OnInit {
     const s = this.statutFeuille();
     return !s || s === 'BROUILLON' || s === 'REJETEE';
   });
-  allSelected   = computed(() => {
+  allSelected = computed(() => {
     const ls = this.lignesMatrice();
     return ls.length > 0 && ls.every(l => this.selectedRows().has(l.rowId));
   });
@@ -94,18 +93,21 @@ export class MaSemaineComponent implements OnInit {
     return ligne.jours[date] ? ligne.jours[date].minutes + ligne.jours[date].minutesSupp : 0;
   }
 
+  // ✅ FIX: calcule directement depuis les jours (plus de dépendance à une fonction externe)
   getTotalLigne(rowId: string): number {
     const l = this.lignesMatrice().find(x => x.rowId === rowId);
     if (!l) return 0;
     return Object.values(l.jours).reduce((s, c) => s + c.minutes + c.minutesSupp, 0);
   }
 
-  // ✅ Activités pour une ligne : globales seulement si pas de projet, globales + du projet sinon
-  getActivitesPourLigne(projetId?: number): Activite[] {
-    const globales = this.activitesGlobales();
-    if (!projetId) return globales;
-    const duProjet = (this.activitesParProjet()[projetId] ?? []).filter(a => !globales.find(g => g.id === a.id));
-    return [...duProjet, ...globales];
+  // ✅ Total d'une MatriceLigne directement (pour sauvegarder)
+  private getLigneTotalMinutes(l: MatriceLigne): number {
+    return Object.values(l.jours).reduce((s, c) => s + c.minutes + c.minutesSupp, 0);
+  }
+
+  getActivitesDuProjet(projetId?: number): Activite[] {
+    if (!projetId) return [];
+    return this.activitesParProjet()[projetId] ?? [];
   }
 
   ngOnInit(): void {
@@ -115,11 +117,12 @@ export class MaSemaineComponent implements OnInit {
         next: u => { this.currentUser.set(u); this.loadSemaine(); },
         error: () => this.loadSemaine()
       });
-    } else { this.loadSemaine(); }
+    } else {
+      this.loadSemaine();
+    }
 
     this.projetSvc.getAll().subscribe({ next: d => this.projets.set(d) });
 
-    // Activités globales (sans projet)
     this.activiteSvc.getAll().subscribe({
       next: (all: Activite[]) => this.activitesGlobales.set(all.filter(a => !(a as any).projetId))
     });
@@ -145,31 +148,45 @@ export class MaSemaineComponent implements OnInit {
     if (!feuille?.lignes?.length) { this.lignesMatrice.set([this.newLigne()]); return; }
     const g: Record<string, MatriceLigne> = {};
     for (const l of feuille.lignes) {
-      const k = `${l.projetId??0}-${l.activiteId??0}`;
+      const k = `${l.projetId ?? 0}-${l.activiteId ?? 0}`;
       if (!g[k]) g[k] = {
         rowId: k,
-        projetId: l.projetId, projetNom: l.projetNom,
+        projetId: l.projetId,   projetNom: l.projetNom,
         activiteId: l.activiteId, activiteNom: l.activiteNom,
-        clientId: l.clientId, clientNom: l.clientNom, jours: {}
+        clientId: l.clientId,    clientNom: l.clientNom,
+        jours: {}
       };
-      // ✅ Commentaires correctement chargés depuis le backend
+      // ✅ Commentaire chargé correctement
       g[k].jours[l.date] = {
-        minutes: l.minutesTravaillees, minutesSupp: l.minutesSupplementaires,
-        heureDebut: l.heureDebut || '', heureFin: l.heureFin || '',
-        commentaire: l.commentaire || '',   // ← commentaire chargé
+        minutes: l.minutesTravaillees,
+        minutesSupp: l.minutesSupplementaires,
+        heureDebut: l.heureDebut || '',
+        heureFin: l.heureFin || '',
+        commentaire: l.commentaire || '',
         estWeekend: FeuilleTempsService.isWeekend(l.date)
       };
     }
-    // Charger activités des projets déjà dans la feuille
+
+    // S'assurer que tous les jours de la semaine sont présents dans chaque ligne
+    for (const ligne of Object.values(g)) {
+      for (const d of FeuilleTempsService.getDatesDesSemaine(this.lundiCourant())) {
+        if (!ligne.jours[d]) {
+          ligne.jours[d] = { minutes: 0, minutesSupp: 0, heureDebut: '', heureFin: '', commentaire: '', estWeekend: FeuilleTempsService.isWeekend(d) };
+        }
+      }
+    }
+
+    // Charger activités des projets dans la feuille
     const projetIds = [...new Set(Object.values(g).map(l => l.projetId).filter(Boolean) as number[])];
     for (const pid of projetIds) this.loadActivitesDuProjet(pid);
+
     this.lignesMatrice.set(Object.values(g));
   }
 
   newLigne(): MatriceLigne {
     const jours: MatriceLigne['jours'] = {};
     for (const d of FeuilleTempsService.getDatesDesSemaine(this.lundiCourant()))
-      jours[d] = { minutes:0, minutesSupp:0, heureDebut:'', heureFin:'', commentaire:'', estWeekend:FeuilleTempsService.isWeekend(d) };
+      jours[d] = { minutes: 0, minutesSupp: 0, heureDebut: '', heureFin: '', commentaire: '', estWeekend: FeuilleTempsService.isWeekend(d) };
     return { rowId: crypto.randomUUID(), jours };
   }
 
@@ -179,7 +196,7 @@ export class MaSemaineComponent implements OnInit {
     const sel = this.selectedRows();
     if (sel.size === 0) {
       if (this.lignesMatrice().length <= 1) return;
-      this.lignesMatrice.update(l => l.slice(0,-1));
+      this.lignesMatrice.update(l => l.slice(0, -1));
       return;
     }
     this.lignesMatrice.update(ls => ls.filter(l => !sel.has(l.rowId)));
@@ -189,13 +206,15 @@ export class MaSemaineComponent implements OnInit {
   reinitialiser(): void {
     const sel = this.selectedRows();
     this.ui.confirm({
-      title: 'Réinitialiser', message: sel.size > 0 ? `Remettre ${sel.size} ligne(s) à zéro ?` : 'Remettre toutes les heures à zéro ?',
+      title: 'Réinitialiser',
+      message: sel.size > 0 ? `Remettre ${sel.size} ligne(s) à zéro ?` : 'Remettre toutes les heures à zéro ?',
       confirmLabel: 'Réinitialiser', type: 'warning',
       onConfirm: () => {
         this.lignesMatrice.update(ls => ls.map(l => {
           if (sel.size > 0 && !sel.has(l.rowId)) return l;
           const jours = { ...l.jours };
-          for (const d of Object.keys(jours)) jours[d] = { ...jours[d], minutes:0, minutesSupp:0 };
+          for (const d of Object.keys(jours))
+            jours[d] = { ...jours[d], minutes: 0, minutesSupp: 0 };
           return { ...l, jours };
         }));
       }
@@ -217,6 +236,7 @@ export class MaSemaineComponent implements OnInit {
   }
 
   isRowSelected(rowId: string): boolean { return this.selectedRows().has(rowId); }
+  deselectAll(): void { this.selectedRows.set(new Set()); }
 
   private loadActivitesDuProjet(projetId: number): void {
     if (this.activitesParProjet()[projetId]) return;
@@ -226,7 +246,7 @@ export class MaSemaineComponent implements OnInit {
   }
 
   onProjetChange(rowId: string, val: string): void {
-    const projetId = +val || undefined;
+    const projetId = val ? +val : undefined;
     const projet = this.projets().find(p => p.id === projetId);
     this.lignesMatrice.update(ls => ls.map(l =>
       l.rowId !== rowId ? l : {
@@ -240,10 +260,11 @@ export class MaSemaineComponent implements OnInit {
   }
 
   onActiviteChange(rowId: string, val: string): void {
-    const activiteId = +val || undefined;
+    const activiteId = val ? +val : undefined;
     const ligne = this.lignesMatrice().find(l => l.rowId === rowId);
-    const acts  = this.getActivitesPourLigne(ligne?.projetId);
-    const act   = acts.find(a => a.id === activiteId);
+    const duProjet = ligne?.projetId ? (this.activitesParProjet()[ligne.projetId] ?? []) : [];
+    const toutes = [...duProjet, ...this.activitesGlobales()];
+    const act = toutes.find(a => a.id === activiteId);
     this.lignesMatrice.update(ls => ls.map(l =>
       l.rowId !== rowId ? l : { ...l, activiteId: act?.id, activiteNom: act?.nom }
     ));
@@ -259,19 +280,19 @@ export class MaSemaineComponent implements OnInit {
   }
 
   private parseHHMM(val: string): number {
-    if (!val) return 0;
+    if (!val || val === '0:00') return 0;
     if (val.includes(':')) {
-      const [h, m] = val.split(':').map(n => parseInt(n,10)||0);
-      return h*60+m;
+      const [h, m] = val.split(':').map(n => parseInt(n, 10) || 0);
+      return h * 60 + m;
     }
     const n = parseFloat(val);
-    return isNaN(n) ? 0 : Math.round(n*60);
+    return isNaN(n) ? 0 : Math.round(n * 60);
   }
 
   private updateCell(rowId: string, date: string, patch: Partial<MatriceLigne['jours'][string]>): void {
     this.lignesMatrice.update(ls => ls.map(l => {
       if (l.rowId !== rowId) return l;
-      const def = { minutes:0, minutesSupp:0, heureDebut:'', heureFin:'', commentaire:'', estWeekend:FeuilleTempsService.isWeekend(date) };
+      const def = { minutes: 0, minutesSupp: 0, heureDebut: '', heureFin: '', commentaire: '', estWeekend: FeuilleTempsService.isWeekend(date) };
       return { ...l, jours: { ...l.jours, [date]: { ...def, ...l.jours[date], ...patch } } };
     }));
   }
@@ -282,94 +303,109 @@ export class MaSemaineComponent implements OnInit {
     this.commentaireModal.set({ rowId, date });
   }
 
-  // ✅ Commentaire sauvegardé dans le signal local, persisté au moment de sauvegarder la feuille
   sauvegarderCommentaire(): void {
     const m = this.commentaireModal();
     if (!m) return;
     this.updateCell(m.rowId, m.date, { commentaire: this.commentaireTexte });
     this.commentaireModal.set(null);
-    this.ui.success('Commentaire enregistré.');
+    // ✅ Auto-sauvegarde du commentaire sur le backend
+    this.sauvegarder(false, true);
   }
 
   hasComment(rowId: string, date: string): boolean {
     return !!(this.lignesMatrice().find(l => l.rowId === rowId)?.jours[date]?.commentaire?.trim());
   }
 
-  getActivitesDuProjet(projetId?: number): Activite[] {
-    if (!projetId) return [];
-    return this.activitesParProjet()[projetId] ?? [];
-  }
-
   semainePrec(): void {
-    const d = new Date(this.lundiCourant()); d.setDate(d.getDate()-7);
+    const d = new Date(this.lundiCourant()); d.setDate(d.getDate() - 7);
     this.lundiCourant.set(d.toISOString().split('T')[0]); this.loadSemaine();
   }
   semaineSuiv(): void {
-    const d = new Date(this.lundiCourant()); d.setDate(d.getDate()+7);
+    const d = new Date(this.lundiCourant()); d.setDate(d.getDate() + 7);
     this.lundiCourant.set(d.toISOString().split('T')[0]); this.loadSemaine();
   }
 
   get semaineLabelFR(): string {
     const lundi  = this.lundiCourant();
     const samedi = FeuilleTempsService.getSamediSemaine(lundi);
-    const f = (s: string) => new Date(s).toLocaleDateString('fr-FR', { day:'2-digit', month:'short' });
+    const f = (s: string) => new Date(s).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
     return `${f(lundi)} – ${f(samedi)}`;
   }
 
-  sauvegarder(soumettre = false): void {
+  // ✅ FIX CRITIQUE : sauvegarder() utilise maintenant getLigneTotalMinutes(l) 
+  // au lieu de l'ancienne fonction getTotalLigne(l) qui attendait un rowId string
+  sauvegarder(soumettre = false, silencieux = false): void {
     const user = this.currentUser();
     if (!user) { this.ui.warning('Utilisateur non identifié.'); return; }
 
-    // ✅ Validation uniquement à la soumission
     if (soumettre) {
       this.submitted.set(true);
-      const hasSansProjet = this.lignesMatrice().some(l => getTotalLigne(l) > 0 && !l.projetId);
+      const hasSansProjet = this.lignesMatrice().some(
+        l => this.getLigneTotalMinutes(l) > 0 && !l.projetId
+      );
       if (hasSansProjet) {
         this.ui.warning('Certaines lignes avec des heures n\'ont pas de projet sélectionné.');
         return;
       }
     }
 
-    // ✅ Construire les lignes avec les commentaires inclus
+    // ✅ Construire les lignes avec commentaires inclus
     const lignes: LigneFeuilleTempsRequest[] = [];
-    for (const l of this.lignesMatrice())
-      for (const [date, c] of Object.entries(l.jours))
-        if (c.minutes > 0 || c.minutesSupp > 0)
+    for (const l of this.lignesMatrice()) {
+      for (const [date, c] of Object.entries(l.jours)) {
+        if (c.minutes > 0 || c.minutesSupp > 0) {
           lignes.push({
             date,
-            projetId: l.projetId, projetNom: l.projetNom,
+            projetId: l.projetId,     projetNom: l.projetNom,
             activiteId: l.activiteId, activiteNom: l.activiteNom,
-            clientId: l.clientId, clientNom: l.clientNom,
-            minutesTravaillees: c.minutes, minutesSupplementaires: c.minutesSupp,
-            commentaire: c.commentaire?.trim() || undefined,  // ← commentaire inclus
+            clientId: l.clientId,     clientNom: l.clientNom,
+            minutesTravaillees: c.minutes,
+            minutesSupplementaires: c.minutesSupp,
+            commentaire: c.commentaire?.trim() || undefined, // ✅ commentaire persisté
             estWeekend: c.estWeekend
           });
+        }
+      }
+    }
 
     this.saving.set(true);
+
     const req: FeuilleTempsRequest = {
-      utilisateurId: user.id, semaineDu: this.lundiCourant(),
-      semaineAu: FeuilleTempsService.getVendrediSemaine(this.lundiCourant()),
-      statut: soumettre ? 'SOUMISE' : 'BROUILLON', commentaireEmploye: '', lignes
+      utilisateurId: user.id,
+      semaineDu: this.lundiCourant(),
+      // ✅ FIX 500 : utiliser semaineAu de la feuille existante si elle existe,
+      // sinon calculer le vendredi. NE JAMAIS changer semaineDu d'une feuille existante.
+      semaineAu: this.feuilleCourante()?.semaineAu
+                 ?? FeuilleTempsService.getVendrediSemaine(this.lundiCourant()),
+      statut: soumettre ? 'SOUMISE' : 'BROUILLON',
+      commentaireEmploye: this.feuilleCourante()?.commentaireEmploye || '',
+      lignes
     };
+
     const id  = this.feuilleCourante()?.id;
     const obs = id ? this.ftSvc.update(id, req) : this.ftSvc.create(req);
+
     obs.subscribe({
       next: ft => {
         this.feuilleCourante.set(ft);
-        this.buildMatrice(ft);  // ✅ Reconstruit depuis le backend (avec commentaires persistés)
-        this.ui.success(soumettre ? 'Feuille soumise ✅' : 'Sauvegardé 💾');
+        this.buildMatrice(ft); // ✅ Reconstruit depuis le backend (commentaires persistés)
+        if (!silencieux) {
+          this.ui.success(soumettre ? 'Feuille soumise ✅' : 'Sauvegardé 💾');
+        }
         this.saving.set(false);
         this.submitted.set(false);
       },
-      error: (err: HttpErrorResponse) => { this.ui.error(this.errorSvc.parse(err).message); this.saving.set(false); }
+      error: (err: HttpErrorResponse) => {
+        this.ui.error(this.errorSvc.parse(err).message);
+        this.saving.set(false);
+      }
     });
   }
-  deselectAll(): void {
-    this.selectedRows.set(new Set());
-  }
+
   soumettreFeuille(): void {
     this.ui.confirm({
-      title: 'Soumettre', message: 'Envoyer pour validation ? Vous ne pourrez plus modifier ensuite.',
+      title: 'Soumettre',
+      message: 'Envoyer pour validation ? Vous ne pourrez plus modifier ensuite.',
       confirmLabel: 'Soumettre', type: 'info',
       onConfirm: () => {
         const id = this.feuilleCourante()?.id;
@@ -394,10 +430,3 @@ export class MaSemaineComponent implements OnInit {
     });
   }
 }
-
-// Helper interne (pas une méthode de la classe pour éviter les problèmes de this)
-function getTotalLigne(l: MatriceLigne): number {
-  return Object.values(l.jours).reduce((s, c) => s + c.minutes + c.minutesSupp, 0);
-}
-
-

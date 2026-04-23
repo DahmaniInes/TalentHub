@@ -24,7 +24,9 @@ public class LigneFeuilleTemps {
 
     @Column(nullable = false)
     private LocalDate date;
-
+    @Column(name = "categorie_code")
+    @Builder.Default
+    private String categorieCode = "PROJET";
     // ─── Référence projet/activité (remplace categorieCode) ───
     @Column(name = "projet_id")
     private Long projetId;

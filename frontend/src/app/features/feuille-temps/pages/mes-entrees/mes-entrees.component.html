@@ -1,174 +1,552 @@
-<!-- mes-entrees.component.html -->
-<div class="mx-page">
+<!-- mes-entrees.component.html — dt-* complet -->
+<div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh" (click)="closeAllMenus(); showFilterPanel.set(false)">
+  <div class="dt-wrap">
 
-    <div class="mx-page-header">
-      <div class="mx-page-title-block">
-        <h1 class="mx-page-title">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" style="width:20px;height:20px"><path d="M3 5h14M3 10h14M3 15h8" stroke-linecap="round"/></svg>
+    <!-- ══ HEADER ══ -->
+    <div class="dt-header">
+      <div>
+        <h1 class="dt-title">
+          <svg class="dt-title-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M2 4h12M2 8h12M2 12h8" stroke-linecap="round"/>
+          </svg>
           Mes entrées
         </h1>
-        <p class="mx-page-subtitle">{{ filteredEntrees().length }} entrée(s) — {{ fmt(totalFiltre()) }}</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+          <span class="dt-badge dt-badge-accent" style="font-size:.66rem;padding:3px 9px">
+            <span class="dt-badge-dot"></span>{{ filteredEntrees().length }} entrée(s)
+          </span>
+          <span class="dt-badge dt-badge-delivered" style="font-size:.66rem;padding:3px 9px">
+            <span class="dt-badge-dot"></span>{{ fmt(totalFiltre()) }} total
+          </span>
+        </div>
       </div>
-      <div class="mx-page-actions">
-        <button class="mx-btn mx-btn-ghost" (click)="exportCSV()">
-          <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px"><path d="M7 2v8M4 7l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Exporter CSV
+
+      <div class="dt-header-actions">
+
+        <!-- Recherche rapide -->
+        <div class="dt-search-bar" style="min-width:210px">
+          <svg class="dt-search-icon" viewBox="0 0 14 14" fill="none">
+            <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.4"/>
+            <path d="m10 10 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+          <input class="dt-search-input" [value]="searchText()"
+                 (input)="searchText.set($any($event.target).value)"
+                 placeholder="Rechercher...">
+        </div>
+
+        <!-- Bouton filtres -->
+        <div style="position:relative" (click)="$event.stopPropagation()">
+          <button class="me-toolbar-btn"
+                  [class.me-toolbar-btn-active]="hasFilters()"
+                  (click)="showFilterPanel.set(!showFilterPanel())">
+            <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
+              <path d="M1 3h12M3 7h8M5 11h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            Filtres
+            <span *ngIf="hasFilters()" class="me-filter-badge">{{ activeFiltersCount() }}</span>
+          </button>
+
+          <!-- Panneau filtres -->
+          <div *ngIf="showFilterPanel()" class="me-filter-panel" (click)="$event.stopPropagation()">
+            <div class="me-filter-panel-header">
+              <span class="me-filter-panel-title">Filtres avancés</span>
+              <button *ngIf="hasFilters()" class="me-filter-reset" (click)="resetFilters()">Réinitialiser</button>
+            </div>
+
+            <div class="me-filter-group">
+              <label class="me-filter-label">Période</label>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <input type="date" class="mx-field-input" [value]="filterDateDu()"
+                       (change)="filterDateDu.set($any($event.target).value)">
+                <input type="date" class="mx-field-input" [value]="filterDateAu()"
+                       (change)="filterDateAu.set($any($event.target).value)">
+              </div>
+            </div>
+
+            <div class="me-filter-group">
+              <label class="me-filter-label">Projet</label>
+              <select class="mx-field-select" [value]="filterProjet()" (change)="filterProjet.set($any($event.target).value)">
+                <option value="">Tous les projets</option>
+                <option *ngFor="let p of projets()" [value]="p.id">{{ p.nom }}</option>
+              </select>
+            </div>
+
+            <div class="me-filter-group">
+              <label class="me-filter-label">Activité</label>
+              <select class="mx-field-select" [value]="filterActivite()" (change)="filterActivite.set($any($event.target).value)">
+                <option value="">Toutes les activités</option>
+                <option *ngFor="let a of activites()" [value]="a.id">{{ a.nom }}</option>
+              </select>
+            </div>
+
+            <div class="me-filter-group">
+              <label class="me-filter-label">Client</label>
+              <select class="mx-field-select" [value]="filterClient()" (change)="filterClient.set($any($event.target).value)">
+                <option value="">Tous les clients</option>
+                <option *ngFor="let c of clients()" [value]="c.id">{{ c.nom }}</option>
+              </select>
+            </div>
+
+            <div class="me-filter-group">
+              <label class="me-filter-label">Statut</label>
+              <select class="mx-field-select" [value]="filterStatut()" (change)="filterStatut.set($any($event.target).value)">
+                <option value="">Tous les statuts</option>
+                <option value="BROUILLON">Brouillon</option>
+                <option value="SOUMISE">Soumise</option>
+                <option value="VALIDEE">Validée</option>
+                <option value="REJETEE">Rejetée</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Export -->
+        <button class="me-toolbar-btn" (click)="exportCSV()">
+          <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
+            <path d="M7 2v8M4 7l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Export
+        </button>
+
+        <!-- Ajouter -->
+        <button class="dt-btn-create" (click)="ouvrirAjout()">
+          <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
+            <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+          </svg>
+          Ajouter
         </button>
       </div>
     </div>
-  
-    <!-- Filtres -->
-    <div class="mx-toolbar" style="flex-wrap:wrap;gap:6px">
-      <div class="mx-search" style="min-width:180px">
-        <svg viewBox="0 0 14 14" fill="none" class="mx-search-icon"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="m10 10 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-        <input [value]="searchText()" (input)="searchText.set($any($event.target).value)" placeholder="Rechercher..." class="mx-search-input">
-      </div>
-      <select class="mx-filter-select" [value]="filterClient()" (change)="filterClient.set($any($event.target).value)">
-        <option value="">Tous les clients</option>
-        <option *ngFor="let c of clients()" [value]="c.id">{{ c.nom }}</option>
-      </select>
-      <select class="mx-filter-select" [value]="filterProjet()" (change)="filterProjet.set($any($event.target).value)">
-        <option value="">Tous les projets</option>
-        <option *ngFor="let p of projets()" [value]="p.id">{{ p.nom }}</option>
-      </select>
-      <input type="date" class="mx-filter-select" [value]="filterDateDu()" (change)="filterDateDu.set($any($event.target).value)" title="Date du">
-      <input type="date" class="mx-filter-select" [value]="filterDateAu()" (change)="filterDateAu.set($any($event.target).value)" title="Date au">
-      <button *ngIf="filterProjet() || filterClient() || filterDateDu() || searchText()" class="mx-btn mx-btn-ghost mx-btn-sm"
-              (click)="filterProjet.set(''); filterClient.set(''); filterDateDu.set(''); filterDateAu.set(''); searchText.set('')">
-        Réinitialiser
+
+    <!-- Barre bulk -->
+    <div *ngIf="selectedIds().size > 0" class="dt-bulk-bar">
+      <span class="dt-bulk-count">{{ selectedIds().size }} sélectionnée(s)</span>
+      <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="clearSelection()">Annuler</button>
+      <button class="mx-btn mx-btn-danger mx-btn-sm" (click)="supprimerSelection()">
+        Supprimer ({{ selectedIds().size }})
       </button>
     </div>
-  
+
     <!-- Loading -->
-    <div *ngIf="loading()" class="mx-loading"><div class="mx-spinner"></div> Chargement...</div>
-  
-    <!-- Tableau -->
-    <div *ngIf="!loading()" class="mx-table-wrap">
-      <div class="mx-table-scroll">
-        <table class="mx-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Début</th>
-              <th>Fin</th>
-              <th>Durée</th>
-              <th>Client</th>
-              <th>Projet</th>
-              <th>Activité</th>
-              <th>Statut</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let e of filteredEntrees()"
-                [class.ft-row-editable]="peutEditer(e)"
-                (click)="ouvrirEdition(e)"
-                style="cursor:pointer">
-              <td style="font-size:.8rem;color:var(--text-primary);white-space:nowrap">
-                {{ e.date | date:'dd/MM/yyyy' }}
-              </td>
-              <td style="font-size:.78rem;color:var(--text-secondary);font-variant-numeric:tabular-nums">
-                {{ e.heureDebut ? fmtAMPM(e.heureDebut) : '—' }}
-              </td>
-              <td style="font-size:.78rem;color:var(--text-secondary);font-variant-numeric:tabular-nums">
-                {{ e.heureFin ? fmtAMPM(e.heureFin) : '—' }}
-              </td>
-              <td style="font-size:.78rem;font-weight:600;color:var(--text-primary)">
-                {{ fmtDuree(e.heureDebut || '', e.heureFin || '') !== '—' ? fmtDuree(e.heureDebut || '', e.heureFin || '') : fmt(e.minutesTravaillees) }}
-              </td>
-              <td class="muted" style="font-size:.75rem">{{ e.clientNom || '—' }}</td>
-              <td style="font-size:.78rem">
-                <div style="display:flex;align-items:center;gap:5px">
-                  <span style="font-weight:600;color:var(--text-primary)">{{ e.projetNom || '—' }}</span>
-                </div>
-              </td>
-              <td style="font-size:.75rem;color:var(--text-secondary)">{{ e.activiteNom || '—' }}</td>
-              <td>
-                <span class="ft-statut-badge ft-statut-sm" [class]="'ft-statut-' + e.feuilleStatut.toLowerCase()">
-                  {{ {BROUILLON:'Brouillon', SOUMISE:'Soumise', VALIDEE:'Validée', REJETEE:'Rejetée'}[e.feuilleStatut] }}
+    <div *ngIf="loading()" class="dt-loading"><div class="dt-spinner"></div> Chargement...</div>
+
+    <!-- ══ TABLEAU ══ -->
+    <div *ngIf="!loading()" class="dt-scroll">
+      <table class="dt-table">
+        <thead>
+          <tr>
+            <!-- Checkbox -->
+            <th class="dt-th dt-th-cb">
+              <input type="checkbox" class="dt-checkbox"
+                     [class.indeterminate]="someSelected()"
+                     [checked]="allSelected()"
+                     (change)="toggleSelectAll()">
+            </th>
+
+            <!-- Date -->
+            <th class="dt-th" style="min-width:110px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
+                  <rect x="1" y="2" width="12" height="11" rx="1.5"/>
+                  <path d="M1 6h12M4.5 1v2M9.5 1v2" stroke-linecap="round"/>
+                </svg>
+                Date
+              </div>
+            </th>
+
+            <!-- Projet -->
+            <th class="dt-th" style="min-width:150px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 52 52" fill="currentColor">
+                  <path d="M39.3,26.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9V25c0-1,0.9-1.9,1.9-1.9h22.9
+                    c1,0,1.9,0.9,1.9,1.9v1.9H39.3z M41.2,4H10.8C7.6,4,5,6.6,5,9.7v32.4c0,3.1,2.6,5.7,5.7,5.7h30.5
+                    c3.1,0,5.7-2.6,5.7-5.7V9.7C47,6.6,44.4,4,41.2,4z"/>
+                </svg>
+                Projet
+              </div>
+            </th>
+
+            <!-- Activité -->
+            <th class="dt-th" style="min-width:150px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+                  <rect x="1" y="1" width="12" height="12" rx="2"/>
+                  <path d="M4 5h6M4 7.5h6M4 10h4" stroke-linecap="round"/>
+                </svg>
+                Activité
+              </div>
+            </th>
+
+            <!-- Client -->
+            <th class="dt-th" style="min-width:110px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="currentColor">
+                  <path d="M7 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm-4 6a4 4 0 118 0H3z"/>
+                </svg>
+                Client
+              </div>
+            </th>
+
+            <!-- ✅ Début (nouvelle colonne) -->
+            <th class="dt-th" style="min-width:100px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
+                  <circle cx="7" cy="7" r="5.5"/>
+                  <path d="M7 4v3l1.5 1" stroke-linecap="round"/>
+                </svg>
+                Début
+              </div>
+            </th>
+
+            <!-- ✅ Fin (nouvelle colonne) -->
+            <th class="dt-th" style="min-width:100px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
+                  <circle cx="7" cy="7" r="5.5"/>
+                  <path d="M7 4v3l1.5 1" stroke-linecap="round"/>
+                  <path d="M10.5 10.5l2 2" stroke-linecap="round" stroke-width="1.5"/>
+                </svg>
+                Fin
+              </div>
+            </th>
+
+            <!-- ✅ Durée -->
+            <th class="dt-th" style="min-width:90px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
+                  <rect x="1" y="3" width="12" height="9" rx="1.5"/>
+                  <path d="M5 3V1.5M9 3V1.5M1 6.5h12" stroke-linecap="round"/>
+                </svg>
+                Durée
+              </div>
+            </th>
+
+            <!-- Statut -->
+            <th class="dt-th" style="min-width:100px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+                  <circle cx="7" cy="7" r="5.5"/>
+                  <path d="M4.5 7l2 2 3-3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Statut
+              </div>
+            </th>
+
+            <!-- Actions -->
+            <th class="dt-th dt-th-actions"></th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let e of filteredEntrees()"
+              class="dt-tr"
+              [class.dt-tr-selected]="isSelected(getEntreeKey(e))">
+
+            <!-- Checkbox -->
+            <td class="dt-td dt-td-cb" (click)="$event.stopPropagation()">
+              <input type="checkbox" class="dt-checkbox"
+                     [class.dt-checkbox-active]="isSelected(getEntreeKey(e))"
+                     [checked]="isSelected(getEntreeKey(e))"
+                     (change)="toggleSelect(getEntreeKey(e), $event)">
+            </td>
+
+            <!-- Date -->
+            <td class="dt-td">
+              <span class="dt-cell-text">{{ e.date | date:'dd/MM/yyyy' }}</span>
+            </td>
+
+            <!-- Projet -->
+            <td class="dt-td">
+              <span *ngIf="e.projetNom" class="dt-cell-name">{{ e.projetNom }}</span>
+              <span *ngIf="!e.projetNom" class="dt-cell-muted"
+                    style="font-style:italic;font-size:.71rem">Sans projet</span>
+            </td>
+
+            <!-- Activité -->
+            <td class="dt-td">
+              <span *ngIf="e.activiteNom" class="dt-cell-sub">{{ e.activiteNom }}</span>
+              <span *ngIf="!e.activiteNom" class="dt-cell-muted">—</span>
+            </td>
+
+            <!-- Client -->
+            <td class="dt-td">
+              <span class="dt-cell-muted">{{ e.clientNom || '—' }}</span>
+            </td>
+
+            <!-- ✅ Début -->
+            <td class="dt-td">
+              <span *ngIf="e.heureDebut" class="me-time-chip me-time-start">
+                <svg viewBox="0 0 10 10" fill="none" style="width:9px;height:9px;flex-shrink:0">
+                  <circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.2"/>
+                  <path d="M5 3v2l1.2 1" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+                </svg>
+                {{ e.heureDebut }}
+              </span>
+              <span *ngIf="!e.heureDebut" class="dt-cell-muted">—</span>
+            </td>
+
+            <!-- ✅ Fin -->
+            <td class="dt-td">
+              <span *ngIf="e.heureFin" class="me-time-chip me-time-end">
+                <svg viewBox="0 0 10 10" fill="none" style="width:9px;height:9px;flex-shrink:0">
+                  <circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.2"/>
+                  <path d="M5 3v2l1.2 1" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+                </svg>
+                {{ e.heureFin }}
+              </span>
+              <span *ngIf="!e.heureFin" class="dt-cell-muted">—</span>
+            </td>
+
+            <!-- ✅ Durée (calculée depuis heureDebut/heureFin ou minutesTravaillees) -->
+            <td class="dt-td">
+              <ng-container *ngIf="e.heureDebut && e.heureFin; else dureeMinutes">
+                <span class="me-duree-chip">
+                  <svg viewBox="0 0 10 10" fill="none" style="width:9px;height:9px;flex-shrink:0">
+                    <circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.2"/>
+                    <path d="M5 2.5v2.5l1.5 1" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+                  </svg>
+                  {{ fmtDuree(e.heureDebut, e.heureFin) }}
                 </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-  
-        <div *ngIf="filteredEntrees().length === 0" class="mx-empty">
-          <p class="mx-empty-title">Aucune entrée</p>
-          <p class="mx-empty-sub">Saisissez vos heures dans "Ma semaine".</p>
-        </div>
+              </ng-container>
+              <ng-template #dureeMinutes>
+                <span *ngIf="e.minutesTravaillees > 0" class="me-duree-chip">
+                  <svg viewBox="0 0 10 10" fill="none" style="width:9px;height:9px;flex-shrink:0">
+                    <circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.2"/>
+                    <path d="M5 2.5v2.5l1.5 1" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+                  </svg>
+                  {{ fmt(e.minutesTravaillees) }}
+                </span>
+                <span *ngIf="e.minutesTravaillees === 0" class="dt-cell-muted">—</span>
+              </ng-template>
+            </td>
+
+            <!-- Statut -->
+            <td class="dt-td">
+              <span class="dt-badge"
+                    [class.dt-badge-delivered]="e.feuilleStatut==='VALIDEE'"
+                    [class.dt-badge-canceled]="e.feuilleStatut==='REJETEE'"
+                    [class.dt-badge-pending]="e.feuilleStatut==='SOUMISE'"
+                    [class.dt-badge-default]="e.feuilleStatut==='BROUILLON'">
+                <span class="dt-badge-dot"></span>
+                {{ {BROUILLON:'Brouillon',SOUMISE:'Soumise',VALIDEE:'Validée',REJETEE:'Rejetée'}[e.feuilleStatut] }}
+              </span>
+            </td>
+
+            <!-- ✅ 3-points — désactivé si VALIDEE / SOUMISE -->
+            <td class="dt-td dt-td-actions" (click)="$event.stopPropagation()">
+              <div style="position:relative;display:flex;justify-content:center">
+                <button class="me-3dot-btn dt-action-btn"
+                        [style.opacity]="peutEditer(e) ? '1' : '.3'"
+                        [disabled]="!peutEditer(e)"
+                        (click)="peutEditer(e) && toggleMenu(e, $event)">
+                  <svg viewBox="0 0 4 18" fill="currentColor" style="width:4px;height:18px">
+                    <circle cx="2" cy="2"  r="1.8"/>
+                    <circle cx="2" cy="9"  r="1.8"/>
+                    <circle cx="2" cy="16" r="1.8"/>
+                  </svg>
+                </button>
+
+                <!-- Dropdown menu -->
+                <div *ngIf="openMenuId() === getEntreeKey(e)" class="me-dropdown">
+
+                  <button class="me-dropdown-item" (click)="ouvrirEdition(e); closeAllMenus()">
+                    <svg viewBox="0 0 14 14" fill="none">
+                      <path d="M9 2l3 3-7 7H2V9l7-7z"
+                            stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+                    </svg>
+                    Modifier
+                  </button>
+
+                  <button class="me-dropdown-item" (click)="copierEntree(e); closeAllMenus()">
+                    <svg viewBox="0 0 14 14" fill="none">
+                      <rect x="4" y="4" width="9" height="9" rx="1.5"
+                            stroke="currentColor" stroke-width="1.3"/>
+                      <path d="M4 10H2a1 1 0 01-1-1V2a1 1 0 011-1h7a1 1 0 011 1v2"
+                            stroke="currentColor" stroke-width="1.3"/>
+                    </svg>
+                    Créer une copie
+                  </button>
+
+                  <div class="me-dropdown-sep"></div>
+
+                  <button class="me-dropdown-item me-dropdown-danger"
+                          (click)="supprimerEntree(e); closeAllMenus()">
+                    <svg viewBox="0 0 14 14" fill="none">
+                      <path d="M2 3.5h10M5 3.5V2h4v1.5M4 3.5l.6 8.5h4.8L10 3.5"
+                            stroke="currentColor" stroke-width="1.3"
+                            stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Supprimer
+                  </button>
+
+                </div>
+              </div>
+            </td>
+
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- État vide -->
+      <div *ngIf="filteredEntrees().length === 0" class="dt-empty">
+        <svg viewBox="0 0 48 48" fill="none" style="width:40px;height:40px;opacity:.4">
+          <circle cx="24" cy="24" r="20" stroke="currentColor"
+                  stroke-width="1.5" stroke-dasharray="5 3"/>
+          <path d="M24 16v8M24 28h.01" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <p class="dt-empty-title">Aucune entrée</p>
+        <p class="dt-empty-sub">Saisissez vos heures dans "Ma semaine" ou cliquez sur Ajouter.</p>
+        <button class="dt-btn-create" style="margin-top:12px" (click)="ouvrirAjout()">
+          <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+            <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+          </svg>
+          Ajouter une entrée
+        </button>
       </div>
     </div>
+
+    <!-- Footer -->
+    <div *ngIf="!loading() && filteredEntrees().length > 0" class="dt-footer">
+      <div class="dt-count-info">
+        <strong>{{ filteredEntrees().length }}</strong> entrée(s) ·
+        <strong style="color:var(--accent)">{{ fmt(totalFiltre()) }}</strong> total
+      </div>
+    </div>
+
   </div>
-  
-  <!-- SLIDE-OVER ÉDITION -->
-  <div *ngIf="editingEntree()" class="mx-overlay" (click)="editingEntree.set(null)"></div>
-  <div *ngIf="editingEntree() as entree" class="mx-slideover">
-    <div class="mx-so-header">
-      <div>
-        <p class="mx-so-name">Modifier l'entrée</p>
-        <p class="mx-so-sub">{{ entree.date | date:'EEEE dd MMMM yyyy' : '' : 'fr' }}</p>
-      </div>
-      <button class="mx-so-close" (click)="editingEntree.set(null)">
-        <svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      </button>
+</div>
+
+<!-- ════ SLIDE-OVER ════ -->
+<div *ngIf="editingEntree() || addingEntree()"
+     class="mx-overlay" (click)="fermerFormulaire()"></div>
+
+<div *ngIf="editingEntree() || addingEntree()" class="mx-slideover">
+
+  <!-- Header slide-over -->
+  <div class="mx-so-header">
+    <div class="dt-avatar"
+         style="width:44px;height:44px;border-radius:11px;background:var(--accent)">
+      <svg viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="1.5"
+           style="width:18px;height:18px">
+        <path d="M2 4h12M2 8h12M2 12h8" stroke-linecap="round"/>
+      </svg>
     </div>
-  
-    <div class="mx-so-body" style="display:flex;flex-direction:column;gap:12px">
-      <!-- Date -->
-      <div class="mx-field">
-        <label class="mx-field-label">Date</label>
-        <input type="date" [(ngModel)]="editForm().date" [ngModelOptions]="{standalone:true}" class="mx-field-input">
-      </div>
-  
-      <!-- Projet -->
-      <div class="mx-field">
-        <label class="mx-field-label">Projet</label>
-        <select [(ngModel)]="editForm().projetId" [ngModelOptions]="{standalone:true}" class="mx-field-select"
-                (ngModelChange)="onEditProjetChange($event)">
-          <option [ngValue]="undefined">— Projet —</option>
-          <option *ngFor="let p of projets()" [ngValue]="p.id">{{ p.nom }}</option>
-        </select>
-      </div>
-  
-      <!-- Activité -->
-      <div class="mx-field">
-        <label class="mx-field-label">Activité</label>
-        <select [(ngModel)]="editForm().activiteId" [ngModelOptions]="{standalone:true}" class="mx-field-select"
-                (ngModelChange)="onEditActiviteChange($event)">
-          <option [ngValue]="undefined">— Activité —</option>
-          <option *ngFor="let a of activites()" [ngValue]="a.id">{{ a.nom }}</option>
-        </select>
-      </div>
-  
-      <!-- Début / Fin -->
-      <div class="mx-so-grid">
-        <div class="mx-field">
-          <label class="mx-field-label">Début</label>
-          <input type="time" [(ngModel)]="editForm().heureDebut" [ngModelOptions]="{standalone:true}" class="mx-field-input" (change)="recalcDuree()">
-        </div>
-        <div class="mx-field">
-          <label class="mx-field-label">Fin</label>
-          <input type="time" [(ngModel)]="editForm().heureFin" [ngModelOptions]="{standalone:true}" class="mx-field-input" (change)="recalcDuree()">
-        </div>
-      </div>
-  
-      <!-- Durée calculée -->
-      <div *ngIf="editForm().minutesTravaillees" style="font-size:.75rem;color:var(--text-muted);background:var(--bg-hover);padding:6px 10px;border-radius:6px">
-        Durée : <strong style="color:var(--text-primary)">{{ fmt(editForm().minutesTravaillees || 0) }}</strong>
-        <span *ngIf="editForm().minutesSupplementaires"> + {{ fmt(editForm().minutesSupplementaires || 0) }} suppl.</span>
-      </div>
-  
-      <!-- Commentaire -->
-      <div class="mx-field">
-        <label class="mx-field-label">Commentaire</label>
-        <textarea [(ngModel)]="editForm().commentaire" [ngModelOptions]="{standalone:true}" rows="2" class="mx-field-textarea"></textarea>
-      </div>
+    <div class="mx-so-title-block">
+      <p class="mx-so-name">
+        {{ addingEntree() ? 'Nouvelle entrée' : 'Modifier l\'entrée' }}
+      </p>
+      <p class="mx-so-sub" *ngIf="editForm().date">
+        {{ editForm().date | date:'EEEE dd MMMM yyyy' }}
+      </p>
     </div>
-  
-    <div style="padding:12px 18px;border-top:1px solid var(--border-color);background:var(--bg-hover);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0">
-      <button class="mx-btn mx-btn-ghost" (click)="editingEntree.set(null)">Annuler</button>
-      <button class="mx-btn mx-btn-primary" [disabled]="saving()" (click)="sauvegarderEdition()">
-        <div *ngIf="saving()" class="mx-spinner" style="width:12px;height:12px"></div>
-        Enregistrer
-      </button>
-    </div>
+    <button class="mx-so-close" (click)="fermerFormulaire()">
+      <svg viewBox="0 0 14 14" fill="none">
+        <path d="M3 3l8 8M11 3L3 11"
+              stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
   </div>
+
+  <!-- Body slide-over -->
+  <div class="mx-so-body" style="display:flex;flex-direction:column;gap:13px">
+
+    <!-- Date -->
+    <div class="mx-field">
+      <label class="mx-field-label">
+        Date <span style="color:#ef4444">*</span>
+      </label>
+      <input type="date"
+             [(ngModel)]="editForm().date"
+             [ngModelOptions]="{standalone:true}"
+             class="mx-field-input">
+    </div>
+
+    <!-- Projet -->
+    <div class="mx-field">
+      <label class="mx-field-label">Projet</label>
+      <select [(ngModel)]="editForm().projetId"
+              [ngModelOptions]="{standalone:true}"
+              class="mx-field-select"
+              (ngModelChange)="onEditProjetChange($event)">
+        <option [ngValue]="undefined">— Sans projet —</option>
+        <option *ngFor="let p of projets()" [ngValue]="p.id">{{ p.nom }}</option>
+      </select>
+    </div>
+
+    <!-- Activité -->
+    <div class="mx-field">
+      <label class="mx-field-label">Activité</label>
+      <select [(ngModel)]="editForm().activiteId"
+              [ngModelOptions]="{standalone:true}"
+              class="mx-field-select"
+              (ngModelChange)="onEditActiviteChange($event)">
+        <option [ngValue]="undefined">— Sans activité —</option>
+        <option *ngFor="let a of activites()" [ngValue]="a.id">{{ a.nom }}</option>
+      </select>
+    </div>
+
+    <!-- Heure début / fin -->
+    <div class="mx-so-grid">
+      <div class="mx-field">
+        <label class="mx-field-label">Heure début</label>
+        <input type="time"
+               [(ngModel)]="editForm().heureDebut"
+               [ngModelOptions]="{standalone:true}"
+               class="mx-field-input"
+               (change)="recalcDuree()">
+      </div>
+      <div class="mx-field">
+        <label class="mx-field-label">Heure fin</label>
+        <input type="time"
+               [(ngModel)]="editForm().heureFin"
+               [ngModelOptions]="{standalone:true}"
+               class="mx-field-input"
+               (change)="recalcDuree()">
+      </div>
+    </div>
+
+    <!-- Aperçu durée calculée -->
+    <div *ngIf="(editForm().minutesTravaillees || 0) > 0"
+         style="display:inline-flex;align-items:center;gap:6px;
+                background:var(--accent-soft);color:var(--accent);
+                padding:5px 12px;border-radius:7px;font-size:.77rem;
+                font-weight:700;border:1px solid rgba(192,38,211,.2)">
+      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"
+           style="width:12px;height:12px">
+        <circle cx="7" cy="7" r="5.5"/>
+        <path d="M7 4v3l2 1.5" stroke-linecap="round"/>
+      </svg>
+      Durée : {{ fmt(editForm().minutesTravaillees || 0) }}
+    </div>
+
+    <!-- Commentaire -->
+    <div class="mx-field">
+      <label class="mx-field-label">Commentaire</label>
+      <textarea [(ngModel)]="editForm().commentaire"
+                [ngModelOptions]="{standalone:true}"
+                rows="2"
+                class="mx-field-textarea"
+                placeholder="Note optionnelle..."></textarea>
+    </div>
+
+  </div>
+
+  <!-- Footer slide-over -->
+  <div class="mx-so-footer">
+    <button class="mx-btn mx-btn-ghost" (click)="fermerFormulaire()">
+      Annuler
+    </button>
+    <button class="dt-btn-create"
+            style="height:36px;padding:0 18px;font-size:.78rem"
+            [disabled]="saving()"
+            (click)="sauvegarderFormulaire()">
+      <div *ngIf="saving()" class="dt-spinner"
+           style="width:12px;height:12px;border-width:2px;
+                  border-color:rgba(255,255,255,.3);border-top-color:white">
+      </div>
+      {{ addingEntree() ? 'Ajouter' : 'Enregistrer' }}
+    </button>
+  </div>
+
+</div>

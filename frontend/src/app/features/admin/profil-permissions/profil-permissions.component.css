@@ -1,577 +1,70 @@
-/* ══════════════════════════════════════════════════════════
-   profil-permissions.component.css
-══════════════════════════════════════════════════════════ */
+/* profil-permissions.component.css
+   ✅ Les classes dt-* sont dans styles.css global
+   ✅ Ce fichier ne contient que les overrides spécifiques à ce composant
+*/
 
 .pp-wrapper {
-    min-height: 100vh;
-    padding: 28px 24px;
-    background: var(--bg-primary);
-  }
-  
-  /* ── Header ── */
-  .pp-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 24px;
-    flex-wrap: wrap;
-    gap: 14px;
-  }
-  
-  .pp-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--text-primary);
-    margin: 0 0 4px;
-    letter-spacing: -0.5px;
-  }
-  
-  .pp-title-icon { width: 24px; height: 24px; color: var(--accent); }
-  .pp-subtitle   { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
-  .pp-header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-  
-  /* ── Boutons ── */
-  .pp-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    border-radius: 10px;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    padding: 9px 18px;
-    border: none;
-    cursor: pointer;
-    transition: all .15s;
-    font-family: inherit;
-    white-space: nowrap;
-  }
-  .pp-btn-primary {
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    color: white;
-    box-shadow: 0 2px 8px var(--accent-soft);
-  }
-  .pp-btn-primary:hover { opacity: .88; }
-  .pp-btn-secondary {
-    background: var(--bg-card);
-    color: var(--text-secondary);
-    border: 1px solid var(--border-color);
-  }
-  .pp-btn-secondary:hover { background: var(--bg-hover); }
-  .pp-btn-ghost {
-    background: var(--bg-hover);
-    color: var(--text-secondary);
-    border: 1px solid var(--border-color);
-  }
-  
-  /* ── Stat Cards — ✅ grille 4 colonnes fixe ── */
-  .pp-stats-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-  
-  @media (max-width: 900px) {
-    .pp-stats-grid { grid-template-columns: repeat(2, 1fr); }
-  }
-  @media (max-width: 500px) {
-    .pp-stats-grid { grid-template-columns: 1fr; }
-  }
-  
-  .pp-stat-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 14px;
-    padding: 16px 18px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    transition: transform .2s, box-shadow .2s;
-    min-height: 84px;
-  }
-  .pp-stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.12); }
-  
-  /* ✅ Sans avatar — icône SVG simple */
-  .pp-stat-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-  .pp-stat-icon-blue   { background: rgba(59,130,246,.15);  color: #60a5fa; }
-  .pp-stat-icon-purple { background: var(--accent-soft);    color: var(--accent); }
-  .pp-stat-icon-profil { background: rgba(16,185,129,.15);  color: #34d399; }
-  
-  .pp-stat-body { flex: 1; min-width: 0; }
-  
-  .pp-stat-label {
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .4px;
-    color: var(--text-muted);
-    margin: 0 0 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .pp-stat-value {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--text-primary);
-    margin: 0;
-    letter-spacing: -0.5px;
-    line-height: 1;
-  }
-  .pp-stat-sub { font-size: 0.68rem; color: var(--text-muted); margin: 2px 0 0; }
-  
-  /* ✅ Actions dans les cards profil */
-  .pp-stat-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    flex-shrink: 0;
-    opacity: 0;
-    transition: opacity .15s;
-  }
-  .pp-stat-card:hover .pp-stat-actions { opacity: 1; }
-  
-  /* ── Icon buttons ── */
-  .pp-icon-btn {
-    width: 26px;
-    height: 26px;
-    border-radius: 7px;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: background .15s, color .15s;
-  }
-  .pp-icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
-  .pp-icon-btn-danger:hover { background: rgba(239,68,68,.12); color: #ef4444; }
-  
-  /* ── Table Card ── */
-  .pp-table-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    overflow: hidden;
-  }
-  
-  .pp-table-scroll { overflow-x: auto; }
-  
-  /* ── Tableau ── */
-  .pp-matrix-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 500px;
-  }
-  
-  /* En-têtes */
-  .pp-th-perm {
-    padding: 12px 16px;
-    text-align: left;
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .5px;
-    color: var(--text-muted);
-    background: var(--bg-hover);
-    border-bottom: 1px solid var(--border-color);
-    min-width: 240px;
-    position: sticky;
-    left: 0;
-    z-index: 2;
-  }
-  
-  /* ✅ En-tête profil SANS avatar — juste le nom */
-  .pp-th-profil {
-    padding: 12px 8px;
-    text-align: center;
-    background: var(--bg-hover);
-    border-bottom: 1px solid var(--border-color);
-    border-left: 1px solid var(--border-color);
-    min-width: 90px;
-    max-width: 130px;
-  }
-  
-  .pp-th-profil-nom {
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--text-secondary);
-    display: block;
-    word-break: break-word;
-    line-height: 1.3;
-  }
-  
-  .pp-th-actions {
-    padding: 12px 8px;
-    background: var(--bg-hover);
-    border-bottom: 1px solid var(--border-color);
-    border-left: 1px solid var(--border-color);
-    width: 68px;
-    min-width: 68px;
-  }
-  
-  /* ── Lignes module (grises) ── */
-  .pp-tr-module td {
-    background: var(--bg-hover);
-    border-bottom: 1px solid var(--border-color);
-  }
-  
-  .pp-td-module-name {
-    padding: 8px 12px;
-    position: sticky;
-    left: 0;
-    z-index: 1;
-    background: var(--bg-hover);
-  }
-  
-  .pp-module-cell {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-  }
-  
-  .pp-collapse-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-muted);
-    padding: 2px;
-    display: flex;
-    align-items: center;
-    border-radius: 4px;
-    transition: background .15s, color .15s;
-    flex-shrink: 0;
-  }
-  .pp-collapse-btn:hover { background: var(--bg-card); color: var(--text-primary); }
-  
-  .pp-module-label {
-    font-size: 0.75rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: .7px;
-    color: var(--text-secondary);
-    flex: 1;
-  }
-  
-  .pp-module-count {
-    font-size: 0.68rem;
-    font-weight: 600;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    color: var(--text-muted);
-    padding: 1px 7px;
-    border-radius: 999px;
-  }
-  
-  .pp-add-to-module-btn {
-    width: 22px;
-    height: 22px;
-    border-radius: 6px;
-    border: 1px dashed var(--border-color);
-    background: none;
-    color: var(--text-muted);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all .15s;
-    flex-shrink: 0;
-  }
-  .pp-add-to-module-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: var(--accent-soft);
-  }
-  
-  /* ✅ Cellule module — même style que pp-td-cell */
-  .pp-td-module-check {
-    text-align: center;
-    border-left: 1px solid var(--border-color);
-    padding: 6px 4px;
-    background: var(--bg-hover);
-  }
-  
-  .pp-td-module-actions {
-    border-left: 1px solid var(--border-color);
-    background: var(--bg-hover);
-  }
-  
-  /* ── Lignes permission ── */
-  .pp-tr-perm {
-    border-bottom: 1px solid var(--border-color);
-    transition: background .12s;
-  }
-  .pp-tr-perm:hover { background: var(--bg-hover); }
-  .pp-tr-perm:last-child { border-bottom: none; }
-  
-  .pp-td-perm-name {
-    padding: 10px 16px;
-    position: sticky;
-    left: 0;
-    background: var(--bg-card);
-    z-index: 1;
-    min-width: 240px;
-    transition: background .12s;
-  }
-  .pp-tr-perm:hover .pp-td-perm-name { background: var(--bg-hover); }
-  
-  .pp-perm-libelle {
-    display: block;
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--text-primary);
-  }
-  .pp-perm-desc {
-    display: block;
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    margin-top: 1px;
-  }
-  
-  /* ── Cellule ── */
-  .pp-td-cell {
-    text-align: center;
-    border-left: 1px solid var(--border-color);
-    padding: 8px 4px;
-  }
-  
-  .pp-cell-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .pp-cell-label { cursor: pointer; display: inline-flex; }
-  
-  /* ✅ Checkbox UNIFORME — même style partout (module + permission) */
-  .pp-cell-check {
-    width: 20px;
-    height: 20px;
-    border-radius: 6px;
-    border: 1.8px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg-card);
-    transition: all .15s;
-  }
-  .pp-cell-label:hover .pp-cell-check { border-color: var(--accent); }
-  .pp-cell-check.checked {
-    background: var(--accent);
-    border-color: var(--accent);
-    box-shadow: 0 2px 6px var(--accent-soft);
-  }
-  .pp-cell-check svg { width: 12px; height: 12px; color: white; }
-  
-  /* Spinner cellule */
-  .pp-cell-spinner {
-    width: 18px;
-    height: 18px;
-    border: 2px solid var(--border-color);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: ppSpin .6s linear infinite;
-  }
-  
-  .pp-cell-spinner-sm {
-    width: 10px;
-    height: 10px;
-    border: 1.5px solid var(--border-color);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: ppSpin .6s linear infinite;
-  }
-  
-  @keyframes ppSpin { to { transform: rotate(360deg); } }
-  
-  /* Actions ligne */
-  .pp-td-row-actions {
-    padding: 4px 6px;
-    border-left: 1px solid var(--border-color);
-    white-space: nowrap;
-  }
-  
-  /* ── Loading ── */
-  .pp-loading-center {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 60px 24px;
-    justify-content: center;
-    color: var(--text-muted);
-    font-size: 0.875rem;
-  }
-  
-  .pp-spinner {
-    width: 20px;
-    height: 20px;
-    border: 2px solid var(--border-color);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: ppSpin .7s linear infinite;
-    flex-shrink: 0;
-  }
-  
-  /* ── Empty ── */
-  .pp-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 60px 20px;
-    gap: 10px;
-    text-align: center;
-  }
-  .pp-empty p { font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); margin: 0; }
-  
-  /* ── Modal ── */
-  .pp-modal-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.55);
-    backdrop-filter: blur(6px);
-    z-index: 9998;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    animation: ppFade .2s ease;
-  }
-  @keyframes ppFade { from { opacity: 0; } to { opacity: 1; } }
-  
-  .pp-modal {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 18px;
-    width: 100%;
-    max-width: 420px;
-    box-shadow: 0 24px 80px rgba(0,0,0,.3);
-    animation: ppUp .28s cubic-bezier(.34,1.56,.64,1);
-    overflow: hidden;
-  }
-  @keyframes ppUp {
-    from { opacity: 0; transform: scale(.9) translateY(14px); }
-    to   { opacity: 1; transform: scale(1)  translateY(0); }
-  }
-  
-  .pp-modal-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 18px 20px 14px;
-    border-bottom: 1px solid var(--border-color);
-  }
-  
-  .pp-modal-icon-wrap {
-    width: 36px; height: 36px;
-    border-radius: 10px;
-    background: var(--accent-soft);
-    border: 1px solid rgba(192,38,211,.2);
-    display: flex; align-items: center; justify-content: center;
-    color: var(--accent); flex-shrink: 0;
-  }
-  .pp-modal-icon-wrap svg { width: 18px; height: 18px; }
-  
-  .pp-modal-title {
-    flex: 1;
-    font-size: 0.9375rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .pp-module-tag {
-    background: var(--accent-soft);
-    color: var(--accent);
-    font-size: 0.75rem;
-    padding: 2px 10px;
-    border-radius: 999px;
-    font-weight: 700;
-  }
-  
-  .pp-modal-close {
-    width: 28px; height: 28px;
-    border-radius: 8px; border: none;
-    background: none; cursor: pointer;
-    color: var(--text-muted);
-    display: flex; align-items: center; justify-content: center;
-    transition: background .15s, color .15s;
-  }
-  .pp-modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
-  .pp-modal-close svg { width: 12px; height: 12px; }
-  
-  .pp-modal-body {
-    padding: 18px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-  
-  .pp-modal-footer {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-    padding: 12px 20px 18px;
-    border-top: 1px solid var(--border-color);
-    background: var(--bg-hover);
-  }
-  
-  /* Champs */
-  .pp-field { display: flex; flex-direction: column; gap: 5px; }
-  .pp-label { font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); }
-  .pp-required { color: #ef4444; margin-left: 2px; }
-  
-  .pp-input {
-    border: 1.5px solid var(--border-color);
-    border-radius: 8px;
-    padding: 9px 12px;
-    font-size: 0.8375rem;
-    background: var(--bg-input);
-    color: var(--text-primary);
-    font-family: inherit;
-    outline: none;
-    transition: border-color .15s, box-shadow .15s;
-    width: 100%;
-  }
-  .pp-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-  .pp-input-mono { font-family: 'Courier New', monospace; letter-spacing: .4px; font-size: 0.8rem; }
-  .pp-input-upper { text-transform: uppercase; letter-spacing: .5px; }
-  
-  .pp-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  
-  /* Toggle */
-  .pp-toggle-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-  .pp-toggle {
-    width: 36px; height: 20px; border-radius: 999px;
-    background: var(--border-color); position: relative;
-    transition: background .2s; flex-shrink: 0;
-  }
-  .pp-toggle.on { background: var(--accent); }
-  .pp-toggle-knob {
-    position: absolute; top: 2px; left: 2px;
-    width: 16px; height: 16px; border-radius: 50%;
-    background: white; box-shadow: 0 1px 4px rgba(0,0,0,.2);
-    transition: transform .2s;
-  }
-  .pp-toggle.on .pp-toggle-knob { transform: translateX(16px); }
-  .pp-toggle-text { font-size: 0.8125rem; color: var(--text-secondary); }
-  
-  .sr-only {
-    position: absolute; width: 1px; height: 1px;
-    padding: 0; margin: -1px; overflow: hidden;
-    clip: rect(0,0,0,0); white-space: nowrap; border: 0;
-  }
+  min-height: 100vh;
+  padding: 24px 28px;
+  background: var(--bg-primary);
+}
+
+/* ── Collapse btn dans la matrice ── */
+.pp-collapse-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--dt-text-sub);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: background .15s, color .15s;
+  flex-shrink: 0;
+}
+
+.pp-collapse-btn:hover {
+  background: var(--bg-hover);
+  color: var(--dt-text);
+}
+
+/* ── Bouton ajouter dans module ── */
+.pp-add-to-module-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px dashed var(--dt-border);
+  background: none;
+  color: var(--dt-text-sub);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+
+.pp-add-to-module-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* ── Surcharge pour les lignes module ── */
+.dt-table .pp-module-row td {
+  background: var(--dt-bg-header);
+  border-bottom: 1px solid var(--dt-border);
+}
+
+/* ── Sticky colonne permission ── */
+.dt-table td:first-child,
+.dt-table th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+/* ── Responsive matrice ── */
+@media (max-width: 768px) {
+  .pp-wrapper { padding: 16px; }
+}
