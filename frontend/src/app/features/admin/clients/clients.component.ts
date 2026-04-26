@@ -179,7 +179,9 @@ export class ClientsComponent implements OnInit {
   isSelected(id: number): boolean { return this.selectedIds().has(id); }
   clearSelection(): void { this.selectedIds.set(new Set()); }
   toggleMenu(id: number, e: Event): void { e.stopPropagation(); this.openMenuId.set(this.openMenuId()===id?null:id); }
-  closeMenu(): void { this.openMenuId.set(null); }
+  closeMenu(): void { this.openMenuId.set(null);
+    this.filterPanelOpenC.set(false);
+  }
 
   getInitiales(nom: string): string { return (nom||'').split(' ').slice(0,2).map(w=>w.charAt(0).toUpperCase()).join(''); }
   getCouleurStyle(couleur?: string): string { return couleur || '#6366f1'; }
@@ -194,4 +196,9 @@ export class ClientsComponent implements OnInit {
       .replace(/\/$/, '');
   }
   
+
+  filterPanelOpenP = signal(false);
+
+
+  filterPanelOpenC = signal(false);
 }

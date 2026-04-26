@@ -264,7 +264,10 @@ export class UsersComponent implements OnInit {
     this.openMenuId.set(this.openMenuId() === id ? null : id);
   }
 
-  closeMenu(): void { this.openMenuId.set(null); }
+  closeMenu(): void { this.openMenuId.set(null);
+    this.filterPanelOpenU.set(false);
+  
+  }
 
   // ── Helpers ──
   getInitiales(u: Utilisateur): string {
@@ -283,4 +286,10 @@ export class UsersComponent implements OnInit {
     const mois = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
     return `${String(date.getDate()).padStart(2,'0')} ${mois[date.getMonth()]}, ${date.getFullYear()}`;
   }
+
+
+  // ✅ AJOUTER ce signal (avec les autres signals)
+filterPanelOpenU = signal(false);
+
+
 }

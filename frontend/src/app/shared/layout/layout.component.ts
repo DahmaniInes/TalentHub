@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, PLATFORM_ID, Inject, inject, signal } from '@angular/core';
-import { isPlatformBrowser, NgIf,NgFor, AsyncPipe } from '@angular/common';
-import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { isPlatformBrowser, NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { KeycloakService } from '../../services/keycloak.service';
 import { UserService } from '../../services/user.service';
 import { NotificationService } from '../../services/notification.service';
@@ -8,12 +8,11 @@ import { Utilisateur } from '../../shared/models/utilisateur.model';
 import { AppNotification } from '../../shared/models/notification.model';
 import { Subscription } from 'rxjs';
 import { ToastModalComponent } from '../components/toast-modal-component/toast-modal-component.component';
-import { NavigationEnd } from '@angular/router';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, NgIf,NgFor, AsyncPipe,ToastModalComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, NgIf, NgFor, AsyncPipe, ToastModalComponent],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.css'
 })
@@ -23,15 +22,20 @@ export class LayoutComponent implements OnInit, OnDestroy {
   sidebarOpen = false;
   sidebarCollapsed = false;
   showUserMenu = false;
-  showNotifPanel = false;  // ✅ Panel notifications
+  showNotifPanel = false;
+
+  // ✅ Menus groupes
   ftMenuOpen = false;
+  rhMenuOpen = false;
+  gestionMenuOpen = false;
 
   currentUser = signal<Utilisateur | null>(null);
+  currentUrl  = signal('');
 
-  private keycloakService  = inject(KeycloakService);
-  private userService      = inject(UserService);
-  private router           = inject(Router);
-  readonly notifService    = inject(NotificationService); // public pour le template
+  private keycloakService = inject(KeycloakService);
+  private userService     = inject(UserService);
+  private router          = inject(Router);
+  readonly notifService   = inject(NotificationService);
   private sub = new Subscription();
 
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
@@ -42,22 +46,29 @@ export class LayoutComponent implements OnInit, OnDestroy {
       this.isDark = saved === 'dark';
       this.applyTheme(this.isDark);
 
-      // Fermer les panels en cliquant ailleurs
       document.addEventListener('click', () => {
         this.showUserMenu = false;
         this.showNotifPanel = false;
       });
     }
-    this.loadCurrentUser();
-    if (this.isRouteActive('/feuille-temps')) {
-          this.ftMenuOpen = true;
-       }
-       this.router.events.subscribe(evt => {
-          if (evt instanceof NavigationEnd) {
-            if (evt.url.startsWith('/feuille-temps')) this.ftMenuOpen = true;
-          }
-        });
 
+    this.loadCurrentUser();
+
+    // Ouvrir le menu FT si on est déjà sur /feuille-temps
+    const url = this.router.url;
+    this.currentUrl.set(url);
+    if (url.startsWith('/feuille-temps')) this.ftMenuOpen = true;
+    if (url.startsWith('/add-user') || url.startsWith('/admin') || url.startsWith('/users')) this.rhMenuOpen = true;
+    if (url.startsWith('/projets') || url.startsWith('/clients') || url.startsWith('/groups') || url.startsWith('/activites')) this.gestionMenuOpen = true;
+
+    this.router.events.subscribe(evt => {
+      if (evt instanceof NavigationEnd) {
+        this.currentUrl.set(evt.url);
+        if (evt.url.startsWith('/feuille-temps')) this.ftMenuOpen = true;
+        if (evt.url.startsWith('/add-user') || evt.url.startsWith('/admin') || evt.url.startsWith('/users')) this.rhMenuOpen = true;
+        if (evt.url.startsWith('/projets') || evt.url.startsWith('/clients') || evt.url.startsWith('/groups') || evt.url.startsWith('/activites')) this.gestionMenuOpen = true;
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -72,18 +83,31 @@ export class LayoutComponent implements OnInit, OnDestroy {
     this.userService.getUserByKeycloakId(keycloakId).subscribe({
       next: (user) => {
         this.currentUser.set(user);
-        // ✅ Initialiser les notifications dès que l'utilisateur est chargé
         this.notifService.init(keycloakId);
       },
       error: (err) => {
         if (err.status === 404) console.info('Profil non trouvé en base.');
-        // Initialiser quand même les notifs
         if (keycloakId) this.notifService.init(keycloakId);
       }
     });
   }
 
-  // ── Panel notifications ──
+  // ✅ FIX : retourne un boolean directement (pas un computed)
+  // Utiliser dans le HTML comme : isRouteActive('/feuille-temps')
+  isRouteActive(path: string): boolean {
+    return this.currentUrl().startsWith(path);
+  }
+
+  // ✅ Vérifie si AU MOINS UNE des routes est active
+  isAnyRouteActive(...paths: string[]): boolean {
+    const url = this.currentUrl();
+    return paths.some(p => url.startsWith(p));
+  }
+
+  toggleFTMenu(): void      { this.ftMenuOpen      = !this.ftMenuOpen; }
+  toggleRHMenu(): void      { this.rhMenuOpen      = !this.rhMenuOpen; }
+  toggleGestionMenu(): void { this.gestionMenuOpen = !this.gestionMenuOpen; }
+
   toggleNotifPanel(event: Event): void {
     event.stopPropagation();
     this.showNotifPanel = !this.showNotifPanel;
@@ -96,7 +120,6 @@ export class LayoutComponent implements OnInit, OnDestroy {
     if (notif.lien) this.router.navigate([notif.lien]);
   }
 
-  // ── Icône selon le type ──
   getNotifIcon(type: string): string {
     const icons: Record<string, string> = {
       FEUILLE_SOUMISE: '📋',
@@ -126,7 +149,6 @@ export class LayoutComponent implements OnInit, OnDestroy {
     return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
   }
 
-  // ── Existants ──
   get userName(): string {
     const u = this.currentUser();
     if (u) return (u.prenom + ' ' + u.nom).trim();
@@ -179,15 +201,5 @@ export class LayoutComponent implements OnInit, OnDestroy {
     img.style.display = 'none';
     const fallback = img.parentElement?.querySelector('.logo-icon-fallback') as HTMLElement;
     if (fallback) fallback.style.display = 'flex';
-  }
-
-
-
-  toggleFTMenu(): void {
-    this.ftMenuOpen = !this.ftMenuOpen;
-  }
-   
-  isRouteActive(path: string): boolean {
-    return typeof window !== 'undefined' && window.location.pathname.startsWith(path);
   }
 }

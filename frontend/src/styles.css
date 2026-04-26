@@ -730,4 +730,214 @@ html, body { height: 100%; }
 
 
 
-@keyframes dtSpin { to { transform:rotate(360deg); } }
+@keyframes dtSpin { to { transform:rotate(360deg); }}
+
+
+
+
+/* ══════════════════════════════════════════════════════════════════
+   AJOUT dans styles.css — FILTRE PANEL dt-filter-*
+   Coller APRÈS les classes dt-* existantes dans styles.css
+   
+   PRINCIPE :
+   - Un seul champ visible dans le header : le .dt-search-bar
+   - L'icône de loupe est remplacée par une icône filtre (entonnoir)
+   - Cliquer sur l'icône ouvre un panel dropdown .dt-filter-panel
+   - Le panel contient tous les champs de filtrage
+══════════════════════════════════════════════════════════════════ */
+
+/* ─── Icône filtre (remplacement de la loupe) ─────────────────── */
+.dt-filter-icon-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--accent);
+  border-radius: 6px;
+  flex-shrink: 0;
+  transition: background .12s;
+  position: relative;
+}
+
+.dt-filter-icon-btn:hover { opacity: 0.7;; }
+.dt-filter-icon-btn svg { width: 15px; height: 15px; }
+
+/* Pastille rouge si filtres actifs */
+.dt-filter-icon-btn::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 1.5px solid var(--dt-bg);
+  display: none;
+}
+.dt-filter-icon-btn.has-filters::after { display: block; }
+
+/* ─── Wrapper du champ de recherche + panel ────────────────────── */
+.dt-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* ─── Panel de filtres ─────────────────────────────────────────── */
+.dt-filter-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  min-width: 320px;
+  max-width: 380px;
+  background: var(--dt-bg);
+  border: 1px solid var(--dt-border);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.16);
+  z-index: 600;
+  overflow: hidden;
+
+  /* Animation slide-down */
+  opacity: 0;
+  transform: translateY(-8px) scale(.97);
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.dt-filter-panel.open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: all;
+}
+
+/* Dark mode ombre */
+.dark .dt-filter-panel {
+  box-shadow: 0 12px 40px rgba(0,0,0,.5);
+}
+
+/* En-tête du panel */
+.dt-fp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 14px 9px;
+  border-bottom: 1px solid var(--dt-border);
+}
+
+.dt-fp-title {
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--dt-text);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  font-family: 'Space Vacation', sans-serif;
+}
+
+/* Bouton Réinitialiser */
+.dt-fp-reset {
+  font-size: .7rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Space Vacation', sans-serif;
+  padding: 3px 8px;
+  border-radius: 5px;
+  transition: background .12s;
+}
+.dt-fp-reset:hover { background: var(--accent-soft); }
+
+/* Corps du panel */
+.dt-fp-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Champ individuel */
+.dt-fp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dt-fp-label {
+  font-size: .6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--dt-text-sub);
+  font-family: 'Space Vacation', sans-serif;
+}
+
+/* Input / select dans le panel */
+.dt-fp-input,
+.dt-fp-select {
+  height: 34px;
+  border: 1px solid var(--dt-border);
+  border-radius: 7px;
+  padding: 0 10px;
+  font-size: .77rem;
+  background: var(--bg-input);
+  color: var(--dt-text);
+  font-family: 'Space Vacation', sans-serif;
+  outline: none;
+  transition: border-color .12s, box-shadow .12s;
+  width: 100%;
+}
+.dt-fp-input:focus,
+.dt-fp-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* Grille 2 colonnes pour dates */
+.dt-fp-grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* Pied du panel */
+.dt-fp-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 8px 14px;
+  border-top: 1px solid var(--dt-border);
+  background: var(--dt-bg-header);
+}
+
+/* ─── Statuts Activités — couleurs sémantiques ─────────────────── */
+/* Utiliser [class]="getStatutBadgeClass(a.statutActiviteId)" dans le HTML */
+
+.dt-status-a-faire   { background: rgba(148,163,184,.15) !important; color: #94a3b8 !important; border-color: rgba(148,163,184,.35) !important; }
+.dt-status-a-faire   .dt-badge-dot { background: #94a3b8 !important; }
+
+.dt-status-en-cours  { background: rgba(59,130,246,.12)  !important; color: #3b82f6 !important; border-color: rgba(59,130,246,.35)  !important; }
+.dt-status-en-cours  .dt-badge-dot { background: #3b82f6 !important; }
+
+.dt-status-en-revue  { background: rgba(139,92,246,.12)  !important; color: #8b5cf6 !important; border-color: rgba(139,92,246,.35)  !important; }
+.dt-status-en-revue  .dt-badge-dot { background: #8b5cf6 !important; }
+
+.dt-status-termine   { background: rgba(16,185,129,.12)  !important; color: #10b981 !important; border-color: rgba(16,185,129,.35)  !important; }
+.dt-status-termine   .dt-badge-dot { background: #10b981 !important; }
+
+.dt-status-bloque    { background: rgba(239,68,68,.12)   !important; color: #ef4444 !important; border-color: rgba(239,68,68,.35)   !important; }
+.dt-status-bloque    .dt-badge-dot { background: #ef4444 !important; }
+
+.dt-status-annule    { background: rgba(107,114,128,.12) !important; color: #6b7280 !important; border-color: rgba(107,114,128,.35) !important; }
+.dt-status-annule    .dt-badge-dot { background: #6b7280 !important; }
+
+/* Fallback générique (couleur venant du backend) */
+.dt-status-custom    { /* Les couleurs viennent du [style] inline */ }
+
+

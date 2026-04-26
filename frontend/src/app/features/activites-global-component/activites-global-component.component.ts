@@ -1,4 +1,4 @@
-// activites-global.component.ts — VERSION DT-*
+// activites-global.component.ts — COMPLET avec filtre panel + badges couleurs sémantiques
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -43,6 +43,9 @@ export class ActivitesGlobalComponent implements OnInit {
   selectedActivite = signal<Activite | null>(null);
   detailTab        = signal<'infos' | 'statut'>('infos');
 
+  // ✅ NOUVEAU : signal pour le panel de filtre
+  filterPanelOpen  = signal(false);
+
   search         = signal('');
   filterVue      = signal<FiltreVue>('toutes');
   filterStatut   = signal<number | ''>('');
@@ -68,6 +71,17 @@ export class ActivitesGlobalComponent implements OnInit {
     { value: 3, label: 'Haute',   couleur: '#f97316' },
     { value: 4, label: 'Urgente', couleur: '#ef4444' }
   ];
+
+  // ✅ Mapping codes DB → classes CSS sémantiques
+  // Correspond aux codes dans statut_tache : A_FAIRE, EN_COURS, EN_REVUE, TERMINE, BLOQUE, ANNULE
+  private readonly STATUT_CODE_MAP: Record<string, string> = {
+    'A_FAIRE':  'dt-status-a-faire',
+    'EN_COURS': 'dt-status-en-cours',
+    'EN_REVUE': 'dt-status-en-revue',
+    'TERMINE':  'dt-status-termine',
+    'BLOQUE':   'dt-status-bloque',
+    'ANNULE':   'dt-status-annule',
+  };
 
   filteredActivites = computed(() => {
     let list = this.activites();
@@ -100,6 +114,13 @@ export class ActivitesGlobalComponent implements OnInit {
   statsProjet      = computed(() => this.activites().filter(a => a.projetId != null).length);
   statsGlobales    = computed(() => this.activites().filter(a => a.projetId == null).length);
 
+  // ✅ Compteur de filtres actifs (pour la pastille sur l'icône filtre)
+  activeFiltersCount = computed(() =>
+    [this.filterStatut() ? '1':'', this.filterPriorite() ? '1':'', this.filterProjet() ? '1':'',
+     this.filterVue() !== 'toutes' ? '1':'', this.search()]
+      .filter(v => !!v).length
+  );
+
   ngOnInit(): void { this.loadAll(); }
 
   loadAll(): void {
@@ -113,10 +134,22 @@ export class ActivitesGlobalComponent implements OnInit {
     this.userSvc.getAllUsers().subscribe({ next: d => this.utilisateurs.set(d) });
   }
 
+  // ✅ Ferme le panel filtre (appelé par (click) global sur le wrapper)
+  closeFilterPanel(): void {
+    this.filterPanelOpen.set(false);
+    this.openMenuId.set(null);
+  }
+
+  closeMenu(): void { this.openMenuId.set(null);
+    this.filterPanelOpen.set(false);
+    
+  }
+
   openDetail(a: Activite): void {
     this.selectedActivite.set(a);
     this.detailTab.set('infos');
     this.openMenuId.set(null);
+    this.filterPanelOpen.set(false);
   }
 
   openAdd(): void {
@@ -191,6 +224,16 @@ export class ActivitesGlobalComponent implements OnInit {
   resetPage(): void { this.currentPage.set(1); }
   minVal(a: number, b: number): number { return Math.min(a, b); }
 
+  // ✅ Réinitialiser tous les filtres
+  resetFilters(): void {
+    this.filterStatut.set('');
+    this.filterPriorite.set('');
+    this.filterProjet.set('');
+    this.filterVue.set('toutes');
+    this.search.set('');
+    this.resetPage();
+  }
+
   toggleSelectAll(): void {
     const p = this.pagedActivites();
     if (this.allPageSelected()) { const s=new Set(this.selectedIds()); p.forEach(a=>s.delete(a.id)); this.selectedIds.set(s); }
@@ -200,25 +243,47 @@ export class ActivitesGlobalComponent implements OnInit {
   isSelected(id: number): boolean { return this.selectedIds().has(id); }
   clearSelection(): void { this.selectedIds.set(new Set()); }
   toggleMenu(id: number, e: Event): void { e.stopPropagation(); this.openMenuId.set(this.openMenuId()===id?null:id); }
-  closeMenu(): void { this.openMenuId.set(null); }
 
   getPrioriteCouleur(p: number): string { return this.PRIORITES.find(pr=>pr.value===p)?.couleur||'#3b82f6'; }
   getPrioriteLabel(p: number): string   { return this.PRIORITES.find(pr=>pr.value===p)?.label||'Normale'; }
 
-  // ✅ Statut réel depuis la liste chargée (jamais "Statut #N")
+  // ✅ Libellé statut depuis la liste chargée
   getStatutLibelle(id?: number): string {
     if (!id) return '—';
-    const s = this.statutsActivite().find(s => s.id === id);
-    return s?.libelle || '—';
+    return this.statutsActivite().find(s => s.id === id)?.libelle || '—';
   }
 
-  // ✅ Email depuis la liste utilisateurs
+  // ✅ Classe CSS sémantique selon le CODE du statut (A_FAIRE, EN_COURS, etc.)
+  // Utilise d'abord le code, sinon le libellé comme fallback
+  getStatutBadgeClass(id?: number): string {
+    if (!id) return 'dt-badge dt-badge-default';
+    const statut = this.statutsActivite().find(s => s.id === id);
+    if (!statut) return 'dt-badge dt-badge-default';
+
+    // ✅ Priorité 1 : le CODE exact de la DB (A_FAIRE, EN_COURS, BLOQUE...)
+    if (statut.code && this.STATUT_CODE_MAP[statut.code]) {
+      return `dt-badge ${this.STATUT_CODE_MAP[statut.code]}`;
+    }
+
+    // ✅ Priorité 2 : fallback sur le libellé (pour les codes inconnus)
+    const lib = (statut.libelle || '').toLowerCase();
+    if (lib.includes('faire'))                    return 'dt-badge dt-status-a-faire';
+    if (lib.includes('cours'))                    return 'dt-badge dt-status-en-cours';
+    if (lib.includes('revue'))                    return 'dt-badge dt-status-en-revue';
+    if (lib.includes('termin') || lib.includes('clôtur')) return 'dt-badge dt-status-termine';
+    if (lib.includes('bloqu'))                    return 'dt-badge dt-status-bloque';
+    if (lib.includes('annul'))                    return 'dt-badge dt-status-annule';
+
+    // ✅ Priorité 3 : utiliser la couleur du backend via [style] inline
+    return 'dt-badge dt-badge-default';
+  }
+
+  // Email utilisateur
   getUtilisateurEmail(id?: number): string {
     if (!id) return '';
     return this.utilisateurs().find(u => u.id === id)?.email || '';
   }
 
-  // ✅ Couleur barre progression selon %
   getProgressCouleur(passees?: number, estimees?: number): string {
     if (!estimees || estimees === 0) return '#94a3b8';
     const pct = ((passees || 0) / estimees) * 100;
@@ -227,24 +292,20 @@ export class ActivitesGlobalComponent implements OnInit {
     return '#10b981';
   }
 
-  // ✅ Pourcentage progression (plafonné à 100)
   getProgressPct(passees?: number, estimees?: number): number {
     if (!estimees || estimees === 0) return 0;
     return Math.min(100, Math.round(((passees || 0) / estimees) * 100));
   }
 
-  // ✅ Avatar couleur depuis le nom
   getAvatarColor(name: string): string {
     const colors = ['#6366f1','#8b5cf6','#c026d3','#ec4899','#10b981','#06b6d4','#f97316','#3b82f6'];
     return colors[(name || '').charCodeAt(0) % colors.length];
   }
 
-  // ✅ Initiales depuis nom complet
   getInitiales(nom: string): string {
     return (nom || '').split(' ').slice(0, 2).map(w => w.charAt(0).toUpperCase()).join('');
   }
 
-  // ✅ Format date "20 Avr, 2026"
   fmtDate(d?: string | Date): string {
     if (!d) return '—';
     const date = typeof d === 'string' ? new Date(d) : d;
@@ -252,36 +313,4 @@ export class ActivitesGlobalComponent implements OnInit {
     const MOIS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
     return `${String(date.getDate()).padStart(2,'0')} ${MOIS[date.getMonth()]}, ${date.getFullYear()}`;
   }
-  filterPanelOpen = signal(false);
-
-
-
-  activeFiltersCount = computed(() =>
-    [this.filterStatut() ? '1':'', this.filterPriorite() ? '1':'', this.filterProjet() ? '1':'', this.search()]
-      .filter(v => !!v).length
-  );
-  
-  resetFilters(): void {
-    this.filterStatut.set('');
-    this.filterPriorite.set('');
-    this.filterProjet.set('');
-    this.search.set('');
-    this.resetPage();
-  }
-  
-  // Couleur sémantique selon le libellé du statut
-  getStatutBadgeClass(id?: number): string {
-    const libelle = this.getStatutLibelle(id).toLowerCase();
-    if (libelle.includes('cours'))   return 'dt-badge dt-status-encours';
-    if (libelle.includes('bloqu'))   return 'dt-badge dt-status-bloque';
-    if (libelle.includes('planif'))  return 'dt-badge dt-status-planifie';
-    if (libelle.includes('termin') || libelle.includes('clôtur')) return 'dt-badge dt-status-termine';
-    if (libelle.includes('attend') || libelle.includes('pause'))  return 'dt-badge dt-status-attente';
-    if (libelle.includes('annul'))   return 'dt-badge dt-status-annule';
-    return 'dt-badge dt-badge-default';
-  }
-
-
-
- 
 }

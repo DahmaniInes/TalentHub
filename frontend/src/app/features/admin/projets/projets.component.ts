@@ -456,7 +456,9 @@ export class ProjetsComponent implements OnInit {
   clearSelection(): void { this.selectedIds.set(new Set()); }
 
   toggleMenu(id: number, e: Event): void { e.stopPropagation(); this.openMenuId.set(this.openMenuId() === id ? null : id); }
-  closeMenu(): void { this.openMenuId.set(null); }
+  closeMenu(): void { this.openMenuId.set(null); 
+    this.filterPanelOpenP.set(false);
+  }
 
   getStatutColor(s: string): string { return ({ PLANIFIE:'#6366f1', EN_COURS:'#10b981', SUSPENDU:'#f97316', TERMINE:'#64748b', ANNULE:'#ef4444' } as any)[s] || '#94a3b8'; }
   getStatutLabel(s: string): string { return ({ PLANIFIE:'Planifié', EN_COURS:'En cours', SUSPENDU:'Suspendu', TERMINE:'Terminé', ANNULE:'Annulé' } as any)[s] || s; }
@@ -489,5 +491,6 @@ fmtDate(d?: string | Date): string {
   return `${String(date.getDate()).padStart(2,'0')} ${MOIS[date.getMonth()]}, ${date.getFullYear()}`;
 }
 
+filterPanelOpenP = signal(false);
 
 }

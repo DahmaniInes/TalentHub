@@ -1,28 +1,18 @@
-<!-- activites-global.component.html — Style dt-* identique users/groups -->
-<div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh" (click)="closeMenu()">
+<!-- activites-global.component.html — Style dt-* avec filtre panel + badges couleurs -->
+<div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh" (click)="closeFilterPanel()">
   <div class="dt-wrap">
   
     <!-- ══ HEADER ══ -->
     <div class="dt-header">
       <div>
         <h1 class="dt-title">
-          <!-- ✅ SVG identique sidebar activités -->
           <svg class="dt-title-icon" viewBox="0 0 491.5 491.5" fill="currentColor">
-            <path d="M348.1,245.7c-67.8,0-122.9,55.1-122.9,122.9s55.1,122.9,122.9,122.9S471,436.4,471,368.6S415.9,245.7,348.1,245.7z
-               M403.5,362.6l-41,41c-4,4-9.2,6-14.5,6c-5.2,0-10.5-2-14.5-6L313,383.1c-8-8-8-21,0-29s21-8,29,0l6,6l26.5-26.5c8-8,21-8,29,0
-              C411.5,341.7,411.5,354.6,403.5,362.6z"/>
-            <path d="M385.3,41h-57.7v-9.8c0-17.2-14-31.2-31.2-31.2H154c-17.2,0-31.2,14-31.2,31.2v9.7H65.2c-24.7,0-44.7,20.1-44.7,44.7
-              v361.1c0,24.7,20.1,44.7,44.7,44.7h174.9c-34.2-29.9-55.8-73.8-55.8-122.8h-81.9c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5
-              h81.9c1.8,0,3.4,0.6,5.1,1c3.8-14.9,9.5-29,17-42h-83.6c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5h102.4
-              c4.1,0,7.7,1.5,10.9,3.6c29.3-27.5,68.6-44.6,112-44.6c29.9,0,57.8,8.2,81.9,22.2V85.7C430,61,409.9,41,385.3,41z M163.8,184.3
-              h-41c-11.3,0-20.5-9.2-20.5-20.5c0-11.3,9.2-20.5,20.5-20.5h41c11.3,0,20.5,9.2,20.5,20.5C184.3,175.1,175.1,184.3,163.8,184.3z
-               M163.8,81.9v-41h122.9v41H163.8z M327.6,184.3h-81.9c-11.3,0-20.5-9.2-20.5-20.5c0-11.3,9.2-20.5,20.5-20.5h81.9
-              c11.3,0,20.5,9.2,20.5,20.5C348.1,175.1,338.9,184.3,327.6,184.3z"/>
+            <path d="M348.1,245.7c-67.8,0-122.9,55.1-122.9,122.9s55.1,122.9,122.9,122.9S471,436.4,471,368.6S415.9,245.7,348.1,245.7z M403.5,362.6l-41,41c-4,4-9.2,6-14.5,6c-5.2,0-10.5-2-14.5-6L313,383.1c-8-8-8-21,0-29s21-8,29,0l6,6l26.5-26.5c8-8,21-8,29,0 C411.5,341.7,411.5,354.6,403.5,362.6z"/>
+            <path d="M385.3,41h-57.7v-9.8c0-17.2-14-31.2-31.2-31.2H154c-17.2,0-31.2,14-31.2,31.2v9.7H65.2c-24.7,0-44.7,20.1-44.7,44.7 v361.1c0,24.7,20.1,44.7,44.7,44.7h174.9c-34.2-29.9-55.8-73.8-55.8-122.8h-81.9c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5 h81.9c1.8,0,3.4,0.6,5.1,1c3.8-14.9,9.5-29,17-42h-83.6c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5h102.4 c4.1,0,7.7,1.5,10.9,3.6c29.3-27.5,68.6-44.6,112-44.6c29.9,0,57.8,8.2,81.9,22.2V85.7C430,61,409.9,41,385.3,41z M163.8,184.3 h-41c-11.3,0-20.5-9.2-20.5-20.5c0-11.3,9.2-20.5,20.5-20.5h41c11.3,0,20.5,9.2,20.5,20.5C184.3,175.1,175.1,184.3,163.8,184.3z M163.8,81.9v-41h122.9v41H163.8z M327.6,184.3h-81.9c-11.3,0-20.5-9.2-20.5-20.5c0-11.3,9.2-20.5,20.5-20.5h81.9 c11.3,0,20.5,9.2,20.5,20.5C348.1,175.1,338.9,184.3,327.6,184.3z"/>
           </svg>
           Activités
         </h1>
-  
-       <div class="dt-header-stats">
+        <div class="dt-header-stats">
           <span class="dt-badge dt-badge-accent" style="font-size:.66rem;padding:3px 9px">
             <span class="dt-badge-dot"></span>{{ statsToutes() }} total
           </span>
@@ -35,44 +25,90 @@
         </div>
       </div>
   
-
-
-
-
-
-
       <div class="dt-header-actions">
-        <!-- Toggle vue -->
-       
   
-        <!-- Recherche -->
-        <div class="dt-search-bar">
-          <svg class="dt-search-icon" viewBox="0 0 14 14" fill="none">
-            <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.4"/>
-            <path d="m10 10 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-          </svg>
-          <input class="dt-search-input"
-                 [value]="search()"
-                 (input)="search.set($any($event.target).value); resetPage()"
-                 placeholder="Rechercher...">
+        <!-- ✅ UN SEUL CHAMP avec icône filtre (remplace la loupe) -->
+        <div class="dt-search-wrap" (click)="$event.stopPropagation()">
+          
+          
+          
+          <div class="dt-search-bar" style="min-width:240px">
+            <!-- ✅ Icône FILTRE (entonnoir) à la place de la loupe -->
+            <button class="dt-filter-icon-btn"
+                    [class.has-filters]="activeFiltersCount() > 0"
+                    (click)="filterPanelOpen.set(!filterPanelOpen())"
+                    title="Filtres">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7">
+                <path d="M2 3h12l-4.5 5.5V13L6.5 11.5V8.5L2 3z" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <input class="dt-search-input"
+                   [value]="search()"
+                   (input)="search.set($any($event.target).value); resetPage()"
+                   placeholder="Rechercher...">
+          </div>
+  
+          <!-- Panel filtres -->
+          <div class="dt-filter-panel" [class.open]="filterPanelOpen()">
+            <div class="dt-fp-header">
+              <p class="dt-fp-title">Filtres</p>
+              <button *ngIf="activeFiltersCount() > 0" class="dt-fp-reset" (click)="resetFilters()">Réinitialiser ({{ activeFiltersCount() }})</button>
+            </div>
+            <div class="dt-fp-body">
+  
+              <!-- Vue : Toutes / Projets / Globales -->
+              <div class="dt-fp-field">
+                <label class="dt-fp-label">Affichage</label>
+                <div style="display:flex;gap:4px">
+                  <button *ngFor="let v of [['toutes','Toutes'],['projet','Projets'],['globales','Globales']]"
+                          style="flex:1;padding:6px 4px;border-radius:6px;border:1px solid;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .12s;text-align:center"
+                          [style.background]="filterVue()===v[0]?'var(--accent)':'var(--bg-input)'"
+                          [style.color]="filterVue()===v[0]?'white':'var(--dt-text-sub)'"
+                          [style.border-color]="filterVue()===v[0]?'var(--accent)':'var(--dt-border)'"
+                          (click)="filterVue.set($any(v[0])); resetPage()">
+                    {{ v[1] }}
+                  </button>
+                </div>
+              </div>
+  
+              <!-- Statut -->
+              <div class="dt-fp-field">
+                <label class="dt-fp-label">Statut</label>
+                <select class="dt-fp-select" [value]="filterStatut()"
+                        (change)="filterStatut.set($any($event.target).value===''?'':+$any($event.target).value); resetPage()">
+                  <option value="">Tous les statuts</option>
+                  <option *ngFor="let s of statutsActivite()" [value]="s.id">{{ s.libelle }}</option>
+                </select>
+              </div>
+  
+              <!-- Priorité -->
+              <div class="dt-fp-field">
+                <label class="dt-fp-label">Priorité</label>
+                <select class="dt-fp-select" [value]="filterPriorite()"
+                        (change)="filterPriorite.set($any($event.target).value===''?'':+$any($event.target).value); resetPage()">
+                  <option value="">Toutes les priorités</option>
+                  <option *ngFor="let p of PRIORITES" [value]="p.value">{{ p.label }}</option>
+                </select>
+              </div>
+  
+              <!-- Projet -->
+              <div class="dt-fp-field">
+                <label class="dt-fp-label">Projet</label>
+                <select class="dt-fp-select" [value]="filterProjet()"
+                        (change)="filterProjet.set($any($event.target).value===''?'':+$any($event.target).value); resetPage()">
+                  <option value="">Tous les projets</option>
+                  <option *ngFor="let p of projets()" [value]="p.id">{{ p.nom }}</option>
+                </select>
+              </div>
+  
+            </div>
+            <div class="dt-fp-footer">
+              <button class="mx-btn mx-btn-ghost" style="height:30px;font-size:.73rem" (click)="filterPanelOpen.set(false)">Fermer</button>
+            </div>
+          </div>
         </div>
   
-        <!-- Filtre statut -->
-        <select class="dt-filter-select"
-                [value]="filterStatut()"
-                (change)="filterStatut.set($any($event.target).value===''?'':+$any($event.target).value); resetPage()">
-          <option value="">Tous les statuts</option>
-          <option *ngFor="let s of statutsActivite()" [value]="s.id">{{ s.libelle }}</option>
-        </select>
-  
-        <!-- Filtre priorité -->
-        <select class="dt-filter-select"
-                [value]="filterPriorite()"
-                (change)="filterPriorite.set($any($event.target).value===''?'':+$any($event.target).value); resetPage()">
-          <option value="">Priorités</option>
-          <option *ngFor="let p of PRIORITES" [value]="p.value">{{ p.label }}</option>
-        </select>
-  
+        <!-- Bouton créer -->
         <button class="dt-btn-create" (click)="openAdd()">
           <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
             <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
@@ -82,16 +118,6 @@
       </div>
     </div>
   
-
-
-
-
-
-
-
-
-
-    
     <!-- Bulk bar -->
     <div *ngIf="selectedCount() > 0" class="dt-bulk-bar">
       <span class="dt-bulk-count">{{ selectedCount() }} sélectionnée(s)</span>
@@ -114,18 +140,17 @@
                      (change)="toggleSelectAll()">
             </th>
   
-            <!-- Activité -->
             <th class="dt-th" style="min-width:200px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 491.5 491.5" fill="currentColor">
                   <path d="M348.1,245.7c-67.8,0-122.9,55.1-122.9,122.9s55.1,122.9,122.9,122.9S471,436.4,471,368.6S415.9,245.7,348.1,245.7z M403.5,362.6l-41,41c-4,4-9.2,6-14.5,6c-5.2,0-10.5-2-14.5-6L313,383.1c-8-8-8-21,0-29s21-8,29,0l6,6l26.5-26.5c8-8,21-8,29,0 C411.5,341.7,411.5,354.6,403.5,362.6z"/>
-                  <path d="M385.3,41h-57.7v-9.8c0-17.2-14-31.2-31.2-31.2H154c-17.2,0-31.2,14-31.2,31.2v9.7H65.2c-24.7,0-44.7,20.1-44.7,44.7 v361.1c0,24.7,20.1,44.7,44.7,44.7h174.9c-34.2-29.9-55.8-73.8-55.8-122.8h-81.9c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5 h81.9c1.8,0,3.4,0.6,5.1,1c3.8-14.9,9.5-29,17-42h-83.6c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5h102.4 c4.1,0,7.7,1.5,10.9,3.6c29.3-27.5,68.6-44.6,112-44.6c29.9,0,57.8,8.2,81.9,22.2V85.7C430,61,409.9,41,385.3,41z M163.8,184.3 h-41c-11.3,0-20.5-9.2-20.5-20.5c0-11.3,9.2-20.5,20.5-20.5h41c11.3,0,20.5,9.2,20.5,20.5C184.3,175.1,175.1,184.3,163.8,184.3z M163.8,81.9v-41h122.9v41H163.8z M327.6,184.3h-81.9c-11.3,0-20.5-9.2-20.5-20.5c0-11.3,9.2-20.5,20.5-20.5h81.9 c11.3,0,20.5,9.2,20.5,20.5C348.1,175.1,338.9,184.3,327.6,184.3z"/>
+                  <path d="M385.3,41h-57.7v-9.8c0-17.2-14-31.2-31.2-31.2H154c-17.2,0-31.2,14-31.2,31.2v9.7H65.2c-24.7,0-44.7,20.1-44.7,44.7 v361.1c0,24.7,20.1,44.7,44.7,44.7h174.9c-34.2-29.9-55.8-73.8-55.8-122.8h-81.9c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5 h81.9c1.8,0,3.4,0.6,5.1,1c3.8-14.9,9.5-29,17-42h-83.6c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5h102.4 c4.1,0,7.7,1.5,10.9,3.6c29.3-27.5,68.6-44.6,112-44.6c29.9,0,57.8,8.2,81.9,22.2V85.7C430,61,409.9,41,385.3,41z"/>
                 </svg>
                 Activité
               </div>
             </th>
   
-            <!-- Statut -->
+            <!-- ✅ Statut avec couleurs sémantiques -->
             <th class="dt-th" style="min-width:130px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
@@ -136,7 +161,6 @@
               </div>
             </th>
   
-            <!-- Priorité -->
             <th class="dt-th" style="min-width:100px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
@@ -146,7 +170,6 @@
               </div>
             </th>
   
-            <!-- Assigné à -->
             <th class="dt-th" style="min-width:190px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 14 14" fill="currentColor">
@@ -156,7 +179,6 @@
               </div>
             </th>
   
-            <!-- Progression -->
             <th class="dt-th" style="min-width:140px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
@@ -167,7 +189,6 @@
               </div>
             </th>
   
-            <!-- Échéance -->
             <th class="dt-th" style="min-width:105px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
@@ -178,7 +199,6 @@
               </div>
             </th>
   
-            <!-- Projet -->
             <th class="dt-th" style="min-width:120px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 52 52" fill="currentColor">
@@ -198,7 +218,6 @@
               [class.dt-tr-selected]="isSelected(a.id)"
               (click)="openDetail(a)">
   
-            <!-- Checkbox -->
             <td class="dt-td dt-td-cb" (click)="$event.stopPropagation()">
               <input type="checkbox" class="dt-checkbox"
                      [class.dt-checkbox-active]="isSelected(a.id)"
@@ -206,7 +225,7 @@
                      (change)="toggleSelect(a.id, $event)">
             </td>
   
-            <!-- Activité : barre couleur + nom + numéro -->
+            <!-- Activité -->
             <td class="dt-td">
               <div class="dt-cell-with-avatar">
                 <div style="width:3px;height:36px;border-radius:3px;flex-shrink:0"
@@ -224,13 +243,10 @@
               </div>
             </td>
   
-            <!-- ✅ Statut RÉEL : libellé texte, jamais "Statut #N" -->
+            <!-- ✅ Statut avec couleur SÉMANTIQUE basée sur le code -->
             <td class="dt-td">
-              <span class="dt-badge"
-                    [style.background]="(a.statutCouleur||'#94a3b8')+'18'"
-                    [style.color]="a.statutCouleur||'#94a3b8'"
-                    [style.border-color]="(a.statutCouleur||'#94a3b8')+'55'">
-                <span class="dt-badge-dot" [style.background]="a.statutCouleur||'#94a3b8'"></span>
+              <span [class]="getStatutBadgeClass(a.statutActiviteId)">
+                <span class="dt-badge-dot"></span>
                 {{ getStatutLibelle(a.statutActiviteId) }}
               </span>
             </td>
@@ -244,7 +260,7 @@
               </div>
             </td>
   
-            <!-- ✅ Assigné à : avatar rond + nom + email (comme users) -->
+            <!-- Assigné à -->
             <td class="dt-td">
               <div *ngIf="a.utilisateurNomComplet" class="dt-cell-with-avatar">
                 <div class="dt-avatar" [style.background]="getAvatarColor(a.utilisateurNomComplet)">
@@ -258,23 +274,19 @@
               <span *ngIf="!a.utilisateurNomComplet" class="dt-cell-muted">—</span>
             </td>
   
-            <!-- ✅ Barre de progression heures -->
+            <!-- Progression -->
             <td class="dt-td">
               <div *ngIf="a.heuresEstimees && a.heuresEstimees > 0">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-                  <span class="dt-cell-sub" style="font-size:.69rem">
-                    {{ a.heuresPassees || 0 }}h / {{ a.heuresEstimees }}h
-                  </span>
-                  <span style="font-size:.68rem;font-weight:700"
-                        [style.color]="getProgressCouleur(a.heuresPassees, a.heuresEstimees)">
-                    {{ getProgressPct(a.heuresPassees, a.heuresEstimees) }}%
+                  <span class="dt-cell-sub" style="font-size:.69rem">{{ a.heuresPassees||0 }}h / {{ a.heuresEstimees }}h</span>
+                  <span style="font-size:.68rem;font-weight:700" [style.color]="getProgressCouleur(a.heuresPassees,a.heuresEstimees)">
+                    {{ getProgressPct(a.heuresPassees,a.heuresEstimees) }}%
                   </span>
                 </div>
                 <div style="height:5px;background:var(--bg-hover);border-radius:999px;width:100%;max-width:110px;overflow:hidden">
                   <div style="height:100%;border-radius:999px;transition:width .3s"
-                       [style.background]="getProgressCouleur(a.heuresPassees, a.heuresEstimees)"
-                       [style.width.%]="getProgressPct(a.heuresPassees, a.heuresEstimees)">
-                  </div>
+                       [style.background]="getProgressCouleur(a.heuresPassees,a.heuresEstimees)"
+                       [style.width.%]="getProgressPct(a.heuresPassees,a.heuresEstimees)"></div>
                 </div>
               </div>
               <span *ngIf="!a.heuresEstimees" class="dt-cell-muted">—</span>
@@ -291,7 +303,7 @@
               <span *ngIf="!a.projetNom" class="dt-cell-muted" style="font-style:italic;font-size:.71rem">Globale</span>
             </td>
   
-            <!-- Actions inline -->
+            <!-- Actions -->
             <td class="dt-td dt-td-actions" (click)="$event.stopPropagation()">
               <div class="dt-td-actions-wrap">
                 <button class="dt-action-btn dt-action-edit" (click)="openEdit(a)" title="Modifier">
@@ -310,7 +322,6 @@
         </tbody>
       </table>
   
-      <!-- Vide -->
       <div *ngIf="filteredActivites().length === 0" class="dt-empty">
         <svg class="dt-empty-icon" viewBox="0 0 48 48" fill="none" style="width:38px;height:38px">
           <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
@@ -322,7 +333,7 @@
       </div>
     </div>
   
-    <!-- ══ FOOTER PAGINATION ══ -->
+    <!-- Pagination -->
     <div *ngIf="!loading() && filteredActivites().length > 0" class="dt-footer">
       <div class="dt-count-info">
         <strong>{{ (currentPage()-1)*pageSize()+1 }}–{{ minVal(currentPage()*pageSize(), filteredActivites().length) }}</strong>
@@ -351,12 +362,13 @@
   </div><!-- /.dt-wrap -->
   </div>
   
+  <!-- SLIDE-OVER + MODAL (identiques à votre version actuelle — pas de changement) -->
+  <!-- ... garder votre code existant pour le slide-over et le modal activité ... -->
   <!-- ════ SLIDE-OVER DÉTAIL ════ -->
   <div *ngIf="selectedActivite()" class="mx-overlay" (click)="selectedActivite.set(null)"></div>
   <div *ngIf="selectedActivite() as a" class="mx-slideover">
     <div class="mx-so-header">
-      <div class="dt-avatar" [style.background]="a.couleur||'#94a3b8'"
-           style="width:44px;height:44px;border-radius:11px">
+      <div class="dt-avatar" [style.background]="a.couleur||'#94a3b8'" style="width:44px;height:44px;border-radius:11px">
         <svg viewBox="0 0 491.5 491.5" fill="white" style="width:20px;height:20px">
           <path d="M348.1,245.7c-67.8,0-122.9,55.1-122.9,122.9s55.1,122.9,122.9,122.9S471,436.4,471,368.6S415.9,245.7,348.1,245.7z M403.5,362.6l-41,41c-4,4-9.2,6-14.5,6c-5.2,0-10.5-2-14.5-6L313,383.1c-8-8-8-21,0-29s21-8,29,0l6,6l26.5-26.5c8-8,21-8,29,0 C411.5,341.7,411.5,354.6,403.5,362.6z"/>
           <path d="M385.3,41h-57.7v-9.8c0-17.2-14-31.2-31.2-31.2H154c-17.2,0-31.2,14-31.2,31.2v9.7H65.2c-24.7,0-44.7,20.1-44.7,44.7 v361.1c0,24.7,20.1,44.7,44.7,44.7h174.9c-34.2-29.9-55.8-73.8-55.8-122.8h-81.9c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5 h81.9c1.8,0,3.4,0.6,5.1,1c3.8-14.9,9.5-29,17-42h-83.6c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5h102.4 c4.1,0,7.7,1.5,10.9,3.6c29.3-27.5,68.6-44.6,112-44.6c29.9,0,57.8,8.2,81.9,22.2V85.7C430,61,409.9,41,385.3,41z"/>
@@ -366,12 +378,8 @@
         <p class="mx-so-name">{{ a.nom }}</p>
         <p class="mx-so-sub">{{ a.numeroActivite }}<span *ngIf="a.projetNom"> · {{ a.projetNom }}</span><span *ngIf="!a.projetId" style="color:#8b5cf6"> · GLOBALE</span></p>
         <div class="mx-so-badges">
-          <span class="dt-badge" style="font-size:.62rem"
-                [style.background]="(a.statutCouleur||'#94a3b8')+'18'"
-                [style.color]="a.statutCouleur||'#94a3b8'"
-                [style.border-color]="(a.statutCouleur||'#94a3b8')+'55'">
-            <span class="dt-badge-dot" [style.background]="a.statutCouleur||'#94a3b8'"></span>
-            {{ getStatutLibelle(a.statutActiviteId) }}
+          <span [class]="getStatutBadgeClass(a.statutActiviteId)" style="font-size:.62rem">
+            <span class="dt-badge-dot"></span>{{ getStatutLibelle(a.statutActiviteId) }}
           </span>
           <span class="dt-badge" style="font-size:.62rem"
                 [style.background]="getPrioriteCouleur(a.priorite)+'18'"
@@ -391,14 +399,11 @@
       <button class="mx-so-tab" [class.active]="detailTab()==='statut'" (click)="detailTab.set('statut')">Changer statut</button>
     </div>
   
-    <!-- TAB INFOS -->
     <div *ngIf="detailTab()==='infos'" class="mx-so-body">
       <div *ngIf="a.description">
         <p class="mx-so-section-title">Description</p>
         <p style="font-size:.78rem;color:var(--text-secondary);line-height:1.6;margin:0">{{ a.description }}</p>
       </div>
-  
-      <!-- Progression heures dans le slide-over -->
       <div *ngIf="a.heuresEstimees && a.heuresEstimees > 0">
         <p class="mx-so-section-title">Progression</p>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
@@ -413,7 +418,6 @@
                [style.width.%]="getProgressPct(a.heuresPassees,a.heuresEstimees)"></div>
         </div>
       </div>
-  
       <div>
         <p class="mx-so-section-title">Informations</p>
         <div class="mx-info-list">
@@ -421,10 +425,7 @@
           <div class="mx-info-row" *ngIf="!a.projetId"><span class="mx-info-key">Type</span><span class="mx-info-val" style="color:#8b5cf6">Globale</span></div>
           <div class="mx-info-row" *ngIf="a.utilisateurNomComplet">
             <span class="mx-info-key">Assigné à</span>
-            <span class="mx-info-val">
-              {{ a.utilisateurNomComplet }}
-              <span style="display:block;font-size:.68rem;color:var(--text-muted);font-weight:400">{{ getUtilisateurEmail(a.utilisateurId) }}</span>
-            </span>
+            <span class="mx-info-val">{{ a.utilisateurNomComplet }}<span style="display:block;font-size:.68rem;color:var(--text-muted);font-weight:400">{{ getUtilisateurEmail(a.utilisateurId) }}</span></span>
           </div>
           <div class="mx-info-row" *ngIf="a.dateEcheance"><span class="mx-info-key">Échéance</span><span class="mx-info-val">{{ fmtDate(a.dateEcheance) }}</span></div>
           <div class="mx-info-row" *ngIf="a.heuresEstimees"><span class="mx-info-key">Heures</span><span class="mx-info-val">{{ a.heuresPassees||0 }}h / {{ a.heuresEstimees }}h</span></div>
@@ -432,7 +433,6 @@
       </div>
     </div>
   
-    <!-- TAB CHANGER STATUT -->
     <div *ngIf="detailTab()==='statut'" class="mx-so-body">
       <p class="mx-so-section-title">Sélectionner un statut</p>
       <div style="display:flex;flex-direction:column;gap:6px">
@@ -442,8 +442,7 @@
                 [style.background]="s.id===a.statutActiviteId?(s.couleur||'#94a3b8')+'22':'var(--bg-hover)'"
                 [style.color]="s.id===a.statutActiviteId?(s.couleur||'#94a3b8'):'var(--text-secondary)'"
                 [style.border-color]="s.id===a.statutActiviteId?(s.couleur||'#94a3b8')+'77':'var(--border-color)'">
-          <span style="width:10px;height:10px;border-radius:50%;flex-shrink:0;display:inline-block"
-                [style.background]="s.couleur||'#94a3b8'"></span>
+          <span style="width:10px;height:10px;border-radius:50%;flex-shrink:0;display:inline-block" [style.background]="s.couleur||'#94a3b8'"></span>
           {{ s.libelle }}
           <svg *ngIf="s.id===a.statutActiviteId" viewBox="0 0 14 14" fill="none" style="width:13px;height:13px;margin-left:auto;flex-shrink:0">
             <path d="M2.5 7l3.5 3.5 5.5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>

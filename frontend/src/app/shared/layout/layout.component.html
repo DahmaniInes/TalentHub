@@ -1,34 +1,19 @@
 <div class="sidebar-overlay" [class.visible]="sidebarOpen" (click)="closeSidebar()"></div>
 
-<div class="layout-wrapper" [class.sidebar-is-collapsed]="sidebarCollapsed" >
+<div class="layout-wrapper" [class.sidebar-is-collapsed]="sidebarCollapsed">
 
   <!-- ═══ SIDEBAR ═══ -->
   <aside class="sidebar" [class.open]="sidebarOpen" [class.collapsed]="sidebarCollapsed">
 
     <!-- HEADER FIXE -->
-  <!-- HEADER FIXE -->
-<div class="sidebar-header">
-  <div class="sidebar-logo">
-
-    <!-- Logo original restauré -->
-    <img
-      src="assets/images/Logo.png"
-      alt="Logo"
-      class="logo-img"
-      (error)="onLogoError($event)"
-    />
-    <!-- Fallback si image échoue -->
-    <div class="logo-icon-fallback" style="display:none">
-      <span>T</span>
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <img src="assets/images/Logo.png" alt="Logo" class="logo-img" (error)="onLogoError($event)"/>
+        <div class="logo-icon-fallback" style="display:none"><span>T</span></div>
+        <span class="logo-talenthub">TalentHub</span>
+      </div>
     </div>
 
-    <span class="logo-talenthub">TalentHub</span>
-  </div>
-</div>
-
-
-
-    <!-- Ligne séparatrice alignée avec topbar -->
     <div class="sidebar-logo-divider"></div>
 
     <!-- BODY SCROLLABLE -->
@@ -36,392 +21,309 @@
 
       <p class="nav-section-label">Main</p>
       <nav class="sidebar-nav">
+
+        <!-- Home -->
         <a routerLink="home" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
           <span class="nav-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-              <path  d="M2.5192 7.82274C2 8.77128 2 9.91549 2 12.2039V13.725C2 17.6258 2 19.5763 3.17157 20.7881C4.34315 22 6.22876 22 10 22H14C17.7712 22 19.6569 22 20.8284 20.7881C22 19.5763 22 17.6258 22 13.725V12.2039C22 9.91549 22 8.77128 21.4808 7.82274C20.9616 6.87421 20.0131 6.28551 18.116 5.10812L16.116 3.86687C14.1106 2.62229 13.1079 2 12 2C10.8921 2 9.88939 2.62229 7.88403 3.86687L5.88403 5.10813C3.98695 6.28551 3.0384 6.87421 2.5192 7.82274ZM11.25 18C11.25 18.4142 11.5858 18.75 12 18.75C12.4142 18.75 12.75 18.4142 12.75 18V15C12.75 14.5858 12.4142 14.25 12 14.25C11.5858 14.25 11.25 14.5858 11.25 15V18Z" fill="currentColor"/>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M2.5192 7.82274C2 8.77128 2 9.91549 2 12.2039V13.725C2 17.6258 2 19.5763 3.17157 20.7881C4.34315 22 6.22876 22 10 22H14C17.7712 22 19.6569 22 20.8284 20.7881C22 19.5763 22 17.6258 22 13.725V12.2039C22 9.91549 22 8.77128 21.4808 7.82274C20.9616 6.87421 20.0131 6.28551 18.116 5.10812L16.116 3.86687C14.1106 2.62229 13.1079 2 12 2C10.8921 2 9.88939 2.62229 7.88403 3.86687L5.88403 5.10813C3.98695 6.28551 3.0384 6.87421 2.5192 7.82274ZM11.25 18C11.25 18.4142 11.5858 18.75 12 18.75C12.4142 18.75 12.75 18.4142 12.75 18V15C12.75 14.5858 12.4142 14.25 12 14.25C11.5858 14.25 11.25 14.5858 11.25 15V18Z"/>
             </svg>
           </span>
           <span class="nav-label">Home</span>
           <span class="nav-tooltip">Home</span>
         </a>
-  
+
+        <!-- Dashboard -->
         <a routerLink="/dashboard" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
           <span class="nav-icon">
-            <svg width="800px" height="800px" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M16 1H12V15H16V1Z" fill="currentColor"/>
-              <path d="M6 5H10V15H6V5Z" fill="currentColor"/>
-              <path d="M0 9H4V15H0V9Z" fill="currentColor"/>
-              </svg>          </span>
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M16 1H12V15H16V1Z"/>
+              <path d="M6 5H10V15H6V5Z"/>
+              <path d="M0 9H4V15H0V9Z"/>
+            </svg>
+          </span>
           <span class="nav-label">Dashboard</span>
           <span class="nav-tooltip">Dashboard</span>
         </a>
-        
 
-
-<!-- ══════════════════════════════════════════════════════
-  REMPLACER dans layout.component.html
-  le bloc <div class="nav-group"> existant par ceci
-══════════════════════════════════════════════════════ -->
-
-<div class="nav-group">
-  <!-- Bouton parent — identique à nav-item MAIS type=button -->
-  <button class="nav-item nav-group-btn"
-          [class.active]="isRouteActive('/feuille-temps')"
-          (click)="toggleFTMenu()">
-    <span class="nav-icon">
-      <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
-        <path d="M3.95706 1.45712L1.45706 3.95712L0.0428467 2.54291L2.54285 0.0429077L3.95706 1.45712Z"/>
-        <path fill-rule="evenodd" clip-rule="evenodd" d="M14.4999 8.50003C14.4999 9.80523 14.1152 11.0206 13.453 12.0389L15.707 14.2929L14.2928 15.7071L12.1163 13.5307C10.9954 14.449 9.56199 15 7.99986 15C6.43776 15 5.00436 14.449 3.88344 13.5307L1.70701 15.7071L0.2928 14.2929L2.54678 12.0389C1.88457 11.0206 1.49986 9.80525 1.49986 8.50003C1.49986 4.91018 4.41001 2.00003 7.99986 2.00003C11.5897 2.00003 14.4999 4.91018 14.4999 8.50003ZM6.99995 5V9.41421L9.29285 11.7071L10.7071 10.2929L8.99995 8.58579V5H6.99995Z"/>
-        <path d="M14.5428 3.95714L12.0428 1.45714L13.457 0.0429222L15.957 2.54292L14.5428 3.95714Z"/>
-      </svg>
-    </span>
-    <span class="nav-label">Suivi du temps</span>
-    <!-- Chevron animé -->
-    <svg viewBox="0 0 12 12" fill="none" class="nav-sub-chevron"
-         [style.transform]="ftMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)'">
-      <path d="M2.5 4.5l3.5 3 3.5-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <span class="nav-tooltip">Suivi du temps</span>
-  </button>
-
-  <!-- ✅ Sous-menu — même taille/poids/style que nav-item, pas un sous-item -->
-  <div class="nav-submenu" [class.nav-submenu-open]="ftMenuOpen">
-
-    <a routerLink="/feuille-temps" [queryParams]="{page:'semaine'}"
-       class="nav-item nav-subitem-full"
-       routerLinkActive="active"
-       [routerLinkActiveOptions]="{exact:false}"
-       (click)="closeSidebar()">
-      <span class="nav-icon">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
-          <rect x="1" y="2" width="14" height="13" rx="2"/>
-          <path d="M1 7h14M5 1v3M11 1v3" stroke-linecap="round"/>
-        </svg>
-      </span>
-      <span class="nav-label">Ma semaine</span>
-      <span class="nav-tooltip">Ma semaine</span>
-    </a>
-
-    <a routerLink="/feuille-temps" [queryParams]="{page:'entrees'}"
-       class="nav-item nav-subitem-full"
-       routerLinkActive="active"
-       [routerLinkActiveOptions]="{exact:false}"
-       (click)="closeSidebar()">
-      <span class="nav-icon">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
-          <path d="M2 4h12M2 8h12M2 12h8" stroke-linecap="round"/>
-        </svg>
-      </span>
-      <span class="nav-label">Mes entrées</span>
-      <span class="nav-tooltip">Mes entrées</span>
-    </a>
-
-    <a routerLink="/feuille-temps" [queryParams]="{page:'calendrier'}"
-       class="nav-item nav-subitem-full"
-       routerLinkActive="active"
-       [routerLinkActiveOptions]="{exact:false}"
-       (click)="closeSidebar()">
-      <span class="nav-icon">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
-          <rect x="1" y="2" width="14" height="13" rx="2"/>
-          <path d="M1 6h14M5 1v3M11 1v3" stroke-linecap="round"/>
-          <circle cx="5" cy="10" r="1" fill="currentColor" stroke="none"/>
-          <circle cx="8" cy="10" r="1" fill="currentColor" stroke="none"/>
-          <circle cx="11" cy="10" r="1" fill="currentColor" stroke="none"/>
-        </svg>
-      </span>
-      <span class="nav-label">Calendrier</span>
-      <span class="nav-tooltip">Calendrier</span>
-    </a>
-
-    <a routerLink="/feuille-temps" [queryParams]="{page:'fiches'}"
-       class="nav-item nav-subitem-full"
-       routerLinkActive="active"
-       [routerLinkActiveOptions]="{exact:false}"
-       (click)="closeSidebar()">
-      <span class="nav-icon">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
-          <path d="M3 2h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/>
-          <path d="M5 6h6M5 9h6M5 12h3" stroke-linecap="round"/>
-        </svg>
-      </span>
-      <span class="nav-label">Fiches de temps</span>
-      <span class="nav-tooltip">Fiches de temps</span>
-    </a>
-
-    <a routerLink="/feuille-temps" [queryParams]="{page:'centre'}"
-       class="nav-item nav-subitem-full"
-       routerLinkActive="active"
-       [routerLinkActiveOptions]="{exact:false}"
-       (click)="closeSidebar()">
-      <span class="nav-icon">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
-          <path d="M8 1L1.5 5v6L8 15l6.5-4V5L8 1z"/>
-          <path d="M8 1v14M1.5 5l6.5 4 6.5-4" stroke-linecap="round"/>
-        </svg>
-      </span>
-      <span class="nav-label">Centre de données</span>
-      <span class="nav-tooltip">Centre de données</span>
-    </a>
-
-  </div>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        <a routerLink="/add-user" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
-          <span class="nav-icon">
-            <svg fill="currentColor" width="20" height="20" viewBox="0 0 256 256" id="Flat" xmlns="http://www.w3.org/2000/svg">
-              <path d="M166.5415,192.78516a7.99991,7.99991,0,0,1-6.54052,12.606l-144.0044.00537a8.0002,8.0002,0,0,1-6.542-12.60546,96.21448,96.21448,0,0,1,45.34753-34.84351,60.00007,60.00007,0,1,1,66.39661,0A96.21491,96.21491,0,0,1,166.5415,192.78516Zm81.522,0a96.214,96.214,0,0,0-45.34327-34.83765A60.00088,60.00088,0,0,0,153.24707,50.23535a8,8,0,0,0-4.251,12.47852,75.83151,75.83151,0,0,1,3.84082,84.88623,8,8,0,0,0,2.04493,10.60107,113.20643,113.20643,0,0,1,8.74365,7.2146c.14429.15674.28979.31275.44873.46021a112.03418,112.03418,0,0,1,25.479,34.90527,7.99971,7.99971,0,0,0,7.24951,4.61523l44.72071-.00537a8.0001,8.0001,0,0,0,6.54-12.606Z"/>
-            </svg>          </span>
-          <span class="nav-label">Employés</span>
-          <span class="nav-tooltip">Employés</span>
-        </a>
-
-
-        
-        <a routerLink="/admin/profil-permissions" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
-          <span class="nav-icon">
-            <svg fill="currentColor" width="20" height="20" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
-              <path d="M38.3,27.2A11.4,11.4,0,1,0,49.7,38.6,11.46,11.46,0,0,0,38.3,27.2Zm2,12.4a2.39,2.39,0,0,1-.9-.2l-4.3,4.3a1.39,1.39,0,0,1-.9.4,1,1,0,0,1-.9-.4,1.39,1.39,0,0,1,0-1.9l4.3-4.3a2.92,2.92,0,0,1-.2-.9,3.47,3.47,0,0,1,3.4-3.8,2.39,2.39,0,0,1,.9.2c.2,0,.2.2.1.3l-2,1.9a.28.28,0,0,0,0,.5L41.1,37a.38.38,0,0,0,.6,0l1.9-1.9c.1-.1.4-.1.4.1a3.71,3.71,0,0,1,.2.9A3.57,3.57,0,0,1,40.3,39.6Z" />
-              <circle cx="21.7" cy="14.9" r="12.9" />
-              <path d="M25.2,49.8c2.2,0,1-1.5,1-1.5h0a15.44,15.44,0,0,1-3.4-9.7,15,15,0,0,1,1.4-6.4.77.77,0,0,1,.2-.3c.7-1.4-.7-1.5-.7-1.5h0a12.1,12.1,0,0,0-1.9-.1A19.69,19.69,0,0,0,2.4,47.1c0,1,.3,2.8,3.4,2.8H24.9C25.1,49.8,25.1,49.8,25.2,49.8Z" />
-            </svg>
-          </span>
-          <span class="nav-label">Permissions</span>
-          <span class="nav-tooltip">Permissions</span>
-        </a>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        <!-- Demande -->
         <a routerLink="/Demande" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
           <span class="nav-icon">
-            <svg fill="currentColor" width="800px" height="800px" viewBox="0 0 512 512" id="_x30_1" version="1.1" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M452,120h-76C376,53.726,322.274,0,256,0h0c-66.274,0-120,53.726-120,120H60c-33.137,0-60,26.863-60,60v272  c0,33.137,26.863,60,60,60h392c33.137,0,60-26.863,60-60V180C512,146.863,485.137,120,452,120z M256,60c33.137,0,60,26.863,60,60  H196C196,86.863,222.863,60,256,60z M402,260v20c0,16.569-13.431,30-30,30h0c-16.569,0-30-13.431-30-30v-20H170v20  c0,16.569-13.431,30-30,30h0c-16.569,0-30-13.431-30-30v-20c-16.569,0-30-13.431-30-30s13.431-30,30-30h292  c16.569,0,30,13.431,30,30S418.569,260,402,260z"/></svg>
-        
-          </span>
-          <span class="nav-label">Départements</span>
-          <span class="nav-tooltip">Départements</span>
-        </a>
-
-
-        <a routerLink="/projets" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
-          <span class="nav-icon">
-            <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" 
-               width="800px" height="800px" viewBox="0 0 52 52" enable-background="new 0 0 52 52" xml:space="preserve">
-            <path d="M39.3,26.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9V25c0-1,0.9-1.9,1.9-1.9h22.9c1,0,1.9,0.9,1.9,1.9
-              v1.9H39.3z M35.5,38.3c0,1-0.9,1.9-1.9,1.9h-19c-1,0-1.9-0.9-1.9-1.9v-1.9c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9H35.5z
-               M12.7,13.5c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9
-              C12.7,15.4,12.7,13.5,12.7,13.5z M41.2,4H10.8C7.6,4,5,6.6,5,9.7v32.4c0,3.1,2.6,5.7,5.7,5.7h30.5c3.1,0,5.7-2.6,5.7-5.7V9.7
-              C47,6.6,44.4,4,41.2,4z"/>
-            </svg>          </span>
-          <span class="nav-label">projets</span>
-          <span class="nav-tooltip">projets</span>
-        </a>
-
-       
-
-        
-
-       
-
-
-
-
-        <a routerLink="/clients" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
-          <span class="nav-icon">
-            <svg fill="currentColor" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
-            viewBox="0 0 477.297 477.297" xml:space="preserve">
-         <g>
-           <g>
-             <g>
-               <path d="M42.85,358.075c0-24.138,0-306.758,0-330.917c23.9,0,278.867,0,302.767,0c0,8.542,0,49.44,0,99.722
-                 c5.846-1.079,11.842-1.812,17.99-1.812c3.149,0,6.126,0.647,9.232,0.928V0H15.649v385.233h224.638v-27.158
-                 C158.534,358.075,57.475,358.075,42.85,358.075z"/>
-               <path d="M81.527,206.842h184.495c1.812-10.16,5.393-19.608,10.095-28.452H81.527V206.842z"/>
-               <rect x="81.527" y="89.432" width="225.372" height="28.452"/>
-               <path d="M81.527,295.822h191.268c5.112-3.106,10.57-5.63,16.415-7.183c-5.544-6.45-10.095-13.697-13.978-21.269H81.527V295.822z"
-                 />
-               <path d="M363.629,298.669c41.071,0,74.16-33.197,74.16-74.139c0-40.984-33.09-74.16-74.16-74.16
-                 c-40.898,0-74.009,33.176-74.009,74.16C289.62,265.472,322.731,298.669,363.629,298.669z"/>
-               <path d="M423.143,310.706H304.288c-21.226,0-38.612,19.457-38.612,43.422v119.33c0,1.316,0.604,2.481,0.69,3.84h194.59
-                 c0.086-1.337,0.69-2.524,0.69-3.84v-119.33C461.733,330.227,444.39,310.706,423.143,310.706z"/>
-             </g>
-           </g>
-           <g>
-           </g>
-           <g>
-           </g>
-           <g>
-           </g>
-           <g>
-           </g>
-           <g>
-           </g>
-           <g>
-           </g>
-           <g>
-           </g>
-           <g>
-           </g>
-           <g>
-           </g>
-           <g>
-           </g>
-           <g>
-           </g>
-           <g>
-           </g>
-           <g>
-           </g>
-           <g>
-           </g>
-           <g>
-           </g>
-         </g>
-         </svg>
-                  </span>
-          <span class="nav-label">clients</span>
-          <span class="nav-tooltip">clients</span>
-        </a>
-   
-
-
-
-        <a routerLink="/groups" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
-          <span class="nav-icon">
-            <svg fill="currentColor" height="800px" width="800px" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
-            viewBox="0 0 611.998 611.998" xml:space="preserve">
-         <g>
-           <g>
-             <path d="M382.167,150.945c9.702,10.875,16.557,24.306,20.381,39.921c3.629,14.822,4.44,31.308,2.414,49.006
-               c-0.751,6.546-1.861,13.96-3.479,21.802c12.532,12.135,28.95,19.839,50.296,19.838c59.22-0.005,80.529-59.3,86.105-108.006
-               c6.872-60.004-21.498-105.163-86.105-105.163c-50.698,0-79.079,27.82-85.628,68.798
-               C372.076,141.062,377.449,145.655,382.167,150.945z"/>
-             <path d="M611.973,422.704c-0.645-18.899-2.861-37.887-6.161-56.495c-3.992-22.539-9.08-55.585-28.759-70.275
-               c-11.38-8.491-26.117-11.278-39.143-16.398c-6.343-2.492-12.024-4.967-17.354-7.784c-17.995,19.734-41.459,30.055-68.782,30.057
-               c-21.261,0-40.172-6.281-56.001-18.358c-3.644,11.272-8.522,22.623-15.044,32.994c5.728,3.449,11.923,6.204,19.451,9.162
-               c3.332,1.31,6.99,2.506,10.864,3.771c10.472,3.422,22.339,7.301,32.994,15.255c25.329,18.907,31.564,54.336,36.117,80.207
-               l0.49,2.792c2.355,13.266,4.084,26.299,5.197,38.961c20.215-2.071,40.327-5.61,60.047-9.774
-               c15.941-3.365,31.774-7.471,47.109-13.003C605.247,439.397,612.476,437.343,611.973,422.704z"/>
-             <path d="M160.216,281.511c21.345,0.002,37.762-7.703,50.295-19.838c-1.618-7.841-2.728-15.256-3.479-21.802
-               c-2.026-17.697-1.214-34.184,2.414-49.006c3.823-15.614,10.679-29.046,20.381-39.921c4.718-5.291,10.09-9.884,16.014-13.805
-               c-6.549-40.978-34.93-68.798-85.628-68.798c-64.606,0-92.977,45.16-86.106,105.163
-               C79.687,222.212,100.996,281.507,160.216,281.511z"/>
-             <path d="M167.957,344.634c10.655-7.954,22.524-11.833,32.994-15.255c3.875-1.265,7.531-2.461,10.864-3.771
-               c7.528-2.957,13.725-5.711,19.451-9.162c-6.52-10.369-11.4-21.722-15.043-32.994c-15.829,12.077-34.741,18.358-56.001,18.358
-               c-27.322-0.001-50.788-10.324-68.782-30.057c-5.329,2.817-11.012,5.291-17.354,7.784c-13.026,5.12-27.763,7.907-39.143,16.398
-               c-19.678,14.691-24.767,47.735-28.759,70.275c-3.3,18.607-5.516,37.595-6.161,56.495c-0.502,14.64,6.726,16.693,18.974,21.112
-               c15.334,5.531,31.17,9.637,47.109,13.003c19.72,4.165,39.833,7.704,60.047,9.774c1.112-12.662,2.841-25.693,5.197-38.961
-               l0.49-2.792C136.394,398.971,142.628,363.541,167.957,344.634z"/>
-             <path d="M470.351,429.405l-0.493-2.805c-4.258-24.197-10.091-57.334-32.191-73.832c-9.321-6.957-19.872-10.404-30.078-13.74
-               c-4.019-1.313-7.812-2.554-11.427-3.974c-5.269-2.07-10.016-4.097-14.464-6.338c-18.684,24.932-44.58,38.059-75.383,38.062
-               c-30.795,0-56.687-13.128-75.371-38.062c-4.449,2.243-9.196,4.269-14.467,6.34c-3.61,1.418-7.406,2.659-11.424,3.972
-               c-10.207,3.335-20.761,6.784-30.079,13.74c-22.107,16.5-27.936,49.645-32.193,73.846l-0.493,2.795
-               c-3.557,20.086-5.68,39.572-6.308,57.914c-0.737,21.519,12.62,26.316,24.403,30.55l1.269,0.457
-               c14.17,5.112,30.021,9.492,48.457,13.388c37.646,7.946,68.197,11.74,96.138,11.938h0.072h0.072
-               c27.946-0.199,58.495-3.992,96.135-11.938c18.439-3.894,34.289-8.274,48.453-13.387l1.268-0.456
-               c11.786-4.233,25.147-9.029,24.41-30.553C476.03,468.931,473.906,449.447,470.351,429.405z"/>
-             <path d="M221.005,243.009c5.577,48.709,26.883,108.009,86.103,108.006s80.529-59.297,86.106-108.006
-               c6.871-60.002-21.503-105.16-86.106-105.16C242.515,137.847,214.123,183.002,221.005,243.009z"/>
-           </g>
-         </g>
-         </svg>
-                  </span>
-          <span class="nav-label">groups</span>
-          <span class="nav-tooltip">groups</span>
-        </a>
-
-
-
-
-
-        <a routerLink="/users" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
-          <span class="nav-icon">
-            <svg fill="currentColor" width="800px" height="800px" viewBox="0 -64 640 640" xmlns="http://www.w3.org/2000/svg"><path d="M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0 96 57.3 96 128s57.3 128 128 128zm89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h274.9c-2.4-6.8-3.4-14-2.6-21.3l6.8-60.9 1.2-11.1 7.9-7.9 77.3-77.3c-24.5-27.7-60-45.5-99.9-45.5zm45.3 145.3l-6.8 61c-1.1 10.2 7.5 18.8 17.6 17.6l60.9-6.8 137.9-137.9-71.7-71.7-137.9 137.8zM633 268.9L595.1 231c-9.3-9.3-24.5-9.3-33.8 0l-37.8 37.8-4.1 4.1 71.8 71.7 41.8-41.8c9.3-9.4 9.3-24.5 0-33.9z"/></svg>          </span>
-          <span class="nav-label">users</span>
-          <span class="nav-tooltip">users</span>
-        </a>
-
-
-
-
-
-
-
-        <a routerLink="/activites" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
-          <span class="nav-icon">
-            <svg fill="currentColor" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
-            viewBox="0 0 491.5 491.5" xml:space="preserve">
-              <g>
-                <g>
-                  <path d="M348.1,245.7c-67.8,0-122.9,55.1-122.9,122.9s55.1,122.9,122.9,122.9S471,436.4,471,368.6S415.9,245.7,348.1,245.7z
-                     M403.5,362.6l-41,41c-4,4-9.2,6-14.5,6c-5.2,0-10.5-2-14.5-6L313,383.1c-8-8-8-21,0-29s21-8,29,0l6,6l26.5-26.5c8-8,21-8,29,0
-                    C411.5,341.7,411.5,354.6,403.5,362.6z"/>
-                </g>
-              </g>
-              <g>
-                <g>
-                  <path d="M385.3,41h-57.7v-9.8c0-17.2-14-31.2-31.2-31.2H154c-17.2,0-31.2,14-31.2,31.2v9.7H65.2c-24.7,0-44.7,20.1-44.7,44.7
-                    v361.1c0,24.7,20.1,44.7,44.7,44.7h174.9c-34.2-29.9-55.8-73.8-55.8-122.8h-81.9c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5
-                    h81.9c1.8,0,3.4,0.6,5.1,1c3.8-14.9,9.5-29,17-42h-83.6c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5h102.4
-                    c4.1,0,7.7,1.5,10.9,3.6c29.3-27.5,68.6-44.6,112-44.6c29.9,0,57.8,8.2,81.9,22.2V85.7C430,61,409.9,41,385.3,41z M163.8,184.3
-                    h-41c-11.3,0-20.5-9.2-20.5-20.5c0-11.3,9.2-20.5,20.5-20.5h41c11.3,0,20.5,9.2,20.5,20.5C184.3,175.1,175.1,184.3,163.8,184.3z
-                     M163.8,81.9v-41h122.9v41H163.8z M327.6,184.3h-81.9c-11.3,0-20.5-9.2-20.5-20.5c0-11.3,9.2-20.5,20.5-20.5h81.9
-                    c11.3,0,20.5,9.2,20.5,20.5C348.1,175.1,338.9,184.3,327.6,184.3z"/>
-                </g>
-              </g>
+            <svg fill="currentColor" width="20" height="20" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+              <path d="M452,120h-76C376,53.726,322.274,0,256,0h0c-66.274,0-120,53.726-120,120H60c-33.137,0-60,26.863-60,60v272c0,33.137,26.863,60,60,60h392c33.137,0,60-26.863,60-60V180C512,146.863,485.137,120,452,120z M256,60c33.137,0,60,26.863,60,60H196C196,86.863,222.863,60,256,60z M402,260v20c0,16.569-13.431,30-30,30h0c-16.569,0-30-13.431-30-30v-20H170v20c0,16.569-13.431,30-30,30h0c-16.569,0-30-13.431-30-30v-20c-16.569,0-30-13.431-30-30s13.431-30,30-30h292c16.569,0,30,13.431,30,30S418.569,260,402,260z"/>
             </svg>
           </span>
-          <span class="nav-label">activites</span>
-          <span class="nav-tooltip">activites</span>
+          <span class="nav-label">Demande</span>
+          <span class="nav-tooltip">Demande</span>
         </a>
+
+        <!-- ══ GROUPE 1 : SUIVI DU TEMPS ══ -->
+        <div class="nav-group">
+          <button class="nav-item nav-group-btn"
+                  [class.active]="isRouteActive('/feuille-temps')"
+                  (click)="toggleFTMenu()">
+            <span class="nav-icon">
+              <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M3.95706 1.45712L1.45706 3.95712L0.0428467 2.54291L2.54285 0.0429077L3.95706 1.45712Z"/>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M14.4999 8.50003C14.4999 9.80523 14.1152 11.0206 13.453 12.0389L15.707 14.2929L14.2928 15.7071L12.1163 13.5307C10.9954 14.449 9.56199 15 7.99986 15C6.43776 15 5.00436 14.449 3.88344 13.5307L1.70701 15.7071L0.2928 14.2929L2.54678 12.0389C1.88457 11.0206 1.49986 9.80525 1.49986 8.50003C1.49986 4.91018 4.41001 2.00003 7.99986 2.00003C11.5897 2.00003 14.4999 4.91018 14.4999 8.50003ZM6.99995 5V9.41421L9.29285 11.7071L10.7071 10.2929L8.99995 8.58579V5H6.99995Z"/>
+                <path d="M14.5428 3.95714L12.0428 1.45714L13.457 0.0429222L15.957 2.54292L14.5428 3.95714Z"/>
+              </svg>
+            </span>
+            <span class="nav-label">Suivi du temps</span>
+            <svg viewBox="0 0 12 12" fill="none" class="nav-sub-chevron"
+                 [style.transform]="ftMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)'">
+              <path d="M2.5 4.5l3.5 3 3.5-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-tooltip">Suivi du temps</span>
+          </button>
+
+          <div class="nav-submenu" [class.nav-submenu-open]="ftMenuOpen">
+
+            <a routerLink="/feuille-temps" [queryParams]="{page:'semaine'}"
+               class="nav-item nav-subitem-full" routerLinkActive="active"
+               [routerLinkActiveOptions]="{exact:false}" (click)="closeSidebar()">
+              <span class="nav-icon">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <rect x="1" y="2" width="14" height="13" rx="2"/>
+                  <path d="M1 7h14M5 1v3M11 1v3" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <span class="nav-label">Ma semaine</span>
+              <span class="nav-tooltip">Ma semaine</span>
+            </a>
+
+            <a routerLink="/feuille-temps" [queryParams]="{page:'entrees'}"
+               class="nav-item nav-subitem-full" routerLinkActive="active"
+               [routerLinkActiveOptions]="{exact:false}" (click)="closeSidebar()">
+              <span class="nav-icon">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M2 4h12M2 8h12M2 12h8" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <span class="nav-label">Mes entrées</span>
+              <span class="nav-tooltip">Mes entrées</span>
+            </a>
+
+            <a routerLink="/feuille-temps" [queryParams]="{page:'calendrier'}"
+               class="nav-item nav-subitem-full" routerLinkActive="active"
+               [routerLinkActiveOptions]="{exact:false}" (click)="closeSidebar()">
+              <span class="nav-icon">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <rect x="1" y="2" width="14" height="13" rx="2"/>
+                  <path d="M1 6h14M5 1v3M11 1v3" stroke-linecap="round"/>
+                  <circle cx="5" cy="10" r="1" fill="currentColor" stroke="none"/>
+                  <circle cx="8" cy="10" r="1" fill="currentColor" stroke="none"/>
+                  <circle cx="11" cy="10" r="1" fill="currentColor" stroke="none"/>
+                </svg>
+              </span>
+              <span class="nav-label">Calendrier</span>
+              <span class="nav-tooltip">Calendrier</span>
+            </a>
+
+            <a routerLink="/feuille-temps" [queryParams]="{page:'fiches'}"
+               class="nav-item nav-subitem-full" routerLinkActive="active"
+               [routerLinkActiveOptions]="{exact:false}" (click)="closeSidebar()">
+              <span class="nav-icon">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M3 2h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/>
+                  <path d="M5 6h6M5 9h6M5 12h3" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <span class="nav-label">Fiches de temps</span>
+              <span class="nav-tooltip">Fiches de temps</span>
+            </a>
+
+            <a routerLink="/feuille-temps" [queryParams]="{page:'centre'}"
+               class="nav-item nav-subitem-full" routerLinkActive="active"
+               [routerLinkActiveOptions]="{exact:false}" (click)="closeSidebar()">
+              <span class="nav-icon">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M8 1L1.5 5v6L8 15l6.5-4V5L8 1z"/>
+                  <path d="M8 1v14M1.5 5l6.5 4 6.5-4" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <span class="nav-label">Centre de données</span>
+              <span class="nav-tooltip">Centre de données</span>
+            </a>
+
+          </div>
+        </div>
 
 
         
-           </nav>
+
+        <!-- ══ GROUPE 3 : GESTION ══ -->
+        <div class="nav-group">
+          <button class="nav-item nav-group-btn"
+                  [class.active]="isAnyRouteActive('/projets', '/clients', '/groups', '/activites')"
+                  (click)="toggleGestionMenu()">
+            <span class="nav-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+              </svg>
+            </span>
+            <span class="nav-label">Gestion</span>
+            <svg viewBox="0 0 12 12" fill="none" class="nav-sub-chevron"
+                 [style.transform]="gestionMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)'">
+              <path d="M2.5 4.5l3.5 3 3.5-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-tooltip">Gestion</span>
+          </button>
+
+          <div class="nav-submenu" [class.nav-submenu-open]="gestionMenuOpen">
+
+            <a routerLink="/projets" routerLinkActive="active" class="nav-item nav-subitem-full" (click)="closeSidebar()">
+              <span class="nav-icon">
+                <svg fill="currentColor" width="20" height="20" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M39.3,26.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9V25c0-1,0.9-1.9,1.9-1.9h22.9c1,0,1.9,0.9,1.9,1.9v1.9H39.3z M35.5,38.3c0,1-0.9,1.9-1.9,1.9h-19c-1,0-1.9-0.9-1.9-1.9v-1.9c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9H35.5z M12.7,13.5c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9C12.7,15.4,12.7,13.5,12.7,13.5z M41.2,4H10.8C7.6,4,5,6.6,5,9.7v32.4c0,3.1,2.6,5.7,5.7,5.7h30.5c3.1,0,5.7-2.6,5.7-5.7V9.7C47,6.6,44.4,4,41.2,4z"/>
+                </svg>
+              </span>
+              <span class="nav-label">Projets</span>
+              <span class="nav-tooltip">Projets</span>
+            </a>
+
+            <a routerLink="/activites" routerLinkActive="active" class="nav-item nav-subitem-full" (click)="closeSidebar()">
+              <span class="nav-icon">
+                <svg fill="currentColor" width="20" height="20" viewBox="0 0 491.5 491.5" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M348.1,245.7c-67.8,0-122.9,55.1-122.9,122.9s55.1,122.9,122.9,122.9S471,436.4,471,368.6S415.9,245.7,348.1,245.7z M403.5,362.6l-41,41c-4,4-9.2,6-14.5,6c-5.2,0-10.5-2-14.5-6L313,383.1c-8-8-8-21,0-29s21-8,29,0l6,6l26.5-26.5c8-8,21-8,29,0C411.5,341.7,411.5,354.6,403.5,362.6z"/>
+                  <path d="M385.3,41h-57.7v-9.8c0-17.2-14-31.2-31.2-31.2H154c-17.2,0-31.2,14-31.2,31.2v9.7H65.2c-24.7,0-44.7,20.1-44.7,44.7v361.1c0,24.7,20.1,44.7,44.7,44.7h174.9c-34.2-29.9-55.8-73.8-55.8-122.8h-81.9c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5h81.9c1.8,0,3.4,0.6,5.1,1c3.8-14.9,9.5-29,17-42h-83.6c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5h102.4c4.1,0,7.7,1.5,10.9,3.6c29.3-27.5,68.6-44.6,112-44.6c29.9,0,57.8,8.2,81.9,22.2V85.7C430,61,409.9,41,385.3,41z"/>
+                </svg>
+              </span>
+              <span class="nav-label">Activités</span>
+              <span class="nav-tooltip">Activités</span>
+            </a>
+
+            <a routerLink="/clients" routerLinkActive="active" class="nav-item nav-subitem-full" (click)="closeSidebar()">
+              <span class="nav-icon">
+                <svg fill="currentColor" width="20" height="20" viewBox="0 0 477.297 477.297" xmlns="http://www.w3.org/2000/svg">
+                  <g>
+                    <path d="M42.85,358.075c0-24.138,0-306.758,0-330.917c23.9,0,278.867,0,302.767,0c0,8.542,0,49.44,0,99.722
+                      c5.846-1.079,11.842-1.812,17.99-1.812c3.149,0,6.126,0.647,9.232,0.928V0H15.649v385.233h224.638v-27.158
+                      C158.534,358.075,57.475,358.075,42.85,358.075z"/>
+                    <path d="M81.527,206.842h184.495c1.812-10.16,5.393-19.608,10.095-28.452H81.527V206.842z"/>
+                    <rect x="81.527" y="89.432" width="225.372" height="28.452"/>
+                    <path d="M81.527,295.822h191.268c5.112-3.106,10.57-5.63,16.415-7.183c-5.544-6.45-10.095-13.697-13.978-21.269H81.527V295.822z"/>
+                    <path d="M363.629,298.669c41.071,0,74.16-33.197,74.16-74.139c0-40.984-33.09-74.16-74.16-74.16
+                      c-40.898,0-74.009,33.176-74.009,74.16C289.62,265.472,322.731,298.669,363.629,298.669z"/>
+                    <path d="M423.143,310.706H304.288c-21.226,0-38.612,19.457-38.612,43.422v119.33c0,1.316,0.604,2.481,0.69,3.84h194.59
+                      c0.086-1.337,0.69-2.524,0.69-3.84v-119.33C461.733,330.227,444.39,310.706,423.143,310.706z"/>
+                  </g>
+                </svg>
+              </span>
+              <span class="nav-label">Clients</span>
+              <span class="nav-tooltip">Clients</span>
+            </a>
+
+            <a routerLink="/groups" routerLinkActive="active" class="nav-item nav-subitem-full" (click)="closeSidebar()">
+              <span class="nav-icon">
+                <svg fill="currentColor" width="20" height="20" viewBox="0 0 611.998 611.998" xmlns="http://www.w3.org/2000/svg">
+                  <g>
+                    <g>
+                      <path d="M382.167,150.945c9.702,10.875,16.557,24.306,20.381,39.921c3.629,14.822,4.44,31.308,2.414,49.006
+                     c-0.751,6.546-1.861,13.96-3.479,21.802c12.532,12.135,28.95,19.839,50.296,19.838c59.22-0.005,80.529-59.3,86.105-108.006
+                     c6.872-60.004-21.498-105.163-86.105-105.163c-50.698,0-79.079,27.82-85.628,68.798
+                     C372.076,141.062,377.449,145.655,382.167,150.945z"/>
+                   <path d="M611.973,422.704c-0.645-18.899-2.861-37.887-6.161-56.495c-3.992-22.539-9.08-55.585-28.759-70.275
+                     c-11.38-8.491-26.117-11.278-39.143-16.398c-6.343-2.492-12.024-4.967-17.354-7.784c-17.995,19.734-41.459,30.055-68.782,30.057
+                     c-21.261,0-40.172-6.281-56.001-18.358c-3.644,11.272-8.522,22.623-15.044,32.994c5.728,3.449,11.923,6.204,19.451,9.162
+                     c3.332,1.31,6.99,2.506,10.864,3.771c10.472,3.422,22.339,7.301,32.994,15.255c25.329,18.907,31.564,54.336,36.117,80.207
+                     l0.49,2.792c2.355,13.266,4.084,26.299,5.197,38.961c20.215-2.071,40.327-5.61,60.047-9.774
+                     c15.941-3.365,31.774-7.471,47.109-13.003C605.247,439.397,612.476,437.343,611.973,422.704z"/>
+                   <path d="M160.216,281.511c21.345,0.002,37.762-7.703,50.295-19.838c-1.618-7.841-2.728-15.256-3.479-21.802
+                     c-2.026-17.697-1.214-34.184,2.414-49.006c3.823-15.614,10.679-29.046,20.381-39.921c4.718-5.291,10.09-9.884,16.014-13.805
+                     c-6.549-40.978-34.93-68.798-85.628-68.798c-64.606,0-92.977,45.16-86.106,105.163
+                     C79.687,222.212,100.996,281.507,160.216,281.511z"/>
+                   <path d="M167.957,344.634c10.655-7.954,22.524-11.833,32.994-15.255c3.875-1.265,7.531-2.461,10.864-3.771
+                     c7.528-2.957,13.725-5.711,19.451-9.162c-6.52-10.369-11.4-21.722-15.043-32.994c-15.829,12.077-34.741,18.358-56.001,18.358
+                     c-27.322-0.001-50.788-10.324-68.782-30.057c-5.329,2.817-11.012,5.291-17.354,7.784c-13.026,5.12-27.763,7.907-39.143,16.398
+                     c-19.678,14.691-24.767,47.735-28.759,70.275c-3.3,18.607-5.516,37.595-6.161,56.495c-0.502,14.64,6.726,16.693,18.974,21.112
+                     c15.334,5.531,31.17,9.637,47.109,13.003c19.72,4.165,39.833,7.704,60.047,9.774c1.112-12.662,2.841-25.693,5.197-38.961
+                     l0.49-2.792C136.394,398.971,142.628,363.541,167.957,344.634z"/>
+                   <path d="M470.351,429.405l-0.493-2.805c-4.258-24.197-10.091-57.334-32.191-73.832c-9.321-6.957-19.872-10.404-30.078-13.74
+                     c-4.019-1.313-7.812-2.554-11.427-3.974c-5.269-2.07-10.016-4.097-14.464-6.338c-18.684,24.932-44.58,38.059-75.383,38.062
+                     c-30.795,0-56.687-13.128-75.371-38.062c-4.449,2.243-9.196,4.269-14.467,6.34c-3.61,1.418-7.406,2.659-11.424,3.972
+                     c-10.207,3.335-20.761,6.784-30.079,13.74c-22.107,16.5-27.936,49.645-32.193,73.846l-0.493,2.795
+                     c-3.557,20.086-5.68,39.572-6.308,57.914c-0.737,21.519,12.62,26.316,24.403,30.55l1.269,0.457
+                     c14.17,5.112,30.021,9.492,48.457,13.388c37.646,7.946,68.197,11.74,96.138,11.938h0.072h0.072
+                     c27.946-0.199,58.495-3.992,96.135-11.938c18.439-3.894,34.289-8.274,48.453-13.387l1.268-0.456
+                     c11.786-4.233,25.147-9.029,24.41-30.553C476.03,468.931,473.906,449.447,470.351,429.405z"/>
+                   <path d="M221.005,243.009c5.577,48.709,26.883,108.009,86.103,108.006s80.529-59.297,86.106-108.006
+                     c6.871-60.002-21.503-105.16-86.106-105.16C242.515,137.847,214.123,183.002,221.005,243.009z"/>
+                 </g>
+               </g>
+             </svg>      
+              </span>
+              <span class="nav-label">Équipes</span>
+              <span class="nav-tooltip">Équipes</span>
+            </a>
+
+          </div>
+        </div>
 
 
 
 
 
+        <!-- ══ GROUPE 2 : RESSOURCES HUMAINES ══ -->
+        <div class="nav-group">
+          <button class="nav-item nav-group-btn"
+                  [class.active]="isAnyRouteActive('/add-user', '/admin', '/users')"
+                  (click)="toggleRHMenu()">
+            <span class="nav-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+              </svg>
+            </span>
+            <span class="nav-label">Système</span>
+            <svg viewBox="0 0 12 12" fill="none" class="nav-sub-chevron"
+                 [style.transform]="rhMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)'">
+              <path d="M2.5 4.5l3.5 3 3.5-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-tooltip">Ressources Humaines</span>
+          </button>
+
+          <div class="nav-submenu" [class.nav-submenu-open]="rhMenuOpen">
+
+            <a routerLink="/add-user" routerLinkActive="active" class="nav-item nav-subitem-full" (click)="closeSidebar()">
+              <span class="nav-icon">
+                <svg fill="currentColor" width="20" height="20" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M166.5415,192.78516a7.99991,7.99991,0,0,1-6.54052,12.606l-144.0044.00537a8.0002,8.0002,0,0,1-6.542-12.60546,96.21448,96.21448,0,0,1,45.34753-34.84351,60.00007,60.00007,0,1,1,66.39661,0A96.21491,96.21491,0,0,1,166.5415,192.78516Zm81.522,0a96.214,96.214,0,0,0-45.34327-34.83765A60.00088,60.00088,0,0,0,153.24707,50.23535a8,8,0,0,0-4.251,12.47852,75.83151,75.83151,0,0,1,3.84082,84.88623,8,8,0,0,0,2.04493,10.60107,113.20643,113.20643,0,0,1,8.74365,7.2146c.14429.15674.28979.31275.44873.46021a112.03418,112.03418,0,0,1,25.479,34.90527,7.99971,7.99971,0,0,0,7.24951,4.61523l44.72071-.00537a8.0001,8.0001,0,0,0,6.54-12.606Z"/>
+                </svg>
+              </span>
+              <span class="nav-label">Employés</span>
+              <span class="nav-tooltip">Employés</span>
+            </a>
+
+            <a routerLink="/users" routerLinkActive="active" class="nav-item nav-subitem-full" (click)="closeSidebar()">
+              <span class="nav-icon">
+                <svg fill="currentColor" width="20" height="20" viewBox="0 -64 640 640" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0 96 57.3 96 128s57.3 128 128 128zm89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h274.9c-2.4-6.8-3.4-14-2.6-21.3l6.8-60.9 1.2-11.1 7.9-7.9 77.3-77.3c-24.5-27.7-60-45.5-99.9-45.5zm45.3 145.3l-6.8 61c-1.1 10.2 7.5 18.8 17.6 17.6l60.9-6.8 137.9-137.9-71.7-71.7-137.9 137.8zM633 268.9L595.1 231c-9.3-9.3-24.5-9.3-33.8 0l-37.8 37.8-4.1 4.1 71.8 71.7 41.8-41.8c9.3-9.4 9.3-24.5 0-33.9z"/>
+                </svg>
+              </span>
+              <span class="nav-label">Utilisateurs</span>
+              <span class="nav-tooltip">Utilisateurs</span>
+            </a>
+
+            <a routerLink="/admin/profil-permissions" routerLinkActive="active" class="nav-item nav-subitem-full" (click)="closeSidebar()">
+              <span class="nav-icon">
+                <svg fill="currentColor" width="20" height="20" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M38.3,27.2A11.4,11.4,0,1,0,49.7,38.6,11.46,11.46,0,0,0,38.3,27.2Zm2,12.4a2.39,2.39,0,0,1-.9-.2l-4.3,4.3a1.39,1.39,0,0,1-.9.4,1,1,0,0,1-.9-.4,1.39,1.39,0,0,1,0-1.9l4.3-4.3a2.92,2.92,0,0,1-.2-.9,3.47,3.47,0,0,1,3.4-3.8,2.39,2.39,0,0,1,.9.2c.2,0,.2.2.1.3l-2,1.9a.28.28,0,0,0,0,.5L41.1,37a.38.38,0,0,0,.6,0l1.9-1.9c.1-.1.4-.1.4.1a3.71,3.71,0,0,1,.2.9A3.57,3.57,0,0,1,40.3,39.6Z"/>
+                  <circle cx="21.7" cy="14.9" r="12.9"/>
+                  <path d="M25.2,49.8c2.2,0,1-1.5,1-1.5h0a15.44,15.44,0,0,1-3.4-9.7,15,15,0,0,1,1.4-6.4.77.77,0,0,1,.2-.3c.7-1.4-.7-1.5-.7-1.5h0a12.1,12.1,0,0,0-1.9-.1A19.69,19.69,0,0,0,2.4,47.1c0,1,.3,2.8,3.4,2.8H24.9C25.1,49.8,25.1,49.8,25.2,49.8Z"/>
+                </svg>
+              </span>
+              <span class="nav-label">Permissions</span>
+              <span class="nav-tooltip">Permissions</span>
+            </a>
+
+          </div>
+        </div>
 
 
 
 
 
-
-
-
+      </nav>
 
       <div class="sidebar-divider"></div>
 
@@ -430,27 +332,27 @@
 
         <a routerLink="/auth" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
           <span class="nav-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
           </span>
           <span class="nav-label">Authentification</span>
           <span class="nav-tooltip">Authentification</span>
-          <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
         </a>
+
+       
+       
+
 
         <a routerLink="/settings" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
           <span class="nav-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
           </span>
           <span class="nav-label">Paramètres</span>
           <span class="nav-tooltip">Paramètres</span>
-        </a>
-
-        <a routerLink="/templates" class="nav-item disabled">
-          <span class="nav-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          </span>
-          <span class="nav-label">Templates</span>
-          <span class="nav-tooltip">Templates</span>
         </a>
 
       </nav>
@@ -481,15 +383,14 @@
       </button>
 
       <div class="topbar-left">
-        <!-- Icône toggle collapse -->
         <button class="topbar-icon-btn topbar-left-icon" (click)="toggleCollapse()"
                 [title]="sidebarCollapsed ? 'Agrandir' : 'Réduire'">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" id="sidebar">
-                  <g fill="none" fill-rule="evenodd" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" transform="translate(1 1)">
-                    <rect width="18" height="18" rx="2"></rect>
-                    <path d="M6 0v18"></path>
-                  </g>
-                </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+            <g fill="none" fill-rule="evenodd" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" transform="translate(1 1)">
+              <rect width="18" height="18" rx="2"></rect>
+              <path d="M6 0v18"></path>
+            </g>
+          </svg>
         </button>
 
         <div class="topbar-search">
@@ -504,6 +405,8 @@
       </div>
 
       <div class="topbar-right">
+
+        <!-- Toggle thème -->
         <button class="topbar-icon-btn" (click)="toggleTheme()" [title]="isDark ? 'Mode clair' : 'Mode sombre'">
           <svg *ngIf="!isDark" xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24"
                fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -516,187 +419,123 @@
           </svg>
         </button>
 
-      
-      
-      
-      
+        <!-- Bouton Notifications -->
+        <div style="position:relative">
+          <button class="topbar-icon-btn notif-btn"
+                  (click)="toggleNotifPanel($event)"
+                  [class.notif-active]="showNotifPanel">
+            <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span *ngIf="(notifService.unreadCount$ | async) as count" class="notif-count-badge">
+              {{ count > 99 ? '99+' : count }}
+            </span>
+          </button>
 
-
-<!-- ── Bouton Notification ── -->
-<div style="position: relative;">
-  <button class="topbar-icon-btn notif-btn"
-          (click)="toggleNotifPanel($event)"
-          [class.notif-active]="showNotifPanel">
-    <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24"
-         fill="none" stroke="currentColor" stroke-width="1.8"
-         stroke-linecap="round" stroke-linejoin="round">
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-    </svg>
-    <!-- ✅ Badge — number direct -->
-    <span *ngIf="(notifService.unreadCount$ | async) as count"
-          class="notif-count-badge">
-      {{ count > 99 ? '99+' : count }}
-    </span>
-  </button>
-
-  <!-- ✅ Panel positionné correctement -->
-  <div *ngIf="showNotifPanel"
-       class="notif-panel"
-       (click)="$event.stopPropagation()">
-
-    <!-- Header -->
-    <div class="notif-panel-header">
-      <span class="notif-panel-title">Notifications</span>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <button class="notif-action-btn"
-                (click)="notifService.marquerTousLus()"
-                title="Tout marquer comme lu">
-          <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
-            <path d="M1 7l4 4 8-8" stroke="currentColor" stroke-width="1.5"
-                  stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-        <button class="notif-action-btn notif-action-danger"
-                (click)="notifService.supprimerToutes()"
-                title="Tout supprimer">
-          <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
-            <path d="M2 3h10M5 3V2h4v1M4 3l.5 8h5L10 3" stroke="currentColor"
-                  stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- Liste -->
-    <div class="notif-list">
-      <ng-container *ngIf="(notifService.notifications$ | async) as notifs">
-
-        <!-- Vide -->
-        <div *ngIf="notifs.length === 0" class="notif-empty">
-          <div style="font-size:2rem; margin-bottom:8px;">🔔</div>
-          <p>Aucune notification</p>
-        </div>
-
-        <!-- ✅ NgFor sur ng-container pour éviter l'erreur NG0303 -->
-        <ng-container *ngFor="let n of notifs">
-          <div class="notif-item"
-               [class.notif-item-unread]="!n.lu"
-               (click)="onNotifClick(n)">
-
-            <!-- Icône -->
-            <div class="notif-item-icon"
-                 [style.background]="getNotifColor(n.type) + '18'"
-                 [style.color]="getNotifColor(n.type)">
-              {{ getNotifIcon(n.type) }}
+          <div *ngIf="showNotifPanel" class="notif-panel" (click)="$event.stopPropagation()">
+            <div class="notif-panel-header">
+              <span class="notif-panel-title">Notifications</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <button class="notif-action-btn" (click)="notifService.marquerTousLus()" title="Tout marquer comme lu">
+                  <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
+                    <path d="M1 7l4 4 8-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+                <button class="notif-action-btn notif-action-danger" (click)="notifService.supprimerToutes()" title="Tout supprimer">
+                  <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
+                    <path d="M2 3h10M5 3V2h4v1M4 3l.5 8h5L10 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
             </div>
-
-            <!-- Contenu -->
-            <div class="notif-item-body">
-              <p class="notif-item-titre">{{ n.titre }}</p>
-              <p class="notif-item-desc">{{ n.description }}</p>
-              <p class="notif-item-date">{{ formatNotifDate(n.dateCreation) }}</p>
-            </div>
-
-            <!-- Actions -->
-            <div class="notif-item-actions">
-              <span *ngIf="!n.lu" class="notif-unread-dot"></span>
-              <button class="notif-delete-btn"
-                      (click)="$event.stopPropagation(); notifService.supprimer(n.id)"
-                      title="Supprimer">×</button>
+            <div class="notif-list">
+              <ng-container *ngIf="(notifService.notifications$ | async) as notifs">
+                <div *ngIf="notifs.length === 0" class="notif-empty">
+                  <div style="font-size:2rem;margin-bottom:8px">🔔</div>
+                  <p>Aucune notification</p>
+                </div>
+                <ng-container *ngFor="let n of notifs">
+                  <div class="notif-item" [class.notif-item-unread]="!n.lu" (click)="onNotifClick(n)">
+                    <div class="notif-item-icon"
+                         [style.background]="getNotifColor(n.type)+'18'"
+                         [style.color]="getNotifColor(n.type)">
+                      {{ getNotifIcon(n.type) }}
+                    </div>
+                    <div class="notif-item-body">
+                      <p class="notif-item-titre">{{ n.titre }}</p>
+                      <p class="notif-item-desc">{{ n.description }}</p>
+                      <p class="notif-item-date">{{ formatNotifDate(n.dateCreation) }}</p>
+                    </div>
+                    <div class="notif-item-actions">
+                      <span *ngIf="!n.lu" class="notif-unread-dot"></span>
+                      <button class="notif-delete-btn" (click)="$event.stopPropagation(); notifService.supprimer(n.id)" title="Supprimer">×</button>
+                    </div>
+                  </div>
+                </ng-container>
+              </ng-container>
             </div>
           </div>
-        </ng-container>
+        </div>
 
-      </ng-container>
-    </div>
+        <!-- User menu -->
+        <div class="topbar-user-block" (click)="toggleUserMenu($event)" style="position:relative">
+          <ng-container *ngIf="userPhoto; else initialsAvatar">
+            <img [src]="userPhoto" alt="avatar" class="topbar-avatar-initials" style="object-fit:cover;padding:0">
+          </ng-container>
+          <ng-template #initialsAvatar>
+            <div class="topbar-avatar-initials">{{ userInitials }}</div>
+          </ng-template>
+          <div class="topbar-user-info">
+            <span class="topbar-user-name">{{ userName }}</span>
+            <span class="topbar-user-role">{{ userRole }}</span>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2"
+               [style.transform]="showUserMenu ? 'rotate(180deg)' : 'rotate(0)'">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
 
-  </div>
-</div>
+          <div *ngIf="showUserMenu" class="lyt-user-menu" (click)="$event.stopPropagation()">
+            <div class="lyt-user-menu-header">
+              <ng-container *ngIf="userPhoto; else menuInitials">
+                <img [src]="userPhoto" alt="avatar" class="lyt-menu-avatar" style="object-fit:cover">
+              </ng-container>
+              <ng-template #menuInitials>
+                <div class="lyt-menu-avatar lyt-menu-avatar-initials">{{ userInitials }}</div>
+              </ng-template>
+              <div>
+                <p class="lyt-menu-name">{{ userName }}</p>
+                <p class="lyt-menu-role">{{ userRole }}</p>
+              </div>
+            </div>
+            <div class="lyt-menu-divider"></div>
+            <button type="button" class="lyt-menu-item">
+              <svg viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="5.5" r="2.5" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M2 13.5c0-2.485 2.686-4.5 6-4.5s6 2.015 6 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              Mon profil
+            </button>
+            <div class="lyt-menu-divider"></div>
+            <button type="button" class="lyt-menu-item lyt-menu-item-danger" (click)="logout()">
+              <svg viewBox="0 0 16 16" fill="none">
+                <path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M10 11l3-3-3-3M13 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Se déconnecter
+            </button>
+          </div>
+        </div>
 
-   <!-- Dans le topbar-right, remplacer le topbar-user-block -->
-<div class="topbar-user-block"
-(click)="toggleUserMenu($event)"
-style="position: relative">
-
-<!-- Avatar : photo ou initiales -->
-<ng-container *ngIf="userPhoto; else initialsAvatar">
-<img [src]="userPhoto" alt="avatar"
-    class="topbar-avatar-initials"
-    style="object-fit: cover; padding: 0">
-</ng-container>
-<ng-template #initialsAvatar>
-<div class="topbar-avatar-initials">{{ userInitials }}</div>
-</ng-template>
-
-<!-- Nom + Rôle -->
-<div class="topbar-user-info">
-<span class="topbar-user-name">{{ userName }}</span>
-<span class="topbar-user-role">{{ userRole }}</span>
-</div>
-
-<!-- Chevron -->
-<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
-  fill="none" stroke="currentColor" stroke-width="2"
-  style="color: var(--text-muted); flex-shrink: 0; margin-left: 2px;"
-  [style.transform]="showUserMenu ? 'rotate(180deg)' : 'rotate(0)'"
-  style="transition: transform 0.2s">
-<polyline points="6 9 12 15 18 9"/>
-</svg>
-
-<!-- Menu dropdown -->
-<div *ngIf="showUserMenu"
-  class="lyt-user-menu"
-  (click)="$event.stopPropagation()">
-
-<!-- Header du menu -->
-<div class="lyt-user-menu-header">
- <ng-container *ngIf="userPhoto; else menuInitials">
-   <img [src]="userPhoto" alt="avatar" class="lyt-menu-avatar" style="object-fit: cover">
- </ng-container>
- <ng-template #menuInitials>
-   <div class="lyt-menu-avatar lyt-menu-avatar-initials">{{ userInitials }}</div>
- </ng-template>
- <div>
-   <p class="lyt-menu-name">{{ userName }}</p>
-   <p class="lyt-menu-role">{{ userRole }}</p>
- </div>
-</div>
-
-<div class="lyt-menu-divider"></div>
-
-<!-- Actions -->
-<button type="button" class="lyt-menu-item">
- <svg viewBox="0 0 16 16" fill="none">
-   <circle cx="8" cy="5.5" r="2.5" stroke="currentColor" stroke-width="1.5"/>
-   <path d="M2 13.5c0-2.485 2.686-4.5 6-4.5s6 2.015 6 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
- </svg>
- Mon profil
-</button>
-
-<div class="lyt-menu-divider"></div>
-
-<!-- Logout -->
-<button type="button" class="lyt-menu-item lyt-menu-item-danger" (click)="logout()">
- <svg viewBox="0 0 16 16" fill="none">
-   <path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-   <path d="M10 11l3-3-3-3M13 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
- </svg>
- Se déconnecter
-</button>
-</div>
-</div>
-</div>
-
-
-
+      </div>
     </header>
 
     <main class="page-content">
       <router-outlet></router-outlet>
     </main>
   </div>
+
   <app-toast-modal></app-toast-modal>
-
-
 </div>

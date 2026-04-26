@@ -30,32 +30,62 @@
   
       <div class="dt-header-actions">
         <!-- Recherche -->
-        <div class="dt-search-bar">
-          <svg class="dt-search-icon" viewBox="0 0 14 14" fill="none">
-            <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.4"/>
-            <path d="m10 10 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-          </svg>
-          <input class="dt-search-input"
-                 [value]="search()"
-                 (input)="search.set($any($event.target).value); resetPage()"
-                 placeholder="Rechercher...">
-        </div>
+
+
+
+
+        
   
-        <!-- Filtre statut -->
-       <!-- <select class="dt-filter-select"
-                [value]="filterStatut()"
-                (change)="filterStatut.set($any($event.target).value); resetPage()">
-          <option value="">Tous les statuts</option>
-          <option *ngFor="let s of STATUTS_PROJET" [value]="s">{{ getStatutLabel(s) }}</option>
-        </select>
   
-        <select class="dt-filter-select"
-                [value]="filterClient()"
-                (change)="filterClient.set(+$any($event.target).value||''); resetPage()">
-          <option value="">Tous les clients</option>
-          <option *ngFor="let c of clients()" [value]="c.id">{{ c.nom }}</option>
-        </select> -->
+          <!-- ✅ NOUVEAU : search-wrap avec panel de filtres -->
+          <div class="dt-search-wrap" (click)="$event.stopPropagation()">
+            <div class="dt-search-bar" style="min-width:240px">
+              <button class="dt-filter-icon-btn"
+                      [class.has-filters]="filterStatut()||filterClient()||search()"
+                      (click)="filterPanelOpenP.set(!filterPanelOpenP())"
+                      title="Filtres">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M2 3h12l-4.5 5.5V13L6.5 11.5V8.5L2 3z" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <input class="dt-search-input" [value]="search()"
+                     (input)="search.set($any($event.target).value); resetPage()" placeholder="Rechercher...">
+            </div>
   
+            <div class="dt-filter-panel" [class.open]="filterPanelOpenP()">
+              <div class="dt-fp-header">
+                <p class="dt-fp-title">Filtres</p>
+                <button *ngIf="filterStatut()||filterClient()" class="dt-fp-reset"
+                        (click)="filterStatut.set(''); filterClient.set(''); resetPage()">Réinitialiser</button>
+              </div>
+              <div class="dt-fp-body">
+                <div class="dt-fp-field">
+                  <label class="dt-fp-label">Statut</label>
+                  <select class="dt-fp-select" [value]="filterStatut()"
+                          (change)="filterStatut.set($any($event.target).value); resetPage()">
+                    <option value="">Tous les statuts</option>
+                    <option *ngFor="let s of STATUTS_PROJET" [value]="s">{{ getStatutLabel(s) }}</option>
+                  </select>
+                </div>
+                <div class="dt-fp-field">
+                  <label class="dt-fp-label">Client</label>
+                  <select class="dt-fp-select" [value]="filterClient()"
+                          (change)="filterClient.set(+$any($event.target).value||''); resetPage()">
+                    <option value="">Tous les clients</option>
+                    <option *ngFor="let c of clients()" [value]="c.id">{{ c.nom }}</option>
+                  </select>
+                </div>
+              </div>
+              <div class="dt-fp-footer">
+                <button class="mx-btn mx-btn-ghost" style="height:30px;font-size:.73rem" (click)="filterPanelOpenP.set(false)">Fermer</button>
+              </div>
+            </div>
+          </div>
+
+
+
+
+
         <button class="dt-btn-create" (click)="openAddProjet()">
           <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
             <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>

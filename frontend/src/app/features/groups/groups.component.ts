@@ -262,7 +262,9 @@ export class GroupsComponent implements OnInit {
     event.stopPropagation();
     this.openMenuId.set(this.openMenuId() === id ? null : id);
   }
-  closeMenu(): void { this.openMenuId.set(null); }
+  closeMenu(): void { this.openMenuId.set(null);
+    this.filterPanelOpenG.set(false);
+  }
 
   // ── Helpers ──
   isTeamLead(g: Groupe, membreId: number): boolean { return g.teamLeadId === membreId; }
@@ -301,4 +303,7 @@ export class GroupsComponent implements OnInit {
     const MOIS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
     return `${String(date.getDate()).padStart(2,'0')} ${MOIS[date.getMonth()]}, ${date.getFullYear()}`;
   }
+
+
+  filterPanelOpenG = signal(false);
 }
