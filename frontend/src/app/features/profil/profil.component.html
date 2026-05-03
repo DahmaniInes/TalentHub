@@ -1,0 +1,488 @@
+<!-- ════════════════════════════════════════════════════════
+     PROFIL UTILISATEUR — Design refondu
+     • Carte unique élargie (photo + onglets intégrés)
+     • Icônes devant chaque titre de section
+     • Quick access / Demandes / Projets avec icônes
+     • Groupes avec SVG identique à la page Groupes
+     • Infos style dt (label + valeur)
+════════════════════════════════════════════════════════ -->
+
+<div class="pp-page" *ngIf="!loading(); else loadingTpl">
+
+    <!-- ══════════════════════════════════════════
+         LAYOUT PRINCIPAL : grille 2 colonnes
+    ══════════════════════════════════════════ -->
+    <div class="pp-layout">
+  
+      <!-- ══ COLONNE GAUCHE : Carte identité UNIQUE élargie ══ -->
+      <div class="pp-left-card">
+  
+        <!-- Bannière dégradée + Avatar -->
+        <div class="pp-banner">
+          <div class="pp-avatar-zone">
+            <div class="pp-avatar-ring">
+              <img *ngIf="photoPreview() || user()?.photoUrl"
+                   [src]="photoPreview() || user()!.photoUrl!"
+                   alt="avatar" class="pp-avatar-img">
+              <div *ngIf="!photoPreview() && !user()?.photoUrl" class="pp-avatar-initials">
+                {{ initiales() }}
+              </div>
+              <label class="pp-camera-btn" title="Changer la photo">
+                <input type="file" accept="image/*" style="display:none" (change)="onPhotoChange($event)">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" style="width:14px;height:14px">
+                  <path d="M3 6a1 1 0 011-1h1.5l1-2h5l1 2H15a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V6z"/>
+                  <circle cx="10" cy="11" r="2.5"/>
+                </svg>
+              </label>
+            </div>
+  
+            <!-- Boutons upload si fichier sélectionné -->
+            <div *ngIf="photoFile()" class="pp-photo-actions">
+              <button class="pp-btn-photo-save" (click)="uploadPhoto()" [disabled]="photoUploading()">
+                <div class="dt-spinner" *ngIf="photoUploading()" style="width:11px;height:11px;border-width:1.5px;border-color:rgba(255,255,255,.3);border-top-color:white"></div>
+                {{ photoUploading() ? 'Upload...' : 'Enregistrer la photo' }}
+              </button>
+              <button class="pp-btn-photo-cancel" (click)="cancelPhoto()">Annuler</button>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Nom + Email + Profil (juste en dessous du banner) -->
+        <div class="pp-identity-block">
+          <h1 class="pp-name">{{ user()?.nomComplet ?? '—' }}</h1>
+          <p class="pp-email-line">{{ user()?.email }}</p>
+          <div class="pp-role-chip" *ngIf="user()?.profilNom">
+            <svg viewBox="0 0 14 14" fill="none" style="width:10px;height:10px">
+              <path d="M7 1l6 3v4c0 3.5-2.5 6-6 7C4.5 14 1 12 1 8V4L7 1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+            </svg>
+            {{ user()?.profilNom }}
+          </div>
+        </div>
+  
+        <!-- Infos rapides style dt (label → valeur) -->
+        <div class="pp-info-list">
+          <div class="pp-info-row" *ngIf="user()?.poste">
+            <span class="pp-info-icon">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="6" width="12" height="8" rx="1"/><path d="M5 6V4a3 3 0 016 0v2" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <span class="pp-info-key">Poste</span>
+            <span class="pp-info-val">{{ user()?.poste }}</span>
+          </div>
+          <div class="pp-info-row" *ngIf="user()?.departement">
+            <span class="pp-info-icon">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M3 14V6l5-4 5 4v8"/><path d="M6 14v-4h4v4"/>
+              </svg>
+            </span>
+            <span class="pp-info-key">Département</span>
+            <span class="pp-info-val">{{ user()?.departement }}</span>
+          </div>
+          <div class="pp-info-row" *ngIf="user()?.telephone">
+            <span class="pp-info-icon">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M13 10.5c0 .28-.06.55-.19.8l-.59 1.18a1 1 0 01-1.26.46 11 11 0 01-7.9-7.9 1 1 0 01.46-1.26l1.18-.59c.25-.13.52-.19.8-.19h.5a1 1 0 011 1v1.5a1 1 0 01-.8.98l-.5.1a8.08 8.08 0 004.25 4.25l.1-.5A1 1 0 0111 10h1.5a1 1 0 011 1v.5z"/>
+              </svg>
+            </span>
+            <span class="pp-info-key">Téléphone</span>
+            <span class="pp-info-val">{{ user()?.telephone }}</span>
+          </div>
+          <div class="pp-info-row" *ngIf="user()?.adresse">
+            <span class="pp-info-icon">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M8 2C5.79 2 4 3.79 4 6c0 3.5 4 8 4 8s4-4.5 4-8c0-2.21-1.79-4-4-4z"/><circle cx="8" cy="6" r="1.5" fill="currentColor" stroke="none"/>
+              </svg>
+            </span>
+            <span class="pp-info-key">Adresse</span>
+            <span class="pp-info-val">{{ user()?.adresse }}</span>
+          </div>
+          <div class="pp-info-row" *ngIf="user()?.dateEmbauche">
+            <span class="pp-info-icon">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="1" y="2" width="14" height="12" rx="2"/><path d="M1 6h14M5 1v3M11 1v3" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <span class="pp-info-key">Embauche</span>
+            <span class="pp-info-val">{{ fmtDate(user()?.dateEmbauche?.toString()) }}</span>
+          </div>
+          <div class="pp-info-row" *ngIf="user()?.createdAt">
+            <span class="pp-info-icon">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span class="pp-info-key">Inscrit le</span>
+            <span class="pp-info-val">{{ fmtDate(user()?.createdAt?.toString()) }}</span>
+          </div>
+          <div class="pp-info-row">
+            <span class="pp-info-icon">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="8" cy="8" r="6"/>
+                <path *ngIf="user()?.actif" d="M5 8l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+                <path *ngIf="!user()?.actif" d="M5 5l6 6M11 5l-6 6" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <span class="pp-info-key">Statut</span>
+            <span class="dt-badge" [class.dt-badge-delivered]="user()?.actif" [class.dt-badge-canceled]="!user()?.actif" style="font-size:.63rem;padding:2px 8px">
+              <span class="dt-badge-dot"></span>{{ user()?.actif ? 'Actif' : 'Inactif' }}
+            </span>
+          </div>
+        </div>
+  
+        <!-- Divider -->
+        <div class="pp-divider"></div>
+  
+        <!-- ══ ONGLETS ÉDITION (intégrés dans la même carte) ══ -->
+        <div class="pp-tabs-wrap">
+          <div class="pp-tabs">
+            <button class="pp-tab" [class.pp-tab-active]="activeTab()==='infos'" (click)="activeTab.set('infos')">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" style="width:13px;height:13px">
+                <circle cx="7" cy="4.5" r="2.5"/><path d="M1.5 13c0-3 2.5-5 5.5-5s5.5 2 5.5 5" stroke-linecap="round"/>
+              </svg>
+              Informations
+            </button>
+            <button class="pp-tab" [class.pp-tab-active]="activeTab()==='job'" (click)="activeTab.set('job')">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" style="width:13px;height:13px">
+                <rect x="1" y="5" width="12" height="8" rx="1"/><path d="M4 5V3a3 3 0 016 0v2" stroke-linecap="round"/>
+              </svg>
+              Emploi
+            </button>
+            <button class="pp-tab" [class.pp-tab-active]="activeTab()==='contact'" (click)="activeTab.set('contact')">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" style="width:13px;height:13px">
+                <path d="M12 9.5c0 .25-.06.5-.19.73l-.54 1.07a.9.9 0 01-1.15.42 10 10 0 01-7.18-7.18.9.9 0 01.42-1.15l1.07-.54c.23-.13.48-.19.73-.19h.45a.9.9 0 01.9.9v1.37a.9.9 0 01-.72.88l-.46.09a7.3 7.3 0 003.87 3.87l.09-.46A.9.9 0 0110 9h1.1a.9.9 0 01.9.9v.1z"/>
+              </svg>
+              Contact
+            </button>
+            <button class="pp-tab" [class.pp-tab-active]="activeTab()==='activite'" (click)="activeTab.set('activite')">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" style="width:13px;height:13px">
+                <polyline points="1 8 4 5 7 8 13 3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Activité
+            </button>
+          </div>
+  
+          <!-- ── TAB : Informations ── -->
+          <div *ngIf="activeTab()==='infos'" class="pp-tab-body">
+            <div class="pp-form-grid">
+              <div class="pp-field">
+                <label class="pp-field-label">Prénom</label>
+                <input class="pp-field-input" [(ngModel)]="formPrenom" placeholder="Votre prénom">
+              </div>
+              <div class="pp-field">
+                <label class="pp-field-label">Nom</label>
+                <input class="pp-field-input" [(ngModel)]="formNom" placeholder="Votre nom">
+              </div>
+              <div class="pp-field pp-field-full">
+                <label class="pp-field-label">Email</label>
+                <input class="pp-field-input pp-field-readonly" [value]="user()?.email || ''" readonly>
+                <span class="pp-field-hint">Géré par l'administration</span>
+              </div>
+              <div class="pp-field">
+                <label class="pp-field-label">Date de naissance</label>
+                <input type="date" class="pp-field-input" [(ngModel)]="formDateNaissance">
+              </div>
+              <div class="pp-field">
+                <label class="pp-field-label">Profil / Rôle</label>
+                <input class="pp-field-input pp-field-readonly" [value]="user()?.profilNom || '—'" readonly>
+              </div>
+            </div>
+            <div class="pp-form-footer">
+              <button class="pp-btn-save" (click)="save()" [disabled]="saving()">
+                <div class="dt-spinner" *ngIf="saving()" style="width:12px;height:12px;border-width:1.5px;border-color:rgba(255,255,255,.3);border-top-color:white"></div>
+                {{ saving() ? 'Enregistrement...' : 'Enregistrer' }}
+              </button>
+            </div>
+          </div>
+  
+          <!-- ── TAB : Emploi ── -->
+          <div *ngIf="activeTab()==='job'" class="pp-tab-body">
+            <div class="pp-form-grid">
+              <div class="pp-field">
+                <label class="pp-field-label">Poste</label>
+                <input class="pp-field-input" [(ngModel)]="formPoste" placeholder="Votre poste">
+              </div>
+              <div class="pp-field">
+                <label class="pp-field-label">Département</label>
+                <input class="pp-field-input" [(ngModel)]="formDepartement" placeholder="Votre département">
+              </div>
+              <div class="pp-field">
+                <label class="pp-field-label">Date d'embauche</label>
+                <input class="pp-field-input pp-field-readonly" [value]="fmtDate(user()?.dateEmbauche?.toString())" readonly>
+              </div>
+              <div class="pp-field">
+                <label class="pp-field-label">Fin de contrat</label>
+                <input type="date" class="pp-field-input" [(ngModel)]="formDateFin">
+              </div>
+              <div class="pp-field pp-field-full">
+                <label class="pp-field-label">Date d'inscription (app)</label>
+                <input class="pp-field-input pp-field-readonly" [value]="fmtDate(user()?.createdAt?.toString())" readonly>
+              </div>
+            </div>
+  
+            <!-- Mes groupes avec SVG identique à la page Groupes -->
+            <div *ngIf="mesGroupes().length > 0" class="pp-sub-section">
+              <p class="pp-sub-title">
+                <svg viewBox="0 0 611.998 611.998" fill="currentColor" style="width:13px;height:13px;color:var(--accent)">
+                  <path d="M382.167,150.945c9.702,10.875,16.557,24.306,20.381,39.921c3.629,14.822,4.44,31.308,2.414,49.006c-0.751,6.546-1.861,13.96-3.479,21.802c12.532,12.135,28.95,19.839,50.296,19.838c59.22-0.005,80.529-59.3,86.105-108.006c6.872-60.004-21.498-105.163-86.105-105.163c-50.698,0-79.079,27.82-85.628,68.798C372.076,141.062,377.449,145.655,382.167,150.945z"/>
+                  <path d="M470.351,429.405l-0.493-2.805c-4.258-24.197-10.091-57.334-32.191-73.832c-9.321-6.957-19.872-10.404-30.078-13.74c-4.019-1.313-7.812-2.554-11.427-3.974c-5.269-2.07-10.016-4.097-14.464-6.338c-18.684,24.932-44.58,38.059-75.383,38.062c-30.795,0-56.687-13.128-75.371-38.062c-4.449,2.243-9.196,4.269-14.467,6.34c-3.61,1.418-7.406,2.659-11.424,3.972c-10.207,3.335-20.761,6.784-30.079,13.74c-22.107,16.5-27.936,49.645-32.193,73.846l-0.493,2.795c-3.557,20.086-5.68,39.572-6.308,57.914c-0.737,21.519,12.62,26.316,24.403,30.55l1.269,0.457c14.17,5.112,30.021,9.492,48.457,13.388c37.646,7.946,68.197,11.74,96.138,11.938h0.072h0.072c27.946-0.199,58.495-3.992,96.135-11.938c18.439-3.894,34.289-8.274,48.453-13.387l1.268-0.456c11.786-4.233,25.147-9.029,24.41-30.553C476.03,468.931,473.906,449.447,470.351,429.405z"/>
+                  <path d="M221.005,243.009c5.577,48.709,26.883,108.009,86.103,108.006s80.529-59.297,86.106-108.006c6.871-60.002-21.503-105.16-86.106-105.16C242.515,137.847,214.123,183.002,221.005,243.009z"/>
+                </svg>
+                Mes groupes
+              </p>
+              <div class="pp-groups-list">
+                <div *ngFor="let g of mesGroupes()" class="pp-group-item">
+                  <!-- Avatar SVG groupes (identique page Groupes) -->
+                  <div class="pp-group-avatar" [style.background]="g.couleur || 'var(--accent)'">
+                    <svg viewBox="0 0 611.998 611.998" fill="white" style="width:14px;height:14px">
+                      <path d="M382.167,150.945c9.702,10.875,16.557,24.306,20.381,39.921c3.629,14.822,4.44,31.308,2.414,49.006c-0.751,6.546-1.861,13.96-3.479,21.802c12.532,12.135,28.95,19.839,50.296,19.838c59.22-0.005,80.529-59.3,86.105-108.006c6.872-60.004-21.498-105.163-86.105-105.163c-50.698,0-79.079,27.82-85.628,68.798C372.076,141.062,377.449,145.655,382.167,150.945z"/>
+                      <path d="M470.351,429.405l-0.493-2.805c-4.258-24.197-10.091-57.334-32.191-73.832c-9.321-6.957-19.872-10.404-30.078-13.74c-4.019-1.313-7.812-2.554-11.427-3.974c-5.269-2.07-10.016-4.097-14.464-6.338c-18.684,24.932-44.58,38.059-75.383,38.062c-30.795,0-56.687-13.128-75.371-38.062c-4.449,2.243-9.196,4.269-14.467,6.34c-3.61,1.418-7.406,2.659-11.424,3.972c-10.207,3.335-20.761,6.784-30.079,13.74c-22.107,16.5-27.936,49.645-32.193,73.846l-0.493,2.795c-3.557,20.086-5.68,39.572-6.308,57.914c-0.737,21.519,12.62,26.316,24.403,30.55l1.269,0.457c14.17,5.112,30.021,9.492,48.457,13.388c37.646,7.946,68.197,11.74,96.138,11.938h0.072h0.072c27.946-0.199,58.495-3.992,96.135-11.938c18.439-3.894,34.289-8.274,48.453-13.387l1.268-0.456c11.786-4.233,25.147-9.029,24.41-30.553C476.03,468.931,473.906,449.447,470.351,429.405z"/>
+                      <path d="M221.005,243.009c5.577,48.709,26.883,108.009,86.103,108.006s80.529-59.297,86.106-108.006c6.871-60.002-21.503-105.16-86.106-105.16C242.515,137.847,214.123,183.002,221.005,243.009z"/>
+                    </svg>
+                  </div>
+                  <div class="pp-group-info">
+                    <span class="pp-group-name">{{ g.nom }}</span>
+                    <span *ngIf="g.description" class="pp-group-desc">{{ g.description }}</span>
+                    <span class="pp-group-count">{{ g.membres?.length || 0 }} membre(s)</span>
+                  </div>
+                  <span class="dt-badge" [class.dt-badge-delivered]="g.actif" [class.dt-badge-canceled]="!g.actif" style="font-size:.6rem;padding:2px 7px">
+                    <span class="dt-badge-dot"></span>{{ g.actif ? 'Actif' : 'Inactif' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+  
+            <div class="pp-form-footer">
+              <button class="pp-btn-save" (click)="save()" [disabled]="saving()">
+                <div class="dt-spinner" *ngIf="saving()" style="width:12px;height:12px;border-width:1.5px;border-color:rgba(255,255,255,.3);border-top-color:white"></div>
+                {{ saving() ? 'Enregistrement...' : 'Enregistrer' }}
+              </button>
+            </div>
+          </div>
+  
+          <!-- ── TAB : Contact ── -->
+          <div *ngIf="activeTab()==='contact'" class="pp-tab-body">
+            <div class="pp-form-grid">
+              <div class="pp-field">
+                <label class="pp-field-label">Téléphone</label>
+                <input class="pp-field-input" [(ngModel)]="formTelephone" placeholder="+216 XX XXX XXX">
+              </div>
+              <div class="pp-field pp-field-full">
+                <label class="pp-field-label">Adresse</label>
+                <input class="pp-field-input" [(ngModel)]="formAdresse" placeholder="Votre adresse complète">
+              </div>
+            </div>
+            <div class="pp-form-footer">
+              <button class="pp-btn-save" (click)="save()" [disabled]="saving()">
+                <div class="dt-spinner" *ngIf="saving()" style="width:12px;height:12px;border-width:1.5px;border-color:rgba(255,255,255,.3);border-top-color:white"></div>
+                {{ saving() ? 'Enregistrement...' : 'Enregistrer' }}
+              </button>
+            </div>
+          </div>
+  
+          <!-- ── TAB : Activité ── -->
+          <div *ngIf="activeTab()==='activite'" class="pp-tab-body">
+            <!-- Stats -->
+            <div class="pp-act-stats">
+              <div class="pp-act-stat">
+                <span class="pp-act-num" style="color:var(--accent)">{{ demandes().length }}</span>
+                <span class="pp-act-lbl">Demandes</span>
+              </div>
+              <div class="pp-act-stat">
+                <span class="pp-act-num" style="color:var(--accent)">{{ mesGroupes().length }}</span>
+                <span class="pp-act-lbl">Groupes</span>
+              </div>
+              <div class="pp-act-stat">
+                <span class="pp-act-num" style="color:var(--accent)">{{ mesProjets().length }}</span>
+                <span class="pp-act-lbl">Projets</span>
+              </div>
+            </div>
+  
+            <!-- Historique demandes -->
+            <div class="pp-sub-section">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <p class="pp-sub-title">
+                  <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" style="width:13px;height:13px;color:var(--accent)">
+                    <path d="M1 2h12v9H8l-3 3v-3H1z" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Historique demandes
+                </p>
+                <button class="pp-voir-tout" (click)="goTo('/Demande')">Voir tout →</button>
+              </div>
+              <div *ngIf="demandes().length === 0" class="pp-empty-mini">Aucune demande</div>
+              <div *ngIf="demandes().length > 0" class="pp-hist-list">
+                <div class="pp-hist-header">
+                  <span>Sujet</span><span>Date</span><span>Statut</span>
+                </div>
+                <div *ngFor="let d of demandes().slice(0,6)" class="pp-hist-row">
+                  <span class="pp-hist-sujet">{{ d.sujet }}</span>
+                  <span class="pp-hist-date">{{ fmtDate(d.dateCreation) }}</span>
+                  <span [class]="getStatutBadgeClass(d.statutDemandeId)" style="font-size:.6rem;padding:2px 7px">
+                    <span class="dt-badge-dot"></span>{{ getStatutLabel(d.statutDemandeId) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+  
+        </div><!-- /.pp-tabs-wrap -->
+      </div><!-- /.pp-left-card -->
+  
+  
+      <!-- ══ COLONNE DROITE : Stats + Quick Access + Demandes + Projets ══ -->
+      <div class="pp-right-col">
+  
+        <!-- Stats demandes -->
+        <div class="pp-stats-card">
+          <div class="pp-card-title">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;color:var(--accent)">
+              <polyline points="1 12 5 7 9 10 15 4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Aperçu demandes
+          </div>
+          <div class="pp-stats-grid">
+            <div class="pp-stat-card pp-stat-total">
+              <span class="pp-stat-num">{{ demandes().length }}</span>
+              <span class="pp-stat-lbl">Total</span>
+            </div>
+            <div class="pp-stat-card pp-stat-pending">
+              <span class="pp-stat-num">{{ countEnAttente() }}</span>
+              <span class="pp-stat-lbl">En attente</span>
+            </div>
+            <div class="pp-stat-card pp-stat-ok">
+              <span class="pp-stat-num">{{ countAcceptee() }}</span>
+              <span class="pp-stat-lbl">Acceptées</span>
+            </div>
+            <div class="pp-stat-card pp-stat-nok">
+              <span class="pp-stat-num">{{ countRejetee() }}</span>
+              <span class="pp-stat-lbl">Rejetées</span>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Quick Access -->
+        <div class="pp-qa-card">
+          <div class="pp-card-title">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;color:var(--accent)">
+              <path d="M1 5h14M1 11h14M8 1l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Accès rapide
+          </div>
+          <div class="pp-qa-list">
+            <button class="pp-qa-item" (click)="goTo('/feuille-temps')">
+              <div class="pp-qa-icon pp-qa-blue">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px">
+                  <rect x="1" y="1" width="14" height="14" rx="2"/>
+                  <path d="M4 6h8M4 9h8M4 12h5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="pp-qa-info">
+                <span class="pp-qa-label">Feuille de temps</span>
+                <span class="pp-qa-sub">Gérer vos entrées hebdomadaires</span>
+              </div>
+              <svg class="pp-qa-arrow" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="pp-qa-item" (click)="goTo('/Demande')">
+              <div class="pp-qa-icon pp-qa-violet">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px">
+                  <path d="M9 2H3a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1V7L9 2z"/><path d="M9 2v5h5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="pp-qa-info">
+                <span class="pp-qa-label">Mes demandes</span>
+                <span class="pp-qa-sub">Congés, absences, demandes RH</span>
+              </div>
+              <svg class="pp-qa-arrow" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="pp-qa-item" (click)="goTo('/projets')">
+              <div class="pp-qa-icon pp-qa-green">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px">
+                  <rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/>
+                </svg>
+              </div>
+              <div class="pp-qa-info">
+                <span class="pp-qa-label">Mes projets ({{ mesProjets().length }})</span>
+                <span class="pp-qa-sub">Voir vos projets en cours</span>
+              </div>
+              <svg class="pp-qa-arrow" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="pp-qa-item" (click)="goTo('/groups')">
+              <div class="pp-qa-icon pp-qa-orange">
+                <svg viewBox="0 0 611.998 611.998" fill="currentColor" style="width:16px;height:16px">
+                  <path d="M382.167,150.945c9.702,10.875,16.557,24.306,20.381,39.921c3.629,14.822,4.44,31.308,2.414,49.006c-0.751,6.546-1.861,13.96-3.479,21.802c12.532,12.135,28.95,19.839,50.296,19.838c59.22-0.005,80.529-59.3,86.105-108.006c6.872-60.004-21.498-105.163-86.105-105.163c-50.698,0-79.079,27.82-85.628,68.798C372.076,141.062,377.449,145.655,382.167,150.945z"/>
+                  <path d="M470.351,429.405l-0.493-2.805c-4.258-24.197-10.091-57.334-32.191-73.832c-9.321-6.957-19.872-10.404-30.078-13.74c-4.019-1.313-7.812-2.554-11.427-3.974c-5.269-2.07-10.016-4.097-14.464-6.338c-18.684,24.932-44.58,38.059-75.383,38.062c-30.795,0-56.687-13.128-75.371-38.062c-4.449,2.243-9.196,4.269-14.467,6.34c-3.61,1.418-7.406,2.659-11.424,3.972c-10.207,3.335-20.761,6.784-30.079,13.74c-22.107,16.5-27.936,49.645-32.193,73.846l-0.493,2.795c-3.557,20.086-5.68,39.572-6.308,57.914c-0.737,21.519,12.62,26.316,24.403,30.55l1.269,0.457c14.17,5.112,30.021,9.492,48.457,13.388c37.646,7.946,68.197,11.74,96.138,11.938h0.072h0.072c27.946-0.199,58.495-3.992,96.135-11.938c18.439-3.894,34.289-8.274,48.453-13.387l1.268-0.456c11.786-4.233,25.147-9.029,24.41-30.553C476.03,468.931,473.906,449.447,470.351,429.405z"/>
+                  <path d="M221.005,243.009c5.577,48.709,26.883,108.009,86.103,108.006s80.529-59.297,86.106-108.006c6.871-60.002-21.503-105.16-86.106-105.16C242.515,137.847,214.123,183.002,221.005,243.009z"/>
+                </svg>
+              </div>
+              <div class="pp-qa-info">
+                <span class="pp-qa-label">Mes groupes ({{ mesGroupes().length }})</span>
+                <span class="pp-qa-sub">Équipes et collaborateurs</span>
+              </div>
+              <svg class="pp-qa-arrow" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </div>
+  
+        <!-- Dernières demandes -->
+        <div class="pp-recent-card" *ngIf="derniersDemandes().length > 0">
+          <div class="pp-card-header">
+            <div class="pp-card-title">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;color:var(--accent)">
+                <path d="M9 2H3a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1V7L9 2z"/><path d="M9 2v5h5" stroke-linecap="round"/>
+              </svg>
+              Dernières demandes
+            </div>
+            <button class="pp-voir-tout" (click)="goTo('/Demande')">Voir tout →</button>
+          </div>
+          <div class="pp-recent-list">
+            <div *ngFor="let d of derniersDemandes()" class="pp-recent-item">
+              <div class="pp-recent-body">
+                <span class="pp-recent-title">{{ d.sujet }}</span>
+                <span class="pp-recent-date">{{ fmtDate(d.dateCreation) }}</span>
+              </div>
+              <span [class]="getStatutBadgeClass(d.statutDemandeId)" style="font-size:.6rem;padding:2px 7px;flex-shrink:0">
+                <span class="dt-badge-dot"></span>{{ getStatutLabel(d.statutDemandeId) }}
+              </span>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Mes projets -->
+        <div class="pp-recent-card" *ngIf="mesProjets().length > 0">
+          <div class="pp-card-header">
+            <div class="pp-card-title">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;color:var(--accent)">
+                <rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/>
+              </svg>
+              Mes projets ({{ mesProjets().length }})
+            </div>
+            <button class="pp-voir-tout" (click)="goTo('/projets')">Voir tout →</button>
+          </div>
+          <div class="pp-recent-list">
+            <div *ngFor="let p of mesProjets().slice(0,3)" class="pp-recent-item">
+              <div class="pp-recent-body">
+                <span class="pp-recent-title">{{ p.nom }}</span>
+                <span class="pp-recent-date">{{ p.clientNom || '—' }}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+                <div style="width:44px;height:4px;border-radius:2px;background:var(--dt-border);overflow:hidden">
+                  <div style="height:100%;border-radius:2px;background:var(--accent);transition:width .3s" [style.width]="(p.avancement || 0) + '%'"></div>
+                </div>
+                <span style="font-size:.65rem;font-weight:700;color:var(--accent);min-width:26px">{{ p.avancement || 0 }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+  
+      </div><!-- /.pp-right-col -->
+    </div><!-- /.pp-layout -->
+  
+  </div>
+  
+  <!-- Loading -->
+  <ng-template #loadingTpl>
+    <div style="display:flex;align-items:center;justify-content:center;height:60vh;gap:12px;color:var(--dt-text-sub);font-size:.84rem">
+      <div class="dt-spinner" style="width:24px;height:24px;border-width:2px"></div>
+      Chargement du profil...
+    </div>
+  </ng-template>

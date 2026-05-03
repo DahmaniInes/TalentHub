@@ -1,70 +1,43 @@
-/* profil-permissions.component.css
-   ✅ Les classes dt-* sont dans styles.css global
-   ✅ Ce fichier ne contient que les overrides spécifiques à ce composant
-*/
+/* ═══════════════════════════════════════════════════════════
+   ADDITIONS styles.css — Permissions + types-demandes
+   Ajouter à la FIN de styles.css (après le bloc dm-*)
+═══════════════════════════════════════════════════════════ */
 
-.pp-wrapper {
-  min-height: 100vh;
-  padding: 24px 28px;
-  background: var(--bg-primary);
-}
-
-/* ── Collapse btn dans la matrice ── */
-.pp-collapse-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--dt-text-sub);
-  padding: 2px;
-  display: flex;
-  align-items: center;
-  border-radius: 4px;
-  transition: background .15s, color .15s;
-  flex-shrink: 0;
-}
-
-.pp-collapse-btn:hover {
-  background: var(--bg-hover);
+/* ── Code permission affiché dans la matrice ─────────────── */
+.pp-perm-code {
+  font-family: 'Courier New', monospace;
+  font-size: .75rem;
+  font-weight: 700;
   color: var(--dt-text);
+  letter-spacing: .3px;
 }
 
-/* ── Bouton ajouter dans module ── */
-.pp-add-to-module-btn {
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  border: 1px dashed var(--dt-border);
-  background: none;
-  color: var(--dt-text-sub);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all .15s;
+/* ── Bouton collapse module ──────────────────────────────── */
+.pp-collapse-btn {
+  width: 20px; height: 20px;
+  border: none; background: none;
+  cursor: pointer; color: var(--dt-text-sub);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s, color .12s;
   flex-shrink: 0;
 }
+.pp-collapse-btn:hover { background: var(--bg-hover); color: var(--dt-text); }
 
+/* ── Bouton + ajouter dans module ────────────────────────── */
+.pp-add-to-module-btn {
+  width: 20px; height: 20px;
+  border: 1px dashed var(--dt-border);
+  border-radius: 4px; background: none;
+  cursor: pointer; color: var(--dt-text-sub);
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .12s, color .12s, background .12s;
+}
 .pp-add-to-module-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
   background: var(--accent-soft);
 }
 
-/* ── Surcharge pour les lignes module ── */
-.dt-table .pp-module-row td {
-  background: var(--dt-bg-header);
-  border-bottom: 1px solid var(--dt-border);
-}
-
-/* ── Sticky colonne permission ── */
-.dt-table td:first-child,
-.dt-table th:first-child {
-  position: sticky;
-  left: 0;
-  z-index: 2;
-}
-
-/* ── Responsive matrice ── */
-@media (max-width: 768px) {
-  .pp-wrapper { padding: 16px; }
-}
+/* ── Wrapper page permissions ────────────────────────────── */
+.pp-wrapper { padding: 24px 28px; background: var(--bg-primary); min-height: 100vh; }

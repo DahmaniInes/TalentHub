@@ -938,6 +938,217 @@ html, body { height: 100%; }
 .dt-status-annule    .dt-badge-dot { background: #6b7280 !important; }
 
 /* Fallback générique (couleur venant du backend) */
-.dt-status-custom    { /* Les couleurs viennent du [style] inline */ }
+.dt-status-x  { /* Les couleurs viennent du [style] inline */ }
 
+/* ═══════════════════════════════════════════════════════════════
+   DEMANDES — CSS à AJOUTER à la fin de styles.css
+   (seulement ce qui N'EXISTE PAS déjà dans styles.css)
+   
+   ⚠️ NE PAS copier les classes dt-*, toast, modal qui
+      existent déjà dans styles.css.
+═══════════════════════════════════════════════════════════════ */
 
+/* ── Slide-over demandes ─────────────────────────────────────── */
+.dm-slide-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.35);
+  z-index: 800; display: flex; justify-content: flex-end;
+  animation: mxFadeIn .18s ease;   /* ← réutilise l'animation existante */
+}
+.dm-slide-panel {
+  width: 420px; max-width: 100%;
+  background: var(--dt-bg);
+  border-left: 1px solid var(--dt-border);
+  display: flex; flex-direction: column;
+  box-shadow: -12px 0 40px rgba(0,0,0,.15);
+  animation: mxSlideIn .22s cubic-bezier(.4,0,.2,1); /* ← réutilise l'animation existante */
+}
+.dm-slide-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 24px 16px; border-bottom: 1px solid var(--dt-border);
+}
+.dm-slide-title {
+  font-size: .94rem; font-weight: 700; color: var(--dt-text);
+  margin: 0; font-family: 'Space Grotesk', sans-serif;
+}
+.dm-slide-close {
+  width: 30px; height: 30px; border: none; background: none;
+  border-radius: 7px; cursor: pointer; color: var(--dt-text-sub);
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s, color .12s;
+}
+.dm-slide-close:hover { background: var(--bg-hover); color: var(--dt-text); }
+.dm-slide-body {
+  flex: 1; overflow-y: auto; padding: 20px 24px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.dm-slide-footer {
+  display: flex; gap: 10px; justify-content: flex-end;
+  padding: 14px 24px; border-top: 1px solid var(--dt-border);
+  background: var(--dt-bg-header);
+}
+
+/* ── Champs formulaire demandes ──────────────────────────────── */
+.dm-field  { display: flex; flex-direction: column; gap: 5px; }
+.dm-label  {
+  font-size: .68rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--dt-text-sub);
+  font-family: 'Space Grotesk', sans-serif;
+}
+.dm-required  { color: #ef4444; }
+.dm-field-hint { font-size: .65rem; color: var(--dt-text-sub); font-style: italic; }
+.dm-input, .dm-select, .dm-textarea {
+  height: 36px; border: 1px solid var(--dt-border); border-radius: 8px;
+  padding: 0 12px; font-size: .8rem; background: var(--bg-input);
+  color: var(--dt-text); font-family: 'Space Grotesk', sans-serif;
+  outline: none; transition: border-color .15s, box-shadow .15s; width: 100%;
+}
+.dm-textarea { height: auto; padding: 10px 12px; resize: vertical; }
+.dm-input:focus, .dm-select:focus, .dm-textarea:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.dm-input-mono { font-family: monospace; letter-spacing: .5px; text-transform: uppercase; }
+.dm-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* ── Boutons slide-over / modal ──────────────────────────────── */
+.dm-btn-cancel {
+  padding: 8px 18px; border-radius: 7px;
+  border: 1px solid var(--dt-border); background: var(--dt-bg);
+  color: var(--dt-text); font-size: .8rem; font-weight: 600;
+  cursor: pointer; font-family: 'Space Grotesk', sans-serif;
+  transition: background .12s;
+}
+.dm-btn-cancel:hover { background: var(--bg-hover); }
+.dm-btn-save {
+  padding: 8px 20px; border-radius: 7px; border: none;
+  background: linear-gradient(100deg, var(--accent) 20%, var(--accent-2) 100%);
+  color: white; font-size: .8rem; font-weight: 700;
+  cursor: pointer; font-family: 'Space Grotesk', sans-serif;
+  display: flex; align-items: center; gap: 8px;
+  transition: opacity .15s;
+}
+.dm-btn-save:hover:not(:disabled) { opacity: .9; }
+.dm-btn-save:disabled { opacity: .6; cursor: not-allowed; }
+
+/* ── Info / erreur dans formulaire ──────────────────────────── */
+.dm-info-box {
+  padding: 9px 14px; border-radius: 8px; font-size: .78rem; font-weight: 600;
+  background: var(--accent-soft); color: var(--accent);
+  font-family: 'Space Grotesk', sans-serif;
+}
+.dm-info-box-muted {
+  background: var(--bg-input); color: var(--dt-text-sub); font-weight: 500;
+}
+.dm-error-box {
+  padding: 9px 14px; border-radius: 8px; font-size: .78rem;
+  background: rgba(239,68,68,.1); color: #ef4444;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* ── Toggle switch ───────────────────────────────────────────── */
+.dm-toggle-row  { display: flex; align-items: center; justify-content: space-between; padding: 2px 0; }
+.dm-toggle-label { font-size: .8rem; font-weight: 600; color: var(--dt-text); font-family: 'Space Grotesk', sans-serif; }
+.dm-toggle {
+  width: 38px; height: 22px; border-radius: 11px;
+  background: var(--dt-border); cursor: pointer; position: relative;
+  transition: background .2s; flex-shrink: 0;
+}
+.dm-toggle.dm-toggle-on { background: var(--accent); }
+.dm-toggle-thumb {
+  width: 16px; height: 16px; border-radius: 50%; background: white;
+  position: absolute; top: 3px; left: 3px; transition: left .2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+.dm-toggle.dm-toggle-on .dm-toggle-thumb { left: 19px; }
+
+/* ── Code monospace badge ────────────────────────────────────── */
+.dm-code-mono {
+  font-family: monospace; font-size: .78rem; font-weight: 700;
+  color: var(--accent); background: var(--accent-soft);
+  padding: 3px 8px; border-radius: 5px; letter-spacing: .5px;
+}
+
+/* ── Modal traitement ────────────────────────────────────────── */
+.dm-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.4);
+  z-index: 900; display: flex; align-items: center; justify-content: center;
+  animation: mxFadeIn .15s ease;
+}
+.dm-modal {
+  background: var(--dt-bg); border: 1px solid var(--dt-border);
+  border-radius: 14px; width: 480px; max-width: calc(100vw - 32px);
+  box-shadow: 0 20px 60px rgba(0,0,0,.2); animation: mxFadeIn .2s ease;
+}
+.dm-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px 14px; border-bottom: 1px solid var(--dt-border);
+}
+.dm-modal-title {
+  font-size: .92rem; font-weight: 700; color: var(--dt-text);
+  margin: 0; font-family: 'Space Grotesk', sans-serif;
+}
+.dm-modal-body   { padding: 18px 22px; display: flex; flex-direction: column; }
+.dm-modal-footer {
+  display: flex; gap: 10px; justify-content: flex-end;
+  padding: 14px 22px; border-top: 1px solid var(--dt-border);
+  background: var(--dt-bg-header); border-radius: 0 0 14px 14px;
+}
+
+/* Résumé de la demande dans le modal */
+.dm-demande-resume {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 12px 14px; background: var(--bg-input);
+  border-radius: 10px; border: 1px solid var(--dt-border);
+}
+
+/* ── Boutons choix statut ────────────────────────────────────── */
+.dm-statut-choice {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 14px; border-radius: 8px;
+  border: 1.5px solid var(--dt-border); background: var(--dt-bg);
+  color: var(--dt-text); font-size: .78rem; font-weight: 600;
+  cursor: pointer; font-family: 'Space Grotesk', sans-serif;
+  transition: border-color .15s, background .15s;
+}
+.dm-statut-choice:hover { border-color: var(--sc, var(--accent)); }
+.dm-statut-choice-active {
+  border-color: var(--sc, var(--accent)) !important;
+  background: color-mix(in srgb, var(--sc, var(--accent)) 12%, transparent) !important;
+}
+.dm-statut-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Popup commentaire RH ────────────────────────────────────── */
+.dm-comment-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.35);
+  z-index: 1000; display: flex; align-items: center; justify-content: center;
+  animation: mxFadeIn .15s ease;
+}
+.dm-comment-popup {
+  background: var(--dt-bg); border: 1px solid var(--dt-border);
+  border-radius: 12px; width: 380px; max-width: calc(100vw - 32px);
+  box-shadow: 0 16px 50px rgba(0,0,0,.2);
+}
+.dm-comment-popup-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px 12px; border-bottom: 1px solid var(--dt-border);
+  font-size: .82rem; font-weight: 700; color: var(--dt-text);
+  font-family: 'Space Grotesk', sans-serif;
+}
+.dm-comment-close {
+  font-size: 1.2rem; line-height: 1; background: none; border: none;
+  color: var(--dt-text-sub); cursor: pointer; width: 26px; height: 26px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  transition: background .12s;
+}
+.dm-comment-close:hover { background: var(--bg-hover); }
+.dm-comment-popup-body {
+  padding: 14px 18px; font-size: .82rem; color: var(--dt-text); line-height: 1.6;
+}
+
+/* ── Icône commentaire inline dans le tableau ────────────────── */
+.dm-comment-icon-btn {
+  width: 22px; height: 22px; border-radius: 5px; border: none;
+  background: var(--accent-soft); color: var(--accent);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background .12s; flex-shrink: 0;
+}
+.dm-comment-icon-btn:hover { background: var(--accent); color: white; }

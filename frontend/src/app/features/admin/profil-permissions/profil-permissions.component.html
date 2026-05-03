@@ -1,57 +1,67 @@
-<!-- profil-permissions.component.html — Style dt-* COMPLET -->
-<div class="pp-wrapper" (click)="closeMenus()">
+<!-- PROFIL PERMISSIONS — Redesign complet :
+     • Tout dans un seul dt-wrap
+     • Recherche intégrée dans le header
+     • Checkbox sélection 1ère colonne
+     • Nom du module grisé (ligne séparatrice)
+     • Affiche seulement le CODE de la permission
+     • Lignes de même couleur (alternées via dt-tr:nth-child)
+     • Badges stats supprimés
+-->
+<div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh" (click)="closeMenus()">
 
-  <!-- ═══ HEADER dt-style ═══ -->
-  <div style="margin-bottom:20px">
-    <h1 class="dt-title" style="font-size:1.2rem;font-weight:700;color:var(--dt-text)">
-      <svg viewBox="0 0 22 22" fill="none" style="width:22px;height:22px;color:var(--accent)">
-        <path d="M11 2l9 4v5c0 5.5-4 9-9 10.5C6 20 2 16.5 2 11V6l9-4z"
-              stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-        <path d="M7 11l3 3 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      Profils &amp; Permissions
-    </h1>
-    <p style="font-size:.76rem;color:var(--dt-text-sub);margin:4px 0 14px">Gérez les profils et assignez les permissions d'accès</p>
-
-    <!-- Stats en badges -->
-    <div class="dt-header-stats">
-      <span class="dt-badge dt-badge-accent" style="font-size:.66rem;padding:3px 10px">
-        <span class="dt-badge-dot"></span>{{ totalUsers() }} utilisateurs
-      </span>
-      <span class="dt-badge dt-badge-default" style="font-size:.66rem;padding:3px 10px">
-        <span class="dt-badge-dot"></span>{{ permissions().length }} permissions
-      </span>
-      <span *ngFor="let profil of profils()" class="dt-badge dt-badge-pending" style="font-size:.66rem;padding:3px 10px;cursor:pointer">
-        <span class="dt-badge-dot"></span>{{ profil.nom }} : {{ usersByProfil()[profil.id] || 0 }}
-      </span>
-    </div>
-  </div>
-
-  <!-- Actions header -->
-  <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-    <button class="mx-btn mx-btn-ghost" style="height:36px" (click)="openAddPerm()">
-      <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      Nouvelle permission
-    </button>
-    <button class="dt-btn-create" style="height:36px;padding:0 16px;font-size:.78rem" (click)="openAddProfil()">
-      <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      Nouveau profil
-    </button>
-  </div>
-
-  <!-- ═══ MATRICE dans un dt-wrap ═══ -->
   <div class="dt-wrap">
 
-    <!-- Loading -->
-    <div *ngIf="loading()" class="dt-loading"><div class="dt-spinner"></div> Chargement de la matrice...</div>
+    <!-- ══ HEADER ══ -->
+    <div class="dt-header">
+      <div>
+        <h1 class="dt-title">
+          <svg class="dt-title-icon" viewBox="0 0 22 22" fill="none">
+            <path d="M11 2l9 4v5c0 5.5-4 9-9 10.5C6 20 2 16.5 2 11V6l9-4z"
+                  stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="M7 11l3 3 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Profils &amp; Permissions
+        </h1>
+      </div>
 
-    <!-- Tableau -->
+      <div class="dt-header-actions">
+        <!-- Recherche -->
+        <div class="dt-search-bar" style="min-width:220px">
+          <svg class="dt-search-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="7" cy="7" r="5"/><path d="M12 12l2.5 2.5" stroke-linecap="round"/>
+          </svg>
+          <input class="dt-search-input" [(ngModel)]="permSearch" placeholder="Rechercher une permission...">
+        </div>
+        <!-- Boutons -->
+        <button class="mx-btn mx-btn-ghost" style="height:38px" (click)="openAddPerm()">
+          <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+            <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Permission
+        </button>
+        <button class="dt-btn-create" (click)="openAddProfil()">
+          <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+            <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Nouveau profil
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading()" class="dt-loading"><div class="dt-spinner"></div> Chargement...</div>
+
+    <!-- ══ TABLEAU ══ -->
     <div *ngIf="!loading()" class="dt-scroll">
       <table class="dt-table" style="min-width:600px">
         <thead>
           <tr>
-            <!-- Colonne permissions -->
-            <th class="dt-th" style="min-width:240px;position:sticky;left:0;z-index:3;background:var(--dt-bg-header)">
+            <!-- Checkbox global -->
+            <th class="dt-th dt-th-cb" style="width:44px">
+              <input type="checkbox" class="dt-checkbox" disabled style="opacity:.3">
+            </th>
+            <!-- Permission (code) -->
+            <th class="dt-th" style="min-width:200px;position:sticky;left:0;z-index:3;background:var(--dt-bg-header)">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
                   <path d="M7 1l6 3v4c0 3.5-2.5 6-6 7C4.5 14 1 12 1 8V4L7 1z" stroke-linejoin="round"/>
@@ -59,55 +69,54 @@
                 Permission
               </div>
             </th>
-
-            <!-- En-têtes profils -->
-            <th *ngFor="let profil of profils()" class="dt-th" style="text-align:center;min-width:90px;border-left:1px solid var(--dt-border)">
+            <!-- Colonne par profil -->
+            <th *ngFor="let profil of profils()" class="dt-th"
+                style="text-align:center;min-width:90px;border-left:1px solid var(--dt-border)">
               <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
                 <span style="font-size:.74rem;font-weight:700;color:var(--dt-text)">{{ profil.nom }}</span>
-                <!-- Modifier / Supprimer profil -->
                 <div style="display:flex;gap:2px">
-                  <button class="dt-action-btn dt-action-edit" style="width:22px;height:22px" (click)="openEditProfil(profil)" title="Modifier">
-                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                  <button class="dt-action-btn dt-action-edit" style="width:22px;height:22px"
+                          (click)="openEditProfil(profil)" title="Modifier">
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px">
+                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                    </svg>
                   </button>
-                  <button class="dt-action-btn dt-action-del" style="width:22px;height:22px" (click)="deleteProfil(profil)" title="Supprimer">
-                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                  <button class="dt-action-btn dt-action-del" style="width:22px;height:22px"
+                          (click)="deleteProfil(profil)" title="Supprimer">
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px">
+                      <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
                   </button>
                 </div>
               </div>
             </th>
-
             <!-- Actions -->
             <th class="dt-th dt-th-actions" style="border-left:1px solid var(--dt-border)"></th>
           </tr>
         </thead>
 
         <tbody>
-          <ng-container *ngFor="let section of sections()">
+          <ng-container *ngFor="let section of filteredSections()">
 
-            <!-- ✅ Ligne module — fond dt-bg-header, font Space Vacation, couleur dt-text (noir) -->
-            <tr>
-              <td [attr.colspan]="profils().length + 2"
-              style="background:var(--dt-bg-header);border-bottom:1px solid var(--dt-border);padding:0">
-                <div style="display:flex;align-items:center;gap:8px;padding:8px 20px">
-                  <!-- Collapse btn -->
+            <!-- ══ LIGNE MODULE — fond grisé neutre ══ -->
+            <tr style="background:var(--dt-bg-header) !important">
+              <td [attr.colspan]="profils().length + 3"
+                  style="padding:0;border-bottom:1px solid var(--dt-border)">
+                <div style="display:flex;align-items:center;gap:8px;padding:7px 16px">
                   <button class="pp-collapse-btn" (click)="toggleCollapse(section)">
-                    <svg viewBox="0 0 12 12" fill="none" style="width:11px;height:11px;transition:transform .2s"
+                    <svg viewBox="0 0 12 12" fill="none" style="width:10px;height:10px;transition:transform .2s"
                          [style.transform]="section.collapsed ? 'rotate(-90deg)' : 'rotate(0)'">
                       <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                   </button>
-                  <!-- Icône dossier -->
-                  <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px;color:var(--dt-text-sub)">
+                  <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px;color:var(--dt-text-sub);flex-shrink:0">
                     <path d="M1 3a1 1 0 011-1h3l1.5 1.5H12a1 1 0 011 1V11a1 1 0 01-1 1H2a1 1 0 01-1-1V3z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
                   </svg>
-                  <!-- Nom module — style dt-cell-name (noir/texte principal) -->
-                  <span style="font-size:.8rem;font-weight:700;color:var(--dt-text);text-transform:uppercase;letter-spacing:.4px;font-family:'Space Vacation',sans-serif">
+                  <span style="font-size:.75rem;font-weight:700;color:var(--dt-text-sub);text-transform:uppercase;letter-spacing:.5px;font-family:'Space Grotesk',sans-serif">
                     {{ section.module }}
                   </span>
-                  <!-- Compteur -->
-                  <span class="dt-badge dt-badge-default" style="font-size:.62rem;padding:2px 7px">{{ section.rows.length }}</span>
-                  <!-- Ajouter dans module -->
-                  <button class="pp-add-to-module-btn" style="margin-left:4px" (click)="openAddToModule(section.module)" title="Ajouter une permission">
+                  <span class="dt-badge dt-badge-default" style="font-size:.6rem;padding:2px 6px">{{ section.rows.length }}</span>
+                  <button class="pp-add-to-module-btn" style="margin-left:4px" (click)="openAddToModule(section.module)" title="Ajouter">
                     <svg viewBox="0 0 14 14" fill="none" style="width:10px;height:10px">
                       <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
                     </svg>
@@ -116,24 +125,26 @@
               </td>
             </tr>
 
-            <!-- Lignes permissions -->
+            <!-- ══ LIGNES PERMISSIONS ══ -->
             <ng-container *ngIf="!section.collapsed">
               <tr *ngFor="let row of section.rows" class="dt-tr">
 
-                <!-- Nom permission -->
-                <td class="dt-td" style="position:sticky;left:0;background:var(--dt-bg);z-index:1;min-width:240px">
-                  <div class="dt-cell-user">
-                    <span class="dt-cell-name">{{ row.permission.libelle }}</span>
-                    <span *ngIf="row.permission.description" class="dt-cell-sub">{{ row.permission.description }}</span>
-                  </div>
+                <!-- Checkbox (désactivé sur permissions — réservé pour future feature) -->
+                <td class="dt-td dt-td-cb">
+                  <span style="display:inline-block;width:16px;height:16px"></span>
                 </td>
 
-                <!-- ✅ Checkbox par profil — style dt-checkbox -->
+                <!-- Code permission UNIQUEMENT (pas libellé ni description) -->
+                <td class="dt-td" style="position:sticky;left:0;background:inherit;z-index:1;min-width:200px">
+                  <span class="pp-perm-code">{{ row.permission.code || row.permission.libelle }}</span>
+                </td>
+
+                <!-- Checkbox par profil -->
                 <td *ngFor="let profil of profils(); let pi = index"
-                    class="dt-td" style="text-align:center;border-left:1px solid var(--dt-border);padding:10px 8px">
+                    class="dt-td" style="text-align:center;border-left:1px solid var(--dt-border);padding:12px 8px">
                   <div style="display:flex;align-items:center;justify-content:center">
                     <ng-container *ngIf="row.cells[pi] as cell">
-                      <div *ngIf="cell.saving" class="dt-spinner" style="width:16px;height:16px;border-width:1.5px"></div>
+                      <div *ngIf="cell.saving" class="dt-spinner" style="width:15px;height:15px;border-width:1.5px"></div>
                       <input *ngIf="!cell.saving" type="checkbox" class="dt-checkbox"
                              [class.dt-checkbox-active]="cell.assigned"
                              [checked]="cell.assigned"
@@ -145,14 +156,18 @@
                   </div>
                 </td>
 
-                <!-- Actions permission -->
+                <!-- Actions -->
                 <td class="dt-td dt-td-actions" style="border-left:1px solid var(--dt-border)">
-                  <div class="dt-td-actions-wrap">
+                  <div class="dt-td-actions-wrap" style="gap:0">
                     <button class="dt-action-btn dt-action-edit" (click)="openEditPerm(row.permission)" title="Modifier">
-                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                      <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                      </svg>
                     </button>
                     <button class="dt-action-btn dt-action-del" (click)="deletePerm(row.permission)" title="Supprimer">
-                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                      <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                      </svg>
                     </button>
                   </div>
                 </td>
@@ -160,17 +175,21 @@
             </ng-container>
 
           </ng-container>
+
+          <!-- Vide -->
+          <tr *ngIf="filteredSections().length === 0">
+            <td [attr.colspan]="profils().length + 3" class="dt-td">
+              <div class="dt-empty">
+                <svg class="dt-empty-icon" viewBox="0 0 48 48" fill="none" style="width:40px;height:40px;opacity:.3">
+                  <path d="M24 4l18 8v10c0 11-7 18-18 21C13 40 6 33 6 22V12L24 4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                </svg>
+                <p class="dt-empty-title">Aucune permission définie</p>
+                <button class="dt-btn-create" style="margin-top:12px" (click)="openAddPerm()">Créer la première permission</button>
+              </div>
+            </td>
+          </tr>
         </tbody>
       </table>
-
-      <!-- Vide -->
-      <div *ngIf="sections().length === 0" class="dt-empty">
-        <svg class="dt-empty-icon" viewBox="0 0 48 48" fill="none" style="width:40px;height:40px;opacity:.3">
-          <path d="M24 4l18 8v10c0 11-7 18-18 21C13 40 6 33 6 22V12L24 4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-        </svg>
-        <p class="dt-empty-title">Aucune permission définie</p>
-        <button class="dt-btn-create" style="margin-top:12px" (click)="openAddPerm()">Créer la première permission</button>
-      </div>
     </div>
 
   </div><!-- /.dt-wrap -->
@@ -190,7 +209,11 @@
     <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px">
       <div class="mx-field"><label class="mx-field-label">Nom <span style="color:#ef4444">*</span></label><input [(ngModel)]="profilForm().nom" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="Ex: MANAGER RH"></div>
       <div class="mx-field"><label class="mx-field-label">Description</label><input [(ngModel)]="profilForm().description" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="Description du rôle"></div>
-      <label class="mx-toggle-row"><input type="checkbox" [(ngModel)]="profilForm().actif" [ngModelOptions]="{standalone:true}" style="display:none"><div class="mx-toggle" [class.on]="profilForm().actif"><div class="mx-toggle-knob"></div></div><span>Profil actif</span></label>
+      <label class="mx-toggle-row">
+        <input type="checkbox" [(ngModel)]="profilForm().actif" [ngModelOptions]="{standalone:true}" style="display:none">
+        <div class="mx-toggle" [class.on]="profilForm().actif"><div class="mx-toggle-knob"></div></div>
+        <span>Profil actif</span>
+      </label>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;padding:10px 16px;border-top:1px solid var(--border-color);background:var(--bg-hover)">
       <button class="mx-btn mx-btn-ghost" (click)="closeProfilModal()">Annuler</button>
@@ -212,7 +235,7 @@
     <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px">
       <div class="mx-so-grid">
         <div class="mx-field"><label class="mx-field-label">Module <span style="color:#ef4444">*</span></label><input [(ngModel)]="permForm().module" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="CONGES" style="text-transform:uppercase"></div>
-        <div class="mx-field"><label class="mx-field-label">Code</label><input [(ngModel)]="permForm().code" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="CONGE_READ" style="font-family:monospace"></div>
+        <div class="mx-field"><label class="mx-field-label">Code <span style="color:#ef4444">*</span></label><input [(ngModel)]="permForm().code" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="CONGE_READ" style="font-family:monospace"></div>
       </div>
       <div class="mx-field"><label class="mx-field-label">Libellé <span style="color:#ef4444">*</span></label><input [(ngModel)]="permForm().libelle" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="Voir les congés"></div>
       <div class="mx-field"><label class="mx-field-label">Description</label><input [(ngModel)]="permForm().description" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="Description optionnelle"></div>
@@ -234,7 +257,7 @@
       <button class="mx-so-close" (click)="closeAddToModuleModal()"><svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
     </div>
     <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px">
-      <div class="mx-field"><label class="mx-field-label">Code</label><input [(ngModel)]="addToModuleForm().code" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="CONGE_READ" style="font-family:monospace"></div>
+      <div class="mx-field"><label class="mx-field-label">Code <span style="color:#ef4444">*</span></label><input [(ngModel)]="addToModuleForm().code" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="CONGE_READ" style="font-family:monospace"></div>
       <div class="mx-field"><label class="mx-field-label">Libellé <span style="color:#ef4444">*</span></label><input [(ngModel)]="addToModuleForm().libelle" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="Voir les congés"></div>
       <div class="mx-field"><label class="mx-field-label">Description</label><input [(ngModel)]="addToModuleForm().description" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
     </div>

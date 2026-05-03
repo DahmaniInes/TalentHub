@@ -57,6 +57,29 @@
           <span class="nav-tooltip">Demande</span>
         </a>
 
+
+
+        <a routerLink="admin/types-demandes" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
+          <span class="nav-icon">
+            <svg fill="currentColor" width="20" height="20" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+              <path d="M452,120h-76C376,53.726,322.274,0,256,0h0c-66.274,0-120,53.726-120,120H60c-33.137,0-60,26.863-60,60v272c0,33.137,26.863,60,60,60h392c33.137,0,60-26.863,60-60V180C512,146.863,485.137,120,452,120z M256,60c33.137,0,60,26.863,60,60H196C196,86.863,222.863,60,256,60z M402,260v20c0,16.569-13.431,30-30,30h0c-16.569,0-30-13.431-30-30v-20H170v20c0,16.569-13.431,30-30,30h0c-16.569,0-30-13.431-30-30v-20c-16.569,0-30-13.431-30-30s13.431-30,30-30h292c16.569,0,30,13.431,30,30S418.569,260,402,260z"/>
+            </svg>
+          </span>
+          <span class="nav-label">types-demandes</span>
+          <span class="nav-tooltip">types-demandes</span>
+        </a>
+
+
+        <a routerLink="admin/demandes" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
+          <span class="nav-icon">
+            <svg fill="currentColor" width="20" height="20" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+              <path d="M452,120h-76C376,53.726,322.274,0,256,0h0c-66.274,0-120,53.726-120,120H60c-33.137,0-60,26.863-60,60v272c0,33.137,26.863,60,60,60h392c33.137,0,60-26.863,60-60V180C512,146.863,485.137,120,452,120z M256,60c33.137,0,60,26.863,60,60H196C196,86.863,222.863,60,256,60z M402,260v20c0,16.569-13.431,30-30,30h0c-16.569,0-30-13.431-30-30v-20H170v20c0,16.569-13.431,30-30,30h0c-16.569,0-30-13.431-30-30v-20c-16.569,0-30-13.431-30-30s13.431-30,30-30h292c16.569,0,30,13.431,30,30S418.569,260,402,260z"/>
+            </svg>
+          </span>
+          <span class="nav-label">manage demandes</span>
+          <span class="nav-tooltip">manage demandes</span>
+        </a>
+
         <!-- ══ GROUPE 1 : SUIVI DU TEMPS ══ -->
         <div class="nav-group">
           <button class="nav-item nav-group-btn"
@@ -511,7 +534,7 @@
               </div>
             </div>
             <div class="lyt-menu-divider"></div>
-            <button type="button" class="lyt-menu-item">
+            <button type="button" class="lyt-menu-item" routerLink="/profil">
               <svg viewBox="0 0 16 16" fill="none">
                 <circle cx="8" cy="5.5" r="2.5" stroke="currentColor" stroke-width="1.5"/>
                 <path d="M2 13.5c0-2.485 2.686-4.5 6-4.5s6 2.015 6 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>

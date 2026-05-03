@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +25,7 @@ public class UtilisateurController {
         this.utilisateurService = utilisateurService;
     }
 
+    // ── Création utilisateur (admin) ───────────────────────────────────────
     @PostMapping
     public ResponseEntity<UtilisateurResponseDTO> createUtilisateur(
             @Valid @RequestBody UserCreationRequest request) {
@@ -31,22 +33,22 @@ public class UtilisateurController {
         return new ResponseEntity<>(new UtilisateurResponseDTO(created), HttpStatus.CREATED);
     }
 
+    // ── Tous les utilisateurs ──────────────────────────────────────────────
     @GetMapping
     public ResponseEntity<List<UtilisateurResponseDTO>> getAllUtilisateurs() {
-        List<UtilisateurResponseDTO> dtos = utilisateurService.getAllUtilisateurs()
-                .stream()
-                .map(UtilisateurResponseDTO::new)
-                .toList();
-        return ResponseEntity.ok(dtos);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<UtilisateurResponseDTO> getUtilisateurById(@PathVariable Long id) {
         return ResponseEntity.ok(
-                new UtilisateurResponseDTO(utilisateurService.getUtilisateurById(id))
+                utilisateurService.getAllUtilisateurs().stream()
+                        .map(UtilisateurResponseDTO::new).toList()
         );
     }
 
+    // ── Par ID ────────────────────────────────────────────────────────────
+    @GetMapping("/{id}")
+    public ResponseEntity<UtilisateurResponseDTO> getUtilisateurById(@PathVariable Long id) {
+        return ResponseEntity.ok(new UtilisateurResponseDTO(utilisateurService.getUtilisateurById(id)));
+    }
+
+    // ── Par Keycloak ID ───────────────────────────────────────────────────
     @GetMapping("/keycloak/{keycloakId}")
     public ResponseEntity<UtilisateurResponseDTO> getUtilisateurByKeycloakId(
             @PathVariable String keycloakId) {
@@ -55,58 +57,71 @@ public class UtilisateurController {
         );
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUtilisateur(@PathVariable Long id) {
-        utilisateurService.deleteUtilisateur(id);
-        return ResponseEntity.noContent().build();
-    }
-
-
-    // ====================== NOUVELLE MÉTHODE ======================
-    @PatchMapping(value = "/keycloak/{keycloakId}/profile",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UtilisateurResponseDTO> updateProfile(
+    // ─────────────────────────────────────────────────────────────────────
+    // ✅ CAS 1 : Mise à jour TEXTE uniquement (application/json)
+    //    Appelé quand on modifie nom, téléphone, adresse, etc.
+    // ─────────────────────────────────────────────────────────────────────
+    @PatchMapping(
+            value = "/keycloak/{keycloakId}/profile",
+            consumes = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<UtilisateurResponseDTO> updateProfileJson(
             @PathVariable String keycloakId,
-            @RequestPart(value = "updates", required = false) Map<String, Object> updates,   // champs texte
-            @RequestPart(value = "photo", required = false) MultipartFile photo) {         // fichier photo
+            @RequestBody Map<String, Object> updates) throws IOException {
 
-        try {
-            Utilisateur updated = utilisateurService.updateUserProfile(keycloakId, updates, photo);
-            return ResponseEntity.ok(new UtilisateurResponseDTO(updated));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
-        }
+        Utilisateur updated = utilisateurService.updateUserProfile(keycloakId, updates, null);
+        return ResponseEntity.ok(new UtilisateurResponseDTO(updated));
     }
 
+    // ─────────────────────────────────────────────────────────────────────
+    // ✅ CAS 2 : Upload photo (multipart/form-data)
+    //    Appelé quand on change la photo de profil
+    //    Front envoie : FormData avec champ "photo"
+    // ─────────────────────────────────────────────────────────────────────
+    @PatchMapping(
+            value = "/keycloak/{keycloakId}/profile",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<UtilisateurResponseDTO> updateProfilePhoto(
+            @PathVariable String keycloakId,
+            @RequestPart(value = "photo", required = false) MultipartFile photo,
+            @RequestPart(value = "data",  required = false) String jsonData) throws IOException {
 
+        Map<String, Object> updates = Map.of();
+        if (jsonData != null && !jsonData.isBlank()) {
+            try {
+                updates = new com.fasterxml.jackson.databind.ObjectMapper().readValue(jsonData, Map.class);
+            } catch (Exception ignored) {}
+        }
 
+        Utilisateur updated = utilisateurService.updateUserProfile(keycloakId, updates, photo);
+        return ResponseEntity.ok(new UtilisateurResponseDTO(updated));
+    }
 
+    // ── Admin : mise à jour complète ───────────────────────────────────────
+    @PutMapping("/{id}")
+    public ResponseEntity<UtilisateurResponseDTO> updateUtilisateur(
+            @PathVariable Long id, @RequestBody Map<String, Object> body) {
+        return ResponseEntity.ok(new UtilisateurResponseDTO(utilisateurService.updateByAdmin(id, body)));
+    }
 
-
-
-
-
-
-
-
-
+    // ── Toggle actif/inactif ───────────────────────────────────────────────
     @PatchMapping("/{id}/toggle-actif")
     public ResponseEntity<UtilisateurResponseDTO> toggleActif(@PathVariable Long id) {
-        Utilisateur u = utilisateurService.toggleActif(id);
-        return ResponseEntity.ok(new UtilisateurResponseDTO(u));
+        return ResponseEntity.ok(new UtilisateurResponseDTO(utilisateurService.toggleActif(id)));
     }
 
+    // ── Reset password ─────────────────────────────────────────────────────
     @PatchMapping("/{id}/reset-password")
     public ResponseEntity<Void> resetPassword(@PathVariable Long id) {
         utilisateurService.resetPassword(id);
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<UtilisateurResponseDTO> updateUtilisateur(
-            @PathVariable Long id, @RequestBody Map<String, Object> body) {
-        Utilisateur updated = utilisateurService.updateByAdmin(id, body);
-        return ResponseEntity.ok(new UtilisateurResponseDTO(updated));
+    // ── Supprimer ──────────────────────────────────────────────────────────
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUtilisateur(@PathVariable Long id) {
+        utilisateurService.deleteUtilisateur(id);
+        return ResponseEntity.noContent().build();
     }
 }

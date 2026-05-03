@@ -319,6 +319,10 @@ public class UtilisateurService {
         if (body.containsKey("dateFinContrat") && body.get("dateFinContrat") != null) {
             u.setDateFinContrat(java.time.LocalDate.parse(body.get("dateFinContrat").toString()));
         }
+
+        if (body.containsKey("dateNaissance") && body.get("dateNaissance") != null) {
+        u.setDateNaissance(java.time.LocalDate.parse(body.get("dateNaissance").toString()));}
+
         return repository.save(u);
     }
 

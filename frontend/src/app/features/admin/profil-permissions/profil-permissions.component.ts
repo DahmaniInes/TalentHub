@@ -1,18 +1,3 @@
-// profil-permissions.component.ts
-// ✅ Ajout de closeMenus() pour le click global
-// Reste identique à la version précédente, juste ajouter cette méthode
-
-// INSTRUCTIONS : dans votre fichier profil-permissions.component.ts existant,
-// ajoutez simplement cette méthode dans la classe :
-
-/*
-  closeMenus(): void {
-    // Ferme tous les menus ouverts — appelé par (click) sur le wrapper
-  }
-*/
-
-// Voici le fichier COMPLET avec cette méthode ajoutée :
-
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -25,8 +10,8 @@ import { Profil } from '../../../shared/models/profil.model';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Utilisateur } from '../../../shared/models/utilisateur.model';
 
-export interface MatrixCell { assigned: boolean; profilPermId?: number; saving: boolean; }
-export interface MatrixRow  { permission: Permission; cells: MatrixCell[]; }
+export interface MatrixCell    { assigned: boolean; profilPermId?: number; saving: boolean; }
+export interface MatrixRow     { permission: Permission; cells: MatrixCell[]; }
 export interface ModuleSection { module: string; rows: MatrixRow[]; allAssigned: boolean[]; collapsed: boolean; }
 
 @Component({
@@ -48,12 +33,15 @@ export class ProfilPermissionsComponent implements OnInit {
   sections     = signal<ModuleSection[]>([]);
   loading      = signal(true);
 
-  showProfilModal       = signal(false);
-  showPermModal         = signal(false);
-  showAddToModuleModal  = signal(false);
-  editingProfil         = signal<Profil | null>(null);
-  editingPerm           = signal<Permission | null>(null);
-  addToModuleName       = signal('');
+  // ✅ Champ de recherche (ngModel, pas signal — pour éviter NG5002)
+  permSearch = '';
+
+  showProfilModal      = signal(false);
+  showPermModal        = signal(false);
+  showAddToModuleModal = signal(false);
+  editingProfil        = signal<Profil | null>(null);
+  editingPerm          = signal<Permission | null>(null);
+  addToModuleName      = signal('');
 
   profilForm      = signal({ nom: '', description: '', actif: true });
   permForm        = signal({ code: '', libelle: '', module: '', description: '', actif: true });
@@ -66,7 +54,22 @@ export class ProfilPermissionsComponent implements OnInit {
     return counts;
   });
 
-  // ✅ Ferme tous les dropdowns/menus — appelé par (click) global
+  // ✅ Sections filtrées par la recherche (pas de => dans le template)
+  filteredSections = computed(() => {
+    const q = this.permSearch.toLowerCase().trim();
+    if (!q) return this.sections();
+    return this.sections()
+      .map(section => ({
+        ...section,
+        rows: section.rows.filter(r =>
+          (r.permission.code || '').toLowerCase().includes(q) ||
+          r.permission.libelle.toLowerCase().includes(q) ||
+          section.module.toLowerCase().includes(q)
+        )
+      }))
+      .filter(section => section.rows.length > 0);
+  });
+
   closeMenus(): void {}
 
   ngOnInit(): void { this.loadAll(); }
@@ -97,7 +100,9 @@ export class ProfilPermissionsComponent implements OnInit {
         map.get(mod)!.rows.push({ permission: perm, cells });
       });
       map.forEach(section => {
-        section.allAssigned = profils.map((_, pi) => section.rows.length > 0 && section.rows.every(r => r.cells[pi]?.assigned === true));
+        section.allAssigned = profils.map((_, pi) =>
+          section.rows.length > 0 && section.rows.every(r => r.cells[pi]?.assigned === true)
+        );
       });
       this.sections.set(Array.from(map.values()).sort((a, b) => a.module.localeCompare(b.module)));
       this.loading.set(false);
@@ -128,7 +133,10 @@ export class ProfilPermissionsComponent implements OnInit {
     section.allAssigned[profilIdx] = section.rows.length > 0 && section.rows.every(r => r.cells[profilIdx]?.assigned === true);
   }
 
-  toggleCollapse(section: ModuleSection): void { section.collapsed = !section.collapsed; this.sections.set([...this.sections()]); }
+  toggleCollapse(section: ModuleSection): void {
+    section.collapsed = !section.collapsed;
+    this.sections.set([...this.sections()]);
+  }
 
   // ── CRUD Profils ──
   openAddProfil(): void { this.editingProfil.set(null); this.profilForm.set({ nom:'', description:'', actif:true }); this.showProfilModal.set(true); }
@@ -162,7 +170,7 @@ export class ProfilPermissionsComponent implements OnInit {
     });
   }
   deletePerm(p: Permission): void {
-    this.ui.confirm({ title:'Supprimer la permission', message:`Supprimer "${p.libelle}" ?`, confirmLabel:'Supprimer', type:'danger',
+    this.ui.confirm({ title:'Supprimer', message:`Supprimer "${p.libelle}" ?`, confirmLabel:'Supprimer', type:'danger',
       onConfirm: () => this.permSvc.deletePermission(p.id).subscribe({ next: () => { this.ui.success('Permission supprimée.'); this.loadAll(); }, error: (err: HttpErrorResponse) => this.ui.error(this.errorSvc.parse(err).message) })
     });
   }
@@ -174,11 +182,9 @@ export class ProfilPermissionsComponent implements OnInit {
     const f = this.addToModuleForm();
     if (!f.libelle.trim()) { this.ui.warning('Le libellé est obligatoire.'); return; }
     this.permSvc.createPermission({ ...f, module: this.addToModuleName() }).subscribe({
-      next: () => { this.ui.success(`Permission ajoutée.`); this.showAddToModuleModal.set(false); this.loadAll(); },
+      next: () => { this.ui.success('Permission ajoutée.'); this.showAddToModuleModal.set(false); this.loadAll(); },
       error: (err: HttpErrorResponse) => this.ui.error(this.errorSvc.parse(err).message)
     });
   }
   closeAddToModuleModal(): void { this.showAddToModuleModal.set(false); }
-
-
 }
