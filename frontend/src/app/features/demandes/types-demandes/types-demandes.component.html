@@ -1,56 +1,46 @@
-<!-- ════════════════════════════════════════════════════
-     TYPES DE DEMANDES — Tableau dt-* + slide-over
-════════════════════════════════════════════════════ -->
-
-<div class="dt-wrap">
-
+<div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh">
+  <div class="dt-wrap">
+  
     <!-- HEADER -->
     <div class="dt-header">
       <div>
-        <h2 class="dt-title">
+        <h1 class="dt-title">
           <svg class="dt-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           Types de demandes
-        </h2>
-        <!-- ✅ Computed signals — pas de => dans le template -->
-        <div class="dt-header-stats">
-          <span class="dt-badge dt-badge-default">
+        </h1>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap">
+          <span class="dt-badge dt-badge-accent" style="padding:3px 9px;font-size:.66rem">
             <span class="dt-badge-dot"></span>{{ types().length }} types
           </span>
-          <span class="dt-badge dt-badge-delivered">
+          <span class="dt-badge dt-badge-delivered" style="padding:3px 9px;font-size:.66rem">
             <span class="dt-badge-dot"></span>{{ countActifs() }} actifs
           </span>
-          <span class="dt-badge dt-badge-canceled">
+          <span class="dt-badge dt-badge-canceled" style="padding:3px 9px;font-size:.66rem">
             <span class="dt-badge-dot"></span>{{ countInactifs() }} inactifs
           </span>
         </div>
       </div>
   
       <div class="dt-header-actions">
-        <!-- Recherche + filtre -->
-        <div class="dt-search-wrap">
-          <div class="dt-search-bar">
-            <svg class="dt-search-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
-              <circle cx="7" cy="7" r="5"/><path d="M12 12l2.5 2.5" stroke-linecap="round"/>
-            </svg>
+        <div class="dt-search-wrap" (click)="$event.stopPropagation()">
+          <div class="dt-search-bar" style="min-width:240px">
+            <button class="dt-filter-icon-btn"
+                    [class.has-filters]="activeFiltersCount() > 0"
+                    (click)="toggleFilter(); $event.stopPropagation()" title="Filtres">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7">
+                <path d="M2 3h12l-4.5 5.5V13L6.5 11.5V8.5L2 3z" stroke-linejoin="round"/>
+              </svg>
+            </button>
             <input class="dt-search-input" placeholder="Rechercher un type..."
                    [value]="searchText()"
                    (input)="searchText.set($any($event.target).value); currentPage.set(1)">
-            <button class="dt-filter-icon-btn"
-                    [class.has-filters]="activeFiltersCount() > 0"
-                    (click)="toggleFilter(); $event.stopPropagation()">
-              <svg viewBox="0 0 16 16" fill="currentColor">
-                <path d="M1 3h14l-5 6v5l-4-2V9L1 3z"/>
-              </svg>
-            </button>
           </div>
-  
-          <!-- Panel filtre -->
           <div class="dt-filter-panel" [class.open]="filterOpen()" (click)="$event.stopPropagation()">
             <div class="dt-fp-header">
-              <span class="dt-fp-title">Filtres</span>
-              <button class="dt-fp-reset" (click)="resetFilters()">Réinitialiser</button>
+              <p class="dt-fp-title">Filtres</p>
+              <button *ngIf="activeFiltersCount() > 0" class="dt-fp-reset" (click)="resetFilters()">Réinitialiser</button>
             </div>
             <div class="dt-fp-body">
               <div class="dt-fp-field">
@@ -67,7 +57,18 @@
           </div>
         </div>
   
-        <button class="dt-btn-create" (click)="openCreate()">
+        <!-- Export -->
+       <!--- <button class="mx-btn mx-btn-ghost" style="height:38px"
+                *ngIf="permCtx.canExportTypes()"
+                (click)="exportCsv()">
+          <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+            <path d="M2 10v2h10v-2M7 2v7M4 6l3 3 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          Exporter
+        </button> -->
+  
+        <!-- Créer -->
+        <button class="dt-btn-create" *ngIf="permCtx.canCreateType()" (click)="openCreate()">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
@@ -76,61 +77,139 @@
       </div>
     </div>
   
+    <!-- Bulk bar -->
+    <div *ngIf="selectedIds().size > 0" class="dt-bulk-bar">
+      <span class="dt-bulk-count">{{ selectedIds().size }} sélectionné(s)</span>
+      <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="clearSelection()">Désélectionner</button>
+      <button *ngIf="permCtx.canDeleteType()"
+              class="mx-btn mx-btn-danger mx-btn-sm"
+              (click)="bulkDelete()">Supprimer</button>
+    </div>
+  
+    <!-- Loading -->
+    <div *ngIf="loading()" class="dt-loading"><div class="dt-spinner"></div> Chargement...</div>
+  
     <!-- TABLEAU -->
-    <div class="dt-scroll">
+    <div *ngIf="!loading()" class="dt-scroll">
       <table class="dt-table">
         <thead>
           <tr>
-            <th class="dt-th"><div class="dt-th-inner">Code</div></th>
-            <th class="dt-th"><div class="dt-th-inner">Libellé</div></th>
-            <th class="dt-th"><div class="dt-th-inner">Description</div></th>
-            <th class="dt-th"><div class="dt-th-inner">Statut</div></th>
+            <!-- Checkbox -->
+            <th class="dt-th dt-th-cb">
+              <input type="checkbox" class="dt-checkbox"
+                     [class.indeterminate]="somePageSelected()"
+                     [checked]="allPageSelected()"
+                     (change)="toggleSelectAll()">
+            </th>
+            <!-- Code -->
+            <th class="dt-th" style="min-width:120px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M4 2h8a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z"/>
+                  <path d="M6 6h4M6 9h4M6 12h2" stroke-linecap="round"/>
+                </svg>
+                Code
+              </div>
+            </th>
+            <!-- Libellé -->
+            <th class="dt-th" style="min-width:180px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M2 4h12M2 8h8M2 12h6" stroke-linecap="round"/>
+                </svg>
+                Libellé
+              </div>
+            </th>
+            <!-- Description -->
+            <th class="dt-th" style="min-width:200px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M2 3h12M2 7h12M2 11h8" stroke-linecap="round"/>
+                </svg>
+                Description
+              </div>
+            </th>
+            <!-- Statut -->
+            <th class="dt-th" style="min-width:110px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none">
+                  <rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.3"/>
+                  <path d="M4 7l2.5 2.5 3.5-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Statut
+              </div>
+            </th>
             <th class="dt-th dt-th-actions"></th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngIf="loading()">
-            <td colspan="5" class="dt-td">
-              <div class="dt-loading"><div class="dt-spinner"></div> Chargement...</div>
-            </td>
-          </tr>
-          <tr *ngIf="!loading() && paged().length === 0">
-            <td colspan="5" class="dt-td">
+          <tr *ngIf="paged().length === 0">
+            <td colspan="6" class="dt-td">
               <div class="dt-empty">
-                <svg class="dt-empty-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-                  <path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"/>
+                <svg class="dt-empty-icon" viewBox="0 0 48 48" fill="none" style="width:40px;height:40px;opacity:.3">
+                  <path d="M24 4l18 8v10c0 11-7 18-18 21C13 40 6 33 6 22V12L24 4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
                 </svg>
-                <p class="dt-empty-title">Aucun type</p>
-                <p class="dt-empty-sub">Créez votre premier type de demande.</p>
+                <p class="dt-empty-title">Aucun type de demande</p>
+                <p class="dt-empty-sub">Créez votre premier type</p>
+                <button *ngIf="permCtx.canCreateType()"
+                        class="dt-btn-create" style="margin-top:12px"
+                        (click)="openCreate()">Créer</button>
               </div>
             </td>
           </tr>
           <tr *ngFor="let t of paged()" class="dt-tr">
+            <!-- Checkbox -->
+            <td class="dt-td dt-td-cb" (click)="$event.stopPropagation()">
+              <input type="checkbox" class="dt-checkbox"
+                     [class.dt-checkbox-active]="isSelected(t.id)"
+                     [checked]="isSelected(t.id)"
+                     (change)="toggleSelect(t.id, $event)">
+            </td>
+            <!-- Code -->
             <td class="dt-td">
               <span class="dm-code-mono">{{ t.code }}</span>
             </td>
+            <!-- Libellé -->
             <td class="dt-td">
               <span class="dt-cell-name">{{ t.libelle }}</span>
             </td>
+            <!-- Description -->
             <td class="dt-td">
               <span class="dt-cell-sub">{{ t.description || '—' }}</span>
             </td>
+            <!-- Statut — cliquable si permission -->
             <td class="dt-td">
-              <span [class]="t.actif ? 'dt-badge dt-badge-delivered' : 'dt-badge dt-badge-canceled'">
+              <button *ngIf="permCtx.canActivateType() || permCtx.canDeactivateType()"
+                      [class]="t.actif ? 'dt-badge dt-badge-delivered' : 'dt-badge dt-badge-canceled'"
+                      style="border:none;cursor:pointer;padding:3px 8px"
+                      (click)="toggleActif(t, $event)"
+                      [title]="t.actif ? 'Cliquer pour désactiver' : 'Cliquer pour activer'">
+                <span class="dt-badge-dot"></span>
+                {{ t.actif ? 'Actif' : 'Inactif' }}
+              </button>
+              <span *ngIf="!permCtx.canActivateType() && !permCtx.canDeactivateType()"
+                    [class]="t.actif ? 'dt-badge dt-badge-delivered' : 'dt-badge dt-badge-canceled'">
                 <span class="dt-badge-dot"></span>
                 {{ t.actif ? 'Actif' : 'Inactif' }}
               </span>
             </td>
-            <td class="dt-td dt-td-actions">
-              <div class="dt-td-actions-wrap">
-                <button class="dt-action-btn dt-action-edit" (click)="openEdit(t)" title="Modifier">
-                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
-                    <path d="M11 2l3 3-8 8H3v-3l8-8z" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Actions -->
+            <td class="dt-td dt-td-actions" (click)="$event.stopPropagation()">
+              <div class="dt-td-actions-wrap" style="gap:0">
+                <!-- Modifier -->
+                <button *ngIf="permCtx.canUpdateType()"
+                        class="dt-action-btn dt-action-edit"
+                        (click)="openEdit(t)" title="Modifier">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
                   </svg>
                 </button>
-                <button class="dt-action-btn dt-action-del" (click)="delete(t)" title="Supprimer">
-                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
-                    <path d="M2 4h12M5 4V2h6v2M4 4l1 10h6l1-10" stroke-linecap="round" stroke-linejoin="round"/>
+                <!-- Supprimer -->
+                <button *ngIf="permCtx.canDeleteType()"
+                        class="dt-action-btn dt-action-del"
+                        (click)="delete(t)" title="Supprimer">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                   </svg>
                 </button>
               </div>
@@ -141,23 +220,28 @@
     </div>
   
     <!-- FOOTER PAGINATION -->
-    <div class="dt-footer">
-      <span class="dt-count-info"><strong>{{ filtered().length }}</strong> type(s) · page {{ currentPage() }}/{{ totalPages() }}</span>
+    <div *ngIf="!loading() && filtered().length > 0" class="dt-footer">
+      <div class="dt-count-info">
+        <strong>{{ (currentPage()-1)*pageSize+1 }}–{{ minVal(currentPage()*pageSize, filtered().length) }}</strong>
+        of <strong>{{ filtered().length }}</strong>
+      </div>
       <div class="dt-pagination">
-        <button class="dt-page-arrow" [disabled]="currentPage() === 1" (click)="goPage(currentPage()-1)">
-          <svg viewBox="0 0 14 14" fill="none"><path d="M9 11L5 7l4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <button class="dt-page-arrow" [disabled]="currentPage()===1" (click)="goPage(currentPage()-1)">
+          <svg viewBox="0 0 14 14" fill="none"><path d="M9 2L5 7l4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <button *ngFor="let p of pagesArr()" class="dt-page-btn"
-                [class.dt-page-btn-active]="currentPage() === p"
+                [class.dt-page-btn-active]="currentPage()===p"
                 (click)="goPage(p)">{{ p }}</button>
-        <button class="dt-page-arrow" [disabled]="currentPage() === totalPages()" (click)="goPage(currentPage()+1)">
-          <svg viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <button class="dt-page-arrow" [disabled]="currentPage()===totalPages()" (click)="goPage(currentPage()+1)">
+          <svg viewBox="0 0 14 14" fill="none"><path d="M5 2l4 5-4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
     </div>
+  
+  </div>
   </div>
   
-  <!-- ════════ SLIDE-OVER ════════ -->
+  <!-- SLIDE-OVER -->
   <div *ngIf="slideOpen()" class="dm-slide-overlay" (click)="closeSlide()">
     <div class="dm-slide-panel" (click)="$event.stopPropagation()">
       <div class="dm-slide-header">
@@ -168,7 +252,6 @@
           </svg>
         </button>
       </div>
-  
       <div class="dm-slide-body">
         <form [formGroup]="form">
           <div class="dm-grid2">
@@ -195,7 +278,6 @@
           </div>
         </form>
       </div>
-  
       <div class="dm-slide-footer">
         <button class="dm-btn-cancel" (click)="closeSlide()">Annuler</button>
         <button class="dm-btn-save" (click)="save()" [disabled]="loading()">

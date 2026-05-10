@@ -19,6 +19,10 @@ import {AdminDemandesComponent} from './demandes/admin-demandes/admin-demandes.c
 import {MesDemandesComponent} from './demandes/mes-demandes/mes-demandes.component'
 import {TypesDemandesComponent} from './demandes/types-demandes/types-demandes.component'
 import { ProfilComponent } from './profil/profil.component';
+import { DebugTokenComponent } from './debug-token/debug-token.component';
+import { ProjetDetailComponent } from './admin/projet-detail/projet-detail.component';
+import { ActiviteDetailComponent } from './admin/activite-detail/activite-detail.component';
+
 const routes: Routes = [
   { path: 'home', component: HomeComponent },
   { path: 'dashboard', component: DashboardComponent },
@@ -44,7 +48,13 @@ const routes: Routes = [
   {
     path: 'admin/types-demandes',
     component: TypesDemandesComponent  // Référentiel types de demandes
-  }
+  }, 
+  {
+    path: 'DebugToken',
+    component: DebugTokenComponent  // Référentiel types de demandes
+  },
+  { path: 'projets/:id',   component: ProjetDetailComponent },
+{ path: 'activites/:id', component: ActiviteDetailComponent }
 ];
 
 @NgModule({

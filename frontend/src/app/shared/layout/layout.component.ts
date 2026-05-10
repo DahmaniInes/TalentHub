@@ -8,6 +8,8 @@ import { Utilisateur } from '../../shared/models/utilisateur.model';
 import { AppNotification } from '../../shared/models/notification.model';
 import { Subscription } from 'rxjs';
 import { ToastModalComponent } from '../components/toast-modal-component/toast-modal-component.component';
+import { HttpClient } from '@angular/common/http';
+import { PermissionContextService } from '../../services/permission-context.service';
 
 @Component({
   selector: 'app-layout',
@@ -28,6 +30,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   ftMenuOpen = false;
   rhMenuOpen = false;
   gestionMenuOpen = false;
+  demandeMenuOpen = false;
 
   currentUser = signal<Utilisateur | null>(null);
   currentUrl  = signal('');
@@ -36,6 +39,9 @@ export class LayoutComponent implements OnInit, OnDestroy {
   private userService     = inject(UserService);
   private router          = inject(Router);
   readonly notifService   = inject(NotificationService);
+  private http = inject(HttpClient);
+  readonly permCtx = inject(PermissionContextService);
+
   private sub = new Subscription();
 
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
@@ -107,6 +113,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   toggleFTMenu(): void      { this.ftMenuOpen      = !this.ftMenuOpen; }
   toggleRHMenu(): void      { this.rhMenuOpen      = !this.rhMenuOpen; }
   toggleGestionMenu(): void { this.gestionMenuOpen = !this.gestionMenuOpen; }
+  toggleDemandeMenu(): void { this.demandeMenuOpen = !this.demandeMenuOpen; }
 
   toggleNotifPanel(event: Event): void {
     event.stopPropagation();
@@ -202,4 +209,28 @@ export class LayoutComponent implements OnInit, OnDestroy {
     const fallback = img.parentElement?.querySelector('.logo-icon-fallback') as HTMLElement;
     if (fallback) fallback.style.display = 'flex';
   }
+
+
+// ✅ NOUVELLE MÉTHODE — appelée quand on clique sur "Authentification"
+/*syncProfilIds(): void {
+  const token = localStorage.getItem('keycloak-token') || '';
+  
+  this.http.post(
+      'http://localhost:8085/api/utilisateurs/sync-keycloak-profil-ids',
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+  ).subscribe({
+      next: (result: any) => {
+          alert(`✅ Sync réussi !\n\nTotal: ${result.total}\nSuccès: ${result.success}\nÉchecs: ${result.failed}\n\n${result.message}`);
+          console.log('Sync result:', result);
+      },
+      error: (err) => {
+          alert(`❌ Erreur sync: ${err.message || 'Vérifiez la console'}`);
+          console.error('Sync error:', err);
+      }
+  });} */
+
+
+
+
 }

@@ -74,6 +74,16 @@ public class GroupeService {
 
     @Transactional
     public void delete(Long id) {
+        // Vérifier existence
+        if (!groupeRepo.existsById(id)) {
+            throw new RuntimeException("Groupe non trouvé: " + id);
+        }
+
+        // ✅ Nettoyer les tables de jointure AVANT la suppression
+        groupeRepo.deleteGroupeUtilisateursByGroupeId(id);
+        groupeRepo.deleteProjetGroupesByGroupeId(id);
+
+        // ✅ Maintenant supprimer le groupe
         groupeRepo.deleteById(id);
     }
 

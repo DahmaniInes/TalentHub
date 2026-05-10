@@ -11,9 +11,6 @@ public class ProfilPermissionCreateRequest {
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor
     public static class PermissionAssignment {
         private Long permissionId;
-        private boolean canRead;
-        private boolean canWrite;
-        private boolean canDelete;
-        private boolean canExport;
+
     }
 }

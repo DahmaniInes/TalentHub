@@ -1,23 +1,28 @@
+// application-service/.../Service/ProfilPermissionService.java — REMPLACE
 package com.talenthub.application_service.Service;
 
-
 import com.talenthub.application_service.Entity.ProfilPermission;
-import com.talenthub.application_service.Repository.ProfilPermissionRepository;
 import com.talenthub.application_service.Exception.ResourceNotFoundException;
+import com.talenthub.application_service.Repository.ProfilPermissionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 import java.util.Optional;
-// 9. ProfilPermissionService.java
+
 @Service
 @Transactional
 public class ProfilPermissionService {
 
     private final ProfilPermissionRepository repository;
+    private final GatewayEvictService        gatewayEvict;
 
-    public ProfilPermissionService(ProfilPermissionRepository repository) {
-        this.repository = repository;
+    public ProfilPermissionService(ProfilPermissionRepository repository,
+                                   GatewayEvictService gatewayEvict) {
+        this.repository   = repository;
+        this.gatewayEvict = gatewayEvict;
     }
 
     public List<ProfilPermission> getAllProfilPermissions() {
@@ -32,28 +37,40 @@ public class ProfilPermissionService {
         return repository.findByProfilId(profilId);
     }
 
-    public ProfilPermission createProfilPermission(ProfilPermission profilPermission) {
-        return repository.save(profilPermission);
-    }
+    public ProfilPermission createProfilPermission(ProfilPermission pp) {
+        ProfilPermission saved = repository.save(pp);
+        Long profilId = pp.getProfil().getId();
 
-    public ProfilPermission updateProfilPermission(Long id, ProfilPermission details) {
-        ProfilPermission pp = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("ProfilPermission non trouvé avec id: " + id));
+        // ✅ Éviction Redis APRÈS le commit — jamais pendant la transaction
+        evictAfterCommit(profilId);
 
-        pp.setCanRead(details.isCanRead());
-        pp.setCanWrite(details.isCanWrite());
-        pp.setCanDelete(details.isCanDelete());
-        pp.setCanExport(details.isCanExport());
-
-        return repository.save(pp);
+        return saved;
     }
 
     public void deleteProfilPermission(Long id) {
-        if (!repository.existsById(id)) {
-            throw new ResourceNotFoundException("ProfilPermission non trouvé avec id: " + id);
-        }
+        ProfilPermission pp = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Non trouvé: " + id));
+        Long profilId = pp.getProfil().getId();
         repository.deleteById(id);
+
+        // ✅ Éviction Redis APRÈS le commit
+        evictAfterCommit(profilId);
     }
 
-
+    // ✅ Enregistre l'éviction pour qu'elle s'exécute après le commit BD
+    private void evictAfterCommit(Long profilId) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            gatewayEvict.evict(profilId);
+                        }
+                    }
+            );
+        } else {
+            // Pas de transaction active → éviction directe
+            gatewayEvict.evict(profilId);
+        }
+    }
 }

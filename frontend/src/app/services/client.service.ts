@@ -33,5 +33,6 @@ export class ClientService {
   toggleActif(id: number): Observable<Client> {
     return this.http.patch<Client>(`${this.base}/${id}/toggle-actif`, {});
   }
+  
 }
  

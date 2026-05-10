@@ -9,7 +9,7 @@ import { Permission } from '../../../shared/models/permission.model';
 import { Profil } from '../../../shared/models/profil.model';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Utilisateur } from '../../../shared/models/utilisateur.model';
-
+import { PermissionContextService } from '../../../services/permission-context.service';
 export interface MatrixCell    { assigned: boolean; profilPermId?: number; saving: boolean; }
 export interface MatrixRow     { permission: Permission; cells: MatrixCell[]; }
 export interface ModuleSection { module: string; rows: MatrixRow[]; allAssigned: boolean[]; collapsed: boolean; }
@@ -26,6 +26,7 @@ export class ProfilPermissionsComponent implements OnInit {
   private userSvc  = inject(UserService);
   private errorSvc = inject(ErrorService);
   readonly ui      = inject(UiService);
+  readonly permCtx = inject(PermissionContextService);
 
   profils      = signal<Profil[]>([]);
   permissions  = signal<Permission[]>([]);
@@ -109,25 +110,63 @@ export class ProfilPermissionsComponent implements OnInit {
     });
   }
 
-  toggleCell(section: ModuleSection, row: MatrixRow, profilIdx: number): void {
-    if (!row.cells[profilIdx]) return;
-    const cell   = row.cells[profilIdx];
-    const profil = this.profils()[profilIdx];
-    if (!profil || cell.saving) return;
-    cell.saving = true;
-    this.sections.set([...this.sections()]);
-    if (cell.assigned && cell.profilPermId) {
+
+
+
+
+
+toggleCell(section: ModuleSection, row: MatrixRow, profilIdx: number): void {
+  if (!row.cells[profilIdx]) return;
+  const cell   = row.cells[profilIdx];
+  const profil = this.profils()[profilIdx];
+  if (!profil || cell.saving) return;
+
+  cell.saving = true;
+  this.sections.set([...this.sections()]);
+
+  if (cell.assigned && cell.profilPermId) {
+      // ✅ Désassigner
       this.permSvc.removeProfilPermission(cell.profilPermId).subscribe({
-        next: () => { cell.assigned = false; cell.profilPermId = undefined; cell.saving = false; this.updateAllAssigned(section, profilIdx); this.sections.set([...this.sections()]); },
-        error: (err: HttpErrorResponse) => { cell.saving = false; this.sections.set([...this.sections()]); this.ui.error(this.errorSvc.parse(err).message); }
+          next: () => {
+              cell.assigned = false;
+              cell.profilPermId = undefined;
+              cell.saving = false;
+              this.updateAllAssigned(section, profilIdx);
+              this.sections.set([...this.sections()]);
+              this.permCtx.reload(); // ← recharge si c'est ton propre profil
+
+          },
+          error: (err: HttpErrorResponse) => {
+              cell.saving = false;
+              this.sections.set([...this.sections()]);
+              this.ui.error(this.errorSvc.parse(err).message);
+          }
       });
-    } else if (!cell.assigned) {
-      this.permSvc.assignPermission({ profilId: profil.id, permissionId: row.permission.id, canRead: true, canWrite: true, canDelete: false, canExport: false }).subscribe({
-        next: pp => { cell.assigned = true; cell.profilPermId = pp.id; cell.saving = false; this.updateAllAssigned(section, profilIdx); this.sections.set([...this.sections()]); },
-        error: (err: HttpErrorResponse) => { cell.saving = false; this.sections.set([...this.sections()]); this.ui.error(this.errorSvc.parse(err).message); }
+  } else if (!cell.assigned) {
+      // ✅ Assigner — plus de canRead/canWrite/etc.
+      this.permSvc.assignPermission({
+          profilId: profil.id,
+          permissionId: row.permission.id
+          // ✅ SUPPRIMÉ : canRead, canWrite, canDelete, canExport
+      }).subscribe({
+          next: pp => {
+              cell.assigned = true;
+              cell.profilPermId = pp.id;
+              cell.saving = false;
+              this.updateAllAssigned(section, profilIdx);
+              this.sections.set([...this.sections()]);
+          },
+          error: (err: HttpErrorResponse) => {
+              cell.saving = false;
+              this.sections.set([...this.sections()]);
+              this.ui.error(this.errorSvc.parse(err).message);
+          }
       });
-    }
   }
+}
+
+
+
 
   private updateAllAssigned(section: ModuleSection, profilIdx: number): void {
     section.allAssigned[profilIdx] = section.rows.length > 0 && section.rows.every(r => r.cells[profilIdx]?.assigned === true);

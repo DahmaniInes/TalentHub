@@ -16,8 +16,8 @@
    SIDEBAR — BASE
 ══════════════════════════════════════ */
 .sidebar {
-  width: 240px;
-  min-width: 240px;
+  width: 280px;
+  min-width: 280px;
   background-color: var(--bg-sidebar);
   border-right: 1px solid var(--border-color);
   display: flex;

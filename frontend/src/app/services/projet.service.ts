@@ -38,4 +38,10 @@ export class ProjetService {
   deleteBulk(ids: number[]): Observable<void> {
     return this.http.delete<void>(`${this.base}/bulk`, { body: ids });
   }
+
+assignerActivites(projetId: number, activiteIds: number[]): Observable<Projet> {
+  return this.http.patch<Projet>(
+      `${this.base}/${projetId}/activites`, activiteIds);
+}
+
 }

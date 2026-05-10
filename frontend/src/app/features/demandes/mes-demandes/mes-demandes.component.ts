@@ -9,6 +9,9 @@ import { UiService } from '../../../services/ui.service';
 import { Demande, DemandeRequest, TypeDemande, StatutDemande } from '../../../shared/models/demande.model';
 import { Utilisateur } from '../../../shared/models/utilisateur.model';
 import { HttpErrorResponse } from '@angular/common/http';
+import { PermissionContextService } from '../../../services/permission-context.service';
+import { Subscription } from 'rxjs';
+import { NotificationService } from '../../../services/notification.service';
 
 @Component({
   selector: 'app-mes-demandes',
@@ -24,6 +27,10 @@ export class MesDemandesComponent implements OnInit {
   private keycloak       = inject(KeycloakService);
   private ui             = inject(UiService);
   private fb             = inject(FormBuilder);
+  private notifService = inject(NotificationService);
+  private subs = new Subscription();
+  readonly permCtx = inject(PermissionContextService);
+
 
   demandes    = signal<Demande[]>([]);
   types       = signal<TypeDemande[]>([]);
@@ -59,10 +66,10 @@ export class MesDemandesComponent implements OnInit {
       typeDemandeId: [null, Validators.required],
       sujet:         ['', [Validators.required, Validators.minLength(3)]],
       description:   [''],
-      dateDebut:     [null],
-      dateFin:       [null],
+      dateDebut:     [null, Validators.required],   // ✅ obligatoire
+      dateFin:       [null, Validators.required],   // ✅ obligatoire  
       nbJours:       [null],
-    });
+    }, { validators: this.dateRangeValidator }); 
     this.form.get('dateDebut')!.valueChanges.subscribe(() => this.calcNbJours());
     this.form.get('dateFin')!.valueChanges.subscribe(() => this.calcNbJours());
   }
@@ -71,23 +78,53 @@ export class MesDemandesComponent implements OnInit {
     this.nomenclature.getAllTypes().subscribe({ next: t => this.types.set(t), error: () => {} });
     this.nomenclature.getAllStatuts().subscribe({ next: s => this.statuts.set(s), error: () => {} });
     this.loadUserAndDemandes();
+    this.subs.add(
+      this.notifService.newNotification$.subscribe(notif => {
+          if (notif.type === 'DEMANDE_VALIDEE' || notif.type === 'DEMANDE_REJETEE') {
+              // Ma demande a été traitée → recharger silencieusement
+              this.loadUserAndDemandes();
+          }
+      })
+  );
+}  
+ngOnDestroy(): void { this.subs.unsubscribe(); }
+
+private dateRangeValidator(group: FormGroup) {
+    const debut = group.get('dateDebut')?.value;
+    const fin   = group.get('dateFin')?.value;
+    if (debut && fin && new Date(fin) < new Date(debut)) {
+        return { dateRange: true };
+    }
+    return null;
+}
+
+
+private loadUserAndDemandes(): void {
+  // ✅ Vérifier la permission avant de charger
+  if (!this.permCtx.canViewOwnDemandes() && !this.permCtx.canCreateDemande()) {
+      this.ui.warning("Vous n'avez pas la permission de voir vos demandes.");
+      this.loading.set(false);
+      return;
   }
 
-  private loadUserAndDemandes(): void {
-    this.loading.set(true);
-    const kcId = this.keycloak.getKeycloakUserId();
-    if (!kcId) { this.loading.set(false); return; }
-    this.userService.getUserByKeycloakId(kcId).subscribe({
+  this.loading.set(true);
+  const kcId = this.keycloak.getKeycloakUserId();
+  if (!kcId) { this.loading.set(false); return; }
+
+  this.userService.getUserByKeycloakId(kcId).subscribe({
       next: (u) => {
-        this.currentUser.set(u);
-        this.demandeService.getByUtilisateur(u.id).subscribe({
-          next: d => { this.demandes.set(d); this.loading.set(false); },
-          error: () => this.loading.set(false)
-        });
+          this.currentUser.set(u);
+          this.demandeService.getByUtilisateur(u.id).subscribe({
+              next: d => { this.demandes.set(d); this.loading.set(false); },
+              error: () => this.loading.set(false)
+          });
       },
       error: () => { this.demandes.set([]); this.loading.set(false); }
-    });
-  }
+  });
+}
+
+
+
 
   // ── Computed ──
   idEnAttente    = computed(() => this.statuts().find(s => s.code === 'EN_ATTENTE')?.id ?? -1);
@@ -144,7 +181,6 @@ export class MesDemandesComponent implements OnInit {
     return `${String(dt.getDate()).padStart(2,'0')} ${m[dt.getMonth()]}, ${dt.getFullYear()}`;
   }
 
-  peutModifier(d: Demande): boolean { return this.getStatut(d.statutDemandeId)?.code === 'EN_ATTENTE'; }
 
   private calcNbJours(): void {
     const debut = this.form.get('dateDebut')?.value;
@@ -207,7 +243,20 @@ export class MesDemandesComponent implements OnInit {
   closeSlide(): void { this.slideOpen.set(false); this.slideError.set(null); }
 
   save(): void {
-    if (this.form.invalid) { this.slideError.set('Veuillez remplir les champs obligatoires.'); return; }
+    if (!this.permCtx.canCreateDemande() && !this.editingId()) {
+      this.ui.error("Vous n'avez pas la permission de créer une demande.");
+      return;
+  }
+  if (this.form.hasError('dateRange')) {
+      this.slideError.set('La date de fin doit être après la date de début.');
+      return;
+  }
+  if (this.form.invalid) {
+      this.slideError.set('Veuillez remplir tous les champs obligatoires.');
+      return;
+  }
+
+
     const user = this.currentUser();
     if (!user) { this.slideError.set('Utilisateur non identifié.'); return; }
     this.loading.set(true);
@@ -221,7 +270,15 @@ export class MesDemandesComponent implements OnInit {
     });
   }
 
+
+
   delete(d: Demande): void {
+    const isOwn = d.utilisateurId === this.currentUser()?.id;
+    if (!this.permCtx.canDeleteDemande(isOwn)) {
+        this.ui.error("Vous n'avez pas la permission de supprimer cette demande.");
+        return;
+    }
+
     if (!this.peutModifier(d)) return;
     this.ui.confirm({ title: 'Supprimer', message: `Supprimer "${d.sujet}" ?`, type: 'danger', confirmLabel: 'Supprimer',
       onConfirm: () => { this.demandeService.delete(d.id).subscribe({ next: () => { this.ui.success('Supprimée.'); this.loadUserAndDemandes(); }, error: () => this.ui.error('Erreur.') }); }
@@ -232,4 +289,20 @@ export class MesDemandesComponent implements OnInit {
   closeComment(): void { this.commentPopup.set(null); }
   goPage(p: number): void { this.currentPage.set(Math.max(1, Math.min(p, this.totalPages()))); }
   minVal(a: number, b: number): number { return Math.min(a, b); }
+
+  peutModifier(d: Demande): boolean {
+    const enAttente = this.getStatut(d.statutDemandeId)?.code === 'EN_ATTENTE';
+    if (!enAttente) return false;
+    const isOwn = d.utilisateurId === this.currentUser()?.id;
+    return this.permCtx.canModifyDemande(isOwn);
+}
+
+// Export
+exportCsv(): void {
+    if (!this.permCtx.canExportDemandes()) {
+        this.ui.error("Permission requise : DEMANDE_EXPORT");
+        return;
+    }
+    this.demandeService.exportCsv();
+}
 }

@@ -115,7 +115,12 @@ public class Projet {
     @Builder.Default
     private List<MembreEquipe> membres = new ArrayList<>();
 
-    @OneToMany(mappedBy = "projet", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "projet_activites",
+            joinColumns = @JoinColumn(name = "projet_id"),
+            inverseJoinColumns = @JoinColumn(name = "activite_id")
+    )
     @Builder.Default
     private List<Activité> activites = new ArrayList<>();
 

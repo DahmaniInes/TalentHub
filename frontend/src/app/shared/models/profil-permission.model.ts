@@ -5,8 +5,4 @@ export interface ProfilPermission {
     permissionCode: string;
     permissionLibelle: string;
     permissionModule: string;
-    canRead: boolean;
-    canWrite: boolean;
-    canDelete: boolean;
-    canExport: boolean;
   }

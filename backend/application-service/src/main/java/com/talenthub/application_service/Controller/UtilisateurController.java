@@ -124,4 +124,13 @@ public class UtilisateurController {
         utilisateurService.deleteUtilisateur(id);
         return ResponseEntity.noContent().build();
     }
+
+    // Dans UtilisateurController.java — AJOUTE cette méthode
+    @PostMapping("/sync-keycloak-profil-ids")
+    public ResponseEntity<Map<String, Object>> syncProfilIds() {
+        Map<String, Object> result = utilisateurService.syncAllProfilIdsToKeycloak();
+        return ResponseEntity.ok(result);
+    }
+
+
 }

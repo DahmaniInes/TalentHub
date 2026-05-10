@@ -85,4 +85,37 @@ logout(): void {
     redirectUri: window.location.origin  // retour à la page login Keycloak
   });
 }
+
+
+
+
+
+
+// Dans keycloak.service.ts — AJOUTE ces méthodes
+getTokenParsed(): any {
+  return this.keycloak?.tokenParsed || null;
+}
+
+getProfilId(): number | null {
+  const parsed = this.keycloak?.tokenParsed;
+  if (!parsed) return null;
+
+  const raw = parsed['profilId'];
+  console.log('[Keycloak] profilId brut:', raw, 'type:', typeof raw);
+
+  if (raw == null) return null;
+  const val = Number(raw);
+  return isNaN(val) ? null : val;
+}
+
+// ✅ Debug complet du token
+debugToken(): void {
+  const parsed = this.keycloak?.tokenParsed;
+  console.log('=== DEBUG TOKEN KEYCLOAK ===');
+  console.log('Token parsé:', JSON.stringify(parsed, null, 2));
+  console.log('sub (userId):', parsed?.sub);
+  console.log('profilId:', parsed?.['profilId']);
+  console.log('realm_access:', parsed?.['realm_access']);
+  console.log('===========================');
+}
 }

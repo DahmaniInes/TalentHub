@@ -273,21 +273,48 @@ public class FeuilleTempsService {
         });
     }
 
+
+
+
+
+
+
+
+    // Remplace uniquement la méthode notifierApprobateurs()
+// Le problème : isCanWrite() n'existe plus → vérifier par code de permission
+
     private void notifierApprobateurs(FeuilleTemps ft) {
         utilisateurRepository.findAll().stream()
                 .filter(u -> u.getProfil() != null && u.getKeycloakId() != null)
                 .filter(u -> !u.getKeycloakId().equals(ft.getUtilisateur().getKeycloakId()))
                 .forEach(u -> {
-                    boolean aPermission = profilPermissionRepository.findByProfilId(u.getProfil().getId())
-                            .stream().anyMatch(pp -> pp.getPermission() != null &&
-                                    "Traiter les feuilles de temps".equals(pp.getPermission().getLibelle()) &&
-                                    pp.isCanWrite());
+                    // ✅ FIX : plus de isCanWrite() — vérifier par code de permission
+                    boolean aPermission = profilPermissionRepository
+                            .findByProfilId(u.getProfil().getId())
+                            .stream()
+                            .anyMatch(pp -> pp.getPermission() != null
+                                    && "FT_APPROVE".equals(pp.getPermission().getCode()));
+                    // OU si tu veux par libellé :
+                    // && "Traiter les feuilles de temps".equals(pp.getPermission().getLibelle())
+
                     if (aPermission) {
-                        notificationService.creer(u.getKeycloakId(), NotificationType.FEUILLE_SOUMISE,
+                        notificationService.creer(
+                                u.getKeycloakId(),
+                                NotificationType.FEUILLE_SOUMISE,
                                 "Nouvelle feuille soumise 📋",
-                                ft.getUtilisateur().getNomComplet() + " a soumis sa feuille de la semaine du " + ft.getSemaineDu(),
-                                "/approbations-ft", ft.getId());
+                                ft.getUtilisateur().getNomComplet()
+                                        + " a soumis sa feuille de la semaine du " + ft.getSemaineDu(),
+                                "/approbations-ft",
+                                ft.getId()
+                        );
                     }
                 });
     }
+
+
+
+
+
+
+
 }

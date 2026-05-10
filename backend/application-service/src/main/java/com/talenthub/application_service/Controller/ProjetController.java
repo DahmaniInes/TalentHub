@@ -58,34 +58,43 @@ public class ProjetController {
         }
     }
 
+
+
+
     @PostMapping
     public ResponseEntity<ProjetDTO> create(@RequestBody Map<String, Object> body) {
         try {
-            Projet projet        = buildProjetFromBody(body);
-            Long   clientId      = extractLong(body, "clientId");
-            List<Long> groupeIds = extractLongList(body, "groupeIds");
-            Projet saved = projetService.create(projet, clientId, groupeIds);
-            // Recharger avec détails
+            Projet projet          = buildProjetFromBody(body);
+            Long   clientId        = extractLong(body, "clientId");
+            List<Long> groupeIds   = extractLongList(body, "groupeIds");
+            List<Long> activiteIds = extractLongList(body, "activiteIds"); // ✅ NOUVEAU
+            Projet saved = projetService.create(projet, clientId, groupeIds, activiteIds);
             try {
-                return new ResponseEntity<>(projetService.toDTO(projetService.getByIdWithDetails(saved.getId())), HttpStatus.CREATED);
+                return new ResponseEntity<>(projetService.toDTO(
+                        projetService.getByIdWithDetails(saved.getId())), HttpStatus.CREATED);
             } catch (Exception e) {
                 return new ResponseEntity<>(new ProjetDTO(saved), HttpStatus.CREATED);
             }
         } catch (Exception e) {
             log.error("Erreur POST /projets: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().build();
-        }
-    }
+        }}
+
+
+
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProjetDTO> update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+    public ResponseEntity<ProjetDTO> update(@PathVariable Long id,
+                                            @RequestBody Map<String, Object> body) {
         try {
-            Projet details       = buildProjetFromBody(body);
-            Long   clientId      = extractLong(body, "clientId");
-            List<Long> groupeIds = extractLongList(body, "groupeIds");
-            Projet saved = projetService.update(id, details, clientId, groupeIds);
+            Projet details         = buildProjetFromBody(body);
+            Long   clientId        = extractLong(body, "clientId");
+            List<Long> groupeIds   = extractLongList(body, "groupeIds");
+            List<Long> activiteIds = extractLongList(body, "activiteIds"); // ✅ NOUVEAU
+            Projet saved = projetService.update(id, details, clientId, groupeIds, activiteIds);
             try {
-                return ResponseEntity.ok(projetService.toDTO(projetService.getByIdWithDetails(saved.getId())));
+                return ResponseEntity.ok(projetService.toDTO(
+                        projetService.getByIdWithDetails(saved.getId())));
             } catch (Exception e) {
                 return ResponseEntity.ok(new ProjetDTO(saved));
             }
@@ -149,4 +158,21 @@ public class ProjetController {
             return list.stream().map(o -> Long.valueOf(o.toString())).toList();
         return null;
     }
+
+
+    // ✅ NOUVEAU endpoint — assigner des activités à un projet
+    @PatchMapping("/{id}/activites")
+    public ResponseEntity<ProjetDTO> assignerActivites(
+            @PathVariable Long id,
+            @RequestBody List<Long> activiteIds) {
+        try {
+            Projet saved = projetService.assignerActivites(id, activiteIds);
+            return ResponseEntity.ok(projetService.toDTO(
+                    projetService.getByIdWithDetails(saved.getId())));
+        } catch (Exception e) {
+            log.error("Erreur PATCH /projets/{}/activites: {}", id, e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+
+        }}
+
 }

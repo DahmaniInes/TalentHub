@@ -1,91 +1,66 @@
-<!-- projets.component.html — Style dt-* identique users/groups -->
+<!-- projets.component.html — COMPLET FINAL -->
 <div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh" (click)="closeMenu()">
   <div class="dt-wrap">
-  
+
     <!-- ══ HEADER ══ -->
     <div class="dt-header">
       <div>
         <h1 class="dt-title">
-          <!-- ✅ SVG identique sidebar projets -->
           <svg class="dt-title-icon" viewBox="0 0 52 52" fill="currentColor">
             <path d="M39.3,26.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9V25c0-1,0.9-1.9,1.9-1.9h22.9c1,0,1.9,0.9,1.9,1.9v1.9H39.3z M35.5,38.3c0,1-0.9,1.9-1.9,1.9h-19c-1,0-1.9-0.9-1.9-1.9v-1.9c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9H35.5z M12.7,13.5c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9C12.7,15.4,12.7,13.5,12.7,13.5z M41.2,4H10.8C7.6,4,5,6.6,5,9.7v32.4c0,3.1,2.6,5.7,5.7,5.7h30.5c3.1,0,5.7-2.6,5.7-5.7V9.7C47,6.6,44.4,4,41.2,4z"/>
           </svg>
           Projets
         </h1>
         <div class="dt-header-stats">
-          <span class="dt-badge dt-badge-accent" style="font-size:.66rem;padding:3px 9px">
-            <span class="dt-badge-dot"></span>{{ projets().length }} total
-          </span>
-          <span class="dt-badge dt-badge-delivered" style="font-size:.66rem;padding:3px 9px">
-            <span class="dt-badge-dot"></span>{{ statsEnCours() }} en cours
-          </span>
-          <span class="dt-badge dt-badge-pending" style="font-size:.66rem;padding:3px 9px">
-            <span class="dt-badge-dot"></span>{{ statsPlanifies() }} planifiés
-          </span>
-          <span class="dt-badge dt-badge-default" style="font-size:.66rem;padding:3px 9px">
-            <span class="dt-badge-dot"></span>{{ statsTermines() }} terminés
-          </span>
+          <span class="dt-badge dt-badge-accent" style="font-size:.66rem;padding:3px 9px"><span class="dt-badge-dot"></span>{{ projets().length }} total</span>
+          <span class="dt-badge dt-badge-delivered" style="font-size:.66rem;padding:3px 9px"><span class="dt-badge-dot"></span>{{ statsEnCours() }} en cours</span>
+          <span class="dt-badge dt-badge-pending" style="font-size:.66rem;padding:3px 9px"><span class="dt-badge-dot"></span>{{ statsPlanifies() }} planifiés</span>
+          <span class="dt-badge dt-badge-default" style="font-size:.66rem;padding:3px 9px"><span class="dt-badge-dot"></span>{{ statsTermines() }} terminés</span>
         </div>
       </div>
-  
+
       <div class="dt-header-actions">
-        <!-- Recherche -->
-
-
-
-
-        
-  
-  
-          <!-- ✅ NOUVEAU : search-wrap avec panel de filtres -->
-          <div class="dt-search-wrap" (click)="$event.stopPropagation()">
-            <div class="dt-search-bar" style="min-width:240px">
-              <button class="dt-filter-icon-btn"
-                      [class.has-filters]="filterStatut()||filterClient()||search()"
-                      (click)="filterPanelOpenP.set(!filterPanelOpenP())"
-                      title="Filtres">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7">
-                  <path d="M2 3h12l-4.5 5.5V13L6.5 11.5V8.5L2 3z" stroke-linejoin="round"/>
-                </svg>
-              </button>
-              <input class="dt-search-input" [value]="search()"
-                     (input)="search.set($any($event.target).value); resetPage()" placeholder="Rechercher...">
+        <div class="dt-search-wrap" (click)="$event.stopPropagation()">
+          <div class="dt-search-bar" style="min-width:240px">
+            <button class="dt-filter-icon-btn"
+                    [class.has-filters]="filterStatut()||filterClient()||search()"
+                    (click)="filterPanelOpenP.set(!filterPanelOpenP())" title="Filtres">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7">
+                <path d="M2 3h12l-4.5 5.5V13L6.5 11.5V8.5L2 3z" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <input class="dt-search-input" [value]="search()"
+                   (input)="search.set($any($event.target).value); resetPage()" placeholder="Rechercher...">
+          </div>
+          <div class="dt-filter-panel" [class.open]="filterPanelOpenP()">
+            <div class="dt-fp-header">
+              <p class="dt-fp-title">Filtres</p>
+              <button *ngIf="filterStatut()||filterClient()" class="dt-fp-reset"
+                      (click)="filterStatut.set(''); filterClient.set(''); resetPage()">Réinitialiser</button>
             </div>
-  
-            <div class="dt-filter-panel" [class.open]="filterPanelOpenP()">
-              <div class="dt-fp-header">
-                <p class="dt-fp-title">Filtres</p>
-                <button *ngIf="filterStatut()||filterClient()" class="dt-fp-reset"
-                        (click)="filterStatut.set(''); filterClient.set(''); resetPage()">Réinitialiser</button>
+            <div class="dt-fp-body">
+              <div class="dt-fp-field">
+                <label class="dt-fp-label">Statut</label>
+                <select class="dt-fp-select" [value]="filterStatut()"
+                        (change)="filterStatut.set($any($event.target).value); resetPage()">
+                  <option value="">Tous les statuts</option>
+                  <option *ngFor="let s of STATUTS_PROJET" [value]="s">{{ getStatutLabel(s) }}</option>
+                </select>
               </div>
-              <div class="dt-fp-body">
-                <div class="dt-fp-field">
-                  <label class="dt-fp-label">Statut</label>
-                  <select class="dt-fp-select" [value]="filterStatut()"
-                          (change)="filterStatut.set($any($event.target).value); resetPage()">
-                    <option value="">Tous les statuts</option>
-                    <option *ngFor="let s of STATUTS_PROJET" [value]="s">{{ getStatutLabel(s) }}</option>
-                  </select>
-                </div>
-                <div class="dt-fp-field">
-                  <label class="dt-fp-label">Client</label>
-                  <select class="dt-fp-select" [value]="filterClient()"
-                          (change)="filterClient.set(+$any($event.target).value||''); resetPage()">
-                    <option value="">Tous les clients</option>
-                    <option *ngFor="let c of clients()" [value]="c.id">{{ c.nom }}</option>
-                  </select>
-                </div>
+              <div class="dt-fp-field">
+                <label class="dt-fp-label">Client</label>
+                <select class="dt-fp-select" [value]="filterClient()"
+                        (change)="filterClient.set(+$any($event.target).value||''); resetPage()">
+                  <option value="">Tous les clients</option>
+                  <option *ngFor="let c of clients()" [value]="c.id">{{ c.nom }}</option>
+                </select>
               </div>
-              <div class="dt-fp-footer">
-                <button class="mx-btn mx-btn-ghost" style="height:30px;font-size:.73rem" (click)="filterPanelOpenP.set(false)">Fermer</button>
-              </div>
+            </div>
+            <div class="dt-fp-footer">
+              <button class="mx-btn mx-btn-ghost" style="height:30px;font-size:.73rem" (click)="filterPanelOpenP.set(false)">Fermer</button>
             </div>
           </div>
-
-
-
-
-
+        </div>
         <button class="dt-btn-create" (click)="openAddProjet()">
           <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
             <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
@@ -94,141 +69,110 @@
         </button>
       </div>
     </div>
-  
+
     <!-- Bulk bar -->
     <div *ngIf="selectedCount() > 0" class="dt-bulk-bar">
       <span class="dt-bulk-count">{{ selectedCount() }} sélectionné(s)</span>
       <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="clearSelection()">Annuler</button>
       <button class="mx-btn mx-btn-danger mx-btn-sm" (click)="deleteBulkProjets()">Supprimer ({{ selectedCount() }})</button>
     </div>
-  
+
     <!-- Loading -->
     <div *ngIf="loading()" class="dt-loading"><div class="dt-spinner"></div> Chargement...</div>
-  
+
     <!-- ══ TABLEAU ══ -->
     <div *ngIf="!loading()" class="dt-scroll">
       <table class="dt-table">
         <thead>
           <tr>
             <th class="dt-th dt-th-cb">
-              <input type="checkbox" class="dt-checkbox"
-                     [class.indeterminate]="somePageSelected()"
-                     [checked]="allPageSelected()"
-                     (change)="toggleSelectAll()">
+              <input type="checkbox" class="dt-checkbox" [class.indeterminate]="somePageSelected()"
+                     [checked]="allPageSelected()" (change)="toggleSelectAll()">
             </th>
-  
-            <!-- Projet -->
             <th class="dt-th" style="min-width:200px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 52 52" fill="currentColor">
-                  <path d="M39.3,26.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9V25c0-1,0.9-1.9,1.9-1.9h22.9c1,0,1.9,0.9,1.9,1.9v1.9H39.3z M35.5,38.3c0,1-0.9,1.9-1.9,1.9h-19c-1,0-1.9-0.9-1.9-1.9v-1.9c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9H35.5z M12.7,13.5c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9C12.7,15.4,12.7,13.5,12.7,13.5z M41.2,4H10.8C7.6,4,5,6.6,5,9.7v32.4c0,3.1,2.6,5.7,5.7,5.7h30.5c3.1,0,5.7-2.6,5.7-5.7V9.7C47,6.6,44.4,4,41.2,4z"/>
+                  <path d="M39.3,26.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9V25c0-1,0.9-1.9,1.9-1.9h22.9c1,0,1.9,0.9,1.9,1.9v1.9H39.3z"/>
                 </svg>
                 Projet
               </div>
             </th>
-  
-            <!-- Client -->
             <th class="dt-th" style="min-width:130px">
               <div class="dt-th-inner">
-                <svg class="dt-th-icon" viewBox="0 0 477.297 477.297" fill="currentColor">
-                  <path d="M42.85,358.075c0-24.138,0-306.758,0-330.917c23.9,0,278.867,0,302.767,0c0,8.542,0,49.44,0,99.722 c5.846-1.079,11.842-1.812,17.99-1.812c3.149,0,6.126,0.647,9.232,0.928V0H15.649v385.233h224.638v-27.158 C158.534,358.075,57.475,358.075,42.85,358.075z"/>
-                  <path d="M363.629,298.669c41.071,0,74.16-33.197,74.16-74.139c0-40.984-33.09-74.16-74.16-74.16 c-40.898,0-74.009,33.176-74.009,74.16C289.62,265.472,322.731,298.669,363.629,298.669z"/>
-                  <path d="M423.143,310.706H304.288c-21.226,0-38.612,19.457-38.612,43.422v119.33c0,1.316,0.604,2.481,0.69,3.84h194.59 c0.086-1.337,0.69-2.524,0.69-3.84v-119.33C461.733,330.227,444.39,310.706,423.143,310.706z"/>
-                </svg>
-                Client
-              </div>
-            </th>
-  
-            <!-- Statut -->
-            <th class="dt-th" style="min-width:120px">
-              <div class="dt-th-inner">
-                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
-                  <circle cx="7" cy="7" r="5.5"/>
-                  <path d="M4.5 7l2 2 3-3" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="5.5"/><path d="M4.5 7l2 2 3-3" stroke-linecap="round"/></svg>
                 Statut
               </div>
             </th>
-  
-            <!-- ✅ Avancement avec barre -->
             <th class="dt-th" style="min-width:150px">
               <div class="dt-th-inner">
-                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
-                  <rect x="1" y="5" width="12" height="4" rx="2"/>
-                  <rect x="1" y="5" width="8" height="4" rx="2" fill="currentColor" stroke="none" style="opacity:.4"/>
-                </svg>
+                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="5" width="12" height="4" rx="2"/></svg>
                 Avancement
               </div>
             </th>
-  
-            <!-- ✅ Équipes : nombre seulement -->
             <th class="dt-th" style="min-width:90px">
               <div class="dt-th-inner">
-                <svg class="dt-th-icon" viewBox="0 0 611.998 611.998" fill="currentColor">
-                  <path d="M470.351,429.405l-0.493-2.805c-4.258-24.197-10.091-57.334-32.191-73.832c-9.321-6.957-19.872-10.404-30.078-13.74 c-4.019-1.313-7.812-2.554-11.427-3.974c-5.269-2.07-10.016-4.097-14.464-6.338c-18.684,24.932-44.58,38.059-75.383,38.062 c-30.795,0-56.687-13.128-75.371-38.062c-4.449,2.243-9.196,4.269-14.467,6.34c-3.61,1.418-7.406,2.659-11.424,3.972 c-10.207,3.335-20.761,6.784-30.079,13.74c-22.107,16.5-27.936,49.645-32.193,73.846l-0.493,2.795 c-3.557,20.086-5.68,39.572-6.308,57.914c-0.737,21.519,12.62,26.316,24.403,30.55l1.269,0.457 c14.17,5.112,30.021,9.492,48.457,13.388c37.646,7.946,68.197,11.74,96.138,11.938h0.072h0.072 c27.946-0.199,58.495-3.992,96.135-11.938c18.439-3.894,34.289-8.274,48.453-13.387l1.268-0.456 c11.786-4.233,25.147-9.029,24.41-30.553C476.03,468.931,473.906,449.447,470.351,429.405z"/>
-                  <path d="M221.005,243.009c5.577,48.709,26.883,108.009,86.103,108.006s80.529-59.297,86.106-108.006 c6.871-60.002-21.503-105.16-86.106-105.16C242.515,137.847,214.123,183.002,221.005,243.009z"/>
-                </svg>
+                <svg class="dt-th-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm-4 6a4 4 0 118 0H4z"/></svg>
                 Équipes
               </div>
             </th>
-  
-            <!-- ✅ Facturable -->
             <th class="dt-th" style="min-width:100px">
               <div class="dt-th-inner">
-                <svg class="dt-th-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="2" y="5" width="20" height="14" rx="2"/>
-                  <path d="M2 10h20M6 15h2M10 15h4" stroke-linecap="round"/>
-                </svg>
+                <svg class="dt-th-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20" stroke-linecap="round"/></svg>
                 Facturable
               </div>
             </th>
-  
-            <!-- Dates -->
             <th class="dt-th" style="min-width:110px">
               <div class="dt-th-inner">
-                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
-                  <rect x="1" y="2" width="12" height="11" rx="1.5"/>
-                  <path d="M1 6h12M4.5 1v2M9.5 1v2" stroke-linecap="round"/>
-                </svg>
+                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="2" width="12" height="11" rx="1.5"/><path d="M1 6h12M4.5 1v2M9.5 1v2" stroke-linecap="round"/></svg>
                 Dates
               </div>
             </th>
-  
+            <th class="dt-th" style="min-width:90px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 491.5 491.5" fill="currentColor" style="width:13px;height:13px">
+                  <path d="M348.1,245.7c-67.8,0-122.9,55.1-122.9,122.9s55.1,122.9,122.9,122.9S471,436.4,471,368.6S415.9,245.7,348.1,245.7z"/>
+                </svg>
+                Activités
+              </div>
+            </th>
             <th class="dt-th dt-th-actions"></th>
           </tr>
         </thead>
-  
         <tbody>
-          <tr *ngFor="let p of pagedProjets()"
-              class="dt-tr"
+          <tr *ngIf="filteredProjets().length === 0">
+            <td colspan="9" class="dt-td">
+              <div class="dt-empty">
+                <svg class="dt-empty-icon" viewBox="0 0 48 48" fill="none" style="width:38px;height:38px">
+                  <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+                  <path d="M24 16v8M24 28h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <p class="dt-empty-title">Aucun projet trouvé</p>
+                <p class="dt-empty-sub">Modifiez vos filtres ou créez un projet</p>
+                <button class="dt-btn-create" style="margin-top:12px" (click)="openAddProjet()">Nouveau projet</button>
+              </div>
+            </td>
+          </tr>
+
+          <tr *ngFor="let p of pagedProjets()" class="dt-tr"
               [class.dt-tr-selected]="isSelected(p.id)"
               (click)="selectProjet(p)">
-  
-            <!-- Checkbox -->
+
             <td class="dt-td dt-td-cb" (click)="$event.stopPropagation()">
-              <input type="checkbox" class="dt-checkbox"
-                     [class.dt-checkbox-active]="isSelected(p.id)"
-                     [checked]="isSelected(p.id)"
-                     (change)="toggleSelect(p.id, $event)">
+              <input type="checkbox" class="dt-checkbox" [class.dt-checkbox-active]="isSelected(p.id)"
+                     [checked]="isSelected(p.id)" (change)="toggleSelect(p.id, $event)">
             </td>
-  
-            <!-- Projet : barre couleur + nom + numéro -->
+
+            <!-- Projet -->
             <td class="dt-td">
               <div class="dt-cell-with-avatar">
-                <div style="width:3px;height:36px;border-radius:3px;flex-shrink:0"
-                     [style.background]="p.couleur||'#6366f1'"></div>
+                <div style="width:3px;height:36px;border-radius:3px;flex-shrink:0" [style.background]="p.couleur||'#6366f1'"></div>
                 <div class="dt-cell-user">
                   <span class="dt-cell-name">{{ p.nom }}</span>
                   <span class="dt-cell-sub" style="font-family:'Courier New',monospace;font-size:.67rem">{{ p.numeroProjet }}</span>
                 </div>
               </div>
             </td>
-  
-            <!-- Client -->
-            <td class="dt-td">
-              <span class="dt-cell-text">{{ p.clientNom || '—' }}</span>
-            </td>
-  
+
             <!-- Statut -->
             <td class="dt-td">
               <span class="dt-badge"
@@ -239,85 +183,71 @@
                 {{ getStatutLabel(p.statut) }}
               </span>
             </td>
-  
-            <!-- ✅ Avancement : barre de progression + % -->
+
+            <!-- Avancement -->
             <td class="dt-td">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-                <span class="dt-cell-sub" style="font-size:.69rem">{{ p.avancement || 0 }}%</span>
-              </div>
-              <div style="height:5px;background:var(--bg-hover);border-radius:999px;width:100%;max-width:110px;overflow:hidden">
-                <div style="height:100%;border-radius:999px;transition:width .3s"
-                     [style.background]="getAvancementCouleur(p.avancement)"
-                     [style.width.%]="p.avancement || 0">
+              <div style="display:flex;align-items:center;gap:6px">
+                <div style="height:5px;background:var(--bg-hover);border-radius:999px;width:80px;overflow:hidden;flex-shrink:0">
+                  <div style="height:100%;border-radius:999px;transition:width .3s"
+                       [style.background]="getAvancementCouleur(p.avancement)"
+                       [style.width.%]="p.avancement || 0"></div>
                 </div>
+                <span class="dt-cell-sub" style="font-size:.69rem;flex-shrink:0">{{ p.avancement || 0 }}%</span>
               </div>
             </td>
-  
-            <!-- ✅ Équipes : NOMBRE seulement, pas les noms -->
+
+            <!-- Équipes -->
             <td class="dt-td">
               <div *ngIf="p.groupes && p.groupes.length > 0" style="display:flex;align-items:center;gap:6px">
-                <div style="width:28px;height:28px;border-radius:8px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:.72rem;font-weight:800;flex-shrink:0">
+                <div style="width:26px;height:26px;border-radius:7px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:.7rem;font-weight:800;flex-shrink:0">
                   {{ p.groupes.length }}
                 </div>
                 <span class="dt-cell-sub" style="font-size:.72rem">équipe{{ p.groupes.length > 1 ? 's' : '' }}</span>
               </div>
               <span *ngIf="!p.groupes || p.groupes.length === 0" class="dt-cell-muted">—</span>
             </td>
-  
-            <!-- ✅ Facturable -->
+
+            <!-- Facturable -->
             <td class="dt-td">
-              <span class="dt-badge"
-                    [class.dt-badge-delivered]="p.facturable"
-                    [class.dt-badge-canceled]="!p.facturable">
-                <span class="dt-badge-dot"></span>
-                {{ p.facturable ? 'Oui' : 'Non' }}
+              <span class="dt-badge" [class.dt-badge-delivered]="p.facturable" [class.dt-badge-canceled]="!p.facturable">
+                <span class="dt-badge-dot"></span>{{ p.facturable ? 'Oui' : 'Non' }}
               </span>
             </td>
-  
+
             <!-- Dates -->
             <td class="dt-td">
               <div class="dt-cell-user">
-                <span class="dt-cell-sub" style="font-size:.69rem">
-                  {{ p.dateDebut ? fmtDate(p.dateDebut) : '—' }}
-                </span>
-                <span *ngIf="p.dateFin" class="dt-cell-sub" style="font-size:.69rem">
-                  → {{ fmtDate(p.dateFin) }}
-                </span>
+                <span class="dt-cell-sub" style="font-size:.69rem">{{ p.dateDebut ? fmtDate(p.dateDebut) : '—' }}</span>
+                <span *ngIf="p.dateFin" class="dt-cell-sub" style="font-size:.69rem">→ {{ fmtDate(p.dateFin) }}</span>
               </div>
             </td>
-  
+
+            <!-- ✅ Activités count -->
+            <td class="dt-td">
+              <span *ngIf="p.nombreActivites > 0"
+                    style="display:inline-flex;align-items:center;gap:5px;font-size:.72rem;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:2px 9px;border-radius:5px;border:1px solid rgba(192,38,211,.2)">
+                {{ p.nombreActivites }}
+              </span>
+              <span *ngIf="!p.nombreActivites || p.nombreActivites === 0" class="dt-cell-muted">—</span>
+            </td>
+
             <!-- Actions -->
             <td class="dt-td dt-td-actions" (click)="$event.stopPropagation()">
               <div class="dt-td-actions-wrap">
-                <button class="dt-action-btn dt-action-edit" (click)="openEditProjet(p)" title="Modifier">
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                  </svg>
+                <button class="dt-action-btn dt-action-edit" (click)="openEditProjet(p, $event)" title="Modifier">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                 </button>
-                <button class="dt-action-btn dt-action-del" (click)="deleteProjet(p)" title="Supprimer">
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                  </svg>
+                <button class="dt-action-btn dt-action-del" (click)="deleteProjet(p, $event)" title="Supprimer">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                 </button>
               </div>
             </td>
           </tr>
         </tbody>
       </table>
-  
-      <!-- Vide -->
-      <div *ngIf="filteredProjets().length === 0" class="dt-empty">
-        <svg class="dt-empty-icon" viewBox="0 0 48 48" fill="none" style="width:38px;height:38px">
-          <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
-          <path d="M24 16v8M24 28h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <p class="dt-empty-title">Aucun projet trouvé</p>
-        <p class="dt-empty-sub">Modifiez vos filtres ou créez un projet</p>
-        <button class="dt-btn-create" style="margin-top:12px" (click)="openAddProjet()">Nouveau projet</button>
-      </div>
     </div>
-  
-    <!-- ══ FOOTER PAGINATION ══ -->
+
+    <!-- Pagination -->
     <div *ngIf="!loading() && filteredProjets().length > 0" class="dt-footer">
       <div class="dt-count-info">
         <strong>{{ (currentPage()-1)*pageSize()+1 }}–{{ minVal(currentPage()*pageSize(), filteredProjets().length) }}</strong>
@@ -334,223 +264,153 @@
         <ng-container *ngFor="let pg of pagesArray()">
           <button *ngIf="pg===1||pg===totalPages()||(pg>=currentPage()-1&&pg<=currentPage()+1)"
                   class="dt-page-btn" [class.dt-page-btn-active]="pg===currentPage()" (click)="goToPage(pg)">{{ pg }}</button>
-          <span *ngIf="pg===currentPage()-2&&pg>1" style="color:var(--dt-text-head);padding:0 4px;font-size:.75rem;line-height:30px">…</span>
-          <span *ngIf="pg===currentPage()+2&&pg<totalPages()" style="color:var(--dt-text-head);padding:0 4px;font-size:.75rem;line-height:30px">…</span>
+          <span *ngIf="pg===currentPage()-2&&pg>1" style="padding:0 4px;font-size:.75rem;line-height:30px;color:var(--dt-text-head)">…</span>
+          <span *ngIf="pg===currentPage()+2&&pg<totalPages()" style="padding:0 4px;font-size:.75rem;line-height:30px;color:var(--dt-text-head)">…</span>
         </ng-container>
         <button class="dt-page-arrow" [disabled]="currentPage()===totalPages()" (click)="goToPage(currentPage()+1)">
           <svg viewBox="0 0 14 14" fill="none"><path d="M5 2l4 5-4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
     </div>
-  
-  </div><!-- /.dt-wrap -->
+
   </div>
-  
-  <!-- ════ SLIDE-OVER DÉTAIL PROJET ════ -->
-  <div *ngIf="selectedProjet()" class="mx-overlay" (click)="selectedProjet.set(null)"></div>
-  <div *ngIf="selectedProjet() as p" class="mx-slideover">
-    <div class="mx-so-header">
-      <div class="dt-avatar" [style.background]="p.couleur||'#6366f1'"
-           style="width:44px;height:44px;border-radius:11px">
-        <svg viewBox="0 0 52 52" fill="white" style="width:22px;height:22px">
-          <path d="M39.3,26.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9V25c0-1,0.9-1.9,1.9-1.9h22.9c1,0,1.9,0.9,1.9,1.9v1.9H39.3z M35.5,38.3c0,1-0.9,1.9-1.9,1.9h-19c-1,0-1.9-0.9-1.9-1.9v-1.9c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9H35.5z M12.7,13.5c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9C12.7,15.4,12.7,13.5,12.7,13.5z M41.2,4H10.8C7.6,4,5,6.6,5,9.7v32.4c0,3.1,2.6,5.7,5.7,5.7h30.5c3.1,0,5.7-2.6,5.7-5.7V9.7C47,6.6,44.4,4,41.2,4z"/>
-        </svg>
+</div>
+
+<!-- ════ MODAL PROJET ════ -->
+<div *ngIf="showProjetModal()" class="mx-modal-backdrop" (click)="closeProjetModal()">
+  <div class="mx-modal" style="max-width:560px;padding:0;overflow:hidden;max-height:92vh;display:flex;flex-direction:column"
+       (click)="$event.stopPropagation()">
+
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 20px 13px;border-bottom:1px solid var(--border-color);flex-shrink:0">
+      <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 52 52" fill="currentColor" style="width:17px;height:17px"><path d="M39.3,26.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9V25c0-1,0.9-1.9,1.9-1.9h22.9c1,0,1.9,0.9,1.9,1.9v1.9H39.3z M35.5,38.3c0,1-0.9,1.9-1.9,1.9h-19c-1,0-1.9-0.9-1.9-1.9v-1.9c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9H35.5z M12.7,13.5c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9C12.7,15.4,12.7,13.5,12.7,13.5z M41.2,4H10.8C7.6,4,5,6.6,5,9.7v32.4c0,3.1,2.6,5.7,5.7,5.7h30.5c3.1,0,5.7-2.6,5.7-5.7V9.7C47,6.6,44.4,4,41.2,4z"/></svg>
       </div>
-      <div class="mx-so-title-block">
-        <p class="mx-so-name">{{ p.nom }}</p>
-        <p class="mx-so-sub">{{ p.numeroProjet }}<span *ngIf="p.clientNom"> · {{ p.clientNom }}</span></p>
-        <div class="mx-so-badges">
-          <span class="dt-badge" style="font-size:.62rem"
-                [style.background]="getStatutColor(p.statut)+'18'"
-                [style.color]="getStatutColor(p.statut)"
-                [style.border-color]="getStatutColor(p.statut)+'55'">
-            <span class="dt-badge-dot" [style.background]="getStatutColor(p.statut)"></span>
-            {{ getStatutLabel(p.statut) }}
-          </span>
-          <span class="dt-badge" style="font-size:.62rem"
-                [class.dt-badge-delivered]="p.facturable"
-                [class.dt-badge-canceled]="!p.facturable">
-            <span class="dt-badge-dot"></span>
-            {{ p.facturable ? 'Facturable' : 'Non facturable' }}
-          </span>
-        </div>
-      </div>
-      <button class="mx-so-close" (click)="selectedProjet.set(null)">
+      <span style="flex:1;font-size:.92rem;font-weight:700;color:var(--text-primary)">{{ editingProjet() ? 'Modifier le projet' : 'Nouveau projet' }}</span>
+      <button class="mx-so-close" (click)="closeProjetModal()">
         <svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       </button>
     </div>
-  
-    <!-- Barre progression avancement -->
-    <div style="padding:12px 18px 10px;border-bottom:1px solid var(--border-color)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-        <span style="font-size:.72rem;color:var(--text-muted);font-weight:600">Avancement</span>
-        <span style="font-size:.78rem;font-weight:700" [style.color]="getAvancementCouleur(p.avancement)">{{ p.avancement||0 }}%</span>
-      </div>
-      <div style="height:7px;background:var(--bg-hover);border-radius:999px;overflow:hidden">
-        <div style="height:100%;border-radius:999px;transition:width .3s"
-             [style.background]="getAvancementCouleur(p.avancement)"
-             [style.width.%]="p.avancement||0"></div>
-      </div>
-    </div>
-  
-    <div class="mx-so-tabs">
-      <button class="mx-so-tab" [class.active]="detailTab()==='infos'"     (click)="detailTab.set('infos')">Infos</button>
-      <button class="mx-so-tab" [class.active]="detailTab()==='equipes'"   (click)="detailTab.set('equipes')">Équipes ({{ p.groupes?.length||0 }})</button>
-      <button class="mx-so-tab" [class.active]="detailTab()==='activites'" (click)="detailTab.set('activites')">Activités ({{ activites().length }})</button>
-    </div>
-  
-    <!-- TAB INFOS -->
-    <div *ngIf="detailTab()==='infos'" class="mx-so-body">
-      <div class="mx-info-list">
-        <div class="mx-info-row" *ngIf="p.description"><span class="mx-info-key">Description</span><span class="mx-info-val">{{ p.description }}</span></div>
-        <div class="mx-info-row"><span class="mx-info-key">Début</span><span class="mx-info-val">{{ p.dateDebut ? fmtDate(p.dateDebut) : '—' }}</span></div>
-        <div class="mx-info-row"><span class="mx-info-key">Fin</span><span class="mx-info-val">{{ p.dateFin ? fmtDate(p.dateFin) : '—' }}</span></div>
-        <div class="mx-info-row" *ngIf="p.budgetPrevu"><span class="mx-info-key">Budget</span><span class="mx-info-val">{{ p.budgetPrevu | number:'1.0-0' }}</span></div>
-        <div class="mx-info-row" *ngIf="p.quotaHoraire"><span class="mx-info-key">Quota horaire</span><span class="mx-info-val">{{ p.quotaHoraire }} h</span></div>
-      </div>
-    </div>
-  
-    <!-- TAB ÉQUIPES -->
-    <div *ngIf="detailTab()==='equipes'" class="mx-so-body">
-      <p class="mx-so-section-title">Équipes ({{ p.groupes?.length||0 }})</p>
-      <div class="mx-membre-list">
-        <div *ngFor="let g of (p.groupes||[])" class="mx-membre-item">
-          <div style="width:36px;height:36px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:.72rem"
-               [style.background]="g.couleur||'#6366f1'">
-            {{ g.nom.charAt(0).toUpperCase() }}
-          </div>
-          <div class="mx-membre-info">
-            <span class="mx-membre-nom">{{ g.nom }}</span>
-            <span class="mx-membre-sub">{{ g.nombreMembres || 0 }} membre(s)</span>
-          </div>
-          <button class="dt-action-btn dt-action-del" style="width:24px;height:24px" (click)="removeGroupeFromProjet(g.id)">
-            <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </button>
-        </div>
-        <div *ngIf="!p.groupes||p.groupes.length===0" class="dt-empty" style="padding:20px">
-          <p class="dt-empty-sub">Aucune équipe assignée</p>
-        </div>
-      </div>
-      <button class="dt-btn-create" style="margin-top:12px;width:100%;justify-content:center" (click)="openCreateGroupe()">
-        <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        Créer une équipe
-      </button>
-    </div>
-  
-    <!-- TAB ACTIVITÉS -->
-    <div *ngIf="detailTab()==='activites'" class="mx-so-body">
-      <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
-        <button class="dt-btn-create" style="height:32px;padding:0 12px;font-size:.74rem" (click)="openAddActivite()">+ Ajouter</button>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:5px">
-        <div *ngFor="let a of activites()"
-             style="display:flex;align-items:flex-start;background:var(--bg-hover);border-radius:8px;border:1px solid var(--border-color);overflow:hidden">
-          <div style="width:3px;flex-shrink:0;align-self:stretch" [style.background]="a.couleur||'#94a3b8'"></div>
-          <div style="flex:1;padding:8px 10px;min-width:0">
-            <p style="font-size:.78rem;font-weight:600;color:var(--text-primary);margin:0 0 3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.nom }}</p>
-            <div style="display:flex;align-items:center;gap:5px">
-              <span class="dt-badge" style="font-size:.6rem;padding:2px 7px"
-                    [style.background]="(a.statutCouleur||'#94a3b8')+'18'"
-                    [style.color]="a.statutCouleur||'#94a3b8'"
-                    [style.border-color]="(a.statutCouleur||'#94a3b8')+'44'">
-                {{ a.statutLibelle || '—' }}
-              </span>
-            </div>
-          </div>
-          <div style="display:flex;gap:1px;padding:6px 6px 6px 0;flex-shrink:0">
-            <button class="dt-action-btn dt-action-edit" style="width:24px;height:24px" (click)="openEditActivite(a)">
-              <svg viewBox="0 0 24 24" fill="currentColor" style="width:13px;height:13px"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-            </button>
-            <button class="dt-action-btn dt-action-del" style="width:24px;height:24px" (click)="deleteActivite(a)">
-              <svg viewBox="0 0 24 24" fill="currentColor" style="width:13px;height:13px"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-            </button>
-          </div>
-        </div>
-        <div *ngIf="activites().length===0" class="dt-empty" style="padding:20px">
-          <p class="dt-empty-sub">Aucune activité</p>
-        </div>
-      </div>
-    </div>
-  
-    <div class="mx-so-footer">
-      <button class="mx-btn mx-btn-ghost" (click)="selectedProjet.set(null)">Fermer</button>
-      <button class="mx-btn mx-btn-primary" (click)="openEditProjet(p)">
-        <svg viewBox="0 0 14 14" fill="none" style="width:11px;height:11px"><path d="M9 2l3 3-7 7H2V9l7-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
-        Modifier
-      </button>
-    </div>
-  </div>
-  
-  <!-- ════ MODAL PROJET ════ -->
-  <div *ngIf="showProjetModal()" class="mx-modal-backdrop" (click)="closeProjetModal()">
-    <div class="mx-modal" style="max-width:540px;padding:0;overflow:hidden;max-height:90vh;display:flex;flex-direction:column" (click)="$event.stopPropagation()">
-      <div style="display:flex;align-items:center;gap:12px;padding:16px 18px 12px;border-bottom:1px solid var(--border-color);flex-shrink:0">
-        <div style="width:34px;height:34px;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center">
-          <svg viewBox="0 0 52 52" fill="currentColor" style="width:16px;height:16px"><path d="M39.3,26.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9V25c0-1,0.9-1.9,1.9-1.9h22.9c1,0,1.9,0.9,1.9,1.9v1.9H39.3z M35.5,38.3c0,1-0.9,1.9-1.9,1.9h-19c-1,0-1.9-0.9-1.9-1.9v-1.9c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9H35.5z M12.7,13.5c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9C12.7,15.4,12.7,13.5,12.7,13.5z M41.2,4H10.8C7.6,4,5,6.6,5,9.7v32.4c0,3.1,2.6,5.7,5.7,5.7h30.5c3.1,0,5.7-2.6,5.7-5.7V9.7C47,6.6,44.4,4,41.2,4z"/></svg>
-        </div>
-        <span style="flex:1;font-size:.9rem;font-weight:700;color:var(--text-primary)">{{ editingProjet() ? 'Modifier le projet' : 'Nouveau projet' }}</span>
-        <button class="mx-so-close" (click)="closeProjetModal()"><svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
-      </div>
-      <div style="padding:16px 18px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1">
-        <div class="mx-field"><label class="mx-field-label">Nom <span style="color:#ef4444">*</span></label><input [(ngModel)]="projetForm().nom" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-        <div class="mx-field"><label class="mx-field-label">Description</label><textarea [(ngModel)]="projetForm().description" [ngModelOptions]="{standalone:true}" rows="2" class="mx-field-textarea"></textarea></div>
-        <div class="mx-so-grid">
-          <div class="mx-field"><label class="mx-field-label">Client</label><select [(ngModel)]="projetFormClientId" [ngModelOptions]="{standalone:true}" class="mx-field-select"><option [ngValue]="null">— Aucun —</option><option *ngFor="let c of clients()" [ngValue]="c.id">{{ c.nom }}</option></select></div>
-          <div class="mx-field"><label class="mx-field-label">Statut</label><select [(ngModel)]="projetForm().statut" [ngModelOptions]="{standalone:true}" class="mx-field-select"><option *ngFor="let s of STATUTS_PROJET" [value]="s">{{ getStatutLabel(s) }}</option></select></div>
-          <div class="mx-field"><label class="mx-field-label">Budget prévu</label><input type="number" [(ngModel)]="projetForm().budgetPrevu" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-          <div class="mx-field"><label class="mx-field-label">Quota horaire (h)</label><input type="number" [(ngModel)]="projetForm().quotaHoraire" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-          <div class="mx-field"><label class="mx-field-label">Date début</label><input type="date" [(ngModel)]="projetForm().dateDebut" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-          <div class="mx-field"><label class="mx-field-label">Date fin</label><input type="date" [(ngModel)]="projetForm().dateFin" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-        </div>
-        <div class="mx-field"><label class="mx-field-label">Couleur</label><div class="mx-colors-row"><button *ngFor="let c of COULEURS" type="button" class="mx-color-btn" [class.selected]="projetForm().couleur===c" [style.background]="c" (click)="projetForm().couleur=c"></button></div></div>
-        <!-- Équipes -->
+
+    <div style="padding:16px 20px;display:flex;flex-direction:column;gap:13px;overflow-y:auto;flex:1">
+
+      <!-- Nom + Description -->
+      <div class="mx-field"><label class="mx-field-label">Nom <span style="color:#ef4444">*</span></label><input [(ngModel)]="projetForm().nom" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="Nom du projet"></div>
+      <div class="mx-field"><label class="mx-field-label">Description</label><textarea [(ngModel)]="projetForm().description" [ngModelOptions]="{standalone:true}" rows="2" class="mx-field-textarea" placeholder="Description..."></textarea></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <!-- Client -->
+        <div class="mx-field"><label class="mx-field-label">Client</label><select [(ngModel)]="projetFormClientId" [ngModelOptions]="{standalone:true}" class="mx-field-select"><option [ngValue]="null">— Aucun —</option><option *ngFor="let c of clients()" [ngValue]="c.id">{{ c.nom }}</option></select></div>
+        <!-- Statut -->
+        <div class="mx-field"><label class="mx-field-label">Statut</label><select [(ngModel)]="projetForm().statut" [ngModelOptions]="{standalone:true}" class="mx-field-select"><option *ngFor="let s of STATUTS_PROJET" [value]="s">{{ getStatutLabel(s) }}</option></select></div>
+        <!-- Budget -->
+        <div class="mx-field"><label class="mx-field-label">Budget prévu</label><input type="number" [(ngModel)]="projetForm().budgetPrevu" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="0"></div>
+        <!-- Quota horaire -->
+        <div class="mx-field"><label class="mx-field-label">Quota horaire (h)</label><input type="number" [(ngModel)]="projetForm().quotaHoraire" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="0"></div>
+        <!-- Type budget -->
+        <div class="mx-field"><label class="mx-field-label">Type de budget</label><select [(ngModel)]="projetForm().typeBudget" [ngModelOptions]="{standalone:true}" class="mx-field-select"><option *ngFor="let t of TYPES_BUDGET" [value]="t">{{ t }}</option></select></div>
+        <!-- Seuil alerte -->
         <div class="mx-field">
-          <label class="mx-field-label">Équipes <span style="font-size:.6rem;color:var(--accent);background:var(--accent-soft);padding:1px 5px;border-radius:4px;margin-left:3px">{{ groupesSelectionnes().length }}</span></label>
-          <div *ngIf="groupesSelectionnesInfo().length > 0" style="display:flex;flex-direction:column;gap:4px;margin-bottom:6px">
-            <div *ngFor="let g of groupesSelectionnesInfo()" style="display:flex;align-items:center;gap:8px;padding:6px 9px;background:var(--bg-hover);border-radius:7px;border:1px solid var(--border-color)">
-              <div style="width:22px;height:22px;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:white;font-size:.55rem;font-weight:800" [style.background]="g.couleur||'#6366f1'">{{ g.nom.charAt(0) }}</div>
-              <span style="flex:1;font-size:.77rem;font-weight:600;color:var(--text-primary)">{{ g.nom }}</span>
-              <button style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:1rem;line-height:1;padding:0" (click)="removeGroupeFromForm(g.id)">×</button>
-            </div>
+          <label class="mx-field-label">Seuil d'alerte <span style="font-size:.6rem;color:var(--text-muted)">(%) — défaut 80%</span></label>
+          <input type="number" min="0" max="100" [(ngModel)]="projetForm().seuilAlerteHoraire" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="80">
+        </div>
+        <!-- Dates -->
+        <div class="mx-field"><label class="mx-field-label">Date début</label><input type="date" [(ngModel)]="projetForm().dateDebut" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        <div class="mx-field"><label class="mx-field-label">Date fin</label><input type="date" [(ngModel)]="projetForm().dateFin" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+      </div>
+
+      <!-- Couleur -->
+      <div class="mx-field">
+        <label class="mx-field-label">Couleur</label>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
+          <button *ngFor="let c of COULEURS" type="button"
+                  [style.background]="c" [style.width]="'26px'" [style.height]="'26px'" [style.border-radius]="'6px'"
+                  [style.border]="projetForm().couleur===c ? '3px solid var(--text-primary)' : '3px solid transparent'"
+                  [style.cursor]="'pointer'" [style.outline]="'none'" [style.transition]="'all .15s'"
+                  (click)="projetForm().couleur=c"></button>
+        </div>
+      </div>
+
+      <!-- Équipes -->
+      <div class="mx-field">
+        <label class="mx-field-label">
+          Équipes
+          <span style="font-size:.6rem;color:var(--accent);background:var(--accent-soft);padding:1px 5px;border-radius:4px;margin-left:3px">{{ groupesSelectionnes().length }}</span>
+        </label>
+        <div *ngIf="groupesSelectionnesInfo().length > 0" style="display:flex;flex-direction:column;gap:4px;margin-bottom:7px">
+          <div *ngFor="let g of groupesSelectionnesInfo()"
+               style="display:flex;align-items:center;gap:8px;padding:6px 9px;background:var(--bg-hover);border-radius:7px;border:1px solid var(--border-color)">
+            <div style="width:22px;height:22px;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:white;font-size:.55rem;font-weight:800"
+                 [style.background]="g.couleur||'#6366f1'">{{ g.nom.charAt(0) }}</div>
+            <span style="flex:1;font-size:.77rem;font-weight:600;color:var(--text-primary)">{{ g.nom }}</span>
+            <button style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:1rem;line-height:1;padding:0" (click)="removeGroupeFromForm(g.id)">×</button>
           </div>
-          <select class="mx-field-select" (change)="addGroupeToForm(+$any($event.target).value); $any($event.target).value=''">
-            <option value="">+ Ajouter une équipe...</option>
-            <option *ngFor="let g of groupesDispo()" [value]="g.id">{{ g.nom }}</option>
-          </select>
         </div>
-        <div style="display:flex;gap:14px;flex-wrap:wrap">
-          <label class="mx-toggle-row"><input type="checkbox" [(ngModel)]="projetForm().visible" [ngModelOptions]="{standalone:true}" style="display:none"><div class="mx-toggle" [class.on]="projetForm().visible"><div class="mx-toggle-knob"></div></div><span>Visible</span></label>
-          <label class="mx-toggle-row"><input type="checkbox" [(ngModel)]="projetForm().facturable" [ngModelOptions]="{standalone:true}" style="display:none"><div class="mx-toggle" [class.on]="projetForm().facturable"><div class="mx-toggle-knob"></div></div><span>Facturable</span></label>
-          <label class="mx-toggle-row"><input type="checkbox" [(ngModel)]="projetForm().autoriserActivitesGlobales" [ngModelOptions]="{standalone:true}" style="display:none"><div class="mx-toggle" [class.on]="projetForm().autoriserActivitesGlobales"><div class="mx-toggle-knob"></div></div><span>Activités globales</span></label>
+        <select class="mx-field-select" (change)="addGroupeToForm(+$any($event.target).value); $any($event.target).value=''">
+          <option value="">+ Ajouter une équipe...</option>
+          <option *ngFor="let g of groupesDispo()" [value]="g.id">{{ g.nom }}</option>
+        </select>
+      </div>
+
+      <!-- ✅ Activités assignées -->
+      <div class="mx-field">
+        <label class="mx-field-label">
+          Activités assignées
+          <span style="font-size:.6rem;color:var(--accent);background:var(--accent-soft);padding:1px 5px;border-radius:4px;margin-left:3px">{{ activitesSelectionnees().length }}</span>
+        </label>
+        <!-- Activités déjà sélectionnées -->
+        <div *ngIf="activitesSelectionneesInfo().length > 0"
+             style="display:flex;flex-direction:column;gap:4px;margin-bottom:7px;max-height:140px;overflow-y:auto">
+          <div *ngFor="let a of activitesSelectionneesInfo()"
+               style="display:flex;align-items:center;gap:8px;padding:6px 9px;background:var(--bg-hover);border-radius:7px;border:1px solid var(--border-color)">
+            <div style="width:3px;height:22px;border-radius:2px;flex-shrink:0" [style.background]="a.couleur || '#94a3b8'"></div>
+            <span style="flex:1;font-size:.77rem;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.nom }}</span>
+            <span *ngIf="a.estGlobale" style="font-size:.58rem;color:#8b5cf6;background:rgba(139,92,246,.1);padding:1px 5px;border-radius:3px;flex-shrink:0">GLOB.</span>
+            <button style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:.9rem;line-height:1;padding:0;flex-shrink:0" (click)="removeActiviteFromProjet(a.id)">×</button>
+          </div>
         </div>
+        <!-- Select pour ajouter -->
+        <select class="mx-field-select" (change)="addActiviteToProjet(+$any($event.target).value); $any($event.target).value=''">
+          <option value="">+ Assigner une activité existante...</option>
+          <optgroup *ngIf="activitesGlobalesDispo().length > 0" label="🌐 Activités globales">
+            <option *ngFor="let a of activitesGlobalesDispo()" [value]="a.id">
+              {{ a.nom }}
+            </option>
+          </optgroup>
+          <optgroup *ngIf="activitesNonGlobalesDispo().length > 0" label="Autres activités">
+            <option *ngFor="let a of activitesNonGlobalesDispo()" [value]="a.id">
+              {{ a.nom }}
+              <ng-container *ngIf="a.projets && a.projets.length > 0"> (dans {{ a.projets.length }} projet(s))</ng-container>
+            </option>
+          </optgroup>
+        </select>
       </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;padding:10px 18px;border-top:1px solid var(--border-color);background:var(--bg-hover);flex-shrink:0">
-        <button class="mx-btn mx-btn-ghost" (click)="closeProjetModal()">Annuler</button>
-        <button class="dt-btn-create" (click)="saveProjet()" style="height:36px;padding:0 16px;font-size:.78rem">{{ editingProjet() ? 'Enregistrer' : 'Créer' }}</button>
+
+      <!-- Toggles -->
+      <div style="display:flex;gap:16px;flex-wrap:wrap;padding:9px 12px;background:var(--bg-input);border-radius:9px;border:1px solid var(--border-color)">
+        <label class="mx-toggle-row" style="cursor:pointer">
+          <input type="checkbox" [(ngModel)]="projetForm().visible" [ngModelOptions]="{standalone:true}" style="display:none">
+          <div class="mx-toggle" [class.on]="projetForm().visible"><div class="mx-toggle-knob"></div></div>
+          <span style="font-size:.78rem">Visible</span>
+        </label>
+        <label class="mx-toggle-row" style="cursor:pointer">
+          <input type="checkbox" [(ngModel)]="projetForm().facturable" [ngModelOptions]="{standalone:true}" style="display:none">
+          <div class="mx-toggle" [class.on]="projetForm().facturable"><div class="mx-toggle-knob"></div></div>
+          <span style="font-size:.78rem">Facturable</span>
+        </label>
+        <label class="mx-toggle-row" style="cursor:pointer">
+          <input type="checkbox" [(ngModel)]="projetForm().autoriserActivitesGlobales" [ngModelOptions]="{standalone:true}" style="display:none">
+          <div class="mx-toggle" [class.on]="projetForm().autoriserActivitesGlobales"><div class="mx-toggle-knob"></div></div>
+          <span style="font-size:.78rem">Activités globales autorisées</span>
+        </label>
       </div>
+
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding:12px 20px;border-top:1px solid var(--border-color);background:var(--bg-hover);flex-shrink:0">
+      <button class="mx-btn mx-btn-ghost" (click)="closeProjetModal()">Annuler</button>
+      <button class="dt-btn-create" (click)="saveProjet()" style="height:36px;padding:0 20px;font-size:.8rem;border-radius:8px">
+        {{ editingProjet() ? 'Enregistrer' : 'Créer' }}
+      </button>
     </div>
   </div>
-  
-  <!-- ════ MODAL ACTIVITÉ ════ -->
-  <div *ngIf="showActiviteModal()" class="mx-modal-backdrop" (click)="showActiviteModal.set(false)">
-    <div class="mx-modal" style="max-width:500px;padding:0;overflow:hidden;max-height:90vh;display:flex;flex-direction:column" (click)="$event.stopPropagation()">
-      <div style="display:flex;align-items:center;gap:12px;padding:16px 18px 12px;border-bottom:1px solid var(--border-color);flex-shrink:0">
-        <span style="flex:1;font-size:.9rem;font-weight:700;color:var(--text-primary)">{{ editingActivite() ? 'Modifier' : 'Nouvelle activité' }}</span>
-        <button class="mx-so-close" (click)="showActiviteModal.set(false);editingActivite.set(null)"><svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
-      </div>
-      <div style="padding:16px 18px;display:flex;flex-direction:column;gap:11px;overflow-y:auto;flex:1">
-        <div class="mx-field"><label class="mx-field-label">Nom <span style="color:#ef4444">*</span></label><input [(ngModel)]="activiteForm().nom" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-        <div class="mx-so-grid">
-          <div class="mx-field"><label class="mx-field-label">Statut</label><select [(ngModel)]="activiteForm().statutActiviteId" [ngModelOptions]="{standalone:true}" class="mx-field-select"><option *ngFor="let s of statutsActivite()" [ngValue]="s.id">{{ s.libelle }}</option></select></div>
-          <div class="mx-field"><label class="mx-field-label">Priorité</label><select [(ngModel)]="activiteForm().priorite" [ngModelOptions]="{standalone:true}" class="mx-field-select"><option [ngValue]="1">Basse</option><option [ngValue]="2">Normale</option><option [ngValue]="3">Haute</option><option [ngValue]="4">Urgente</option></select></div>
-          <div class="mx-field"><label class="mx-field-label">Assigné à</label><select [(ngModel)]="activiteForm().utilisateurId" [ngModelOptions]="{standalone:true}" class="mx-field-select"><option [ngValue]="undefined">— Non assigné —</option><option *ngFor="let u of utilisateurs()" [ngValue]="u.id">{{ u.prenom }} {{ u.nom }}</option></select></div>
-          <div class="mx-field"><label class="mx-field-label">Échéance</label><input type="date" [(ngModel)]="activiteForm().dateEcheance" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-          <div class="mx-field"><label class="mx-field-label">Heures estimées</label><input type="number" [(ngModel)]="activiteForm().heuresEstimees" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;padding:10px 18px;border-top:1px solid var(--border-color);background:var(--bg-hover);flex-shrink:0">
-        <button class="mx-btn mx-btn-ghost" (click)="showActiviteModal.set(false);editingActivite.set(null)">Annuler</button>
-        <button class="dt-btn-create" (click)="saveActivite()" style="height:36px;padding:0 16px;font-size:.78rem">{{ editingActivite() ? 'Enregistrer' : 'Créer' }}</button>
-      </div>
-    </div>
-  </div>
+</div>

@@ -1,17 +1,15 @@
+// Service/UtilisateurService.java — REMPLACE le fichier entier
 package com.talenthub.application_service.Service;
 
-import com.talenthub.application_service.Entity.Permission;
+import com.talenthub.application_service.Entity.Groupe;
 import com.talenthub.application_service.Entity.Profil;
-import com.talenthub.application_service.Entity.ProfilPermission;
 import com.talenthub.application_service.Entity.Utilisateur;
 import com.talenthub.application_service.Exception.DuplicateResourceException;
-import com.talenthub.application_service.Repository.PermissionRepository;
-import com.talenthub.application_service.Repository.ProfilPermissionRepository;
+import com.talenthub.application_service.Exception.ResourceNotFoundException;
+import com.talenthub.application_service.Repository.GroupeRepository;
 import com.talenthub.application_service.Repository.UtilisateurRepository;
 import com.talenthub.application_service.DTO.UserCreationRequest;
 import com.talenthub.application_service.Service.CloudinaryService;
-
-import com.talenthub.application_service.Exception.ResourceNotFoundException;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UsersResource;
@@ -32,46 +30,47 @@ import java.util.Map;
 public class UtilisateurService {
 
     private final UtilisateurRepository repository;
-    private final ProfilService profilService;
-    private final EmailService emailService;
-    private final Keycloak keycloakAdmin;
+    private final ProfilService         profilService;
+    private final EmailService          emailService;
+    private final Keycloak              keycloakAdmin;
+    private final CloudinaryService     cloudinaryService;
+    private final GroupeRepository groupeRepository;  // ← AJOUTER
 
-    private final PermissionRepository permissionRepository;           // ✅ Ajouter
-    private final ProfilPermissionRepository profilPermissionRepository; // ✅ Ajouter
 
-    private final CloudinaryService cloudinaryService;
+    // ✅ SUPPRIMÉ : PermissionRepository, ProfilPermissionRepository
+    // Plus besoin — les permissions sont liées au profil, pas à la création user
+
     @Value("${keycloak.realm:talenthub}")
     private String realm;
 
-    public UtilisateurService(UtilisateurRepository repository,
-                              ProfilService profilService,
-                              EmailService emailService,
-                              Keycloak keycloakAdmin,
-                              PermissionRepository permissionRepository,
-                              ProfilPermissionRepository profilPermissionRepository,
-                              CloudinaryService cloudinaryService) {
-        this.repository = repository;
-        this.profilService = profilService;
-        this.emailService = emailService;
-        this.keycloakAdmin = keycloakAdmin;
-        this.permissionRepository = permissionRepository;
-        this.profilPermissionRepository = profilPermissionRepository;
-        this.cloudinaryService = cloudinaryService;
+    public UtilisateurService(
+            UtilisateurRepository repository,
+            ProfilService profilService,
+            EmailService emailService,
+            Keycloak keycloakAdmin,
+            CloudinaryService cloudinaryService,
+            GroupeRepository groupeRepository) {
+        this.repository       = repository;
+        this.profilService    = profilService;
+        this.emailService     = emailService;
+        this.keycloakAdmin    = keycloakAdmin;
+        this.cloudinaryService= cloudinaryService;
+        this.groupeRepository = groupeRepository;  // ← AJOUTER
+
     }
 
     public Utilisateur createUserByAdmin(UserCreationRequest request) {
         if (repository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException(
-                    "Un utilisateur avec l'email \"" + request.getEmail() + "\" existe déjà."
-            );
+                    "Un utilisateur avec l'email \"" + request.getEmail() + "\" existe déjà.");
         }
 
         Profil profil = profilService.getProfilById(request.getProfilId())
-                .orElseThrow(() -> new ResourceNotFoundException("Profil non trouvé: " + request.getProfilId()));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Profil non trouvé: " + request.getProfilId()));
 
-
-
-        String keycloakId = createInKeycloak(request);
+        // ✅ profilId injecté dans Keycloak — c'est tout ce dont on a besoin
+        String keycloakId = createInKeycloak(request, request.getProfilId());
 
         Utilisateur utilisateur = Utilisateur.builder()
                 .keycloakId(keycloakId)
@@ -89,64 +88,13 @@ public class UtilisateurService {
                 .profil(profil)
                 .build();
 
-        Utilisateur saved = repository.save(utilisateur);
-
-        // ✅ Sauvegarder les permissions sélectionnées
-        if (request.getPermissions() != null && !request.getPermissions().isEmpty()) {
-            savePermissions(profil, request.getPermissions());
-        }
-
-      /*  try {
-            emailService.sendWelcomeEmail(saved);
-        } catch (Exception e) {
-            System.err.println("Email non envoyé: " + e.getMessage());
-        }*/
-
-        return saved;
+        return repository.save(utilisateur);
+        // ✅ SUPPRIMÉ : savePermissions() — inutile
     }
 
-    // ✅ Nouvelle méthode
-    private void savePermissions(Profil profil,
-                                 List<UserCreationRequest.PermissionSelectionDTO> selections) {
-        for (UserCreationRequest.PermissionSelectionDTO sel : selections) {
-            // Vérifier si une entrée existe déjà
-            profilPermissionRepository
-                    .findByProfilIdAndPermissionId(profil.getId(), sel.getPermissionId())
-                    .ifPresentOrElse(
-                            existing -> {
-                                // Mettre à jour
-                                existing.setCanRead(sel.isCanRead());
-                                existing.setCanWrite(sel.isCanWrite());
-                                existing.setCanDelete(sel.isCanDelete());
-                                existing.setCanExport(sel.isCanExport());
-                                profilPermissionRepository.save(existing);
-                            },
-                            () -> {
-                                // Créer
-                                Permission permission = permissionRepository.findById(sel.getPermissionId())
-                                        .orElseThrow(() -> new ResourceNotFoundException(
-                                                "Permission non trouvée: " + sel.getPermissionId()));
-                                ProfilPermission pp = ProfilPermission.builder()
-                                        .profil(profil)
-                                        .permission(permission)
-                                        .canRead(sel.isCanRead())
-                                        .canWrite(sel.isCanWrite())
-                                        .canDelete(sel.isCanDelete())
-                                        .canExport(sel.isCanExport())
-                                        .build();
-                                profilPermissionRepository.save(pp);
-                            }
-                    );
-        }
-    }
-
-
-
-
-
-    private String createInKeycloak(UserCreationRequest request) {
-        RealmResource realmResource = keycloakAdmin.realm(realm);
-        UsersResource usersResource = realmResource.users();
+    private String createInKeycloak(UserCreationRequest request, Long profilId) {
+        RealmResource  realmResource = keycloakAdmin.realm(realm);
+        UsersResource  usersResource = realmResource.users();
 
         UserRepresentation user = new UserRepresentation();
         user.setUsername(request.getEmail());
@@ -165,124 +113,175 @@ public class UtilisateurService {
             keycloakId = response.getLocation().getPath().replaceAll(".*/([^/]+)$", "$1");
         } else if (status == 409) {
             List<UserRepresentation> existing = usersResource.search(request.getEmail(), true);
-            if (existing == null || existing.isEmpty()) {
+            if (existing == null || existing.isEmpty())
                 throw new RuntimeException("Utilisateur Keycloak introuvable après conflit");
-            }
             keycloakId = existing.get(0).getId();
         } else {
             throw new RuntimeException("Erreur Keycloak création - status: " + status);
         }
 
-        // === ESSAI SIMPLIFIÉ DE L'EMAIL KEYCLOAK ===
+        // ✅ Sauvegarder profilId dans les attributs Keycloak
         try {
-            List<String> actions = Collections.singletonList("UPDATE_PASSWORD");
-            String clientId = "talenthub-frontend";
-            String redirectUri = "http://localhost:4200/complete-profile";   // Doit être exactement comme dans Valid Redirect URIs
-            Integer lifespan = 86400;
-
-            usersResource.get(keycloakId).executeActionsEmail(
-                    clientId,
-                    redirectUri,
-                    lifespan,
-                    actions
-            );
-
-            System.out.println("✅ Email envoyé avec redirectUri = " + redirectUri);
-
+            UserRepresentation userToUpdate = usersResource.get(keycloakId).toRepresentation();
+            userToUpdate.setAttributes(Map.of("profilId", List.of(String.valueOf(profilId))));
+            usersResource.get(keycloakId).update(userToUpdate);
+            System.out.println("✅ profilId=" + profilId + " sauvegardé dans Keycloak");
         } catch (Exception e) {
-            System.err.println("Échec executeActionsEmail : " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Impossible de sauvegarder profilId dans Keycloak: " + e.getMessage());
+        }
+
+        // Email de bienvenue
+        try {
+            usersResource.get(keycloakId).executeActionsEmail(
+                    "talenthub-frontend",
+                    "http://localhost:4200/complete-profile",
+                    86400,
+                    Collections.singletonList("UPDATE_PASSWORD")
+            );
+        } catch (Exception e) {
+            System.err.println("Échec executeActionsEmail: " + e.getMessage());
         }
 
         return keycloakId;
     }
 
+    // ✅ Quand on change le profil d'un user, mettre à jour Keycloak aussi
+    public Utilisateur updateByAdmin(Long id, Map<String, Object> body) {
+        Utilisateur u = getUtilisateurById(id);
+        if (body.containsKey("nom"))         u.setNom(body.get("nom").toString());
+        if (body.containsKey("prenom"))      u.setPrenom(body.get("prenom").toString());
+        if (body.containsKey("telephone"))   u.setTelephone(body.get("telephone").toString());
+        if (body.containsKey("poste"))       u.setPoste(body.get("poste").toString());
+        if (body.containsKey("departement")) u.setDepartement(body.get("departement").toString());
+        if (body.containsKey("adresse"))     u.setAdresse(body.get("adresse").toString());
+        if (body.containsKey("dateFinContrat") && body.get("dateFinContrat") != null)
+            u.setDateFinContrat(LocalDate.parse(body.get("dateFinContrat").toString()));
+        if (body.containsKey("dateNaissance") && body.get("dateNaissance") != null)
+            u.setDateNaissance(LocalDate.parse(body.get("dateNaissance").toString()));
 
-    public List<Utilisateur> getAllUtilisateurs() {
-        return repository.findAll();
+        if (body.containsKey("profilId")) {
+            Long profilId = Long.valueOf(body.get("profilId").toString());
+            profilService.getProfilById(profilId).ifPresent(p -> {
+                u.setProfil(p);
+                // ✅ Mettre à jour profilId dans Keycloak aussi
+                updateProfilIdInKeycloak(u.getKeycloakId(), profilId);
+            });
+        }
+        return repository.save(u);
     }
+
+    // ✅ NOUVEAU : sync profilId dans Keycloak quand on change le profil d'un user
+    private void updateProfilIdInKeycloak(String keycloakId, Long profilId) {
+        try {
+            UsersResource usersResource = keycloakAdmin.realm(realm).users();
+            UserRepresentation user = usersResource.get(keycloakId).toRepresentation();
+            user.setAttributes(Map.of("profilId", List.of(String.valueOf(profilId))));
+            usersResource.get(keycloakId).update(user);
+            System.out.println("✅ profilId mis à jour dans Keycloak pour " + keycloakId);
+        } catch (Exception e) {
+            System.err.println("Échec mise à jour profilId Keycloak: " + e.getMessage());
+        }
+    }
+
+    public List<Utilisateur> getAllUtilisateurs() { return repository.findAll(); }
 
     public Utilisateur getUtilisateurById(Long id) {
         return repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé avec id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé: " + id));
     }
 
     public Utilisateur getUtilisateurByKeycloakId(String keycloakId) {
         return repository.findByKeycloakId(keycloakId)
-                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé avec keycloakId: " + keycloakId));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Utilisateur non trouvé avec keycloakId: " + keycloakId));
     }
 
+
+
+    // UtilisateurService.java — REMPLACE deleteUtilisateur()
+    // UtilisateurService.java — Remplace uniquement cette méthode
     public void deleteUtilisateur(Long id) {
-        repository.deleteById(id);
+        Utilisateur u = getUtilisateurById(id);
+        System.out.println("🗑️ Suppression user id=" + id + " keycloakId=" + u.getKeycloakId());
+
+        String keycloakId = u.getKeycloakId();
+
+        // 1. Retirer des groupes
+        try {
+            List<Groupe> groupes = groupeRepository.findGroupesByMembreId(id);
+            for (Groupe g : groupes) {
+                g.getMembres().removeIf(membre -> membre.getId().equals(id));
+            }
+            if (!groupes.isEmpty()) {
+                groupeRepository.saveAll(groupes);
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ Erreur retrait groupes: " + e.getMessage());
+        }
+
+        // 2. Supprimer dans Keycloak
+        if (keycloakId != null && !keycloakId.isBlank()) {
+            try {
+                UsersResource usersResource = keycloakAdmin.realm(realm).users();
+
+                // Vérification optionnelle avant suppression
+                UserRepresentation kcUser = usersResource.get(keycloakId).toRepresentation();
+                if (kcUser != null) {
+                    usersResource.get(keycloakId).remove();   // ← Correct : void
+                    System.out.println("✅ User supprimé de Keycloak: " + keycloakId);
+                } else {
+                    System.out.println("⚠️ User non trouvé dans Keycloak: " + keycloakId);
+                }
+            } catch (Exception e) {
+                System.err.println("❌ Keycloak delete failed pour " + keycloakId + " : " + e.getMessage());
+                // On continue quand même pour supprimer en base locale
+            }
+        }
+
+        // 3. Supprimer en base de données
+        repository.delete(u);
+        System.out.println("✅ User supprimé en BD: id=" + id);
     }
 
 
 
-    public Utilisateur updateUserProfile(String keycloakId, Map<String, Object> updates, MultipartFile photo) throws IOException {
-        Utilisateur utilisateur = getUtilisateurByKeycloakId(keycloakId);
 
+    public Utilisateur updateUserProfile(String keycloakId,
+                                         Map<String, Object> updates,
+                                         MultipartFile photo) throws IOException {
+        Utilisateur u = getUtilisateurByKeycloakId(keycloakId);
         try {
-            // 1. Mise à jour des champs texte depuis la Map 'updates'
             if (updates != null) {
                 if (updates.containsKey("dateNaissance") && updates.get("dateNaissance") != null) {
-                    String dateStr = updates.get("dateNaissance").toString().trim();
-                    if (!dateStr.isEmpty()) utilisateur.setDateNaissance(LocalDate.parse(dateStr));
+                    String s = updates.get("dateNaissance").toString().trim();
+                    if (!s.isEmpty()) u.setDateNaissance(LocalDate.parse(s));
                 }
-
                 if (updates.containsKey("dateFinContrat") && updates.get("dateFinContrat") != null) {
-                    String dateStr = updates.get("dateFinContrat").toString().trim();
-                    if (!dateStr.isEmpty()) utilisateur.setDateFinContrat(LocalDate.parse(dateStr));
+                    String s = updates.get("dateFinContrat").toString().trim();
+                    if (!s.isEmpty()) u.setDateFinContrat(LocalDate.parse(s));
                 }
-
-                if (updates.containsKey("photoUrl")) {
-                    utilisateur.setPhotoUrl((String) updates.get("photoUrl"));
-                }
-                if (updates.containsKey("telephone")) {
-                    utilisateur.setTelephone((String) updates.get("telephone"));
-                }
-                if (updates.containsKey("adresse")) {
-                    utilisateur.setAdresse((String) updates.get("adresse"));
-                }
-                if (updates.containsKey("poste")) {
-                    utilisateur.setPoste((String) updates.get("poste"));
-                }
-                if (updates.containsKey("departement")) {
-                    utilisateur.setDepartement((String) updates.get("departement"));
-                }
+                if (updates.containsKey("photoUrl"))    u.setPhotoUrl((String) updates.get("photoUrl"));
+                if (updates.containsKey("telephone"))   u.setTelephone((String) updates.get("telephone"));
+                if (updates.containsKey("adresse"))     u.setAdresse((String) updates.get("adresse"));
+                if (updates.containsKey("poste"))       u.setPoste((String) updates.get("poste"));
+                if (updates.containsKey("departement")) u.setDepartement((String) updates.get("departement"));
             }
-
-            // 2. LOGIQUE CLOUDINARY : Si un fichier réel est présent, il est prioritaire
             if (photo != null && !photo.isEmpty()) {
-                // On utilise ton service pour uploader et on récupère l'URL sécurisée
-                String photoUrl = cloudinaryService.uploadImage(photo, "talenthub/profiles");
-                utilisateur.setPhotoUrl(photoUrl);
+                u.setPhotoUrl(cloudinaryService.uploadImage(photo, "talenthub/profiles"));
             }
-
-            // 3. Sauvegarde finale
-            return repository.save(utilisateur);
-
+            return repository.save(u);
         } catch (Exception e) {
-            System.err.println("Erreur lors de la mise à jour du profil pour keycloakId=" + keycloakId);
-            e.printStackTrace();
-            throw new RuntimeException("Erreur lors de la mise à jour du profil : " + e.getMessage(), e);
+            throw new RuntimeException("Erreur mise à jour profil: " + e.getMessage(), e);
         }
     }
-
-
-
-
-
-
-
-
 
     public Utilisateur toggleActif(Long id) {
         Utilisateur u = getUtilisateurById(id);
         u.setActif(!u.isActif());
-        // Désactiver aussi dans Keycloak
         try {
-            keycloakAdmin.realm(realm).users().get(u.getKeycloakId())
-                    .update(buildKcRepresentation(u));
+            var rep = new UserRepresentation();
+            rep.setEnabled(u.isActif());
+            keycloakAdmin.realm(realm).users().get(u.getKeycloakId()).update(rep);
         } catch (Exception e) {
             System.err.println("Keycloak toggle-actif failed: " + e.getMessage());
         }
@@ -293,42 +292,55 @@ public class UtilisateurService {
         Utilisateur u = getUtilisateurById(id);
         try {
             keycloakAdmin.realm(realm).users().get(u.getKeycloakId())
-                    .executeActionsEmail(
-                            "talenthub-frontend",
-                            "http://localhost:4200",
-                            86400,
-                            java.util.Collections.singletonList("UPDATE_PASSWORD")
-                    );
+                    .executeActionsEmail("talenthub-frontend", "http://localhost:4200",
+                            86400, Collections.singletonList("UPDATE_PASSWORD"));
         } catch (Exception e) {
-            throw new RuntimeException("Impossible d'envoyer l'email de réinitialisation: " + e.getMessage());
+            throw new RuntimeException("Impossible d'envoyer l'email: " + e.getMessage());
+        }}
+
+
+    // Dans UtilisateurService.java — AJOUTE
+    public Map<String, Object> syncAllProfilIdsToKeycloak() {
+        List<Utilisateur> users = repository.findAll();
+        int success = 0, failed = 0;
+
+        UsersResource usersResource = keycloakAdmin.realm(realm).users();
+
+        for (Utilisateur u : users) {
+            if (u.getKeycloakId() == null || u.getProfil() == null) {
+                failed++;
+                continue;
+            }
+            try {
+                UserRepresentation kcUser = usersResource.get(u.getKeycloakId())
+                        .toRepresentation();
+                if (kcUser == null) { failed++; continue; }
+
+                // Initialiser les attributs si null
+                java.util.Map<String, List<String>> attrs = kcUser.getAttributes();
+                if (attrs == null) attrs = new java.util.HashMap<>();
+
+                attrs.put("profilId", List.of(String.valueOf(u.getProfil().getId())));
+                kcUser.setAttributes(attrs);
+                usersResource.get(u.getKeycloakId()).update(kcUser);
+
+                System.out.println("✅ Sync profilId=" + u.getProfil().getId()
+                        + " pour user=" + u.getEmail());
+                success++;
+            } catch (Exception e) {
+                System.err.println("❌ Sync échoué pour " + u.getEmail()
+                        + " : " + e.getMessage());
+                failed++;
+            }
         }
+
+        return Map.of(
+                "total", users.size(),
+                "success", success,
+                "failed", failed,
+                "message", "Sync terminé. Reconnectez-vous pour obtenir un nouveau token."
+        );
     }
 
-    public Utilisateur updateByAdmin(Long id, java.util.Map<String, Object> body) {
-        Utilisateur u = getUtilisateurById(id);
-        if (body.containsKey("nom"))         u.setNom(body.get("nom").toString());
-        if (body.containsKey("prenom"))      u.setPrenom(body.get("prenom").toString());
-        if (body.containsKey("telephone"))   u.setTelephone(body.get("telephone").toString());
-        if (body.containsKey("poste"))       u.setPoste(body.get("poste").toString());
-        if (body.containsKey("departement")) u.setDepartement(body.get("departement").toString());
-        if (body.containsKey("adresse"))     u.setAdresse(body.get("adresse").toString());
-        if (body.containsKey("profilId")) {
-            Long profilId = Long.valueOf(body.get("profilId").toString());
-            profilService.getProfilById(profilId).ifPresent(u::setProfil);
-        }
-        if (body.containsKey("dateFinContrat") && body.get("dateFinContrat") != null) {
-            u.setDateFinContrat(java.time.LocalDate.parse(body.get("dateFinContrat").toString()));
-        }
 
-        if (body.containsKey("dateNaissance") && body.get("dateNaissance") != null) {
-        u.setDateNaissance(java.time.LocalDate.parse(body.get("dateNaissance").toString()));}
-
-        return repository.save(u);
-    }
-
-    private org.keycloak.representations.idm.UserRepresentation buildKcRepresentation(Utilisateur u) {
-        var rep = new org.keycloak.representations.idm.UserRepresentation();
-        rep.setEnabled(u.isActif());
-        return rep;
-    }
 }

@@ -1,4 +1,4 @@
-// src/main/java/com/talenthub/application_service/Repository/ActiviteRepository.java
+// ActiviteRepository.java — REMPLACE COMPLET
 package com.talenthub.application_service.Repository;
 
 import com.talenthub.application_service.Entity.Activité;
@@ -10,43 +10,50 @@ import java.util.List;
 
 public interface ActiviteRepository extends JpaRepository<Activité, Long> {
 
-    List<Activité> findByProjetIdOrderByNumeroActivite(Long projetId);
-
-    List<Activité> findByProjetIdAndStatutActiviteId(Long projetId, Long statutId);
-
-    List<Activité> findByUtilisateurId(Long userId);
-
-    long countByProjetId(Long projetId);
-
-    // ✅ NOUVEAU — Requête filtrée avec tous les filtres optionnels
-    // Supporte : projetId, statutId, utilisateurId, priorite, globalesUniquement
+    // ✅ Activités d'un projet via la table de jointure projet_activites
     @Query("""
         SELECT a FROM Activité a
-        LEFT JOIN FETCH a.projet p
-        LEFT JOIN FETCH a.utilisateur u
-        WHERE (:projetId      IS NULL OR a.projet.id          = :projetId)
-          AND (:statutId      IS NULL OR a.statutActiviteId   = :statutId)
-          AND (:utilisateurId IS NULL OR a.utilisateur.id     = :utilisateurId)
-          AND (:priorite      IS NULL OR a.priorite           = :priorite)
-          AND (:globales = false
-               OR a.projet IS NULL
-               OR p.autoriserActivitesGlobales = true)
+        LEFT JOIN FETCH a.groupes
+        LEFT JOIN FETCH a.utilisateur
+        WHERE EXISTS (
+            SELECT p FROM a.projets p WHERE p.id = :projetId
+        )
+        ORDER BY a.dateCreation DESC
+        """)
+    List<Activité> findByProjetId(@Param("projetId") Long projetId);
+
+    @Query("SELECT a FROM Activité a WHERE a.utilisateur.id = :userId")
+    List<Activité> findByUtilisateurId(@Param("userId") Long userId);
+
+    // ✅ Requête filtrée — plus de référence à a.projet.id
+    @Query("""
+        SELECT DISTINCT a FROM Activité a
+        LEFT JOIN FETCH a.groupes
+        LEFT JOIN FETCH a.utilisateur
+        WHERE (:statutId      IS NULL OR a.statutActiviteId = :statutId)
+          AND (:utilisateurId IS NULL OR a.utilisateur.id  = :utilisateurId)
+          AND (:priorite      IS NULL OR a.priorite        = :priorite)
+          AND (:globales = false OR a.estGlobale = true)
         ORDER BY a.dateCreation DESC
         """)
     List<Activité> findAllFiltered(
-            @Param("projetId")      Long    projetId,
             @Param("statutId")      Long    statutId,
             @Param("utilisateurId") Long    utilisateurId,
             @Param("priorite")      Integer priorite,
             @Param("globales")      boolean globalesUniquement
     );
 
-    // ✅ NOUVEAU — Activités sans projet (globales pures)
+    // ✅ Activités globales uniquement
     @Query("""
         SELECT a FROM Activité a
+        LEFT JOIN FETCH a.groupes
         LEFT JOIN FETCH a.utilisateur
-        WHERE a.projet IS NULL
+        WHERE a.estGlobale = true
         ORDER BY a.dateCreation DESC
         """)
     List<Activité> findGlobales();
+
+    // Compter les activités d'un projet
+    @Query("SELECT COUNT(a) FROM Activité a JOIN a.projets p WHERE p.id = :projetId")
+    long countByProjetId(@Param("projetId") Long projetId);
 }

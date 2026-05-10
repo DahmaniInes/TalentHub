@@ -13,7 +13,15 @@
     </div>
   
     <div class="dt-wrap">
-  
+      <div *ngIf="!permCtx.canViewOwnDemandes() && !permCtx.canCreateDemande()"
+      style="padding:48px;text-align:center;color:var(--dt-text-sub)">
+     <svg viewBox="0 0 48 48" fill="none" style="width:48px;height:48px;margin:0 auto 16px;display:block;opacity:.3">
+         <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5"/>
+         <path d="M18 18l12 12M30 18L18 30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+     </svg>
+     <p style="font-weight:600;margin-bottom:4px">Accès refusé</p>
+     <p style="font-size:.85rem">Vous n'avez pas la permission de voir vos demandes.</p>
+ </div>
       <!-- ══ HEADER ══ -->
       <div class="dt-header">
         <div>
@@ -76,12 +84,25 @@
               </div>
             </div>
           </div>
-          <button class="dt-btn-create" (click)="openCreate()">
-            <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
-              <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            Nouvelle demande
-          </button>
+          <button class="dt-btn-create"
+          *ngIf="permCtx.canCreateDemande()"
+          (click)="openCreate()">
+      <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
+          <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      Nouvelle demande
+  </button>
+  <!-- <button class="mx-btn mx-btn-ghost"
+  *ngIf="permCtx.canExportDemandes()"
+  (click)="exportCsv()"
+  style="height:38px">
+<svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+  <path d="M2 10v2h10v-2M7 2v7M4 6l3 3 3-3"
+        stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+</svg>
+Exporter
+</button> -->
+
         </div>
       </div>
   
@@ -185,7 +206,7 @@
                 <div class="dt-cell-user">
                   <span class="dt-cell-name">{{ d.sujet }}</span>
                   <span *ngIf="d.description" class="dt-cell-sub">
-                    {{ d.description!.length > 55 ? (d.description | slice:0:55) + '…' : d.description }}
+                    {{ d.description!.length > 25 ? (d.description | slice:0:25) + '…' : d.description }}
                   </span>
                 </div>
               </td>
@@ -224,6 +245,7 @@
               <td class="dt-td dt-td-actions" (click)="$event.stopPropagation()">
                 <div class="dt-td-actions-wrap" style="gap:0px">
                   <button class="dt-action-btn dt-action-edit"
+                          *ngIf="permCtx.canModifyDemande(d.utilisateurId === currentUser()?.id)"
                           [disabled]="!peutModifier(d)"
                           [style.opacity]="peutModifier(d) ? '1' : '0.3'"
                           (click)="openEdit(d)" title="Modifier">
@@ -232,6 +254,7 @@
                     </svg>
                   </button>
                   <button class="dt-action-btn dt-action-del"
+                  *ngIf="permCtx.canDeleteDemande(d.utilisateurId === currentUser()?.id)"
                           [disabled]="!peutModifier(d)"
                           [style.opacity]="peutModifier(d) ? '1' : '0.3'"
                           (click)="delete(d)" title="Supprimer">
@@ -296,16 +319,35 @@
             <label class="dm-label">Description</label>
             <textarea formControlName="description" rows="3" class="dm-textarea" placeholder="Détails..."></textarea>
           </div>
-          <div class="dm-grid2">
-            <div class="dm-field">
-              <label class="dm-label">Date début</label>
-              <input type="date" formControlName="dateDebut" class="dm-input">
-            </div>
-            <div class="dm-field">
-              <label class="dm-label">Date fin</label>
-              <input type="date" formControlName="dateFin" class="dm-input">
-            </div>
-          </div>
+
+
+         <!-- Remplacer la section dates dans le slide-over -->
+<div class="dm-grid2">
+  <div class="dm-field">
+      <label class="dm-label">
+          Date début <span class="dm-required">*</span>
+      </label>
+      <input type="date" formControlName="dateDebut" class="dm-input"
+             [class.dm-input-error]="form.get('dateDebut')?.invalid && form.get('dateDebut')?.touched">
+      <span *ngIf="form.get('dateDebut')?.invalid && form.get('dateDebut')?.touched"
+            class="dm-field-error">Date de début obligatoire</span>
+  </div>
+  <div class="dm-field">
+      <label class="dm-label">
+          Date fin <span class="dm-required">*</span>
+      </label>
+      <input type="date" formControlName="dateFin" class="dm-input"
+             [class.dm-input-error]="form.get('dateFin')?.invalid && form.get('dateFin')?.touched">
+      <span *ngIf="form.get('dateFin')?.invalid && form.get('dateFin')?.touched"
+            class="dm-field-error">Date de fin obligatoire</span>
+  </div>
+</div>
+<div *ngIf="form.hasError('dateRange') && form.get('dateFin')?.touched"
+   class="dm-error-box" style="margin-top:4px">
+  ⚠️ La date de fin doit être après la date de début
+</div>
+
+
           <div *ngIf="form.get('nbJours')?.value" class="dm-info-box">✓ {{ form.get('nbJours')?.value }} jour(s) calculé(s)</div>
           <div class="dm-info-box dm-info-box-muted">ℹ️ Statut automatique : <strong>En attente</strong></div>
           <div *ngIf="slideError()" class="dm-error-box">⚠️ {{ slideError() }}</div>

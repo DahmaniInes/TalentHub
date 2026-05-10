@@ -29,7 +29,7 @@
   --bg-card:       #ffffff;
   --bg-sidebar:    #ffffff;       /* sidebar CLAIRE en light mode */
   --bg-topbar:     #ffffff;
-  --bg-input:      #f1f5f9;
+  --bg-input:      #f8fafc;
   --bg-hover:      rgba(0, 0, 0, 0.04);
 
   /* ✅ Texte NOIR en light mode */
@@ -37,7 +37,7 @@
   --text-secondary: #475569;
   --text-muted:     #94a3b8;
 
-  --border-color:   rgba(0, 0, 0, 0.08);
+  --border-color:   rgba(0, 0, 0, 0);
   --shadow-card:    0 2px 12px rgba(0,0,0,0.06);
 
   --accent:         #c026d3;
@@ -48,7 +48,7 @@
   --scrollbar-thumb: #cbd5e1;
 
   --surface: #ffffff;
-  --border:  rgba(0, 0, 0, 0.08);
+  --border:  rgba(0, 0, 0, 0);
   --hover:   rgba(0, 0, 0, 0.04);
 
   /* Variables tableau dt-* — light */
@@ -358,8 +358,8 @@ html, body { height: 100%; }
 .mx-so-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .mx-so-full { grid-column:1/-1; }
 .mx-field { display:flex; flex-direction:column; gap:4px; }
-.mx-field-label { font-size:0.65rem; font-weight:600; color:var(--text-secondary); }
-.mx-field-input,.mx-field-select,.mx-field-textarea { border:1px solid var(--border-color); border-radius:7px; padding:7px 9px; font-size:0.78rem; background:var(--bg-input); color:var(--text-primary); font-family:inherit; outline:none; transition:border-color .12s,box-shadow .12s; width:100%; }
+.mx-field-label { font-size:0.85rem; font-weight:600; color:var(--text-primary); }
+.mx-field-input,.mx-field-select,.mx-field-textarea { border:1px solid var(--border-color); border-radius:5px; padding:7px 9px; font-size:0.78rem; background:var(--bg-input); color:var(--text-primary); font-family:inherit; outline:none; transition:border-color .12s,box-shadow .12s; width:100%; }
 .mx-field-input:focus,.mx-field-select:focus,.mx-field-textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
 .mx-field-textarea { resize:vertical; min-height:65px; }
 .mx-membre-list { display:flex; flex-direction:column; gap:6px; }
@@ -1152,3 +1152,763 @@ html, body { height: 100%; }
   transition: background .12s; flex-shrink: 0;
 }
 .dm-comment-icon-btn:hover { background: var(--accent); color: white; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   pd-* — Styles Page Détail Projet / Activité
+   Nomenclature : pd = Page Detail
+   
+   STRUCTURE :
+   .pd-page          → Fond pleine page, padding généreux
+   .pd-container     → Largeur max centrée (1200px)
+   .pd-breadcrumb    → Navigation retour + chemin
+   .pd-hero          → En-tête visuel : icône + titre + stats
+   .pd-tabs          → Barre onglets horizontale
+   .pd-tab-content   → Contenu de l'onglet actif
+   .pd-card          → Carte blanche avec ombre légère
+   .pd-info-list     → Liste clé/valeur en lignes horizontales
+   .pd-comment-*     → Tous les éléments de la section commentaires
+   .pd-groupe-*      → Affichage des équipes/groupes
+   .pd-stat-card     → Mini cartes de statistiques dans le hero
+═══════════════════════════════════════════════════════════════════ */
+
+/* ── Page wrapper ─────────────────────────────────────────────── */
+.pd-page {
+  padding: 24px 28px;
+  background: var(--bg-primary);
+  min-height: 100vh;
+}
+
+/* ── Conteneur centré ─────────────────────────────────────────── */
+.pd-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Loading pleine page ──────────────────────────────────────── */
+.pd-loading-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 16px;
+  color: var(--text-muted);
+}
+
+/* ── Breadcrumb / navigation retour ──────────────────────────── */
+.pd-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .78rem;
+  color: var(--text-muted);
+}
+
+/* Bouton retour avec flèche SVG */
+.pd-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background .12s;
+}
+.pd-back-btn:hover { background: var(--accent-soft); }
+.pd-back-btn svg { width: 13px; height: 13px; }
+
+.pd-breadcrumb-sep     { color: var(--text-muted); opacity: .5; }
+.pd-breadcrumb-current { color: var(--text-primary); font-weight: 600; }
+.pd-breadcrumb-link    { color: var(--accent); text-decoration: none; font-weight: 500; }
+.pd-breadcrumb-link:hover { text-decoration: underline; }
+
+/* ── Hero header ──────────────────────────────────────────────── */
+/* Flex row : icône+info à gauche, stats à droite */
+.pd-hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 24px 28px;
+  box-shadow: var(--shadow-card);
+  flex-wrap: wrap;
+}
+
+/* Icône carrée arrondie avec couleur du projet */
+.pd-hero-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(0,0,0,.15);
+}
+.pd-hero-icon svg { width: 28px; height: 28px; }
+
+/* Bloc titre + description + avancement */
+.pd-hero-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pd-hero-info { flex: 1; min-width: 0; }
+
+/* Ligne de badges en haut du titre */
+.pd-hero-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+/* Badge statut du projet (couleur dynamique via [style]) */
+.pd-statut-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .68rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.pd-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Badges numéro, client, globale */
+.pd-num-badge {
+  font-family: monospace;
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  padding: 2px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--border-color);
+}
+
+.pd-client-badge {
+  font-size: .68rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 2px 8px;
+  border-radius: 5px;
+  border: 1px solid rgba(192,38,211,.2);
+}
+
+.pd-globale-badge {
+  font-size: .62rem;
+  font-weight: 700;
+  color: #8b5cf6;
+  background: rgba(139,92,246,.12);
+  padding: 2px 8px;
+  border-radius: 5px;
+  border: 1px solid rgba(139,92,246,.25);
+  letter-spacing: .3px;
+}
+
+.pd-hero-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+  letter-spacing: -.3px;
+  line-height: 1.2;
+}
+
+.pd-hero-desc {
+  font-size: .82rem;
+  color: var(--text-secondary);
+  margin: 0 0 14px;
+  line-height: 1.6;
+}
+
+/* Barre de progression dans le hero */
+.pd-progress-wrap   { max-width: 420px; }
+.pd-progress-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+.pd-progress-label  { font-size: .72rem; color: var(--text-muted); font-weight: 600; }
+.pd-progress-pct    { font-size: .8rem; font-weight: 800; }
+.pd-progress-bar    { height: 7px; background: var(--bg-hover); border-radius: 999px; overflow: hidden; }
+.pd-progress-fill   { height: 100%; border-radius: 999px; transition: width .4s ease; }
+
+/* ── Stats cards à droite du hero ─────────────────────────────── */
+/* Grille de mini-cartes (compteurs) */
+.pd-hero-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-self: stretch;
+  align-content: flex-start;
+}
+
+.pd-stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 12px 18px;
+  min-width: 72px;
+  gap: 2px;
+}
+
+/* Variantes colorées pour les stat cards */
+.pd-stat-card.pd-stat-green { border-color: rgba(16,185,129,.3); background: rgba(16,185,129,.06); }
+.pd-stat-card.pd-stat-blue  { border-color: rgba(59,130,246,.3);  background: rgba(59,130,246,.06); }
+.pd-stat-card.pd-stat-red   { border-color: rgba(239,68,68,.3);   background: rgba(239,68,68,.06); }
+
+.pd-stat-value {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.pd-stat-label {
+  font-size: .62rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  white-space: nowrap;
+}
+
+/* ── Onglets ──────────────────────────────────────────────────── */
+.pd-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 5px;
+}
+
+.pd-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.pd-tab svg { width: 14px; height: 14px; flex-shrink: 0; }
+.pd-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
+.pd-tab.active {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 2px 8px var(--accent-soft);
+}
+
+/* Compteur dans l'onglet (ex: "Activités (5)") */
+.pd-tab-count {
+  font-size: .6rem;
+  font-weight: 800;
+  background: rgba(255,255,255,.25);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+.pd-tab:not(.active) .pd-tab-count {
+  background: var(--bg-hover);
+  color: var(--text-muted);
+}
+
+/* ── Contenu onglet ───────────────────────────────────────────── */
+.pd-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Grille 2 colonnes ────────────────────────────────────────── */
+.pd-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 768px) { .pd-grid-2 { grid-template-columns: 1fr; } }
+
+/* ── Carte générique ──────────────────────────────────────────── */
+.pd-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* Titre d'une carte */
+.pd-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin: 0 0 14px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+.pd-card-title svg { width: 15px; height: 15px; color: var(--accent); flex-shrink: 0; }
+
+/* ── Liste clé/valeur ─────────────────────────────────────────── */
+.pd-info-list { display: flex; flex-direction: column; }
+.pd-info-row  {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border-color);
+  gap: 16px;
+}
+.pd-info-row:last-child { border-bottom: none; }
+.pd-info-key   { font-size: .72rem; color: var(--text-muted); font-weight: 600; flex-shrink: 0; }
+.pd-info-val   { font-size: .78rem; color: var(--text-primary); font-weight: 500; text-align: right; }
+.pd-info-link  { font-size: .78rem; color: var(--accent); text-decoration: none; font-weight: 600; }
+.pd-info-link:hover { text-decoration: underline; }
+
+/* ── Groupes/équipes ──────────────────────────────────────────── */
+.pd-groupes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Chip d'une équipe dans la liste */
+.pd-groupe-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+}
+
+.pd-groupe-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .72rem;
+  font-weight: 800;
+  color: white;
+  flex-shrink: 0;
+}
+
+.pd-groupe-nom { font-size: .8rem; font-weight: 600; color: var(--text-primary); display: block; }
+.pd-groupe-sub { font-size: .68rem; color: var(--text-muted); display: block; }
+
+/* Grille de cartes groupe (tab équipes) */
+.pd-groupes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.pd-groupe-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.pd-groupe-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+}
+
+.pd-groupe-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .85rem;
+  font-weight: 800;
+  color: white;
+  flex-shrink: 0;
+}
+
+.pd-groupe-card-nom { font-size: .88rem; font-weight: 700; color: var(--text-primary); margin: 0 0 2px; }
+.pd-groupe-card-sub { font-size: .7rem; color: var(--text-muted); margin: 0; }
+
+/* Mini chips de groupes dans le tableau activités */
+.pd-groupes-chips  { display: flex; gap: 4px; flex-wrap: wrap; }
+.pd-groupe-mini    { font-size: .62rem; font-weight: 700; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+.pd-groupe-more    { font-size: .62rem; color: var(--text-muted); padding: 2px 4px; }
+
+/* ── Tableau activités (tab activités) ─────────────────────────── */
+.pd-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .8rem;
+}
+.pd-table thead th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: .62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-hover);
+  white-space: nowrap;
+}
+.pd-table-row {
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: background .1s;
+}
+.pd-table-row:last-child { border-bottom: none; }
+.pd-table-row:hover { background: var(--bg-hover); }
+.pd-table-row td { padding: 12px 14px; vertical-align: middle; }
+
+/* Cellule activité dans le tableau */
+.pd-activite-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Barre de couleur verticale */
+.pd-activite-color {
+  width: 3px;
+  height: 32px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Cellule priorité */
+.pd-priorite-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.pd-priorite-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Mini barre de progression dans le tableau */
+.pd-prog-cell     { display: flex; align-items: center; gap: 8px; }
+.pd-prog-bar-mini { width: 60px; height: 4px; background: var(--bg-hover); border-radius: 999px; overflow: hidden; flex-shrink: 0; }
+.pd-prog-fill-mini { height: 100%; background: var(--accent); border-radius: 999px; transition: width .3s; }
+
+/* ── Aperçu activités récentes (tab aperçu) ─────────────────── */
+.pd-activites-preview { display: flex; flex-direction: column; gap: 8px; }
+.pd-activite-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+.pd-activite-info { flex: 1; min-width: 0; }
+.pd-activite-nom  { font-size: .79rem; font-weight: 600; color: var(--text-primary); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pd-activite-sub  { font-size: .65rem; color: var(--text-muted); font-family: monospace; }
+
+/* Textes */
+.pd-cell-name  { font-size: .8rem; font-weight: 600; color: var(--text-primary); display: block; }
+.pd-cell-sub   { font-size: .68rem; color: var(--text-muted); font-family: monospace; display: block; }
+.pd-cell-muted { font-size: .75rem; color: var(--text-muted); }
+
+/* ── Bouton "Voir plus" ───────────────────────────────────────── */
+.pd-voir-plus {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: .75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 0;
+  text-align: left;
+  font-family: inherit;
+  text-decoration: underline;
+}
+
+/* ── État vide compact ────────────────────────────────────────── */
+.pd-empty-sm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: var(--text-muted);
+  font-size: .78rem;
+  text-align: center;
+}
+.pd-empty-sm p { margin: 0; }
+
+/* ══════════════════════════════════════════════════════════════
+   SECTION COMMENTAIRES
+══════════════════════════════════════════════════════════════ */
+
+/* Formulaire d'ajout commentaire : avatar + zone de texte */
+.pd-comment-form {
+  display: flex;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px 18px;
+  box-shadow: var(--shadow-card);
+}
+
+/* Avatar de l'utilisateur connecté */
+.pd-comment-form-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .68rem;
+  font-weight: 800;
+  color: white;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.pd-comment-form-body { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+
+.pd-comment-form-header { display: flex; gap: 8px; align-items: center; }
+
+/* Select groupe pour associer un commentaire à une équipe */
+.pd-groupe-select {
+  height: 32px;
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  padding: 0 10px;
+  font-size: .74rem;
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  font-family: inherit;
+  outline: none;
+  transition: border-color .12s;
+  cursor: pointer;
+}
+.pd-groupe-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+/* Zone de texte des commentaires */
+.pd-comment-textarea {
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: .8rem;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+  transition: border-color .12s, box-shadow .12s;
+  min-height: 72px;
+}
+.pd-comment-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+.pd-comment-form-footer { display: flex; justify-content: flex-end; }
+
+/* Bouton Envoyer le commentaire */
+.pd-comment-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 7px;
+  border: none;
+  background: linear-gradient(100deg, var(--accent) 20%, var(--accent-2) 100%);
+  color: white;
+  font-size: .78rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity .15s;
+}
+.pd-comment-submit:hover:not(:disabled) { opacity: .9; }
+.pd-comment-submit:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── Liste des commentaires ───────────────────────────────────── */
+.pd-comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Un commentaire : avatar + corps */
+.pd-comment-item {
+  display: flex;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+  transition: box-shadow .15s;
+}
+.pd-comment-item:hover { box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+
+/* Avatar de l'auteur du commentaire */
+.pd-comment-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .68rem;
+  font-weight: 800;
+  color: white;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.pd-comment-body  { flex: 1; min-width: 0; }
+
+/* Méta-données : auteur + groupe + date */
+.pd-comment-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+  flex-wrap: wrap;
+}
+
+.pd-comment-auteur {
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Badge équipe du commentaire */
+.pd-comment-groupe {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .64rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 2px 7px;
+  border-radius: 5px;
+  border: 1px solid rgba(192,38,211,.2);
+}
+
+.pd-comment-date  { font-size: .68rem; color: var(--text-muted); }
+.pd-comment-edite { font-size: .66rem; color: var(--text-muted); font-style: italic; }
+
+/* Texte du commentaire */
+.pd-comment-contenu {
+  font-size: .8rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Zone d'édition inline */
+.pd-comment-edit { display: flex; flex-direction: column; gap: 6px; }
+
+/* Boutons Modifier / Supprimer sous le commentaire */
+.pd-comment-actions { display: flex; gap: 12px; margin-top: 8px; }
+
+.pd-comment-action-btn {
+  font-size: .7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  transition: color .12s;
+}
+.pd-comment-action-btn:hover { color: var(--text-primary); }
+.pd-comment-action-btn.pd-danger:hover { color: #ef4444; }
+
+/* ── Petits boutons réutilisables ─────────────────────────────── */
+.pd-btn-sm {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: .74rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  transition: all .12s;
+}
+
+.pd-btn-primary {
+  background: var(--accent);
+  color: white;
+}
+.pd-btn-primary:hover { opacity: .9; }
+
+.pd-btn-ghost {
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+.pd-btn-ghost:hover { background: var(--bg-hover); }

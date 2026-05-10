@@ -2,6 +2,7 @@
 package com.talenthub.application_service.Service;
 
 import com.talenthub.application_service.DTO.ProjetDTO;
+import com.talenthub.application_service.Entity.Activité;
 import com.talenthub.application_service.Entity.Client;
 import com.talenthub.application_service.Entity.Groupe;
 import com.talenthub.application_service.Entity.Projet;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.talenthub.application_service.Repository.ActiviteRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +26,7 @@ public class ProjetService {
     private final ProjetRepository  projetRepository;
     private final ClientRepository  clientRepository;
     private final GroupeRepository  groupeRepository;
+    private final ActiviteRepository activiteRepository;
 
     // ── Lecture ──
 
@@ -96,6 +99,7 @@ public class ProjetService {
     }
 
     // ── Création ──
+
     @Transactional
     public Projet create(Projet projet, Long clientId, List<Long> groupeIds) {
         if (clientId != null) {
@@ -113,10 +117,28 @@ public class ProjetService {
         return projetRepository.save(projet);
     }
 
+
     @Transactional
-    public Projet create(Projet projet, Long clientId) {
-        return create(projet, clientId, null);
-    }
+    public Projet create(Projet projet, Long clientId, List<Long> groupeIds, List<Long> activiteIds) {
+        if (clientId != null) {
+    Client client = clientRepository.findById(clientId)
+            .orElseThrow(() -> new RuntimeException("Client non trouvé: " + clientId));
+        projet.setClient(client);
+}
+    if (projet.getNumeroProjet() == null || projet.getNumeroProjet().isBlank()) {
+            projet.setNumeroProjet(generateNextNumeroProjet());
+            }
+            if (groupeIds != null && !groupeIds.isEmpty()) {
+            List<Groupe> groupes = groupeRepository.findAllById(groupeIds);
+        projet.setGroupes(new ArrayList<>(groupes));
+        }
+        // ✅ Activités assignées
+        if (activiteIds != null && !activiteIds.isEmpty()) {
+        List<Activité> activites = activiteRepository.findAllById(activiteIds);
+        projet.setActivites(new ArrayList<>(activites));
+        }
+        return projetRepository.save(projet);
+        }
 
     private String generateNextNumeroProjet() {
         String maxNumero = projetRepository.findMaxNumeroProjet();
@@ -134,9 +156,12 @@ public class ProjetService {
     }
 
     @Transactional
-    public Projet update(Long id, Projet details, Long clientId, List<Long> groupeIds) {
+    public Projet update(Long id, Projet details, Long clientId,
+                         List<Long> groupeIds, List<Long> activiteIds) {
         Projet existing = projetRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Projet non trouvé: " + id));
+
+
 
         if (details.getNom() != null && !details.getNom().isBlank()) {
             existing.setNom(details.getNom());
@@ -180,21 +205,25 @@ public class ProjetService {
         }
 
         if (groupeIds != null) {
-            List<Groupe> groupes = groupeIds.isEmpty()
+            existing.setGroupes(groupeIds.isEmpty()
                     ? new ArrayList<>()
-                    : new ArrayList<>(groupeRepository.findAllById(groupeIds));
-            existing.setGroupes(groupes);
+                    : new ArrayList<>(groupeRepository.findAllById(groupeIds)));
         }
 
-        Projet saved = projetRepository.save(existing);
-        log.info("Projet {} mis à jour avec succès", id);
-        return saved;
+        // ✅ Activités
+        if (activiteIds != null) {
+            existing.setActivites(activiteIds.isEmpty()
+                    ? new ArrayList<>()
+                    : new ArrayList<>(activiteRepository.findAllById(activiteIds)));
+        }
+
+        return projetRepository.save(existing);
     }
 
-    @Transactional
+    /*@Transactional
     public Projet update(Long id, Projet details, Long clientId) {
         return update(id, details, clientId, null);
-    }
+    }*/
 
     @Transactional
     public void delete(Long id) {
@@ -205,5 +234,19 @@ public class ProjetService {
     public List<Groupe> getGroupesByProjet(Long projetId) {
         Projet p = getByIdWithDetails(projetId);
         return p.getGroupes();
+    }
+
+    @Transactional
+    public Projet assignerActivites(Long projetId, List<Long> activiteIds) {
+        Projet projet = projetRepository.findById(projetId)
+                .orElseThrow(() -> new RuntimeException("Projet non trouvé: " + projetId));
+
+        if (activiteIds == null || activiteIds.isEmpty()) {
+            projet.getActivites().clear();
+        } else {
+            List<Activité> activites = activiteRepository.findAllById(activiteIds);
+            projet.setActivites(new ArrayList<>(activites));
+        }
+        return projetRepository.save(projet);
     }
 }

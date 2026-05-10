@@ -1,4 +1,16 @@
-// src/app/shared/models/activite.model.ts
+// activite.model.ts — REMPLACE
+export interface ProjetInfoActivite {
+  id:          number;
+  nom:         string;
+  couleur?:    string;
+  numeroProjet?: string;
+}
+
+export interface GroupeInfoActivite {
+  id:      number;
+  nom:     string;
+  couleur: string;
+}
 
 export interface Activite {
   id:                  number;
@@ -7,14 +19,15 @@ export interface Activite {
   numeroActivite?:     string;
   couleur?:            string;
   statutActiviteId:    number;
-  statutLibelle?:      string;   // enrichi par le backend
-  statutCouleur?:      string;   // enrichi par le backend
+  statutLibelle?:      string;
+  statutCouleur?:      string;
   statutCode?:         string;
   budget?:             number;
   quotaHoraire?:       number;
   typeBudget?:         string;
   visible:             boolean;
   facturable:          boolean;
+  estGlobale?:         boolean;   // ✅ NOUVEAU
   priorite:            number;
   prioriteLibelle?:    string;
   dateEcheance?:       string;
@@ -22,10 +35,11 @@ export interface Activite {
   dateFinReelle?:      string;
   heuresEstimees?:     number;
   heuresPassees?:      number;
-  projetId?:           number;    // null = activité globale
-  projetNom?:          string;
+  // ✅ REMPLACÉ : plus de projetId/projetNom — une activité peut être dans N projets
+  projets?:            ProjetInfoActivite[];
   utilisateurId?:      number;
   utilisateurNomComplet?: string;
+  groupes?:            GroupeInfoActivite[];
   creePar?:            string;
   dateCreation?:       string;
   dateMiseAJour?:      string;
@@ -41,9 +55,11 @@ export interface ActiviteRequest {
   typeBudget?:       string;
   visible?:          boolean;
   facturable?:       boolean;
+  estGlobale?:       boolean;   // ✅ NOUVEAU
   priorite?:         number;
   dateEcheance?:     string;
   heuresEstimees?:   number;
-  projetId?:         number;     // null = activité globale
   utilisateurId?:    number;
+  groupeIds?:        number[];
+  // ✅ PAS de projetId — l'assignation se fait côté projet
 }

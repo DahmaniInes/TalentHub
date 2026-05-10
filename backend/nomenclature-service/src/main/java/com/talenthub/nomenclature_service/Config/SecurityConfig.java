@@ -1,3 +1,5 @@
+// nomenclature-service/Config/SecurityConfig.java — REMPLACE
+// ✅ Identique à application-service — plus de CustomJwtAuthConverter ici
 package com.talenthub.nomenclature_service.Config;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -10,14 +12,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -26,62 +21,32 @@ public class SecurityConfig {
 
     @Bean
     public JwtDecoder jwtDecoder() {
-        // Adapte l'URL si ton Keycloak est sur un autre port ou domaine
-        String jwkSetUri = "http://localhost:8080/realms/talenthub/protocol/openid-connect/certs";
-        return NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
+        return NimbusJwtDecoder.withJwkSetUri(
+                "http://localhost:8080/realms/talenthub/protocol/openid-connect/certs"
+        ).build();
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-
-                // ✅ Désactiver CORS ici — le gateway s'en charge
                 .cors(cors -> cors.disable())
-
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.setContentType("application/json");
-                            response.getWriter().write("{\"error\": \"Unauthorized\"}");
+                        .authenticationEntryPoint((req, res, e) -> {
+                            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            res.setContentType("application/json");
+                            res.getWriter().write("{\"error\":\"Unauthorized\"}");
                         })
                 )
-
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/types-demande/**").permitAll()
-                        .requestMatchers("/statuts-demande/**").permitAll()
-                        .requestMatchers("/statuts-feuille-temps/**").permitAll()
-                        .requestMatchers("/categories-entree/**").permitAll()
-                        .requestMatchers("/statut-activite/**").permitAll()
-
-                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                        .requestMatchers("/actuator/health/**").permitAll()
                         .anyRequest().authenticated()
                 )
-
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt
-                                .decoder(jwtDecoder())
-                                .jwtAuthenticationConverter(jwtAuthenticationConverter())
-                        )
+                        .jwt(jwt -> jwt.decoder(jwtDecoder()))
                 );
-
         return http.build();
-    }
-
-
-
-
-    private JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        authoritiesConverter.setAuthorityPrefix("ROLE_");
-        authoritiesConverter.setAuthoritiesClaimName("realm_access.roles");
-
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
-        return converter;
     }
 }

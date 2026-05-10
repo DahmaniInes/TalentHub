@@ -1,6 +1,7 @@
 // src/app/shared/models/notification.model.ts
 
-export type NotificationType = 'FEUILLE_SOUMISE' | 'FEUILLE_VALIDEE' | 'FEUILLE_REJETEE';
+export type NotificationType = 'FEUILLE_SOUMISE' | 'FEUILLE_VALIDEE' | 'FEUILLE_REJETEE'  | 'DEMANDE_SOUMISE' |  'DEMANDE_VALIDEE' | 'DEMANDE_REJETEE' ;
+
 
 export interface AppNotification {
   id: number;

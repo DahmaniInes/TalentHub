@@ -46,40 +46,84 @@
           <span class="nav-tooltip">Dashboard</span>
         </a>
 
-        <!-- Demande -->
-        <a routerLink="/Demande" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
-          <span class="nav-icon">
-            <svg fill="currentColor" width="20" height="20" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-              <path d="M452,120h-76C376,53.726,322.274,0,256,0h0c-66.274,0-120,53.726-120,120H60c-33.137,0-60,26.863-60,60v272c0,33.137,26.863,60,60,60h392c33.137,0,60-26.863,60-60V180C512,146.863,485.137,120,452,120z M256,60c33.137,0,60,26.863,60,60H196C196,86.863,222.863,60,256,60z M402,260v20c0,16.569-13.431,30-30,30h0c-16.569,0-30-13.431-30-30v-20H170v20c0,16.569-13.431,30-30,30h0c-16.569,0-30-13.431-30-30v-20c-16.569,0-30-13.431-30-30s13.431-30,30-30h292c16.569,0,30,13.431,30,30S418.569,260,402,260z"/>
-            </svg>
-          </span>
-          <span class="nav-label">Demande</span>
-          <span class="nav-tooltip">Demande</span>
-        </a>
+        <!-- ══ DEMANDES — Menu conditionnel selon permissions ══ -->
 
+<!-- CAS 1 : L'utilisateur a seulement la permission de voir ses propres demandes -->
+<!-- Lien direct vers la page demande — pas de sous-menu -->
+<a *ngIf="permCtx.canSeeOwnDemandes() && !permCtx.canSeeAdminDemandes() && !permCtx.canSeeTypesDemandes()"
+routerLink="/Demande" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
+ <span class="nav-icon">
+     <svg fill="currentColor" width="20" height="20" viewBox="0 0 512 512">
+         <path d="M452,120h-76C376,53.726,322.274,0,256,0h0c-66.274,0-120,53.726-120,120H60c-33.137,0-60,26.863-60,60v272c0,33.137,26.863,60,60,60h392c33.137,0,60-26.863,60-60V180C512,146.863,485.137,120,452,120z M256,60c33.137,0,60,26.863,60,60H196C196,86.863,222.863,60,256,60z M402,260v20c0,16.569-13.431,30-30,30h0c-16.569,0-30-13.431-30-30v-20H170v20c0,16.569-13.431,30-30,30h0c-16.569,0-30-13.431-30-30v-20c-16.569,0-30-13.431-30-30s13.431-30,30-30h292c16.569,0,30,13.431,30,30S418.569,260,402,260z"/>
+     </svg>
+ </span>
+ <span class="nav-label">Demande</span>
+ <span class="nav-tooltip">Demande</span>
+</a>
 
+<!-- CAS 2 : L'utilisateur a plusieurs permissions → sous-menu Demandes -->
+<div *ngIf="permCtx.canSeeDemandeMenu() && (permCtx.canSeeAdminDemandes() || permCtx.canSeeTypesDemandes())"
+  class="nav-group">
+ <button class="nav-item nav-group-btn"
+         [class.active]="isAnyRouteActive('/Demande', '/admin/demandes', '/admin/types-demandes')"
+         (click)="toggleDemandeMenu()">
+     <span class="nav-icon">
+         <svg fill="currentColor" width="20" height="20" viewBox="0 0 512 512">
+             <path d="M452,120h-76C376,53.726,322.274,0,256,0h0c-66.274,0-120,53.726-120,120H60c-33.137,0-60,26.863-60,60v272c0,33.137,26.863,60,60,60h392c33.137,0,60-26.863,60-60V180C512,146.863,485.137,120,452,120z M256,60c33.137,0,60,26.863,60,60H196C196,86.863,222.863,60,256,60z M402,260v20c0,16.569-13.431,30-30,30h0c-16.569,0-30-13.431-30-30v-20H170v20c0,16.569-13.431,30-30,30h0c-16.569,0-30-13.431-30-30v-20c-16.569,0-30-13.431-30-30s13.431-30,30-30h292c16.569,0,30,13.431,30,30S418.569,260,402,260z"/>
+         </svg>
+     </span>
+     <span class="nav-label">Demandes</span>
+     <svg viewBox="0 0 12 12" fill="none" class="nav-sub-chevron"
+          [style.transform]="demandeMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)'">
+         <path d="M2.5 4.5l3.5 3 3.5-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+     </svg>
+     <span class="nav-tooltip">Demandes</span>
+ </button>
 
-        <a routerLink="admin/types-demandes" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
-          <span class="nav-icon">
-            <svg fill="currentColor" width="20" height="20" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-              <path d="M452,120h-76C376,53.726,322.274,0,256,0h0c-66.274,0-120,53.726-120,120H60c-33.137,0-60,26.863-60,60v272c0,33.137,26.863,60,60,60h392c33.137,0,60-26.863,60-60V180C512,146.863,485.137,120,452,120z M256,60c33.137,0,60,26.863,60,60H196C196,86.863,222.863,60,256,60z M402,260v20c0,16.569-13.431,30-30,30h0c-16.569,0-30-13.431-30-30v-20H170v20c0,16.569-13.431,30-30,30h0c-16.569,0-30-13.431-30-30v-20c-16.569,0-30-13.431-30-30s13.431-30,30-30h292c16.569,0,30,13.431,30,30S418.569,260,402,260z"/>
-            </svg>
-          </span>
-          <span class="nav-label">types-demandes</span>
-          <span class="nav-tooltip">types-demandes</span>
-        </a>
+ <div class="nav-submenu" [class.nav-submenu-open]="demandeMenuOpen">
 
+     <!-- Mes demandes — si permission VIEW_OWN ou CREATE -->
+     <a *ngIf="permCtx.canSeeOwnDemandes()"
+        routerLink="/Demande" routerLinkActive="active"
+        class="nav-item nav-subitem-full" (click)="closeSidebar()">
+         <span class="nav-icon">
+             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                 <path d="M2 4h12M2 8h8M2 12h6" stroke-linecap="round"/>
+             </svg>
+         </span>
+         <span class="nav-label">Mes demandes</span>
+         <span class="nav-tooltip">Mes demandes</span>
+     </a>
 
-        <a routerLink="admin/demandes" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
-          <span class="nav-icon">
-            <svg fill="currentColor" width="20" height="20" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-              <path d="M452,120h-76C376,53.726,322.274,0,256,0h0c-66.274,0-120,53.726-120,120H60c-33.137,0-60,26.863-60,60v272c0,33.137,26.863,60,60,60h392c33.137,0,60-26.863,60-60V180C512,146.863,485.137,120,452,120z M256,60c33.137,0,60,26.863,60,60H196C196,86.863,222.863,60,256,60z M402,260v20c0,16.569-13.431,30-30,30h0c-16.569,0-30-13.431-30-30v-20H170v20c0,16.569-13.431,30-30,30h0c-16.569,0-30-13.431-30-30v-20c-16.569,0-30-13.431-30-30s13.431-30,30-30h292c16.569,0,30,13.431,30,30S418.569,260,402,260z"/>
-            </svg>
-          </span>
-          <span class="nav-label">manage demandes</span>
-          <span class="nav-tooltip">manage demandes</span>
-        </a>
+     <!-- Gérer les demandes — si APPROVE ou VIEW_ALL -->
+     <a *ngIf="permCtx.canSeeAdminDemandes()"
+        routerLink="/admin/demandes" routerLinkActive="active"
+        class="nav-item nav-subitem-full" (click)="closeSidebar()">
+         <span class="nav-icon">
+             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                 <path d="M1 3h14l-5 6v5l-4-2V9L1 3z" stroke-linejoin="round"/>
+             </svg>
+         </span>
+         <span class="nav-label">Gérer les demandes</span>
+         <span class="nav-tooltip">Gérer les demandes</span>
+     </a>
 
+     <!-- Types de demandes — si READ_TYPE ou CREATE_TYPE -->
+     <a *ngIf="permCtx.canSeeTypesDemandes()"
+        routerLink="/admin/types-demandes" routerLinkActive="active"
+        class="nav-item nav-subitem-full" (click)="closeSidebar()">
+         <span class="nav-icon">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h9M4 8h7M4 12h5"/>
+            <path d="M1.5 4h.01M1.5 8h.01M1.5 12h.01" stroke-width="2"/>
+        </svg>
+         </span>
+         <span class="nav-label">Types de demandes</span>
+         <span class="nav-tooltip">Types de demandes</span>
+     </a>
+
+ </div>
+</div>
         <!-- ══ GROUPE 1 : SUIVI DU TEMPS ══ -->
         <div class="nav-group">
           <button class="nav-item nav-group-btn"
@@ -353,7 +397,9 @@
       <p class="nav-section-label">Système</p>
       <nav class="sidebar-nav">
 
-        <a routerLink="/auth" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
+
+        
+        <a routerLink="/DebugToken" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
           <span class="nav-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -362,6 +408,17 @@
           <span class="nav-label">Authentification</span>
           <span class="nav-tooltip">Authentification</span>
         </a>
+
+        <!-- <button class="nav-item" style="background:none;border:none;width:100%;text-align:left;cursor:pointer" 
+        (click)="syncProfilIds(); closeSidebar()">
+    <span class="nav-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+    </span>
+    <span class="nav-label" style="color: var(--accent)">🔧 Sync Keycloak</span>
+    <span class="nav-tooltip">Sync profilId Keycloak (une fois)</span>
+</button> -->
 
        
        

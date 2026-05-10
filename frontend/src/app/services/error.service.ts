@@ -41,8 +41,15 @@ export class ErrorService {
       return { message: msg || 'Ressource introuvable.', code: 'NOT_FOUND' };
     }
     if (err.status === 403) {
-      return { message: msg || 'Accès refusé. Permissions insuffisantes.', code: 'FORBIDDEN' };
-    }
+      const body = err.error;
+      if (body?.message) {
+          return { message: body.message, code: body.permission };
+      }
+      return {
+          message: "Vous n'avez pas la permission d'effectuer cette action.",
+          code: 'PERMISSION_DENIED'
+      };
+  }
     if (err.status === 401) {
       return { message: msg || 'Session expirée. Veuillez vous reconnecter.', code: 'UNAUTHORIZED' };
     }

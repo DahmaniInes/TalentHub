@@ -37,6 +37,7 @@ export interface Projet {
   dateCreation?:               string;
 }
 
+// projet.model.ts — Ajouter activiteIds dans ProjetRequest
 export interface ProjetRequest {
   nom:                          string;
   description?:                 string;
@@ -44,14 +45,15 @@ export interface ProjetRequest {
   clientId?:                    number | null;
   statut?:                      string;
   budgetPrevu?:                 number;
-  quotaHoraire?:                number;       // ✅ NOUVEAU
+  quotaHoraire?:                number;
   typeBudget?:                  string;
-  seuilAlerteHoraire?:          number;       // ✅ NOUVEAU
+  seuilAlerteHoraire?:          number;
   dateDebut?:                   string;
   dateFin?:                     string;
   visible?:                     boolean;
   facturable?:                  boolean;
   autoriserActivitesGlobales?:  boolean;
   responsableKeycloakId?:       string;
-  groupeIds?:                   number[];     // ✅ NOUVEAU — IDs des groupes
+  groupeIds?:                   number[];
+  activiteIds?:                 number[];   // ✅ NOUVEAU
 }

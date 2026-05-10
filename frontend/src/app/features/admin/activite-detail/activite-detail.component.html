@@ -1,0 +1,311 @@
+<!-- activite-detail.component.html — CORRIGÉ FINAL -->
+<div class="pd-page" *ngIf="!loading(); else loadingTpl">
+    <div class="pd-container" *ngIf="activite() as a">
+  
+      <!-- BREADCRUMB -->
+      <div class="pd-breadcrumb">
+        <button class="pd-back-btn" (click)="goBack()">
+          <svg viewBox="0 0 14 14" fill="none">
+            <path d="M9 2L5 7l4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Activités
+        </button>
+        <!-- ✅ CORRIGÉ : plus de projetId/projetNom — afficher le premier projet de la liste -->
+        <ng-container *ngIf="a.projets && a.projets.length > 0">
+          <span class="pd-breadcrumb-sep">/</span>
+          <a [routerLink]="['/projets', a.projets[0].id]" class="pd-breadcrumb-link">{{ a.projets[0].nom }}</a>
+          <ng-container *ngIf="a.projets.length > 1">
+            <span class="pd-breadcrumb-sep">+{{ a.projets.length - 1 }}</span>
+          </ng-container>
+        </ng-container> 
+        <span class="pd-breadcrumb-sep">/</span>
+        <span class="pd-breadcrumb-current">{{ a.nom }}</span>
+      </div>
+  
+      <!-- HERO -->
+      <div class="pd-hero">
+        <div class="pd-hero-left">
+          <div class="pd-hero-icon" [style.background]="a.couleur || '#10b981'">
+            <svg viewBox="0 0 491.5 491.5" fill="white" style="width:26px;height:26px">
+              <path d="M348.1,245.7c-67.8,0-122.9,55.1-122.9,122.9s55.1,122.9,122.9,122.9S471,436.4,471,368.6S415.9,245.7,348.1,245.7z M403.5,362.6l-41,41c-4,4-9.2,6-14.5,6c-5.2,0-10.5-2-14.5-6L313,383.1c-8-8-8-21,0-29s21-8,29,0l6,6l26.5-26.5c8-8,21-8,29,0C411.5,341.7,411.5,354.6,403.5,362.6z"/>
+              <path d="M385.3,41h-57.7v-9.8c0-17.2-14-31.2-31.2-31.2H154c-17.2,0-31.2,14-31.2,31.2v9.7H65.2c-24.7,0-44.7,20.1-44.7,44.7v361.1c0,24.7,20.1,44.7,44.7,44.7h174.9c-34.2-29.9-55.8-73.8-55.8-122.8h-81.9c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5h81.9c1.8,0,3.4,0.6,5.1,1c3.8-14.9,9.5-29,17-42h-83.6c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5h102.4c4.1,0,7.7,1.5,10.9,3.6c29.3-27.5,68.6-44.6,112-44.6c29.9,0,57.8,8.2,81.9,22.2V85.7C430,61,409.9,41,385.3,41z"/>
+            </svg>
+          </div>
+  
+          <div class="pd-hero-info">
+            <div class="pd-hero-badges">
+              <span [class]="getStatutBadgeClass(a.statutActiviteId)" style="font-size:.75rem">
+                <span class="dt-badge-dot"></span>{{ getStatutLibelle(a.statutActiviteId) }}
+              </span>
+              <span *ngIf="a.numeroActivite" class="pd-num-badge">{{ a.numeroActivite }}</span>
+  
+              <!-- ✅ CORRIGÉ : badge GLOBALE basé sur estGlobale -->
+              <span *ngIf="a.estGlobale" class="pd-globale-badge">GLOBALE</span>
+  
+              <!-- ✅ CORRIGÉ : badges projets (Many-to-Many) -->
+              <ng-container *ngIf="a.projets && a.projets.length > 0">
+                <a *ngFor="let p of a.projets.slice(0, 2)"
+                   [routerLink]="['/projets', p.id]"
+                   class="pd-client-badge"
+                   style="cursor:pointer;text-decoration:none">
+                  <span style="width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:4px;flex-shrink:0"
+                        [style.background]="p.couleur || '#94a3b8'"></span>
+                  {{ p.nom }}
+                </a>
+                <span *ngIf="a.projets.length > 2" class="pd-num-badge">+{{ a.projets.length - 2 }} projet(s)</span>
+              </ng-container>
+            </div>
+  
+            <h1 class="pd-hero-title">{{ a.nom }}</h1>
+            <p *ngIf="a.description" class="pd-hero-desc">{{ a.description }}</p>
+  
+            <!-- Progression -->
+            <div *ngIf="a.heuresEstimees && a.heuresEstimees > 0" class="pd-progress-wrap">
+              <div class="pd-progress-header">
+                <span class="pd-progress-label">{{ a.heuresPassees || 0 }}h / {{ a.heuresEstimees }}h</span>
+                <span class="pd-progress-pct" [style.color]="getProgressColor(a.heuresPassees, a.heuresEstimees)">
+                  {{ getProgressPct(a.heuresPassees, a.heuresEstimees) }}%
+                </span>
+              </div>
+              <div class="pd-progress-bar">
+                <div class="pd-progress-fill"
+                     [style.background]="getProgressColor(a.heuresPassees, a.heuresEstimees)"
+                     [style.width.%]="getProgressPct(a.heuresPassees, a.heuresEstimees)"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Stats -->
+        <div class="pd-hero-stats">
+          <div class="pd-stat-card" *ngIf="getPriorite(a.priorite) as pr">
+            <span class="pd-stat-value" [style.color]="pr.couleur">{{ pr.label }}</span>
+            <span class="pd-stat-label">Priorité</span>
+          </div>
+          <!-- ✅ CORRIGÉ : nombre de projets au lieu de projetNom -->
+          <div class="pd-stat-card">
+            <span class="pd-stat-value">{{ a.projets?.length || 0 }}</span>
+            <span class="pd-stat-label">Projets</span>
+          </div>
+          <div class="pd-stat-card" *ngIf="a.heuresEstimees">
+            <span class="pd-stat-value">{{ a.heuresEstimees }}h</span>
+            <span class="pd-stat-label">Estimées</span>
+          </div>
+          <div class="pd-stat-card pd-stat-blue" *ngIf="a.heuresPassees">
+            <span class="pd-stat-value">{{ a.heuresPassees }}h</span>
+            <span class="pd-stat-label">Passées</span>
+          </div>
+          <div class="pd-stat-card">
+            <span class="pd-stat-value">{{ a.groupes?.length || 0 }}</span>
+            <span class="pd-stat-label">Groupes</span>
+          </div>
+          <div class="pd-stat-card">
+            <span class="pd-stat-value">{{ commentaires().length }}</span>
+            <span class="pd-stat-label">Commentaires</span>
+          </div>
+        </div>
+      </div>
+  
+      <!-- ══ INFORMATIONS (toujours visible) ══ -->
+      <div class="pd-section-block">
+        <div class="pd-grid-2">
+  
+          <!-- Détails -->
+          <div class="pd-card">
+            <h3 class="pd-card-title">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="8" cy="8" r="6"/><path d="M8 7v5M8 5h.01" stroke-linecap="round"/>
+              </svg>
+              Détails
+            </h3>
+            <div class="pd-info-list">
+  
+              <!-- ✅ CORRIGÉ : afficher les projets liés (Many-to-Many) -->
+              <div class="pd-info-row" *ngIf="a.projets && a.projets.length > 0">
+                <span class="pd-info-key">Projet(s)</span>
+                <div style="display:flex;flex-direction:column;gap:5px">
+                  <a *ngFor="let p of a.projets"
+                     [routerLink]="['/projets', p.id]"
+                     class="pd-info-link"
+                     style="display:inline-flex;align-items:center;gap:5px">
+                    <span style="width:8px;height:8px;border-radius:50%;flex-shrink:0"
+                          [style.background]="p.couleur || '#94a3b8'"></span>
+                    {{ p.nom }}
+                    <span *ngIf="p.numeroProjet" style="font-size:.65rem;color:var(--text-muted);font-family:monospace">({{ p.numeroProjet }})</span>
+                  </a>
+                </div>
+              </div>
+  
+              <!-- ✅ CORRIGÉ : badge globale basé sur estGlobale -->
+              <div class="pd-info-row">
+                <span class="pd-info-key">Type</span>
+                <span *ngIf="a.estGlobale" class="pd-globale-badge" style="font-size:.72rem">GLOBALE</span>
+                <span *ngIf="!a.estGlobale" class="dt-badge dt-badge-default" style="font-size:.7rem">Liée à un projet</span>
+              </div>
+  
+              <div class="pd-info-row">
+                <span class="pd-info-key">Priorité</span>
+                <div *ngIf="getPriorite(a.priorite) as pr" class="pd-priorite-cell">
+                  <span class="pd-priorite-dot" [style.background]="pr.couleur"></span>{{ pr.label }}
+                </div>
+              </div>
+              <div class="pd-info-row" *ngIf="a.dateEcheance">
+                <span class="pd-info-key">Échéance</span>
+                <span class="pd-info-val">{{ fmtDate(a.dateEcheance) }}</span>
+              </div>
+              <div class="pd-info-row">
+                <span class="pd-info-key">Facturable</span>
+                <span class="dt-badge" [class.dt-badge-delivered]="a.facturable" [class.dt-badge-canceled]="!a.facturable">
+                  <span class="dt-badge-dot"></span>{{ a.facturable ? 'Oui' : 'Non' }}
+                </span>
+              </div>
+              <div class="pd-info-row" *ngIf="a.budget">
+                <span class="pd-info-key">Budget</span>
+                <span class="pd-info-val">{{ a.budget | number:'1.0-0' }} €</span>
+              </div>
+              <div class="pd-info-row" *ngIf="a.quotaHoraire">
+                <span class="pd-info-key">Quota horaire</span>
+                <span class="pd-info-val">{{ a.quotaHoraire }} h</span>
+              </div>
+              <div class="pd-info-row" *ngIf="a.typeBudget">
+                <span class="pd-info-key">Type budget</span>
+                <span class="dt-badge dt-badge-default" style="font-size:.7rem">{{ a.typeBudget }}</span>
+              </div>
+              <div class="pd-info-row" *ngIf="a.dateCreation">
+                <span class="pd-info-key">Créée le</span>
+                <span class="pd-info-val">{{ fmtDate(a.dateCreation) }}</span>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Groupes assignés -->
+          <div class="pd-card">
+            <h3 class="pd-card-title">
+              <svg viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm-4 6a4 4 0 118 0H4z"/>
+              </svg>
+              Groupes assignés
+            </h3>
+            <div *ngIf="a.groupes && a.groupes.length > 0" class="pd-groupes-list">
+              <div *ngFor="let g of a.groupes" class="pd-groupe-chip">
+                <div class="pd-groupe-icon" [style.background]="g.couleur || '#6366f1'">{{ g.nom.charAt(0) }}</div>
+                <span class="pd-groupe-nom">{{ g.nom }}</span>
+              </div>
+            </div>
+            <div *ngIf="!a.groupes || a.groupes.length === 0" class="pd-empty-sm">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:28px;height:28px;opacity:.3">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-linecap="round"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round"/>
+              </svg>
+              <p>Aucun groupe assigné</p>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+      <!-- ══ COMMENTAIRES (toujours visible, jamais dans un tab) ══ -->
+      <div class="pd-section-block">
+        <div class="pd-card pd-comments-card">
+  
+          <h3 class="pd-card-title" style="margin-bottom:16px">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M2 2h12v9H9l-3 3v-3H2z" stroke-linejoin="round"/>
+            </svg>
+            Commentaires
+            <span class="pd-tab-count" style="margin-left:6px">{{ commentaires().length }}</span>
+          </h3>
+  
+          <!-- Formulaire commentaire -->
+          <div class="pd-comment-form">
+            <div class="pd-comment-form-avatar" [style.background]="getAvatarColor(currentUserNom)">
+              {{ getInitiales(currentUserNom) }}
+            </div>
+            <div class="pd-comment-form-body">
+              <!-- Sélecteur de groupe (si l'activité a des groupes) -->
+              <div *ngIf="a.groupes && a.groupes.length > 0" style="margin-bottom:7px">
+                <select class="pd-groupe-select"
+                        [value]="groupeIdComment() ?? ''"
+                        (change)="groupeIdComment.set($any($event.target).value ? +$any($event.target).value : null)">
+                  <option value="">Commentaire général</option>
+                  <option *ngFor="let g of a.groupes" [value]="g.id">Au nom de l'équipe {{ g.nom }}</option>
+                </select>
+              </div>
+              <textarea class="pd-comment-textarea"
+                        placeholder="Écrire un commentaire..."
+                        [value]="nouveauCommentaire()"
+                        (input)="nouveauCommentaire.set($any($event.target).value)"
+                        rows="3"></textarea>
+              <div class="pd-comment-form-footer">
+                <button class="pd-comment-submit"
+                        [disabled]="!nouveauCommentaire().trim() || submittingComment()"
+                        (click)="submitComment()">
+                  <div class="dt-spinner" *ngIf="submittingComment()"
+                       style="width:12px;height:12px;border-width:1.5px;border-color:rgba(255,255,255,.3);border-top-color:white"></div>
+                  Envoyer
+                </button>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Liste commentaires -->
+          <div class="pd-comments-list" style="margin-top:16px">
+            <div *ngIf="loadingComments()" style="display:flex;align-items:center;gap:10px;padding:16px;color:var(--text-muted)">
+              <div class="dt-spinner"></div> Chargement...
+            </div>
+  
+            <div *ngIf="!loadingComments() && commentaires().length === 0" class="pd-empty-sm">
+              <svg viewBox="0 0 48 48" fill="none" style="width:32px;height:32px;opacity:.3">
+                <path d="M6 6h36v28H27l-9 8v-8H6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+              </svg>
+              <p>Aucun commentaire — soyez le premier à commenter</p>
+            </div>
+  
+            <div *ngFor="let c of commentaires()" class="pd-comment-item">
+              <div class="pd-comment-avatar" [style.background]="getAvatarColor(c.auteurNom)">
+                <img *ngIf="c.auteurPhotoUrl" [src]="c.auteurPhotoUrl"
+                     style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                <span *ngIf="!c.auteurPhotoUrl">{{ getInitiales(c.auteurNom) }}</span>
+              </div>
+              <div class="pd-comment-body">
+                <div class="pd-comment-meta">
+                  <span class="pd-comment-auteur">{{ c.auteurNom }}</span>
+                  <span *ngIf="c.groupeNom" class="pd-comment-groupe">{{ c.groupeNom }}</span>
+                  <span class="pd-comment-date">{{ fmtDateTime(c.dateCreation) }}</span>
+                  <span *ngIf="c.edite" class="pd-comment-edite">(modifié)</span>
+                </div>
+  
+                <!-- Affichage -->
+                <div *ngIf="editingCommentId() !== c.id" class="pd-comment-contenu">{{ c.contenu }}</div>
+  
+                <!-- Edition inline -->
+                <div *ngIf="editingCommentId() === c.id" class="pd-comment-edit">
+                  <textarea class="pd-comment-textarea"
+                            [value]="editContenu()"
+                            (input)="editContenu.set($any($event.target).value)"
+                            rows="3"></textarea>
+                  <div style="display:flex;gap:8px;margin-top:8px">
+                    <button class="pd-btn-sm pd-btn-primary" (click)="saveEdit(c)">Enregistrer</button>
+                    <button class="pd-btn-sm pd-btn-ghost" (click)="editingCommentId.set(null)">Annuler</button>
+                  </div>
+                </div>
+  
+                <!-- Actions (seulement si c'est son commentaire) -->
+                <div *ngIf="isOwn(c) && editingCommentId() !== c.id" class="pd-comment-actions">
+                  <button class="pd-comment-action-btn" (click)="startEdit(c)">Modifier</button>
+                  <span style="color:var(--border-color)">·</span>
+                  <button class="pd-comment-action-btn pd-danger" (click)="deleteComment(c)">Supprimer</button>
+                </div>
+              </div>
+            </div>
+          </div>
+  
+        </div>
+      </div>
+  
+    </div>
+  </div>
+  
+  <ng-template #loadingTpl>
+    <div class="pd-loading-page">
+      <div class="dt-spinner" style="width:32px;height:32px;border-width:3px"></div>
+    </div>
+  </ng-template>

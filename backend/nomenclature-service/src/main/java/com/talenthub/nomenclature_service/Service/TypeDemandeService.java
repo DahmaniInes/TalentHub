@@ -48,4 +48,12 @@ public class TypeDemandeService {
             throw new RuntimeException("TypeDemande non trouvé : " + id);
         repository.deleteById(id);
     }
+
+    // Ajouter cette méthode dans TypeDemandeService.java
+    public TypeDemande setActif(Long id, boolean actif) {
+        TypeDemande t = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("TypeDemande non trouvé : " + id));
+        t.setActif(actif);
+        return repository.save(t);
+    }
 }
