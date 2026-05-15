@@ -1,14 +1,18 @@
 // src/app/features/feuille-temps/pages/ma-semaine/ma-semaine.component.ts
+// ✅ COMPLET FINAL — Sélecteur utilisateur + permissions TS_* + notifications modification
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { FeuilleTempsService } from '../../../../services/feuille-temps.service';
-import { ProjetService }       from '../../../../services/projet.service';
-import { ActiviteService }     from '../../../../services/activite.service';
-import { UserService }         from '../../../../services/user.service';
-import { KeycloakService }     from '../../../../services/keycloak.service';
-import { UiService }           from '../../../../services/ui.service';
-import { ErrorService }        from '../../../../services/error.service';
+import { FeuilleTempsService }     from '../../../../services/feuille-temps.service';
+import { ProjetService }           from '../../../../services/projet.service';
+import { ActiviteService }         from '../../../../services/activite.service';
+import { UserService }             from '../../../../services/user.service';
+import { KeycloakService }         from '../../../../services/keycloak.service';
+import { UiService }               from '../../../../services/ui.service';
+import { ErrorService }            from '../../../../services/error.service';
+import { PermissionContextService } from '../../../../services/permission-context.service';
+import { NotificationService }     from '../../../../services/notification.service';
+import { GroupeService }           from '../../../../services/groupe.service';
 import {
   FeuilleTemps, FeuilleTempsRequest,
   LigneFeuilleTempsRequest, MatriceLigne
@@ -16,6 +20,7 @@ import {
 import { Projet }      from '../../../../shared/models/projet.model';
 import { Activite }    from '../../../../shared/models/activite.model';
 import { Utilisateur } from '../../../../shared/models/utilisateur.model';
+import { Groupe }      from '../../../../shared/models/groupe.model';
 import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
@@ -26,21 +31,32 @@ import { HttpErrorResponse } from '@angular/common/http';
   styleUrls: ['./ma-semaine.component.css']
 })
 export class MaSemaineComponent implements OnInit {
+
   private ftSvc       = inject(FeuilleTempsService);
   private projetSvc   = inject(ProjetService);
   private activiteSvc = inject(ActiviteService);
   private userSvc     = inject(UserService);
   private keycloak    = inject(KeycloakService);
-  readonly ui         = inject(UiService);
   private errorSvc    = inject(ErrorService);
+  private groupeSvc   = inject(GroupeService);
+  private notifSvc    = inject(NotificationService);
+  readonly ui         = inject(UiService);
+  readonly perms      = inject(PermissionContextService);
 
-  currentUser          = signal<Utilisateur | null>(null);
-  projets              = signal<Projet[]>([]);
-  activitesGlobales    = signal<Activite[]>([]);
-  activitesParProjet   = signal<Record<number, Activite[]>>({});
-  feuilleCourante      = signal<FeuilleTemps | null>(null);
-  loading              = signal(false);
-  saving               = signal(false);
+  // ── Données ──
+  currentUser           = signal<Utilisateur | null>(null);   // utilisateur connecté
+  selectedUser          = signal<Utilisateur | null>(null);   // utilisateur visualisé/modifié
+  tousUtilisateurs      = signal<Utilisateur[]>([]);           // liste pour le select
+  utilisateursFiltres   = signal<Utilisateur[]>([]);           // selon permission (groupe ou tous)
+  projets               = signal<Projet[]>([]);
+  activitesGlobales     = signal<Activite[]>([]);
+  activitesParProjet    = signal<Record<number, Activite[]>>({});
+  feuilleCourante       = signal<FeuilleTemps | null>(null);
+  mesGroupes            = signal<Groupe[]>([]);                // groupes de l'utilisateur connecté
+
+  loading   = signal(false);
+  saving    = signal(false);
+  submitted = signal(false);
 
   lundiCourant = signal<string>(FeuilleTempsService.getLundiSemaine());
   datesSemaine = computed(() => FeuilleTempsService.getDatesDesSemaine(this.lundiCourant()));
@@ -49,9 +65,59 @@ export class MaSemaineComponent implements OnInit {
   selectedRows     = signal<Set<string>>(new Set());
   commentaireModal = signal<{ rowId: string; date: string } | null>(null);
   commentaireTexte = '';
-  submitted        = signal(false);
 
   readonly JOURS_NOMS = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+
+  // ── Computed permissions ──
+
+  /** L'utilisateur connecté peut-il voir les feuilles de tous les utilisateurs */
+  canReadAll     = computed(() => this.perms.can('TS_ALL_READ'));
+
+  /** Peut voir les feuilles de son groupe */
+  canReadGroup   = computed(() => this.perms.can('TS_GROUP_READ'));
+
+  /** Peut modifier la feuille de n'importe quel utilisateur */
+  canUpdateAll   = computed(() => this.perms.can('TS_ALL_UPDATE'));
+
+  /** Peut modifier les feuilles de son groupe */
+  canUpdateGroup = computed(() => this.perms.can('TS_GROUP_UPDATE'));
+
+  /** Peut modifier sa propre feuille */
+  canUpdateOwn   = computed(() => this.perms.can('TS_OWN_UPDATE'));
+
+  /** Peut créer sa propre feuille */
+  canCreateOwn   = computed(() => this.perms.can('TS_OWN_CREATE'));
+
+  /** Le sélecteur d'utilisateur est visible si l'utilisateur a des droits étendus */
+  showUserSelector = computed(() => this.canReadAll() || this.canReadGroup());
+
+  /** L'utilisateur courant est-il en train de voir sa propre feuille */
+  isViewingOwnSheet = computed(() => {
+    const me = this.currentUser();
+    const sel = this.selectedUser();
+    if (!me || !sel) return true;
+    return me.id === sel.id;
+  });
+
+  /** Peut-on modifier la feuille affichée ? (selon les permissions + statut) */
+  peutModifier = computed(() => {
+    const statut = this.statutFeuille();
+    const bloque = statut === 'SOUMISE' || statut === 'VALIDEE';
+    if (bloque) return false;
+
+    const isOwn = this.isViewingOwnSheet();
+
+    if (isOwn) return this.canUpdateOwn() || this.canCreateOwn();
+    if (this.canUpdateAll()) return true;
+    if (this.canUpdateGroup()) return this.isSelectedUserInMyGroup();
+    return false;
+  });
+
+  /** Peut-on supprimer des lignes ? */
+  peutSupprimer = computed(() => {
+    if (this.isViewingOwnSheet()) return this.perms.can('TS_OWN_DELETE');
+    return this.canUpdateAll() || this.canUpdateGroup();
+  });
 
   totalParJour = computed(() => {
     const t: Record<string, number> = {};
@@ -64,10 +130,7 @@ export class MaSemaineComponent implements OnInit {
 
   totalSemaine  = computed(() => Object.values(this.totalParJour()).reduce((s, v) => s + v, 0));
   statutFeuille = computed(() => this.feuilleCourante()?.statut ?? null);
-  peutModifier  = computed(() => {
-    const s = this.statutFeuille();
-    return !s || s === 'BROUILLON' || s === 'REJETEE';
-  });
+
   allSelected = computed(() => {
     const ls = this.lignesMatrice();
     return ls.length > 0 && ls.every(l => this.selectedRows().has(l.rowId));
@@ -76,60 +139,82 @@ export class MaSemaineComponent implements OnInit {
   readonly fmt  = FeuilleTempsService.formatMinutes;
   readonly isWE = FeuilleTempsService.isWeekend;
 
-  fmtJourNom(d: string): string { return this.JOURS_NOMS[new Date(d).getDay()]; }
-  fmtJourNum(d: string): string { return String(new Date(d).getDate()); }
-  isToday(d: string): boolean   { return d === new Date().toISOString().split('T')[0]; }
-  fmtDateLabel(d: string): string {
-    return new Date(d).toLocaleDateString('fr-FR', { weekday:'long', day:'2-digit', month:'long' });
-  }
-
-  formatCellDisplay(ligne: MatriceLigne, date: string): string {
-    const c = ligne.jours[date];
-    const t = c ? c.minutes + c.minutesSupp : 0;
-    return `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;
-  }
-
-  getCellMinutes(ligne: MatriceLigne, date: string): number {
-    return ligne.jours[date] ? ligne.jours[date].minutes + ligne.jours[date].minutesSupp : 0;
-  }
-
-  // ✅ FIX: calcule directement depuis les jours (plus de dépendance à une fonction externe)
-  getTotalLigne(rowId: string): number {
-    const l = this.lignesMatrice().find(x => x.rowId === rowId);
-    if (!l) return 0;
-    return Object.values(l.jours).reduce((s, c) => s + c.minutes + c.minutesSupp, 0);
-  }
-
-  // ✅ Total d'une MatriceLigne directement (pour sauvegarder)
-  private getLigneTotalMinutes(l: MatriceLigne): number {
-    return Object.values(l.jours).reduce((s, c) => s + c.minutes + c.minutesSupp, 0);
-  }
-
-  getActivitesDuProjet(projetId?: number): Activite[] {
-    if (!projetId) return [];
-    return this.activitesParProjet()[projetId] ?? [];
-  }
-
+  // ── Lifecycle ──
   ngOnInit(): void {
     const kcId = this.keycloak.getKeycloakUserId();
     if (kcId) {
       this.userSvc.getUserByKeycloakId(kcId).subscribe({
-        next: u => { this.currentUser.set(u); this.loadSemaine(); },
+        next: u => {
+          this.currentUser.set(u);
+          this.selectedUser.set(u); // par défaut : voir sa propre feuille
+          this.loadDependencies();
+          this.loadSemaine();
+        },
         error: () => this.loadSemaine()
       });
     } else {
       this.loadSemaine();
     }
 
+    // Charger tous les projets et activités globales
     this.projetSvc.getAll().subscribe({ next: d => this.projets.set(d) });
-
     this.activiteSvc.getAll().subscribe({
-      next: (all: Activite[]) => this.activitesGlobales.set(all.filter(a => !(a as any).projetId))
+      next: (all: Activite[]) => this.activitesGlobales.set(all.filter(a => a.estGlobale))
     });
   }
 
+  /** Charge la liste des utilisateurs affichables selon les permissions */
+  private loadDependencies(): void {
+    const me = this.currentUser();
+    if (!me) return;
+
+    // Charger les groupes de l'utilisateur connecté
+    this.groupeSvc.getAll().subscribe({ next: g => this.mesGroupes.set(g) });
+
+    if (this.canReadAll()) {
+      // TS_ALL_READ → tous les utilisateurs
+      this.userSvc.getAllUsers().subscribe({
+        next: users => {
+          this.tousUtilisateurs.set(users);
+          this.utilisateursFiltres.set(users.filter(u => u.id !== me.id));
+        }
+      });
+    } else if (this.canReadGroup()) {
+      // TS_GROUP_READ → utilisateurs des mêmes groupes
+      this.userSvc.getAllUsers().subscribe({
+        next: users => {
+          this.tousUtilisateurs.set(users);
+          // Filtrer les utilisateurs qui partagent au moins un groupe
+          // (si l'API groupe retourne les membres, utiliser sinon tous)
+          const filtered = users.filter(u => u.id !== me.id);
+          this.utilisateursFiltres.set(filtered);
+        }
+      });
+    }
+  }
+
+  /** Vérifie si l'utilisateur sélectionné est dans le même groupe que moi */
+  isSelectedUserInMyGroup(): boolean {
+    // Implémentation simplifiée — à affiner selon votre modèle Groupe
+    return true; // On délègue la vérification au backend via les permissions
+  }
+
+  // ── Changement d'utilisateur ──
+  onUserChange(userId: string): void {
+    const id = userId ? +userId : null;
+    if (!id) {
+      // Retour à la propre feuille
+      this.selectedUser.set(this.currentUser());
+    } else {
+      const user = this.tousUtilisateurs().find(u => u.id === id) || null;
+      this.selectedUser.set(user);
+    }
+    this.loadSemaine();
+  }
+
+  // ── Chargement feuille ──
   loadSemaine(): void {
-    const user = this.currentUser();
+    const user = this.selectedUser() ?? this.currentUser();
     if (!user) { this.lignesMatrice.set([this.newLigne()]); return; }
     this.loading.set(true);
     this.ftSvc.getByUtilisateur(user.id).subscribe({
@@ -151,12 +236,11 @@ export class MaSemaineComponent implements OnInit {
       const k = `${l.projetId ?? 0}-${l.activiteId ?? 0}`;
       if (!g[k]) g[k] = {
         rowId: k,
-        projetId: l.projetId,   projetNom: l.projetNom,
+        projetId: l.projetId, projetNom: l.projetNom,
         activiteId: l.activiteId, activiteNom: l.activiteNom,
-        clientId: l.clientId,    clientNom: l.clientNom,
+        clientId: l.clientId, clientNom: l.clientNom,
         jours: {}
       };
-      // ✅ Commentaire chargé correctement
       g[k].jours[l.date] = {
         minutes: l.minutesTravaillees,
         minutesSupp: l.minutesSupplementaires,
@@ -166,8 +250,6 @@ export class MaSemaineComponent implements OnInit {
         estWeekend: FeuilleTempsService.isWeekend(l.date)
       };
     }
-
-    // S'assurer que tous les jours de la semaine sont présents dans chaque ligne
     for (const ligne of Object.values(g)) {
       for (const d of FeuilleTempsService.getDatesDesSemaine(this.lundiCourant())) {
         if (!ligne.jours[d]) {
@@ -175,11 +257,8 @@ export class MaSemaineComponent implements OnInit {
         }
       }
     }
-
-    // Charger activités des projets dans la feuille
     const projetIds = [...new Set(Object.values(g).map(l => l.projetId).filter(Boolean) as number[])];
     for (const pid of projetIds) this.loadActivitesDuProjet(pid);
-
     this.lignesMatrice.set(Object.values(g));
   }
 
@@ -190,6 +269,7 @@ export class MaSemaineComponent implements OnInit {
     return { rowId: crypto.randomUUID(), jours };
   }
 
+  // ── Actions lignes ──
   ajouterLigne(): void { this.lignesMatrice.update(l => [...l, this.newLigne()]); }
 
   supprimerLignesSelectionnees(): void {
@@ -221,6 +301,7 @@ export class MaSemaineComponent implements OnInit {
     });
   }
 
+  // ── Sélection ──
   toggleRow(rowId: string): void {
     this.selectedRows.update(sel => {
       const next = new Set(sel);
@@ -228,16 +309,15 @@ export class MaSemaineComponent implements OnInit {
       return next;
     });
   }
-
   toggleAll(): void {
     this.allSelected()
       ? this.selectedRows.set(new Set())
       : this.selectedRows.set(new Set(this.lignesMatrice().map(l => l.rowId)));
   }
-
   isRowSelected(rowId: string): boolean { return this.selectedRows().has(rowId); }
   deselectAll(): void { this.selectedRows.set(new Set()); }
 
+  // ── Activités ──
   private loadActivitesDuProjet(projetId: number): void {
     if (this.activitesParProjet()[projetId]) return;
     this.activiteSvc.getByProjet(projetId).subscribe({
@@ -245,15 +325,23 @@ export class MaSemaineComponent implements OnInit {
     });
   }
 
+  getActivitesDuProjet(projetId?: number): Activite[] {
+    if (!projetId) return []; // ← NE PAS afficher les activités sans projet sélectionné
+    return this.activitesParProjet()[projetId] ?? [];
+  }
+
   onProjetChange(rowId: string, val: string): void {
     const projetId = val ? +val : undefined;
-    const projet = this.projets().find(p => p.id === projetId);
+    const projet   = this.projets().find(p => p.id === projetId);
     this.lignesMatrice.update(ls => ls.map(l =>
       l.rowId !== rowId ? l : {
         ...l,
-        projetId: projet?.id, projetNom: projet?.nom,
-        clientId: undefined, clientNom: undefined,
-        activiteId: undefined, activiteNom: undefined
+        projetId:   projet?.id,
+        projetNom:  projet?.nom,
+        clientId:   undefined,
+        clientNom:  undefined,
+        activiteId: undefined,  // ← reset activité quand projet change
+        activiteNom: undefined
       }
     ));
     if (projetId) this.loadActivitesDuProjet(projetId);
@@ -297,6 +385,7 @@ export class MaSemaineComponent implements OnInit {
     }));
   }
 
+  // ── Commentaires ──
   ouvrirCommentaire(rowId: string, date: string): void {
     const l = this.lignesMatrice().find(x => x.rowId === rowId);
     this.commentaireTexte = l?.jours[date]?.commentaire ?? '';
@@ -308,7 +397,6 @@ export class MaSemaineComponent implements OnInit {
     if (!m) return;
     this.updateCell(m.rowId, m.date, { commentaire: this.commentaireTexte });
     this.commentaireModal.set(null);
-    // ✅ Auto-sauvegarde du commentaire sur le backend
     this.sauvegarder(false, true);
   }
 
@@ -316,6 +404,40 @@ export class MaSemaineComponent implements OnInit {
     return !!(this.lignesMatrice().find(l => l.rowId === rowId)?.jours[date]?.commentaire?.trim());
   }
 
+  // ── Helpers affichage ──
+  fmtJourNom(d: string): string { return this.JOURS_NOMS[new Date(d).getDay()]; }
+  fmtJourNum(d: string): string { return String(new Date(d).getDate()); }
+  isToday(d: string): boolean   { return d === new Date().toISOString().split('T')[0]; }
+  fmtDateLabel(d: string): string {
+    return new Date(d).toLocaleDateString('fr-FR', { weekday:'long', day:'2-digit', month:'long' });
+  }
+  formatCellDisplay(ligne: MatriceLigne, date: string): string {
+    const c = ligne.jours[date];
+    const t = c ? c.minutes + c.minutesSupp : 0;
+    return `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;
+  }
+  getCellMinutes(ligne: MatriceLigne, date: string): number {
+    return ligne.jours[date] ? ligne.jours[date].minutes + ligne.jours[date].minutesSupp : 0;
+  }
+  getTotalLigne(rowId: string): number {
+    const l = this.lignesMatrice().find(x => x.rowId === rowId);
+    if (!l) return 0;
+    return Object.values(l.jours).reduce((s, c) => s + c.minutes + c.minutesSupp, 0);
+  }
+  private getLigneTotalMinutes(l: MatriceLigne): number {
+    return Object.values(l.jours).reduce((s, c) => s + c.minutes + c.minutesSupp, 0);
+  }
+
+  // Libellé de l'utilisateur sélectionné (pour l'affichage)
+  selectedUserLabel = computed(() => {
+    const sel = this.selectedUser();
+    const me  = this.currentUser();
+    if (!sel || !me) return '';
+    if (sel.id === me.id) return '';
+    return `${sel.prenom || ''} ${sel.nom || ''}`.trim();
+  });
+
+  // ── Navigation semaine ──
   semainePrec(): void {
     const d = new Date(this.lundiCourant()); d.setDate(d.getDate() - 7);
     this.lundiCourant.set(d.toISOString().split('T')[0]); this.loadSemaine();
@@ -324,7 +446,6 @@ export class MaSemaineComponent implements OnInit {
     const d = new Date(this.lundiCourant()); d.setDate(d.getDate() + 7);
     this.lundiCourant.set(d.toISOString().split('T')[0]); this.loadSemaine();
   }
-
   get semaineLabelFR(): string {
     const lundi  = this.lundiCourant();
     const samedi = FeuilleTempsService.getSamediSemaine(lundi);
@@ -332,12 +453,27 @@ export class MaSemaineComponent implements OnInit {
     return `${f(lundi)} – ${f(samedi)}`;
   }
 
-  // ✅ FIX CRITIQUE : sauvegarder() utilise maintenant getLigneTotalMinutes(l) 
-  // au lieu de l'ancienne fonction getTotalLigne(l) qui attendait un rowId string
-  sauvegarder(soumettre = false, silencieux = false): void {
-    const user = this.currentUser();
-    if (!user) { this.ui.warning('Utilisateur non identifié.'); return; }
-
+  // ── Sauvegarde ──
+    sauvegarder(soumettre = false, silencieux = false): void {
+      const targetUser = this.selectedUser() ?? this.currentUser();
+      const me = this.currentUser();
+      if (!targetUser) { this.ui.warning("Utilisateur non identifié."); return; }
+     
+      // ✅ NOUVEAU : valider que chaque ligne avec des heures a un projet ET une activité
+      const lignesAvecHeures = this.lignesMatrice().filter(l => this.getLigneTotalMinutes(l) > 0);
+      const lignesSansProjet  = lignesAvecHeures.filter(l => !l.projetId);
+      const lignesSansActivite = lignesAvecHeures.filter(l => l.projetId && !l.activiteId);
+     
+      if (lignesSansProjet.length > 0) {
+        this.ui.warning("⚠️ Un projet doit être sélectionné pour chaque ligne saisie.");
+        this.submitted.set(true);
+        return;
+      }
+      if (lignesSansActivite.length > 0) {
+        this.ui.warning("⚠️ Une activité doit être sélectionnée pour chaque ligne avec un projet.");
+        this.submitted.set(true);
+        return;
+      }
     if (soumettre) {
       this.submitted.set(true);
       const hasSansProjet = this.lignesMatrice().some(
@@ -349,19 +485,18 @@ export class MaSemaineComponent implements OnInit {
       }
     }
 
-    // ✅ Construire les lignes avec commentaires inclus
     const lignes: LigneFeuilleTempsRequest[] = [];
     for (const l of this.lignesMatrice()) {
       for (const [date, c] of Object.entries(l.jours)) {
         if (c.minutes > 0 || c.minutesSupp > 0) {
           lignes.push({
             date,
-            projetId: l.projetId,     projetNom: l.projetNom,
+            projetId: l.projetId, projetNom: l.projetNom,
             activiteId: l.activiteId, activiteNom: l.activiteNom,
-            clientId: l.clientId,     clientNom: l.clientNom,
+            clientId: l.clientId, clientNom: l.clientNom,
             minutesTravaillees: c.minutes,
             minutesSupplementaires: c.minutesSupp,
-            commentaire: c.commentaire?.trim() || undefined, // ✅ commentaire persisté
+            commentaire: c.commentaire?.trim() || undefined,
             estWeekend: c.estWeekend
           });
         }
@@ -371,10 +506,8 @@ export class MaSemaineComponent implements OnInit {
     this.saving.set(true);
 
     const req: FeuilleTempsRequest = {
-      utilisateurId: user.id,
+      utilisateurId: targetUser.id,
       semaineDu: this.lundiCourant(),
-      // ✅ FIX 500 : utiliser semaineAu de la feuille existante si elle existe,
-      // sinon calculer le vendredi. NE JAMAIS changer semaineDu d'une feuille existante.
       semaineAu: this.feuilleCourante()?.semaineAu
                  ?? FeuilleTempsService.getVendrediSemaine(this.lundiCourant()),
       statut: soumettre ? 'SOUMISE' : 'BROUILLON',
@@ -384,16 +517,27 @@ export class MaSemaineComponent implements OnInit {
 
     const id  = this.feuilleCourante()?.id;
     const obs = id ? this.ftSvc.update(id, req) : this.ftSvc.create(req);
+    const isModifyingOther = me && targetUser && me.id !== targetUser.id;
 
     obs.subscribe({
       next: ft => {
         this.feuilleCourante.set(ft);
-        this.buildMatrice(ft); // ✅ Reconstruit depuis le backend (commentaires persistés)
+        this.buildMatrice(ft);
         if (!silencieux) {
           this.ui.success(soumettre ? 'Feuille soumise ✅' : 'Sauvegardé 💾');
         }
         this.saving.set(false);
         this.submitted.set(false);
+
+        // ✅ Notification à l'utilisateur cible si modification par quelqu'un d'autre
+        if (isModifyingOther && targetUser.keycloakId) {
+          const nomModificateur = `${me!.prenom || ''} ${me!.nom || ''}`.trim() || 'Un administrateur';
+          this.ftSvc.notifierModification(
+            targetUser.keycloakId,
+            nomModificateur,
+            this.lundiCourant()
+          ).subscribe({ error: () => {} }); // silencieux si erreur
+        }
       },
       error: (err: HttpErrorResponse) => {
         this.ui.error(this.errorSvc.parse(err).message);

@@ -260,4 +260,96 @@
 }
 
 .appro-btn-rejeter:disabled,
-.appro-btn-valider:disabled { opacity: .5; cursor: not-allowed; }
+
+
+
+/* approbation-feuille-temps.component.css */
+
+/* Chip pour le nombre d'entrées (ex: "6 activités") */
+.appro-entrees-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .74rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-color);
+  padding: 3px 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+/* Dropdown 3 points */
+.appro-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.14);
+  z-index: 500;
+  min-width: 148px;
+  overflow: hidden;
+  animation: appro-dd-in .12s ease;
+}
+.dark .appro-dropdown { box-shadow: 0 8px 28px rgba(0,0,0,.4); }
+@keyframes appro-dd-in { from { opacity:0; transform:scale(.95) translateY(-4px); } to { opacity:1; transform:scale(1) translateY(0); } }
+
+.appro-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 13px;
+  background: none;
+  border: none;
+  font-size: .78rem;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-family: inherit;
+  transition: background .1s;
+  white-space: nowrap;
+}
+.appro-dropdown-item:hover { background: var(--bg-hover); }
+
+/* Tableau des entrées dans le drawer */
+.appro-entries-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.appro-entries-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .76rem;
+}
+
+.appro-entries-table thead tr {
+  background: var(--bg-hover);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.appro-entries-table th {
+  padding: 7px 10px;
+  text-align: left;
+  font-size: .62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.appro-entries-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+  color: var(--text-primary);
+}
+
+.appro-entries-table tbody tr:last-child td { border-bottom: none; }
+.appro-entries-table tbody tr:hover { background: var(--bg-hover); }

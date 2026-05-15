@@ -23,6 +23,11 @@ import { DebugTokenComponent } from './debug-token/debug-token.component';
 import { ProjetDetailComponent } from './admin/projet-detail/projet-detail.component';
 import { ActiviteDetailComponent } from './admin/activite-detail/activite-detail.component';
 
+import { MesReclamationsComponent }    from './reclamation/mes-reclamations/mes-reclamations.component';
+import { GererReclamationsComponent }   from './reclamation/gerer-reclamations/gerer-reclamations.component';
+import { StatutReclamationComponent }   from './reclamation/statut-reclamation/statut-reclamation.component';
+import { ServiceReclamationComponent }  from './reclamation/service-reclamation/service-reclamation.component';
+
 const routes: Routes = [
   { path: 'home', component: HomeComponent },
   { path: 'dashboard', component: DashboardComponent },
@@ -54,7 +59,25 @@ const routes: Routes = [
     component: DebugTokenComponent  // Référentiel types de demandes
   },
   { path: 'projets/:id',   component: ProjetDetailComponent },
-{ path: 'activites/:id', component: ActiviteDetailComponent }
+{ path: 'activites/:id', component: ActiviteDetailComponent },
+
+{
+  path: 'reclamations',
+  component: MesReclamationsComponent      // RECLAMATION_VIEW_OWN / RECLAMATION_CREATE
+},
+{
+  path: 'reclamations/gerer',
+  component: GererReclamationsComponent    // RECLAMATION_VIEW_ALL / RECLAMATION_TREAT
+},
+{
+  path: 'reclamations/statuts',
+  component: StatutReclamationComponent    // RECLAMATION_STATUT_READ
+},
+{
+  path: 'reclamations/services',
+  component: ServiceReclamationComponent   // RECLAMATION_SERVICE_READ
+}
+
 ];
 
 @NgModule({

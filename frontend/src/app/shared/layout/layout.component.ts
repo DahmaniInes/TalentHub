@@ -25,6 +25,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   sidebarCollapsed = false;
   showUserMenu = false;
   showNotifPanel = false;
+  recMenuOpen = false;
 
   // ✅ Menus groupes
   ftMenuOpen = false;
@@ -66,6 +67,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
     if (url.startsWith('/feuille-temps')) this.ftMenuOpen = true;
     if (url.startsWith('/add-user') || url.startsWith('/admin') || url.startsWith('/users')) this.rhMenuOpen = true;
     if (url.startsWith('/projets') || url.startsWith('/clients') || url.startsWith('/groups') || url.startsWith('/activites')) this.gestionMenuOpen = true;
+    if (url.startsWith('/reclamations')) this.recMenuOpen = true;
 
     this.router.events.subscribe(evt => {
       if (evt instanceof NavigationEnd) {
@@ -73,6 +75,8 @@ export class LayoutComponent implements OnInit, OnDestroy {
         if (evt.url.startsWith('/feuille-temps')) this.ftMenuOpen = true;
         if (evt.url.startsWith('/add-user') || evt.url.startsWith('/admin') || evt.url.startsWith('/users')) this.rhMenuOpen = true;
         if (evt.url.startsWith('/projets') || evt.url.startsWith('/clients') || evt.url.startsWith('/groups') || evt.url.startsWith('/activites')) this.gestionMenuOpen = true;
+        if (evt.url.startsWith('/reclamations')) this.recMenuOpen = true;
+
       }
     });
   }
@@ -209,6 +213,9 @@ export class LayoutComponent implements OnInit, OnDestroy {
     const fallback = img.parentElement?.querySelector('.logo-icon-fallback') as HTMLElement;
     if (fallback) fallback.style.display = 'flex';
   }
+
+
+  toggleRecMenu(): void { this.recMenuOpen = !this.recMenuOpen; }
 
 
 // ✅ NOUVELLE MÉTHODE — appelée quand on clique sur "Authentification"

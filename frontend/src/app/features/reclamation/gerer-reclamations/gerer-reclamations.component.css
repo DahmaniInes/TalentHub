@@ -1,0 +1,109 @@
+/* mes-reclamations.component.css */
+
+/* Zone d'upload drag & drop */
+.rec-upload-zone {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; padding: 20px 16px;
+    border: 2px dashed var(--border-color); border-radius: 10px;
+    background: var(--bg-hover); cursor: pointer; transition: border-color .12s;
+  }
+  .rec-upload-zone:hover { border-color: var(--accent); }
+  
+  /* Bouton "Parcourir" dans la zone d'upload */
+  .rec-upload-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 6px 14px; border-radius: 7px;
+    background: var(--accent); color: white;
+    font-size: .74rem; font-weight: 600; cursor: pointer;
+    border: none; font-family: inherit; margin-top: 4px;
+    transition: opacity .14s;
+  }
+  .rec-upload-btn:hover { opacity: .88; }
+  
+  /* Fichier sélectionné avant upload */
+  .rec-file-selected {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; border-radius: 8px;
+    background: var(--bg-hover); border: 1px solid var(--border-color);
+  }
+  
+  /* Fichier uploadé avec succès */
+  .rec-file-uploaded {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; border-radius: 8px;
+    background: rgba(16,185,129,.06); border: 1px solid rgba(16,185,129,.2);
+  }
+  
+  /* Conversation */
+  .rec-conversation {
+    display: flex; flex-direction: column; gap: 10px;
+    max-height: 280px; overflow-y: auto;
+    padding: 8px; background: var(--bg-hover);
+    border: 1px solid var(--border-color); border-radius: 8px;
+    margin-bottom: 10px;
+  }
+  
+  /* Bulle commentaire */
+  .rec-comment {
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  /* Commentaire admin — aligné à droite */
+  .rec-comment-admin {
+    flex-direction: row-reverse;
+  }
+  
+  /* Avatar dans la conversation */
+  .rec-comment-avatar {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .6rem; font-weight: 800; color: white;
+  }
+  
+  /* Corps du commentaire */
+  .rec-comment-body {
+    flex: 1; min-width: 0;
+    background: var(--bg-card); border: 1px solid var(--border-color);
+    border-radius: 8px; padding: 7px 10px;
+  }
+  .rec-comment-admin .rec-comment-body {
+    background: var(--accent-soft); border-color: rgba(192,38,211,.2);
+  }
+  
+  /* En-tête commentaire */
+  .rec-comment-header {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 3px;
+    flex-wrap: wrap;
+  }
+  .rec-comment-auteur { font-size: .72rem; font-weight: 700; color: var(--text-primary); }
+  .rec-comment-date   { font-size: .64rem; color: var(--text-muted); }
+  
+  /* Badge "Agent" dans la conversation */
+  .rec-comment-role-badge {
+    font-size: .6rem; font-weight: 700; padding: 1px 6px;
+    border-radius: 999px; background: var(--accent); color: white;
+  }
+  
+  /* Texte du commentaire */
+  .rec-comment-text { font-size: .76rem; color: var(--text-primary); margin: 0; line-height: 1.4; }
+  
+  /* Zone de saisie d'un nouveau commentaire */
+  .rec-comment-input-wrap {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .rec-comment-input {
+    width: 100%; border: 1px solid var(--border-color); border-radius: 8px;
+    padding: 8px 10px; font-size: .78rem; background: var(--bg-input);
+    color: var(--text-primary); font-family: inherit; resize: none; outline: none;
+    box-sizing: border-box; transition: border-color .12s;
+  }
+  .rec-comment-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+  
+  /* Erreur formulaire */
+  .dm-field-error {
+    font-size: .65rem; color: #ef4444; font-weight: 600; display: block; margin-top: 3px;
+  }
+  .dm-error-box {
+    background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.2);
+    border-radius: 7px; padding: 8px 12px;
+    font-size: .75rem; color: #ef4444; margin-top: 4px;
+  }

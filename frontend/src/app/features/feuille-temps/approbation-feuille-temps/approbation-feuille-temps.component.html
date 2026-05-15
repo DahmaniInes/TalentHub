@@ -1,7 +1,7 @@
-<!-- approbation-feuille-temps.component.html — Style dt-* -->
-<div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh">
+<!-- approbation-feuille-temps.component.html — COMPLET FINAL -->
+<div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh" (click)="closeAllMenus()">
   <div class="dt-wrap">
-  
+
     <!-- ══ HEADER ══ -->
     <div class="dt-header">
       <div>
@@ -15,45 +15,78 @@
           <span class="dt-badge dt-badge-accent" style="font-size:.66rem;padding:3px 9px">
             <span class="dt-badge-dot"></span>{{ filteredFeuilles().length }} feuille(s)
           </span>
-          <span class="dt-badge dt-badge-pending" style="font-size:.66rem;padding:3px 9px">
+          <span class="dt-badge dt-badge-pending" style="font-size:.66rem;padding:3px 9px;cursor:pointer"
+                (click)="filterStatut.set('SOUMISE'); page.set(1)">
             <span class="dt-badge-dot"></span>{{ countStatut('SOUMISE') }} en attente
           </span>
-          <span class="dt-badge dt-badge-delivered" style="font-size:.66rem;padding:3px 9px">
+          <span class="dt-badge dt-badge-delivered" style="font-size:.66rem;padding:3px 9px;cursor:pointer"
+                (click)="filterStatut.set('VALIDEE'); page.set(1)">
             <span class="dt-badge-dot"></span>{{ countStatut('VALIDEE') }} validées
+          </span>
+          <span class="dt-badge dt-badge-canceled" style="font-size:.66rem;padding:3px 9px;cursor:pointer"
+                (click)="filterStatut.set('REJETEE'); page.set(1)">
+            <span class="dt-badge-dot"></span>{{ countStatut('REJETEE') }} rejetées
           </span>
         </div>
       </div>
-  
+
       <div class="dt-header-actions">
-        <div class="dt-search-bar">
-          <svg class="dt-search-icon" viewBox="0 0 14 14" fill="none">
-            <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.4"/>
-            <path d="m10 10 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-          </svg>
-          <input class="dt-search-input" [value]="searchText()"
-                 (input)="searchText.set($any($event.target).value)" placeholder="Rechercher...">
+        <!-- Barre recherche + filtre intégré (style projets) -->
+        <div class="dt-search-wrap" (click)="$event.stopPropagation()">
+          <div class="dt-search-bar" style="min-width:250px">
+            <button class="dt-filter-icon-btn"
+                    [class.has-filters]="hasFilters()"
+                    (click)="showFilterPanel.set(!showFilterPanel())" title="Filtres">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7">
+                <path d="M2 3h12l-4.5 5.5V13L6.5 11.5V8.5L2 3z" stroke-linejoin="round"/>
+              </svg>
+              <span *ngIf="hasFilters()" class="dt-filter-badge">{{ activeFiltersCount() }}</span>
+            </button>
+            <input class="dt-search-input"
+                   [value]="searchText()"
+                   (input)="searchText.set($any($event.target).value); page.set(1)"
+                   placeholder="Rechercher un employé, une semaine...">
+          </div>
+
+          <!-- Panel filtres -->
+          <div class="dt-filter-panel" [class.open]="showFilterPanel()">
+            <div class="dt-fp-header">
+              <p class="dt-fp-title">Filtres</p>
+              <button *ngIf="hasFilters()" class="dt-fp-reset" (click)="resetFilters()">
+                Réinitialiser
+              </button>
+            </div>
+            <div class="dt-fp-body">
+              <div class="dt-fp-field">
+                <label class="dt-fp-label">Statut</label>
+                <select class="dt-fp-select" [value]="filterStatut()"
+                        (change)="filterStatut.set($any($event.target).value); page.set(1)">
+                  <option value="TOUS">Tous les statuts</option>
+                  <option value="SOUMISE">Soumises</option>
+                  <option value="VALIDEE">Validées</option>
+                  <option value="REJETEE">Rejetées</option>
+                  <option value="BROUILLON">Brouillons</option>
+                </select>
+              </div>
+            </div>
+            <div class="dt-fp-footer">
+              <button class="mx-btn mx-btn-ghost" style="height:30px;font-size:.73rem"
+                      (click)="showFilterPanel.set(false)">Fermer</button>
+            </div>
+          </div>
         </div>
-  
-        <select class="dt-filter-select" [value]="filterStatut()"
-                (change)="filterStatut.set($any($event.target).value)">
-          <option value="TOUS">Tous les statuts</option>
-          <option value="SOUMISE">Soumises</option>
-          <option value="VALIDEE">Validées</option>
-          <option value="REJETEE">Rejetées</option>
-        </select>
       </div>
     </div>
-  
-    <!-- Loading -->
+
     <div *ngIf="loading()" class="dt-loading"><div class="dt-spinner"></div> Chargement...</div>
-  
+
     <!-- ══ TABLEAU ══ -->
     <div *ngIf="!loading()" class="dt-scroll">
       <table class="dt-table">
         <thead>
           <tr>
             <!-- Employé -->
-            <th class="dt-th" style="min-width:180px">
+            <th class="dt-th" style="min-width:220px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 14 14" fill="currentColor">
                   <path d="M7 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm-4 6a4 4 0 118 0H3z"/>
@@ -62,7 +95,7 @@
               </div>
             </th>
             <!-- Semaine -->
-            <th class="dt-th" style="min-width:150px">
+            <th class="dt-th" style="min-width:140px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
                   <rect x="1" y="2" width="12" height="11" rx="1.5"/>
@@ -72,13 +105,22 @@
               </div>
             </th>
             <!-- Heures -->
-            <th class="dt-th" style="min-width:100px">
+            <th class="dt-th" style="min-width:90px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
                   <circle cx="7" cy="7" r="5.5"/>
                   <path d="M7 4v3l2 1.5" stroke-linecap="round"/>
                 </svg>
                 Heures
+              </div>
+            </th>
+            <!-- Entrées -->
+            <th class="dt-th" style="min-width:110px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+                  <path d="M2 4h10M2 7h10M2 10h6" stroke-linecap="round"/>
+                </svg>
+                Entrées
               </div>
             </th>
             <!-- Statut -->
@@ -91,52 +133,65 @@
                 Statut
               </div>
             </th>
-            <!-- Entrées -->
-            <th class="dt-th" style="min-width:80px">
-              <div class="dt-th-inner">
-                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
-                  <path d="M2 4h10M2 7h10M2 10h6" stroke-linecap="round"/>
-                </svg>
-                Entrées
-              </div>
-            </th>
-            <!-- Actions -->
-            <th class="dt-th dt-th-actions" style="min-width:140px"></th>
+            <!-- Actions (3 points) -->
+            <th class="dt-th dt-th-actions" style="width:48px"></th>
           </tr>
         </thead>
-  
+
         <tbody>
-          <tr *ngFor="let ft of filteredFeuilles()"
-              class="dt-tr"
-              (click)="ouvrirDetail(ft)">
-  
-            <!-- Employé -->
+          <tr *ngFor="let ft of pagedFeuilles()" class="dt-tr" (click)="ouvrirDetail(ft)">
+
+            <!-- Employé : photo/avatar + nom + email -->
             <td class="dt-td">
-              <div class="dt-cell-user">
-                <span class="dt-cell-name">{{ ft.utilisateurNom || 'Utilisateur #' + ft.utilisateurId }}</span>
+              <div class="dt-cell-with-avatar">
+                <!-- Photo si disponible, sinon avatar initiales coloré -->
+                <div class="dt-avatar"
+                     [style.background]="getUtilisateur(ft)?.photoUrl ? 'transparent' : getAvatarColor(ft.utilisateurNom || '')">
+                  <img *ngIf="getUtilisateur(ft)?.photoUrl"
+                       [src]="getUtilisateur(ft)!.photoUrl!"
+                       style="width:100%;height:100%;object-fit:cover;border-radius:50%"
+                       [alt]="ft.utilisateurNom">
+                  <span *ngIf="!getUtilisateur(ft)?.photoUrl">{{ getInitiales(ft.utilisateurNom) }}</span>
+                </div>
+                <div class="dt-cell-user">
+                  <span class="dt-cell-name">{{ ft.utilisateurNom || 'Utilisateur #' + ft.utilisateurId }}</span>
+                  <span class="dt-cell-sub">{{ getUtilisateur(ft)?.email || '—' }}</span>
+                </div>
               </div>
             </td>
-  
+
             <!-- Semaine -->
             <td class="dt-td">
               <div class="dt-cell-user">
                 <span class="dt-cell-name" style="font-size:.8rem">
                   {{ ft.semaineDu | date:'dd/MM' }} – {{ ft.semaineAu | date:'dd/MM/yy' }}
                 </span>
-                <span *ngIf="ft.commentaireValideur" class="dt-cell-sub" style="font-style:italic">{{ ft.commentaireValideur }}</span>
+                <span *ngIf="ft.commentaireValideur" class="dt-cell-sub" style="font-style:italic;color:var(--dt-text-sub)">
+                  {{ ft.commentaireValideur }}
+                </span>
               </div>
             </td>
-  
+
             <!-- Heures -->
             <td class="dt-td">
               <div class="dt-cell-user">
-                <span class="dt-cell-name" style="color:var(--accent)">{{ fmt(ft.minutesTravaillees) }}</span>
+                <span class="dt-cell-name" style="color:var(--accent);font-weight:700">{{ fmt(ft.minutesTravaillees) }}</span>
                 <span *ngIf="ft.minutesSupplementaires > 0" class="dt-cell-sub" style="color:#10b981">
                   +{{ fmt(ft.minutesSupplementaires) }} suppl.
                 </span>
               </div>
             </td>
-  
+
+            <!-- Entrées : nombre + mot "activité(s)" -->
+            <td class="dt-td">
+              <span class="appro-entrees-chip">
+                <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" style="width:11px;height:11px">
+                  <path d="M2 4h10M2 7h10M2 10h6" stroke-linecap="round"/>
+                </svg>
+                {{ ft.lignes?.length || 0 }} activité{{ (ft.lignes?.length || 0) > 1 ? 's' : '' }}
+              </span>
+            </td>
+
             <!-- Statut -->
             <td class="dt-td">
               <span class="dt-badge"
@@ -144,41 +199,58 @@
                     [class.dt-badge-canceled]="ft.statut==='REJETEE'"
                     [class.dt-badge-pending]="ft.statut==='SOUMISE'"
                     [class.dt-badge-default]="ft.statut==='BROUILLON'">
-                <span class="dt-badge-dot"></span>
-                {{ statutLabel(ft.statut) }}
+                <span class="dt-badge-dot"></span>{{ statutLabel(ft.statut) }}
               </span>
             </td>
-  
-            <!-- Nb entrées -->
-            <td class="dt-td">
-              <span class="dt-cell-muted">{{ ft.lignes?.length || 0 }}</span>
-            </td>
-  
-            <!-- Actions inline -->
-            <td class="dt-td" style="padding-right:16px" (click)="$event.stopPropagation()">
-              <div style="display:flex;gap:6px;justify-content:flex-end">
-                <button *ngIf="ft.statut==='SOUMISE'"
-                        class="dt-btn-create" style="padding:6px 14px;font-size:.74rem;border-radius:7px"
-                        (click)="valider(ft)">
-                  <svg viewBox="0 0 12 12" fill="none" style="width:11px;height:11px">
-                    <path d="M2 6l3 3.5 5-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+
+            <!-- Actions 3 points -->
+            <td class="dt-td dt-td-actions" (click)="$event.stopPropagation()">
+              <div style="position:relative;display:flex;justify-content:center">
+                <button class="dt-action-btn" (click)="toggleMenu(ft.id, $event)">
+                  <svg viewBox="0 0 4 18" fill="currentColor" style="width:4px;height:18px">
+                    <circle cx="2" cy="2" r="1.8"/>
+                    <circle cx="2" cy="9" r="1.8"/>
+                    <circle cx="2" cy="16" r="1.8"/>
                   </svg>
-                  Valider
                 </button>
-                <button *ngIf="ft.statut==='SOUMISE'"
-                        class="ms-btn ms-btn-remove" style="padding:6px 14px;font-size:.74rem"
-                        (click)="ouvrirRejet(ft)">
-                  Rejeter
-                </button>
+                <div *ngIf="openMenuId() === ft.id" class="appro-dropdown">
+                  <!-- Voir détail -->
+                  <button class="appro-dropdown-item" (click)="ouvrirDetail(ft); closeAllMenus()">
+                    <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+                      <path d="M1 7s2.5-5 6-5 6 5 6 5-2.5 5-6 5-6-5-6-5z" stroke="currentColor" stroke-width="1.3"/>
+                      <circle cx="7" cy="7" r="1.5" stroke="currentColor" stroke-width="1.3"/>
+                    </svg>
+                    Voir détail
+                  </button>
+                  <!-- Valider (si SOUMISE) -->
+                  <button *ngIf="ft.statut === 'SOUMISE'" class="appro-dropdown-item"
+                          style="color:#10b981" (click)="valider(ft)">
+                    <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px;color:#10b981">
+                      <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/>
+                      <path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Valider
+                  </button>
+                  <!-- Rejeter (si SOUMISE) -->
+                  <button *ngIf="ft.statut === 'SOUMISE'" class="appro-dropdown-item"
+                          style="color:#f59e0b" (click)="ouvrirRejet(ft)">
+                    <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px;color:#f59e0b">
+                      <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/>
+                      <path d="M5 5l4 4M9 5l-4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                    </svg>
+                    Rejeter
+                  </button>
+                </div>
               </div>
             </td>
+
           </tr>
         </tbody>
       </table>
-  
+
       <!-- Vide -->
       <div *ngIf="filteredFeuilles().length === 0" class="dt-empty">
-        <svg class="dt-empty-icon" viewBox="0 0 48 48" fill="none" style="width:38px;height:38px">
+        <svg viewBox="0 0 48 48" fill="none" style="width:38px;height:38px;opacity:.35">
           <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
           <path d="M24 16v8M24 28h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         </svg>
@@ -186,133 +258,178 @@
         <p class="dt-empty-sub">Aucune feuille ne correspond aux filtres sélectionnés.</p>
       </div>
     </div>
-  
-  </div><!-- /.dt-wrap -->
-  </div>
-  
-  <!-- ════ SLIDE-OVER DÉTAIL ════ -->
-  <div *ngIf="feuilleDetail() && !showRejetModal()" class="mx-overlay" (click)="fermerDetail()"></div>
-  <div *ngIf="feuilleDetail() as ft" class="mx-slideover" [style.display]="showRejetModal()?'none':''">
-    <div class="mx-so-header">
-      <div class="dt-avatar" style="width:44px;height:44px;border-radius:11px"
-           [style.background]="ft.statut==='VALIDEE'?'#10b981':ft.statut==='REJETEE'?'#ef4444':ft.statut==='SOUMISE'?'#3b82f6':'#64748b'">
-        <svg viewBox="0 0 14 14" fill="white" style="width:16px;height:16px">
-          <rect x="1.5" y="1.5" width="11" height="11" rx="1.5" stroke="white" stroke-width="1.2" fill="none"/>
-          <path d="M4 5h6M4 7.5h6M4 10h4" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
-        </svg>
+
+    <!-- ══ PAGINATION ══ -->
+    <div *ngIf="!loading() && filteredFeuilles().length > 0" class="dt-footer">
+      <div class="dt-count-info">
+        <strong>{{ (page()-1)*pageSize()+1 }}–{{ minVal(page()*pageSize(), filteredFeuilles().length) }}</strong>
+        of <strong>{{ filteredFeuilles().length }}</strong>
       </div>
-      <div class="mx-so-title-block">
-        <p class="mx-so-name">{{ ft.utilisateurNom || 'Utilisateur' }}</p>
-        <p class="mx-so-sub">Semaine {{ ft.semaineDu | date:'dd/MM' }} – {{ ft.semaineAu | date:'dd/MM/yyyy' }}</p>
-        <div class="mx-so-badges">
-          <span class="dt-badge" style="font-size:.62rem"
-                [class.dt-badge-delivered]="ft.statut==='VALIDEE'"
-                [class.dt-badge-canceled]="ft.statut==='REJETEE'"
-                [class.dt-badge-pending]="ft.statut==='SOUMISE'"
-                [class.dt-badge-default]="ft.statut==='BROUILLON'">
-            <span class="dt-badge-dot"></span>{{ statutLabel(ft.statut) }}
-          </span>
+      <div class="dt-pagination">
+        <button class="dt-page-arrow" [disabled]="page()===1" (click)="goToPage(page()-1)">
+          <svg viewBox="0 0 14 14" fill="none"><path d="M9 2L5 7l4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <ng-container *ngFor="let p of pagesArray()">
+          <button *ngIf="p===1||p===totalPages()||(p>=page()-1&&p<=page()+1)"
+                  class="dt-page-btn" [class.dt-page-btn-active]="p===page()" (click)="goToPage(p)">{{ p }}</button>
+          <span *ngIf="p===page()-2&&p>1" style="padding:0 4px;font-size:.75rem;color:var(--dt-text-head)">…</span>
+          <span *ngIf="p===page()+2&&p<totalPages()" style="padding:0 4px;font-size:.75rem;color:var(--dt-text-head)">…</span>
+        </ng-container>
+        <button class="dt-page-arrow" [disabled]="page()===totalPages()" (click)="goToPage(page()+1)">
+          <svg viewBox="0 0 14 14" fill="none"><path d="M5 2l4 5-4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════ SLIDE-OVER DÉTAIL ════ -->
+<div *ngIf="feuilleDetail() && !showRejetModal()" class="mx-overlay" (click)="fermerDetail()"></div>
+<div *ngIf="feuilleDetail() as ft" class="mx-slideover" [style.display]="showRejetModal() ? 'none' : ''">
+  <div class="mx-so-header">
+    <!-- Avatar de l'employé dans le drawer -->
+    <div class="dt-avatar"
+         style="width:44px;height:44px;border-radius:11px;flex-shrink:0"
+         [style.background]="getUtilisateur(ft)?.photoUrl ? 'transparent' : getAvatarColor(ft.utilisateurNom || '')">
+      <img *ngIf="getUtilisateur(ft)?.photoUrl"
+           [src]="getUtilisateur(ft)!.photoUrl!"
+           style="width:100%;height:100%;object-fit:cover;border-radius:11px"
+           [alt]="ft.utilisateurNom">
+      <span *ngIf="!getUtilisateur(ft)?.photoUrl"
+            style="font-size:.8rem;font-weight:800;color:white">
+        {{ getInitiales(ft.utilisateurNom) }}
+      </span>
+    </div>
+    <div class="mx-so-title-block">
+      <p class="mx-so-name">{{ ft.utilisateurNom || 'Utilisateur' }}</p>
+      <p class="mx-so-sub" style="font-size:.72rem;color:var(--dt-text-sub)">
+        {{ getUtilisateur(ft)?.email || '' }}
+      </p>
+      <p class="mx-so-sub">Semaine {{ ft.semaineDu | date:'dd/MM' }} – {{ ft.semaineAu | date:'dd/MM/yyyy' }}</p>
+      <div class="mx-so-badges">
+        <span class="dt-badge" style="font-size:.62rem"
+              [class.dt-badge-delivered]="ft.statut==='VALIDEE'"
+              [class.dt-badge-canceled]="ft.statut==='REJETEE'"
+              [class.dt-badge-pending]="ft.statut==='SOUMISE'"
+              [class.dt-badge-default]="ft.statut==='BROUILLON'">
+          <span class="dt-badge-dot"></span>{{ statutLabel(ft.statut) }}
+        </span>
+      </div>
+    </div>
+    <button class="mx-so-close" (click)="fermerDetail()">
+      <svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <div class="mx-so-body">
+    <!-- Résumé heures -->
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <div style="background:var(--bg-hover);border-radius:8px;padding:10px 14px;text-align:center;flex:1;border:1px solid var(--border-color)">
+        <p style="font-size:.62rem;color:var(--text-muted);margin:0;font-weight:700;text-transform:uppercase">Heures</p>
+        <p style="font-size:1.1rem;font-weight:800;color:var(--accent);margin:4px 0 0">{{ fmt(ft.minutesTravaillees) }}</p>
+      </div>
+      <div *ngIf="ft.minutesSupplementaires > 0"
+           style="background:rgba(16,185,129,.08);border-radius:8px;padding:10px 14px;text-align:center;flex:1;border:1px solid rgba(16,185,129,.2)">
+        <p style="font-size:.62rem;color:#10b981;margin:0;font-weight:700;text-transform:uppercase">Suppl.</p>
+        <p style="font-size:1.1rem;font-weight:800;color:#10b981;margin:4px 0 0">+{{ fmt(ft.minutesSupplementaires) }}</p>
+      </div>
+    </div>
+
+    <!-- Entrées en TABLEAU (colonnes: Projet, Activité, Durée) -->
+    <div>
+      <p class="mx-so-section-title">Entrées ({{ ft.lignes?.length || 0 }} activité{{ (ft.lignes?.length||0) > 1 ? 's' : '' }})</p>
+      <div class="appro-entries-table-wrap">
+        <table class="appro-entries-table" *ngIf="ft.lignes && ft.lignes.length > 0">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Projet</th>
+              <th>Activité</th>
+              <th>Horaire</th>
+              <th>Durée</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let l of ft.lignes">
+              <td>{{ l.date | date:'dd/MM' }}</td>
+              <td>
+                <span style="font-weight:600;color:var(--text-primary)">{{ l.projetNom || '—' }}</span>
+              </td>
+              <td>
+                <span style="font-size:.73rem;color:var(--text-secondary)">{{ l.activiteNom || '—' }}</span>
+              </td>
+              <td style="white-space:nowrap;font-size:.72rem;color:var(--text-muted)">
+                {{ l.heureDebut && l.heureFin ? l.heureDebut + ' – ' + l.heureFin : '—' }}
+              </td>
+              <td style="font-weight:700;color:var(--accent);white-space:nowrap">
+                {{ fmtDureeEntree(l.minutesTravaillees) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div *ngIf="!ft.lignes || ft.lignes.length === 0" class="dt-empty" style="padding:20px">
+          <p class="dt-empty-sub">Aucune entrée.</p>
         </div>
       </div>
-      <button class="mx-so-close" (click)="fermerDetail()">
+    </div>
+
+    <!-- Commentaires -->
+    <div *ngIf="ft.commentaireEmploye">
+      <p class="mx-so-section-title">Commentaire de l'employé</p>
+      <p style="font-size:.78rem;color:var(--text-secondary);background:var(--bg-hover);padding:8px 10px;border-radius:7px;margin:0;border:1px solid var(--border-color)">
+        {{ ft.commentaireEmploye }}
+      </p>
+    </div>
+    <div *ngIf="ft.commentaireValideur">
+      <p class="mx-so-section-title">Commentaire du valideur</p>
+      <p style="font-size:.78rem;padding:8px 10px;border-radius:7px;margin:0;border:1px solid"
+         [style.background]="ft.statut==='REJETEE'?'rgba(239,68,68,.08)':'rgba(16,185,129,.08)'"
+         [style.color]="ft.statut==='REJETEE'?'#ef4444':'#10b981'"
+         [style.border-color]="ft.statut==='REJETEE'?'rgba(239,68,68,.2)':'rgba(16,185,129,.2)'">
+        {{ ft.commentaireValideur }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Actions si SOUMISE -->
+  <div *ngIf="ft.statut==='SOUMISE'"
+       style="padding:12px 18px;border-top:1px solid var(--border-color);background:var(--bg-hover);display:flex;gap:8px;flex-shrink:0">
+    <button class="dt-btn-create" style="flex:1;justify-content:center;height:38px" (click)="valider(ft)">
+      <svg viewBox="0 0 12 12" fill="none" style="width:11px;height:11px">
+        <path d="M2 6l3 3.5 5-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Valider
+    </button>
+    <button class="ms-btn ms-btn-remove" style="flex:1;justify-content:center;height:38px" (click)="ouvrirRejet(ft)">
+      Rejeter
+    </button>
+  </div>
+  <div *ngIf="ft.statut!=='SOUMISE'" class="mx-so-footer">
+    <button class="mx-btn mx-btn-ghost" (click)="fermerDetail()">Fermer</button>
+  </div>
+</div>
+
+<!-- ════ MODAL REJET ════ -->
+<div *ngIf="showRejetModal()" class="mx-modal-backdrop" (click)="showRejetModal.set(false)">
+  <div class="mx-modal" style="max-width:420px;padding:0;overflow:hidden" (click)="$event.stopPropagation()">
+    <div style="display:flex;align-items:center;gap:10px;padding:14px 16px 10px;border-bottom:1px solid var(--border-color)">
+      <span style="font-size:.9rem;font-weight:700;color:var(--text-primary)">Rejeter la feuille</span>
+      <button class="mx-so-close" style="margin-left:auto" (click)="showRejetModal.set(false)">
         <svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       </button>
     </div>
-  
-    <div class="mx-so-body">
-      <!-- Résumé heures -->
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <div style="background:var(--dt-bg-header);border-radius:8px;padding:10px 14px;text-align:center;flex:1;border:1px solid var(--dt-border)">
-          <p style="font-size:.62rem;color:var(--dt-text-sub);margin:0;font-weight:700;text-transform:uppercase">Heures</p>
-          <p style="font-size:1.1rem;font-weight:800;color:var(--accent);margin:4px 0 0">{{ fmt(ft.minutesTravaillees) }}</p>
-        </div>
-        <div *ngIf="ft.minutesSupplementaires > 0"
-             style="background:rgba(16,185,129,.08);border-radius:8px;padding:10px 14px;text-align:center;flex:1;border:1px solid rgba(16,185,129,.2)">
-          <p style="font-size:.62rem;color:#10b981;margin:0;font-weight:700;text-transform:uppercase">Suppl.</p>
-          <p style="font-size:1.1rem;font-weight:800;color:#10b981;margin:4px 0 0">+{{ fmt(ft.minutesSupplementaires) }}</p>
-        </div>
-      </div>
-  
-      <!-- Entrées -->
-      <div>
-        <p class="mx-so-section-title">Entrées ({{ ft.lignes?.length || 0 }})</p>
-        <div style="display:flex;flex-direction:column;gap:5px">
-          <div *ngFor="let l of (ft.lignes || [])"
-               style="display:flex;align-items:center;gap:10px;background:var(--dt-bg-header);border-radius:7px;padding:8px 10px;border:1px solid var(--dt-border)">
-            <div style="min-width:46px;font-size:.72rem;font-weight:700;color:var(--dt-text-sub)">{{ l.date | date:'dd/MM' }}</div>
-            <div style="width:7px;height:7px;border-radius:50%;background:#6366f1;flex-shrink:0"></div>
-            <div style="flex:1;min-width:0">
-              <p style="margin:0;font-size:.77rem;font-weight:600;color:var(--dt-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                {{ l.projetNom || '— Sans projet —' }}
-              </p>
-              <p *ngIf="l.activiteNom" style="margin:0;font-size:.64rem;color:var(--dt-text-sub)">{{ l.activiteNom }}</p>
-            </div>
-            <div *ngIf="l.heureDebut" style="font-size:.69rem;color:var(--dt-text-sub);white-space:nowrap">
-              {{ l.heureDebut }} – {{ l.heureFin }}
-            </div>
-            <div style="font-size:.77rem;font-weight:700;color:var(--dt-text);white-space:nowrap">
-              {{ fmt(l.minutesTravaillees) }}
-            </div>
-          </div>
-          <div *ngIf="!ft.lignes || ft.lignes.length === 0" class="dt-empty" style="padding:20px">
-            <p class="dt-empty-sub">Aucune entrée.</p>
-          </div>
-        </div>
-      </div>
-  
-      <div *ngIf="ft.commentaireEmploye">
-        <p class="mx-so-section-title">Commentaire de l'employé</p>
-        <p style="font-size:.78rem;color:var(--dt-text-sub);background:var(--dt-bg-header);padding:8px 10px;border-radius:7px;margin:0;border:1px solid var(--dt-border)">{{ ft.commentaireEmploye }}</p>
-      </div>
-  
-      <div *ngIf="ft.commentaireValideur">
-        <p class="mx-so-section-title">Commentaire du valideur</p>
-        <p style="font-size:.78rem;padding:8px 10px;border-radius:7px;margin:0;border:1px solid"
-           [style.background]="ft.statut==='REJETEE'?'rgba(239,68,68,.08)':'rgba(16,185,129,.08)'"
-           [style.color]="ft.statut==='REJETEE'?'#ef4444':'#10b981'"
-           [style.border-color]="ft.statut==='REJETEE'?'rgba(239,68,68,.2)':'rgba(16,185,129,.2)'">
-          {{ ft.commentaireValideur }}
-        </p>
-      </div>
+    <div style="padding:14px 16px">
+      <label class="mx-field-label">Motif de rejet <span style="color:#ef4444">*</span></label>
+      <textarea [(ngModel)]="motifRejet" rows="3" class="mx-field-textarea"
+                placeholder="Expliquez la raison du rejet..."></textarea>
     </div>
-  
-    <!-- Actions si SOUMISE -->
-    <div *ngIf="ft.statut==='SOUMISE'" style="padding:12px 18px;border-top:1px solid var(--dt-border);background:var(--dt-bg-header);display:flex;gap:8px;flex-shrink:0">
-      <button class="dt-btn-create" style="flex:1;justify-content:center;height:38px" (click)="valider(ft)">
-        <svg viewBox="0 0 12 12" fill="none" style="width:11px;height:11px">
-          <path d="M2 6l3 3.5 5-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        Valider
-      </button>
-      <button class="ms-btn ms-btn-remove" style="flex:1;justify-content:center;height:38px" (click)="ouvrirRejet(ft)">
-        Rejeter
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding:10px 16px;border-top:1px solid var(--border-color);background:var(--bg-hover)">
+      <button class="mx-btn mx-btn-ghost" (click)="showRejetModal.set(false)">Annuler</button>
+      <button style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:.77rem;font-weight:600;cursor:pointer;background:#ef4444;color:white;border:none"
+              (click)="confirmerRejet()">
+        Confirmer le rejet
       </button>
     </div>
-    <div *ngIf="ft.statut!=='SOUMISE'" class="mx-so-footer">
-      <button class="mx-btn mx-btn-ghost" (click)="fermerDetail()">Fermer</button>
-    </div>
   </div>
-  
-  <!-- ════ MODAL REJET ════ -->
-  <div *ngIf="showRejetModal()" class="mx-modal-backdrop" (click)="showRejetModal.set(false)">
-    <div class="mx-modal" style="max-width:420px;padding:0;overflow:hidden" (click)="$event.stopPropagation()">
-      <div style="display:flex;align-items:center;gap:10px;padding:14px 16px 10px;border-bottom:1px solid var(--border-color)">
-        <span style="font-size:.9rem;font-weight:700;color:var(--text-primary)">Rejeter la feuille</span>
-        <button class="mx-so-close" style="margin-left:auto" (click)="showRejetModal.set(false)">
-          <svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        </button>
-      </div>
-      <div style="padding:14px 16px">
-        <label class="mx-field-label">Motif de rejet <span style="color:#ef4444">*</span></label>
-        <textarea [(ngModel)]="motifRejet" rows="3" class="mx-field-textarea"
-                  placeholder="Expliquez la raison du rejet..."></textarea>
-      </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;padding:10px 16px;border-top:1px solid var(--border-color);background:var(--bg-hover)">
-        <button class="mx-btn mx-btn-ghost" (click)="showRejetModal.set(false)">Annuler</button>
-        <button style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:.77rem;font-weight:600;cursor:pointer;background:#ef4444;color:white;border:none"
-                (click)="confirmerRejet()">
-          Confirmer le rejet
-        </button>
-      </div>
-    </div>
-  </div>
+</div>

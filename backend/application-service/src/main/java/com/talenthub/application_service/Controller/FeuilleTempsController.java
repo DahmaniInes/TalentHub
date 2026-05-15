@@ -4,10 +4,12 @@ import com.talenthub.application_service.DTO.FeuilleTempsDTO;
 import com.talenthub.application_service.DTO.FeuilleTempsRequest;
 import com.talenthub.application_service.Service.FeuilleTempsService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import com.talenthub.application_service.Service.NotificationService;
+import com.talenthub.application_service.Enum.NotificationType;
 import java.util.List;
 import java.util.Map;
 
@@ -16,9 +18,14 @@ import java.util.Map;
 public class FeuilleTempsController {
 
     private final FeuilleTempsService service;
+    private final NotificationService notificationService;
 
-    public FeuilleTempsController(FeuilleTempsService service) {
-        this.service = service;
+    @Autowired
+    public FeuilleTempsController(
+            FeuilleTempsService service,
+            NotificationService notificationService) {
+        this.service             = service;
+        this.notificationService = notificationService;
     }
 
     @GetMapping
@@ -104,4 +111,30 @@ public class FeuilleTempsController {
                 service.getPourApprobation().stream().map(FeuilleTempsDTO::new).toList()
         );
     }
+
+
+
+    @PostMapping("/notifier-modification")
+    public ResponseEntity<Void> notifierModification(@RequestBody Map<String, String> body) {
+        String destinataireKeycloakId = body.get("destinataireKeycloakId");
+        String nomModificateur         = body.get("nomModificateur");
+        String semaineDu               = body.get("semaineDu");
+
+        if (destinataireKeycloakId == null || destinataireKeycloakId.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        notificationService.creer(
+                destinataireKeycloakId,
+                NotificationType.FEUILLE_MODIFIEE,
+                "Feuille de temps modifiée 📝",
+                nomModificateur + " a modifié votre feuille de temps de la semaine du " + semaineDu + ".",
+                "/feuille-temps",
+                null
+        );
+
+        return ResponseEntity.ok().build();
+    }
+
+
 }

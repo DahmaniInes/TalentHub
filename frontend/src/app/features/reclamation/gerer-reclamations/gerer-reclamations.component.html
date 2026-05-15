@@ -1,0 +1,411 @@
+<!-- gerer-reclamations.component.html — CORRIGÉ (sans arrow function) -->
+<div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh" (click)="closeAllMenus()">
+    <div class="dt-wrap">
+  
+      <!-- Accès refusé -->
+      <div *ngIf="!perms.canViewAllRec() && !perms.canTreatRec()"
+           style="padding:60px;text-align:center;color:var(--text-muted)">
+        <p style="font-weight:700;font-size:1rem">Accès refusé</p>
+        <p>Permission RECLAMATION_VIEW_ALL ou RECLAMATION_TREAT requise.</p>
+      </div>
+  
+      <!-- HEADER -->
+      <div class="dt-header">
+        <div>
+          <h1 class="dt-title">
+            <svg class="dt-title-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M2 8l4 4 8-8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Gérer les réclamations
+          </h1>
+          <div class="dt-header-stats">
+            <span class="dt-badge dt-badge-accent" style="font-size:.66rem;padding:3px 9px">
+              <span class="dt-badge-dot"></span>{{ filteredRecs().length }} total
+            </span>
+            <!-- ✅ FIX : filtrerParStatut() — pas de => dans le template -->
+            <span class="dt-badge dt-badge-pending" style="font-size:.66rem;padding:3px 9px;cursor:pointer"
+                  (click)="filtrerParStatut('EN_ATTENTE')">
+              <span class="dt-badge-dot"></span>{{ countByStatut('EN_ATTENTE') }} en attente
+            </span>
+            <span class="dt-badge dt-badge-accent" style="font-size:.66rem;padding:3px 9px;cursor:pointer"
+                  (click)="filtrerParStatut('EN_COURS')">
+              <span class="dt-badge-dot"></span>{{ countByStatut('EN_COURS') }} en cours
+            </span>
+            <span class="dt-badge dt-badge-delivered" style="font-size:.66rem;padding:3px 9px;cursor:pointer"
+                  (click)="filtrerParStatut('RESOLUE')">
+              <span class="dt-badge-dot"></span>{{ countByStatut('RESOLUE') }} résolues
+            </span>
+          </div>
+        </div>
+        <div class="dt-header-actions">
+          <div class="dt-search-wrap" (click)="$event.stopPropagation()">
+            <div class="dt-search-bar" style="min-width:250px">
+              <button class="dt-filter-icon-btn" [class.has-filters]="hasFilters()"
+                      (click)="filterOpen.set(!filterOpen())" title="Filtres">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M2 3h12l-4.5 5.5V13L6.5 11.5V8.5L2 3z" stroke-linejoin="round"/>
+                </svg>
+                <span *ngIf="hasFilters()" class="dt-filter-badge">{{ activeFiltersCount() }}</span>
+              </button>
+              <input class="dt-search-input" [value]="searchText()"
+                     (input)="searchText.set($any($event.target).value); page.set(1)"
+                     placeholder="Rechercher par sujet, employé, service...">
+            </div>
+            <div class="dt-filter-panel" [class.open]="filterOpen()">
+              <div class="dt-fp-header">
+                <p class="dt-fp-title">Filtres</p>
+                <button *ngIf="hasFilters()" class="dt-fp-reset" (click)="resetFilters()">Réinitialiser</button>
+              </div>
+              <div class="dt-fp-body">
+                <div class="dt-fp-field">
+                  <label class="dt-fp-label">Statut</label>
+                  <select class="dt-fp-select" [value]="filterStatutId() ?? ''"
+                          (change)="filterStatutId.set($any($event.target).value ? +$any($event.target).value : null); page.set(1)">
+                    <option value="">Tous</option>
+                    <option *ngFor="let s of statuts()" [value]="s.id">{{ s.libelle }}</option>
+                  </select>
+                </div>
+                <div class="dt-fp-field">
+                  <label class="dt-fp-label">Service</label>
+                  <select class="dt-fp-select" [value]="filterServiceId() ?? ''"
+                          (change)="filterServiceId.set($any($event.target).value ? +$any($event.target).value : null); page.set(1)">
+                    <option value="">Tous</option>
+                    <option *ngFor="let s of services()" [value]="s.id">{{ s.libelle }}</option>
+                  </select>
+                </div>
+              </div>
+              <div class="dt-fp-footer">
+                <button class="mx-btn mx-btn-ghost" style="height:30px;font-size:.73rem" (click)="filterOpen.set(false)">Fermer</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+      <div *ngIf="loading()" class="dt-loading"><div class="dt-spinner"></div> Chargement...</div>
+  
+      <!-- TABLEAU -->
+      <div *ngIf="!loading()" class="dt-scroll">
+        <table class="dt-table">
+          <thead>
+            <tr>
+              <th class="dt-th" style="min-width:200px">
+                <div class="dt-th-inner">
+                  <svg class="dt-th-icon" viewBox="0 0 14 14" fill="currentColor">
+                    <path d="M7 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm-4 6a4 4 0 118 0H3z"/>
+                  </svg>
+                  Employé
+                </div>
+              </th>
+              <th class="dt-th" style="min-width:200px">
+                <div class="dt-th-inner">
+                  <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
+                    <path d="M2 4h10M2 7h10M2 10h6" stroke-linecap="round"/>
+                  </svg>
+                  Sujet
+                </div>
+              </th>
+              <th class="dt-th" style="min-width:110px">
+                <div class="dt-th-inner">
+                  <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
+                    <path d="M1 3.5h4.5l1.5 1.5H13v7H1V3.5z" stroke-linejoin="round"/>
+                  </svg>
+                  Service
+                </div>
+              </th>
+              <th class="dt-th" style="min-width:110px">
+                <div class="dt-th-inner">
+                  <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
+                    <circle cx="7" cy="7" r="5.5"/><path d="M4.5 7l2 2 3-3" stroke-linecap="round"/>
+                  </svg>
+                  Statut
+                </div>
+              </th>
+              <th class="dt-th" style="min-width:100px">
+                <div class="dt-th-inner">Date</div>
+              </th>
+              <th class="dt-th" style="min-width:80px">
+                <div class="dt-th-inner">Document</div>
+              </th>
+              <th class="dt-th dt-th-actions" style="width:48px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="filteredRecs().length === 0">
+              <td colspan="7" class="dt-td">
+                <div class="dt-empty">
+                  <svg viewBox="0 0 48 48" fill="none" style="width:38px;height:38px;opacity:.35">
+                    <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+                    <path d="M24 16v8M24 28h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  <p class="dt-empty-title">Aucune réclamation</p>
+                  <p class="dt-empty-sub">Modifiez vos filtres</p>
+                </div>
+              </td>
+            </tr>
+            <tr *ngFor="let r of pagedRecs()" class="dt-tr" (click)="voirDetail(r)">
+  
+              <!-- Employé -->
+              <td class="dt-td">
+                <div class="dt-cell-with-avatar">
+                  <div class="dt-avatar"
+                       [style.background]="getUtilisateur(r)?.photoUrl ? 'transparent' : getAvatarColor(r.utilisateurNom || '')">
+                    <img *ngIf="getUtilisateur(r)?.photoUrl"
+                         [src]="getUtilisateur(r)!.photoUrl!"
+                         style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                    <span *ngIf="!getUtilisateur(r)?.photoUrl">{{ getInitiales(r.utilisateurNom) }}</span>
+                  </div>
+                  <div class="dt-cell-user">
+                    <span class="dt-cell-name">{{ r.utilisateurNom || '#' + r.utilisateurId }}</span>
+                    <span class="dt-cell-sub">{{ r.utilisateurEmail || getUtilisateur(r)?.email || '—' }}</span>
+                  </div>
+                </div>
+              </td>
+  
+              <!-- Sujet -->
+              <td class="dt-td">
+                <div class="dt-cell-user">
+                  <span class="dt-cell-name">{{ r.sujet }}</span>
+                  <span *ngIf="r.description" class="dt-cell-sub">
+                    {{ r.description!.length > 35 ? (r.description | slice:0:35) + '…' : r.description }}
+                  </span>
+                </div>
+              </td>
+  
+              <!-- Service -->
+              <td class="dt-td">
+                <span class="dt-badge dt-badge-accent" style="font-size:.65rem">{{ r.serviceNom }}</span>
+              </td>
+  
+              <!-- Statut -->
+              <td class="dt-td">
+                <span [class]="getBadgeClass(r.statutCode)">
+                  <span class="dt-badge-dot"></span>{{ r.statutNom }}
+                </span>
+              </td>
+  
+              <!-- Date -->
+              <td class="dt-td">
+                <span class="dt-cell-muted">{{ fmtDate(r.dateCreation) }}</span>
+              </td>
+  
+              <!-- Document -->
+              <td class="dt-td">
+                <a *ngIf="r.pieceJointeUrl" [href]="r.pieceJointeUrl" target="_blank"
+                   (click)="$event.stopPropagation()"
+                   style="color:var(--accent);font-size:.72rem;text-decoration:none;display:flex;align-items:center;gap:3px">
+                  <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" style="width:12px;height:12px">
+                    <path d="M2 12h10M7 2v8M4 7l3 3 3-3" stroke-linecap="round"/>
+                  </svg>
+                  Voir
+                </a>
+                <span *ngIf="!r.pieceJointeUrl" class="dt-cell-muted">—</span>
+              </td>
+  
+              <!-- Actions 3 points -->
+              <td class="dt-td dt-td-actions" (click)="$event.stopPropagation()">
+                <div style="position:relative;display:flex;justify-content:center">
+                  <button class="dt-action-btn" (click)="toggleMenu(r.id, $event)">
+                    <svg viewBox="0 0 4 18" fill="currentColor" style="width:4px;height:18px">
+                      <circle cx="2" cy="2" r="1.8"/>
+                      <circle cx="2" cy="9" r="1.8"/>
+                      <circle cx="2" cy="16" r="1.8"/>
+                    </svg>
+                  </button>
+                  <div *ngIf="openMenuId() === r.id" class="appro-dropdown">
+                    <button class="appro-dropdown-item" (click)="voirDetail(r)">
+                      <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+                        <path d="M1 7s2.5-5 6-5 6 5 6 5-2.5 5-6 5-6-5-6-5z" stroke="currentColor" stroke-width="1.3"/>
+                        <circle cx="7" cy="7" r="1.5" stroke="currentColor" stroke-width="1.3"/>
+                      </svg>
+                      Voir détail
+                    </button>
+                    <button *ngIf="perms.canTreatRec()" class="appro-dropdown-item" style="color:#10b981"
+                            (click)="ouvrirTraiter(r)">
+                      <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px;color:#10b981">
+                        <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/>
+                        <path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                      </svg>
+                      Traiter
+                    </button>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+  
+      <!-- Pagination -->
+      <div *ngIf="!loading() && filteredRecs().length > 0" class="dt-footer">
+        <div class="dt-count-info">
+          <strong>{{ (page()-1)*pageSize+1 }}–{{ minVal(page()*pageSize, filteredRecs().length) }}</strong>
+          of <strong>{{ filteredRecs().length }}</strong>
+        </div>
+        <div class="dt-pagination">
+          <button class="dt-page-arrow" [disabled]="page()===1" (click)="goPage(page()-1)">
+            <svg viewBox="0 0 14 14" fill="none">
+              <path d="M9 2L5 7l4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button *ngFor="let p of pagesArr()" class="dt-page-btn"
+                  [class.dt-page-btn-active]="p===page()" (click)="goPage(p)">{{ p }}</button>
+          <button class="dt-page-arrow" [disabled]="page()===totalPages()" (click)="goPage(page()+1)">
+            <svg viewBox="0 0 14 14" fill="none">
+              <path d="M5 2l4 5-4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- SLIDE-OVER DÉTAIL + TRAITEMENT -->
+  <div *ngIf="detailRec()" class="mx-overlay" (click)="fermerDetail()"></div>
+  <div *ngIf="detailRec() as r" class="mx-slideover">
+    <div class="mx-so-header">
+      <div class="dt-avatar"
+           style="width:44px;height:44px;border-radius:11px;flex-shrink:0"
+           [style.background]="getUtilisateur(r)?.photoUrl ? 'transparent' : getAvatarColor(r.utilisateurNom || '')">
+        <img *ngIf="getUtilisateur(r)?.photoUrl"
+             [src]="getUtilisateur(r)!.photoUrl!"
+             style="width:100%;height:100%;object-fit:cover;border-radius:11px">
+        <span *ngIf="!getUtilisateur(r)?.photoUrl"
+              style="font-size:.8rem;font-weight:800;color:white">{{ getInitiales(r.utilisateurNom) }}</span>
+      </div>
+      <div class="mx-so-title-block">
+        <p class="mx-so-name">{{ r.sujet }}</p>
+        <p class="mx-so-sub">{{ r.utilisateurNom }} · {{ r.serviceNom }}</p>
+        <p class="mx-so-sub" style="font-size:.67rem">{{ fmtDate(r.dateCreation) }}</p>
+        <div class="mx-so-badges">
+          <span [class]="getBadgeClass(r.statutCode)" style="font-size:.62rem">
+            <span class="dt-badge-dot"></span>{{ r.statutNom }}
+          </span>
+        </div>
+      </div>
+      <button class="mx-so-close" (click)="fermerDetail()">
+        <svg viewBox="0 0 14 14" fill="none">
+          <path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+  
+    <div class="mx-so-body">
+  
+      <!-- Description -->
+      <div *ngIf="r.description">
+        <p class="mx-so-section-title">Description</p>
+        <p style="font-size:.8rem;color:var(--text-primary);background:var(--bg-hover);padding:10px 12px;border-radius:8px;border:1px solid var(--border-color);margin:0">
+          {{ r.description }}
+        </p>
+      </div>
+  
+      <!-- Pièce jointe -->
+      <div *ngIf="r.pieceJointeUrl">
+        <p class="mx-so-section-title">Pièce jointe</p>
+        <div style="background:var(--bg-hover);border:1px solid var(--border-color);border-radius:8px;padding:10px 12px">
+          <img *ngIf="isImage(r.pieceJointeUrl)" [src]="r.pieceJointeUrl"
+               style="max-width:100%;max-height:200px;border-radius:6px;object-fit:contain;display:block;margin-bottom:8px">
+          <a [href]="r.pieceJointeUrl" target="_blank"
+             style="display:inline-flex;align-items:center;gap:5px;font-size:.75rem;color:var(--accent);text-decoration:none;font-weight:600">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" style="width:12px;height:12px">
+              <path d="M2 12h10M7 2v8M4 7l3 3 3-3" stroke-linecap="round"/>
+            </svg>
+            Télécharger
+          </a>
+        </div>
+      </div>
+  
+      <!-- Formulaire de traitement -->
+      <div *ngIf="showTraiter() && perms.canTreatRec()"
+           style="background:rgba(192,38,211,.04);border:1.5px solid rgba(192,38,211,.2);border-radius:10px;padding:14px 16px">
+        <p class="mx-so-section-title" style="color:var(--accent)">Traiter cette réclamation</p>
+        <div class="mx-field" style="margin-bottom:10px">
+          <label class="mx-field-label">Nouveau statut <span style="color:#ef4444">*</span></label>
+          <select class="mx-field-select"
+                  [value]="traiterStatutId() ?? ''"
+                  (change)="traiterStatutId.set($any($event.target).value ? +$any($event.target).value : null)">
+            <option value="">— Choisir un statut —</option>
+            <option *ngFor="let s of statuts()" [value]="s.id">{{ s.libelle }}</option>
+          </select>
+        </div>
+        <div class="mx-field">
+          <label class="mx-field-label">Commentaire de résolution</label>
+          <textarea class="mx-field-textarea" rows="3"
+                    [value]="traiterCommentaire()"
+                    (input)="traiterCommentaire.set($any($event.target).value)"
+                    placeholder="Expliquez la résolution ou le motif du rejet..."></textarea>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+          <button class="mx-btn mx-btn-ghost" (click)="annulerTraitement()">Annuler</button>
+          <button class="dt-btn-create"
+                  style="height:36px;padding:0 16px;border-radius:8px"
+                  [disabled]="saving()" (click)="confirmerTraitement()">
+            <div *ngIf="saving()" class="dt-spinner"
+                 style="width:11px;height:11px;border-width:1.5px;border-color:rgba(255,255,255,.3);border-top-color:white"></div>
+            Confirmer
+          </button>
+        </div>
+      </div>
+  
+      <!-- Commentaire de traitement existant -->
+      <div *ngIf="r.commentaireTraitement && !showTraiter()">
+        <p class="mx-so-section-title">Réponse du traiteur</p>
+        <p style="font-size:.78rem;padding:10px 12px;border-radius:8px;border:1px solid rgba(16,185,129,.2);background:rgba(16,185,129,.06);color:#10b981;margin:0">
+          {{ r.commentaireTraitement }}
+        </p>
+      </div>
+  
+      <!-- Conversation -->
+      <div>
+        <p class="mx-so-section-title">Conversation ({{ r.commentaires?.length || 0 }})</p>
+        <div class="rec-conversation">
+          <div *ngIf="!r.commentaires?.length"
+               style="font-size:.74rem;color:var(--text-muted);text-align:center;padding:16px">
+            Aucun commentaire
+          </div>
+          <div *ngFor="let c of r.commentaires"
+               class="rec-comment"
+               [class.rec-comment-admin]="c.estAdmin">
+            <div class="rec-comment-avatar" [style.background]="getAvatarColor(c.auteurNom || '')">
+              {{ getInitiales(c.auteurNom) }}
+            </div>
+            <div class="rec-comment-body">
+              <div class="rec-comment-header">
+                <span class="rec-comment-auteur">{{ c.auteurNom || 'Anonyme' }}</span>
+                <span *ngIf="c.estAdmin" class="rec-comment-role-badge">Agent</span>
+                <span class="rec-comment-date">{{ fmtDateTime(c.dateCreation) }}</span>
+              </div>
+              <p class="rec-comment-text">{{ c.contenu }}</p>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Zone saisie commentaire agent -->
+        <div *ngIf="perms.canCommentRec() || perms.canTreatRec()" class="rec-comment-input-wrap">
+          <textarea class="rec-comment-input"
+                    [value]="newComment()"
+                    (input)="newComment.set($any($event.target).value)"
+                    rows="2"
+                    placeholder="Répondre au demandeur..."></textarea>
+          <button class="dt-btn-create"
+                  style="height:36px;padding:0 16px;font-size:.76rem;border-radius:7px;align-self:flex-end"
+                  [disabled]="!newComment().trim() || savingComment()"
+                  (click)="envoyerCommentaire()">
+            <div *ngIf="savingComment()" class="dt-spinner"
+                 style="width:10px;height:10px;border-width:1.5px;border-color:rgba(255,255,255,.3);border-top-color:white"></div>
+            Répondre
+          </button>
+        </div>
+      </div>
+    </div>
+  
+    <div style="padding:12px 18px;border-top:1px solid var(--border-color);background:var(--bg-hover);display:flex;gap:8px;flex-shrink:0">
+      <button *ngIf="perms.canTreatRec() && !showTraiter()"
+              class="dt-btn-create" style="flex:1;justify-content:center;height:38px"
+              (click)="ouvrirFormTraiter()">
+        Traiter cette réclamation
+      </button>
+      <button class="mx-btn mx-btn-ghost" style="flex:1" (click)="fermerDetail()">Fermer</button>
+    </div>
+  </div>

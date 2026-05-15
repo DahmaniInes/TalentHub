@@ -7,12 +7,20 @@ public enum NotificationType {
     FEUILLE_VALIDEE,
     FEUILLE_REJETEE,
     FEUILLE_ANNULEE,
+    FEUILLE_MODIFIEE,
 
     // Demandes (congés, etc.)
     DEMANDE_SOUMISE,
     DEMANDE_VALIDEE,
     DEMANDE_REJETEE,
     DEMANDE_ANNULEE,
+
+
+    RECLAMATION_SOUMISE,       // Nouvelle réclamation soumise (pour les agents)
+    RECLAMATION_RESOLUE,       // Réclamation résolue (pour le demandeur)
+    RECLAMATION_REJETEE,       // Réclamation rejetée (pour le demandeur)
+    RECLAMATION_COMMENTEE,     // Nouveau commentaire sur une réclamation
+    RECLAMATION_MISE_A_JOUR,   // Changement de statut générique
 
     // Système général
     INFO,

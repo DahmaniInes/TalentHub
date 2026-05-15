@@ -1,59 +1,117 @@
-<!-- ma-semaine.component.html — Style dt-* + fixes select + commentaires -->
+<!-- ma-semaine.component.html — COMPLET FINAL avec sélecteur utilisateur -->
 <div class="ms-page">
 
-  <!-- ── Navigation semaine + statut (conservé comme version actuelle) ── -->
+  <!-- ── HEADER : Navigation semaine + sélecteur utilisateur + statut ── -->
   <div class="ms-header">
+
+    <!-- Navigation semaine (gauche) -->
     <div class="ms-week-nav">
       <button class="ms-nav-arrow" (click)="semainePrec()">
-        <svg viewBox="0 0 12 12" fill="none"><path d="M7.5 2L3.5 6l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 12 12" fill="none">
+          <path d="M7.5 2L3.5 6l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </button>
       <div class="ms-week-info">
         <span class="ms-week-range">{{ semaineLabelFR }}</span>
         <span class="ms-week-total" *ngIf="totalSemaine() > 0">{{ fmt(totalSemaine()) }} travaillées</span>
       </div>
       <button class="ms-nav-arrow" (click)="semaineSuiv()">
-        <svg viewBox="0 0 12 12" fill="none"><path d="M4.5 2l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 12 12" fill="none">
+          <path d="M4.5 2l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </button>
     </div>
+
+    <!-- ✅ Sélecteur utilisateur — visible seulement si TS_ALL_READ ou TS_GROUP_READ -->
+    <div *ngIf="showUserSelector()" class="ms-user-selector-wrap">
+      <label class="ms-user-selector-label">
+        <svg viewBox="0 0 16 16" fill="currentColor" style="width:13px;height:13px;opacity:.6">
+          <path d="M8 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm-4 6a4 4 0 118 0H4z"/>
+        </svg>
+        Utilisateur
+      </label>
+      <select class="ms-user-select"
+              [value]="selectedUser()?.id ?? ''"
+              (change)="onUserChange($any($event.target).value)">
+        <!-- Option "Ma feuille" = se référer à l'utilisateur connecté -->
+        <option [value]="currentUser()?.id ?? ''">
+          {{ currentUser()?.prenom }} {{ currentUser()?.nom }} (moi)
+        </option>
+        <option *ngFor="let u of utilisateursFiltres()" [value]="u.id">
+          {{ u.prenom }} {{ u.nom }}
+          <ng-container *ngIf="u.email"> — {{ u.email }}</ng-container>
+        </option>
+      </select>
+
+      <!-- Badge indicateur si on visualise un autre utilisateur -->
+      <div *ngIf="!isViewingOwnSheet()" class="ms-viewing-other-badge">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" style="width:11px;height:11px">
+          <circle cx="7" cy="5" r="3"/>
+          <path d="M1.5 13a5.5 5.5 0 0111 0" stroke-linecap="round"/>
+        </svg>
+        Feuille de {{ selectedUser()?.prenom }} {{ selectedUser()?.nom }}
+      </div>
+    </div>
+
+    <!-- Statut de la feuille (droite) -->
     <div *ngIf="statutFeuille()" class="ms-statut" [class]="'ms-statut-' + statutFeuille()">
       {{ {BROUILLON:'✏️ Brouillon', SOUMISE:'⏳ En validation', VALIDEE:'✅ Validée', REJETEE:'❌ Rejetée'}[statutFeuille()!] }}
     </div>
   </div>
 
   <!-- Bannières statut -->
-  <div *ngIf="statutFeuille() === 'SOUMISE'" class="ms-banner ms-banner-blue">🔒 Feuille soumise — en attente de validation.</div>
-  <div *ngIf="statutFeuille() === 'VALIDEE'" class="ms-banner ms-banner-green">✅ Validée et clôturée.</div>
-  <div *ngIf="statutFeuille() === 'REJETEE'" class="ms-banner ms-banner-red">❌ Rejetée — {{ feuilleCourante()?.commentaireValideur || 'aucun motif.' }}</div>
+  <div *ngIf="statutFeuille() === 'SOUMISE'" class="ms-banner ms-banner-blue">
+    🔒 Feuille soumise — en attente de validation.
+  </div>
+  <div *ngIf="statutFeuille() === 'VALIDEE'" class="ms-banner ms-banner-green">
+    ✅ Validée et clôturée.
+  </div>
+  <div *ngIf="statutFeuille() === 'REJETEE'" class="ms-banner ms-banner-red">
+    ❌ Rejetée — {{ feuilleCourante()?.commentaireValideur || 'aucun motif.' }}
+  </div>
+
+  <!-- Bannière lecture seule si on visualise sans droits de modification -->
+  <div *ngIf="!peutModifier() && statutFeuille() !== 'SOUMISE' && statutFeuille() !== 'VALIDEE'"
+       class="ms-banner ms-banner-blue" style="background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.3);color:#f59e0b">
+    👁️ Vous consultez cette feuille en lecture seule.
+  </div>
 
   <!-- Barre bulk -->
   <div *ngIf="selectedRows().size > 0" class="ms-bulk-bar">
     <span class="ms-bulk-count">{{ selectedRows().size }} ligne(s) sélectionnée(s)</span>
     <button class="ms-bulk-btn ms-bulk-reset" (click)="reinitialiser()">
-      <svg viewBox="0 0 12 12" fill="none"><path d="M1.5 6a4.5 4.5 0 105-4.47M1.5 2v4h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg viewBox="0 0 12 12" fill="none">
+        <path d="M1.5 6a4.5 4.5 0 105-4.47M1.5 2v4h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
       Réinitialiser
     </button>
-    <button class="ms-bulk-btn ms-bulk-del" (click)="supprimerLignesSelectionnees()">
-      <svg viewBox="0 0 12 12" fill="none"><path d="M2 3h8M4 3V2h4v1M3 3l.5 7h5L9 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <button *ngIf="peutSupprimer()" class="ms-bulk-btn ms-bulk-del" (click)="supprimerLignesSelectionnees()">
+      <svg viewBox="0 0 12 12" fill="none">
+        <path d="M2 3h8M4 3V2h4v1M3 3l.5 7h5L9 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
       Supprimer
     </button>
     <button class="ms-bulk-btn ms-bulk-cancel" (click)="deselectAll()">Annuler</button>
   </div>
 
-  <div *ngIf="loading()" class="ms-loading"><div class="ms-spinner"></div> Chargement...</div>
+  <div *ngIf="loading()" class="ms-loading">
+    <div class="ms-spinner"></div> Chargement...
+  </div>
 
-  <!-- ── Tableau matrice (style dt-*) ── -->
+  <!-- ── Tableau matrice ── -->
   <div *ngIf="!loading()" class="dt-wrap" style="margin:0;border-radius:12px">
     <div class="dt-scroll" style="overflow-x:auto">
       <table class="dt-table ms-table">
         <thead>
           <tr>
-            <!-- Checkbox -->
+            <!-- Checkbox sélection tout -->
             <th class="dt-th dt-th-cb" style="width:38px">
               <input type="checkbox" class="dt-checkbox"
-                     [checked]="allSelected()" (change)="toggleAll()">
+                     [checked]="allSelected()" (change)="toggleAll()"
+                     [disabled]="!peutModifier()">
             </th>
 
-            <!-- Projet -->
+            <!-- Colonne Projet -->
             <th class="dt-th" style="min-width:180px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 52 52" fill="currentColor">
@@ -63,25 +121,26 @@
               </div>
             </th>
 
-            <!-- Activité -->
+            <!-- Colonne Activité -->
             <th class="dt-th" style="min-width:160px;border-right:1px solid var(--dt-border)">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 491.5 491.5" fill="currentColor">
-                  <path d="M348.1,245.7c-67.8,0-122.9,55.1-122.9,122.9s55.1,122.9,122.9,122.9S471,436.4,471,368.6S415.9,245.7,348.1,245.7z M403.5,362.6l-41,41c-4,4-9.2,6-14.5,6c-5.2,0-10.5-2-14.5-6L313,383.1c-8-8-8-21,0-29s21-8,29,0l6,6l26.5-26.5c8-8,21-8,29,0 C411.5,341.7,411.5,354.6,403.5,362.6z"/>
-                  <path d="M385.3,41h-57.7v-9.8c0-17.2-14-31.2-31.2-31.2H154c-17.2,0-31.2,14-31.2,31.2v9.7H65.2c-24.7,0-44.7,20.1-44.7,44.7 v361.1c0,24.7,20.1,44.7,44.7,44.7h174.9c-34.2-29.9-55.8-73.8-55.8-122.8h-81.9c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5 h81.9c1.8,0,3.4,0.6,5.1,1c3.8-14.9,9.5-29,17-42h-83.6c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5h102.4 c4.1,0,7.7,1.5,10.9,3.6c29.3-27.5,68.6-44.6,112-44.6c29.9,0,57.8,8.2,81.9,22.2V85.7C430,61,409.9,41,385.3,41z M163.8,81.9v-41h122.9v41H163.8z"/>
+                  <path d="M348.1,245.7c-67.8,0-122.9,55.1-122.9,122.9s55.1,122.9,122.9,122.9S471,436.4,471,368.6S415.9,245.7,348.1,245.7z M403.5,362.6l-41,41c-4,4-9.2,6-14.5,6c-5.2,0-10.5-2-14.5-6L313,383.1c-8-8-8-21,0-29s21-8,29,0l6,6l26.5-26.5c8-8,21-8,29,0C411.5,341.7,411.5,354.6,403.5,362.6z"/>
+                  <path d="M385.3,41h-57.7v-9.8c0-17.2-14-31.2-31.2-31.2H154c-17.2,0-31.2,14-31.2,31.2v9.7H65.2c-24.7,0-44.7,20.1-44.7,44.7v361.1c0,24.7,20.1,44.7,44.7,44.7h174.9c-34.2-29.9-55.8-73.8-55.8-122.8h-81.9c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5h81.9c1.8,0,3.4,0.6,5.1,1c3.8-14.9,9.5-29,17-42h-83.6c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5h102.4c4.1,0,7.7,1.5,10.9,3.6c29.3-27.5,68.6-44.6,112-44.6c29.9,0,57.8,8.2,81.9,22.2V85.7C430,61,409.9,41,385.3,41z"/>
                 </svg>
                 Activité
               </div>
             </th>
 
-            <!-- En-têtes jours -->
-            <th *ngFor="let date of datesSemaine()" class="dt-th ms-th-jour" [class.ms-we]="isWE(date)"
+            <!-- En-têtes jours (Lun → Sam) -->
+            <th *ngFor="let date of datesSemaine()"
+                class="dt-th ms-th-jour" [class.ms-we]="isWE(date)"
                 style="min-width:70px;text-align:center;border-left:1px solid var(--dt-border)">
               <span class="ms-jour-nom">{{ fmtJourNom(date) }}</span>
               <span class="ms-jour-num" [class.ms-today]="isToday(date)">{{ fmtJourNum(date) }}</span>
             </th>
 
-            <!-- Total -->
+            <!-- Colonne Total ligne -->
             <th class="dt-th" style="min-width:58px;text-align:center;border-left:2px solid var(--dt-border)">Total</th>
           </tr>
         </thead>
@@ -89,7 +148,7 @@
         <tbody>
           <tr *ngFor="let ligne of lignesMatrice()" class="dt-tr" [class.dt-tr-selected]="isRowSelected(ligne.rowId)">
 
-            <!-- Checkbox -->
+            <!-- Checkbox ligne -->
             <td class="dt-td dt-td-cb" (click)="$event.stopPropagation()">
               <input type="checkbox" class="dt-checkbox"
                      [class.dt-checkbox-active]="isRowSelected(ligne.rowId)"
@@ -98,48 +157,67 @@
                      [disabled]="!peutModifier()">
             </td>
 
-            <!-- ✅ Projet select avec [(ngModel)] — la valeur sélectionnée s'affiche bien -->
-            <td class="dt-td" style="padding:8px 10px;vertical-align:middle">
-              <select class="ms-select ms-select-proj"
-                      [ngModel]="ligne.projetId ?? ''"
-                      [disabled]="!peutModifier()"
-                      (ngModelChange)="onProjetChange(ligne.rowId, $event)">
-                <option value="">— Choisir un projet —</option>
-                <option *ngFor="let p of projets()" [value]="p.id">{{ p.nom }}</option>
-              </select>
-              <!-- Message erreur seulement après tentative de soumission -->
-              <div *ngIf="submitted() && !ligne.projetId && getTotalLigne(ligne.rowId) > 0"
-                   class="ms-field-error">
-                ⚠️ Projet requis
-              </div>
-            </td>
 
-            <!-- ✅ Activité select avec [(ngModel)] -->
-            <td class="dt-td" style="padding:8px 10px;vertical-align:middle;border-right:1px solid var(--dt-border)">
-              <select class="ms-select ms-select-act"
-                      [ngModel]="ligne.activiteId ?? ''"
-                      [disabled]="!peutModifier()"
-                      (ngModelChange)="onActiviteChange(ligne.rowId, $event)">
-                <option value="">— Choisir une activité —</option>
-                <!-- Activités du projet -->
-                <ng-container *ngIf="ligne.projetId && getActivitesDuProjet(ligne.projetId).length > 0">
-                  <optgroup label="Activités du projet">
-                    <option *ngFor="let a of getActivitesDuProjet(ligne.projetId)" [value]="a.id">{{ a.nom }}</option>
-                  </optgroup>
-                </ng-container>
-                <!-- Activités globales -->
-                <ng-container *ngIf="activitesGlobales().length > 0">
-                  <optgroup *ngIf="ligne.projetId && getActivitesDuProjet(ligne.projetId).length > 0" label="Activités globales">
-                    <option *ngFor="let a of activitesGlobales()" [value]="a.id">{{ a.nom }}</option>
-                  </optgroup>
-                  <ng-container *ngIf="!ligne.projetId || getActivitesDuProjet(ligne.projetId).length === 0">
-                    <option *ngFor="let a of activitesGlobales()" [value]="a.id">{{ a.nom }}</option>
-                  </ng-container>
-                </ng-container>
-              </select>
-            </td>
 
-            <!-- Cellules jours -->
+            <!-- Select Projet -->
+        <td class="dt-td" style="padding:8px 10px;vertical-align:middle">
+  <select class="ms-select ms-select-proj"
+          [class.ms-field-invalid]="submitted() && !ligne.projetId && getTotalLigne(ligne.rowId) > 0"
+          [ngModel]="ligne.projetId ?? ''"
+          [disabled]="!peutModifier()"
+          (ngModelChange)="onProjetChange(ligne.rowId, $event)">
+    <option value="">— Choisir un projet —</option>
+    <option *ngFor="let p of projets()" [value]="p.id">{{ p.nom }}</option>
+  </select>
+  <div *ngIf="submitted() && !ligne.projetId && getTotalLigne(ligne.rowId) > 0"
+       class="ms-field-error">⚠️ Projet requis</div>
+</td>
+
+
+
+
+
+            <!-- Select Activité -->
+          <!-- REMPLACER le <td> "Select Activité" (colonne activité dans le tableau) par ceci : -->
+<td class="dt-td" style="padding:8px 10px;vertical-align:middle;border-right:1px solid var(--dt-border)">
+ 
+  <!-- ✅ Select activité : affiché SEULEMENT si un projet est sélectionné -->
+  <select *ngIf="ligne.projetId"
+          class="ms-select ms-select-act"
+          [ngModel]="ligne.activiteId ?? ''"
+          [disabled]="!peutModifier()"
+          (ngModelChange)="onActiviteChange(ligne.rowId, $event)">
+    <option value="">— Choisir une activité —</option>
+ 
+    <!-- Activités du projet sélectionné -->
+    <option *ngFor="let a of getActivitesDuProjet(ligne.projetId)" [value]="a.id">{{ a.nom }}</option>
+ 
+    <!-- Activités globales en optgroup séparé si projet sélectionné -->
+    <optgroup *ngIf="activitesGlobales().length > 0" label="Activités globales">
+      <option *ngFor="let a of activitesGlobales()" [value]="a.id">{{ a.nom }}</option>
+    </optgroup>
+  </select>
+ 
+  <!-- Message si pas de projet sélectionné -->
+  <span *ngIf="!ligne.projetId" class="ms-select-placeholder">
+    ← Choisir un projet d'abord
+  </span>
+ 
+  <!-- Erreur si ligne avec heures mais sans activité -->
+  <div *ngIf="submitted() && ligne.projetId && !ligne.activiteId && getTotalLigne(ligne.rowId) > 0"
+       class="ms-field-error">⚠️ Activité requise</div>
+</td>
+
+
+
+
+
+
+
+
+
+
+            <!-- Cellules jours (Lun → Sam) -->
             <td *ngFor="let date of datesSemaine()"
                 class="dt-td ms-td-jour" [class.ms-we]="isWE(date)"
                 style="padding:5px 3px;text-align:center;vertical-align:middle;border-left:1px solid var(--dt-border)">
@@ -156,7 +234,8 @@
                 <button class="ms-comment-btn"
                         [class.ms-has-comment]="hasComment(ligne.rowId, date)"
                         (click)="ouvrirCommentaire(ligne.rowId, date)"
-                        [title]="hasComment(ligne.rowId, date) ? 'Commentaire : ' + (ligne.jours[date]?.commentaire ?? '') : 'Ajouter un commentaire'">
+                        [title]="hasComment(ligne.rowId, date) ? 'Commentaire : ' + (ligne.jours[date]?.commentaire ?? '') : 'Ajouter un commentaire'"
+                        [disabled]="!peutModifier()">
                   <svg viewBox="0 0 12 12" fill="none">
                     <path d="M1.5 1.5h9a.5.5 0 01.5.5v5a.5.5 0 01-.5.5H4L1.5 10V2a.5.5 0 01.5-.5z"
                           stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"
@@ -179,7 +258,8 @@
         <tfoot>
           <tr class="ms-tfoot">
             <td colspan="3" class="ms-tfoot-empty"></td>
-            <td *ngFor="let date of datesSemaine()" class="ms-tfoot-val" [class.ms-we]="isWE(date)"
+            <td *ngFor="let date of datesSemaine()"
+                class="ms-tfoot-val" [class.ms-we]="isWE(date)"
                 style="border-left:1px solid var(--dt-border)">
               <span *ngIf="totalParJour()[date] > 0" class="ms-tfoot-num">{{ fmt(totalParJour()[date]) }}</span>
               <span *ngIf="!totalParJour()[date]" class="ms-tfoot-dash">—</span>
@@ -192,9 +272,10 @@
       </table>
     </div>
 
-    <!-- ── Actions ── -->
+    <!-- ── Barre d'actions ── -->
     <div class="ms-actions">
       <div class="ms-actions-left">
+        <!-- Ajouter une ligne — TS_OWN_CREATE ou droits étendus -->
         <button class="dt-btn-create" style="padding:7px 14px;font-size:.74rem;border-radius:7px"
                 [disabled]="!peutModifier()" (click)="ajouterLigne()">
           <svg viewBox="0 0 12 12" fill="none" style="width:11px;height:11px">
@@ -202,27 +283,52 @@
           </svg>
           Ajouter une ligne
         </button>
-        <button class="ms-btn ms-btn-remove"
+
+        <!-- Supprimer — TS_OWN_DELETE ou droits étendus -->
+        <button *ngIf="peutSupprimer()"
+                class="ms-btn ms-btn-remove"
                 [disabled]="!peutModifier() || (lignesMatrice().length <= 1 && selectedRows().size === 0)"
                 (click)="supprimerLignesSelectionnees()">
-          <svg viewBox="0 0 12 12" fill="none"><path d="M2 3h8M4 3V2h4v1M3 3l.5 7h5L9 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg viewBox="0 0 12 12" fill="none">
+            <path d="M2 3h8M4 3V2h4v1M3 3l.5 7h5L9 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
           Supprimer{{ selectedRows().size > 0 ? ' (' + selectedRows().size + ')' : '' }}
         </button>
+
         <button class="ms-btn ms-btn-reset" [disabled]="!peutModifier()" (click)="reinitialiser()">
-          <svg viewBox="0 0 12 12" fill="none"><path d="M1.5 6a4.5 4.5 0 105-4.47M1.5 2v4h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg viewBox="0 0 12 12" fill="none">
+            <path d="M1.5 6a4.5 4.5 0 105-4.47M1.5 2v4h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
           Réinitialiser
         </button>
       </div>
+
       <div class="ms-actions-right">
-        <button *ngIf="statutFeuille() === 'SOUMISE'" class="ms-btn ms-btn-ghost" (click)="annulerSoumission()">↩ Retirer</button>
-        <button class="ms-btn ms-btn-save" [disabled]="saving() || !peutModifier()" (click)="sauvegarder(false)">
+        <!-- Annuler soumission — seulement pour la propre feuille -->
+        <button *ngIf="statutFeuille() === 'SOUMISE' && isViewingOwnSheet()"
+                class="ms-btn ms-btn-ghost" (click)="annulerSoumission()">↩ Retirer</button>
+
+        <!-- Sauvegarder — visible si droits de modification -->
+        <button *ngIf="peutModifier()"
+                class="ms-btn ms-btn-save"
+                [disabled]="saving()"
+                (click)="sauvegarder(false)">
           <div *ngIf="saving()" class="ms-spin"></div>
-          <svg *ngIf="!saving()" viewBox="0 0 12 12" fill="none"><path d="M1.5 6.5l3 3 6-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Sauvegarder
+          <svg *ngIf="!saving()" viewBox="0 0 12 12" fill="none">
+            <path d="M1.5 6.5l3 3 6-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          {{ isViewingOwnSheet() ? 'Sauvegarder' : 'Enregistrer modifications' }}
         </button>
-        <button class="ms-btn ms-btn-submit" [disabled]="saving() || !peutModifier()" (click)="soumettreFeuille()">
+
+        <!-- Soumettre — seulement pour sa propre feuille, avec TS_OWN_CREATE/UPDATE -->
+        <button *ngIf="isViewingOwnSheet() && peutModifier()"
+                class="ms-btn ms-btn-submit"
+                [disabled]="saving()"
+                (click)="soumettreFeuille()">
           Soumettre
-          <svg viewBox="0 0 12 12" fill="none"><path d="M6 1l5 5-5 5M1 6h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg viewBox="0 0 12 12" fill="none">
+            <path d="M6 1l5 5-5 5M1 6h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </button>
       </div>
     </div>
@@ -230,16 +336,19 @@
 
 </div>
 
-<!-- Modal commentaire -->
+<!-- ── Modal commentaire ── -->
 <div *ngIf="commentaireModal()" class="ms-modal-bg" (click)="commentaireModal.set(null)">
   <div class="ms-modal" (click)="$event.stopPropagation()">
     <div class="ms-modal-head">
       <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px;color:var(--accent)">
-        <path d="M1.5 1.5h9a.5.5 0 01.5.5v5a.5.5 0 01-.5.5H4L1.5 10V2a.5.5 0 01.5-.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+        <path d="M1.5 1.5h9a.5.5 0 01.5.5v5a.5.5 0 01-.5.5H4L1.5 10V2a.5.5 0 01.5-.5z"
+              stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
       </svg>
       <span>{{ commentaireModal() ? fmtDateLabel(commentaireModal()!.date) : '' }}</span>
       <button class="ms-modal-x" (click)="commentaireModal.set(null)">
-        <svg viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 12 12" fill="none">
+          <path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
       </button>
     </div>
     <div class="ms-modal-body">

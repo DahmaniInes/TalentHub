@@ -1,82 +1,754 @@
-/* calendrier.component.css — V6 Google Calendar avec heures + sidebar */
+/* calendrier.component.css — REDESIGN COMPLET */
 
-/* ── Root ── */
-.gcal-root { display: flex; flex-direction: column; height: 100%; background: var(--bg-primary); overflow: hidden; }
-
-/* ══ TOOLBAR ══ */
-.gcal-toolbar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 20px; background: var(--bg-card); border-bottom: 1px solid var(--border-color);
-  flex-shrink: 0; flex-wrap: wrap; gap: 8px;
+/* ── Conteneur racine ── */
+.gcal-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-primary);
+  overflow: hidden;
+  gap: 0;
 }
-.gcal-toolbar-left  { display: flex; align-items: center; gap: 8px; }
-.gcal-toolbar-right { display: flex; align-items: center; gap: 10px; }
 
-.gcal-today-btn { padding: 6px 16px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--bg-card); font-size: .76rem; font-weight: 600; color: var(--text-secondary); cursor: pointer; font-family: inherit; transition: all .14s; }
-.gcal-today-btn:hover { background: var(--bg-hover); border-color: var(--text-secondary); }
+/* ══════════════════════════════════════════════════
+   CARTE HEADER PRINCIPALE
+   Ligne du haut : titre gauche + navigation droite
+   ══════════════════════════════════════════════════ */
+.gcal-header-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 13px 20px 12px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+  border-radius: 7px;
+}
 
-.gcal-arrow { width: 32px; height: 32px; border-radius: 50%; border: none; background: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; transition: background .12s, color .12s; }
-.gcal-arrow:hover { background: var(--bg-hover); color: var(--text-primary); }
-.gcal-arrow svg { width: 14px; height: 14px; }
+/* ── Partie gauche : icône + titre ── */
+.gcal-header-left {
+  display: flex;
+  flex-direction: column;   /* titre + sous-titre en colonne */
+  gap: 2px;
+}
 
-.gcal-label { font-size: 1rem; font-weight: 800; color: var(--text-primary); margin: 0; letter-spacing: -.3px; white-space: nowrap; }
 
-.gcal-total-tag { display: flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 4px 12px; border-radius: 20px; }
 
-.gcal-switcher { display: flex; background: var(--bg-hover); border: 1px solid var(--border-color); border-radius: 8px; padding: 3px; gap: 2px; }
-.gcal-switch-btn { padding: 4px 12px; border-radius: 6px; border: none; background: none; font-size: .73rem; font-weight: 500; color: var(--text-muted); cursor: pointer; font-family: inherit; transition: all .14s; }
-.gcal-switch-btn.active { background: var(--bg-card); color: var(--accent); font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
 
-/* Loading */
-.gcal-loading { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 80px; color: var(--text-muted); }
-.gcal-spinner { width: 20px; height: 20px; border: 2px solid var(--border-color); border-top-color: var(--accent); border-radius: 50%; animation: gcalSpin .65s linear infinite; }
+
+/* Sous-titre : nom de l'utilisateur courant */
+.gcal-header-sub {
+  font-size: .78rem;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+  font-weight: 500;
+}
+
+/* ── Partie droite : navigation + switcher ── */
+.gcal-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ── Bouton navigation date (< label >) ──
+   Bordure en accent, flèches et label en accent */
+   .gcal-nav-date-btn {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border: 1.5px solid var(--accent);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--bg-input);        /* ← FOND ACCENT PLEIN */
+  }
+
+/* Flèches < et > à l'intérieur du bouton date */
+.gcal-nav-arrow {
+  width: 32px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  background: none;
+  border: none;
+  color:var(--accent);                     /* ← TEXTE BLANC */
+  cursor: pointer;
+  transition: background .12s, opacity .12s;
+  flex-shrink: 0;
+}
+.gcal-nav-arrow:hover {
+  background: rgba(255,255,255,.15);  /* ← Hover blanc transparent */
+  opacity: 1;
+}
+.gcal-nav-arrow svg {
+  width: 12px; height: 12px;
+  stroke-width: 2.2;
+}
+/* Label de la période dans le bouton date */
+.gcal-nav-label {
+  font-size: .82rem;                  /* ← Comme "Rechercher" */
+  font-weight: 600;
+  color: white;                       /* ← TEXTE BLANC */
+  padding: 0 12px;
+  white-space: nowrap;
+  border-left: 1px solid rgba(255,255,255,.25);
+  border-right: 1px solid rgba(255,255,255,.25);
+  height: 34px;
+  display: flex; align-items: center;
+  min-width: 130px;
+  justify-content: center;
+  font-family: 'Space Vacation', sans-serif;  /* ← Même police */
+}
+
+/* Bouton "Aujourd'hui" */
+.gcal-today-pill {
+  padding: 6px 14px;
+  border-radius: 7px;
+  border: 1.5px solid var(--accent);
+  background: var(--bg-input);          /* ← FOND ACCENT */
+  font-size: .82rem;                  /* ← Comme "Rechercher" */
+  font-weight: 600;
+  color: white;                       /* ← TEXTE BLANC */
+  cursor: pointer;
+  font-family: 'Space Vacation', sans-serif;
+  transition: all .14s;
+  height: 34px;
+}
+.gcal-today-pill:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  opacity: .9;
+}
+/* ── Switcher vue Jour / Semaine / Mois ──
+   En accent, avec opacité réduite sur le bouton actif */
+   .gcal-view-switcher {
+    display: flex;
+    gap: 2px;
+    background: var(--accent);        /* ← FOND ACCENT PLEIN */
+    border: 1.5px solid var(--accent);
+    border-radius: 8px;
+    padding: 4px;
+  }
+
+/* Bouton de vue inactif */
+.gcal-view-btn {
+  padding: 4px 13px;
+  border-radius: 5px;
+  border: none;
+  background: none;
+  font-size: .82rem;                  /* ← Comme "Rechercher" */
+  font-weight: 600;
+  color: white;                       /* ← TEXTE BLANC */
+  cursor: pointer;
+  font-family: 'Space Vacation', sans-serif;
+  transition: all .14s;
+}
+.gcal-view-btn:hover {
+  opacity: .8;
+  background: rgba(255,255,255,.1);
+}
+/* Bouton actif : fond accent plein, texte blanc, opacité pleine */
+.gcal-view-btn.active {
+  background: rgba(255,255,255,.25);  /* ← Blanc transparent */
+  color: white;
+  opacity: 1;                         /* ← Actif plein */
+  box-shadow: 0 1px 4px rgba(0,0,0,.15);
+}
+
+/* Tag total heures */
+.gcal-total-tag {
+  display: flex; align-items: center; gap: 5px;
+  font-size: .72rem; font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(192,38,211,.2);
+}
+
+/* ══ PAGE ACCÈS REFUSÉ ══ */
+.gcal-no-perm {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  flex: 1; padding: 60px 24px; gap: 10px; text-align: center;
+}
+.gcal-no-perm-icon {
+  width: 70px; height: 70px; border-radius: 50%;
+  background: var(--bg-hover); border: 2px solid var(--border-color);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted); margin-bottom: 8px;
+}
+.gcal-no-perm-title { font-size: 1rem; font-weight: 700; color: var(--text-primary); margin: 0; }
+.gcal-no-perm-sub   { font-size: .78rem; color: var(--text-muted); margin: 0; max-width: 340px; }
+
+/* ── Loading ── */
+.gcal-loading {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; padding: 80px; color: var(--text-muted); font-size: .82rem; flex: 1;
+}
+.gcal-spinner    { width: 20px; height: 20px; border: 2px solid var(--border-color); border-top-color: var(--accent); border-radius: 50%; animation: gcalSpin .65s linear infinite; }
+.gcal-spinner-sm { width: 11px; height: 11px; border: 2px solid rgba(255,255,255,.3); border-top-color: white; border-radius: 50%; animation: gcalSpin .65s linear infinite; }
 @keyframes gcalSpin { to { transform: rotate(360deg); } }
 
-/* ══ LAYOUT PRINCIPAL ══ */
-.gcal-layout { display: flex; flex: 1; overflow: hidden; gap: 0; }
+/* ══════════════════════════════════════════════════
+   LAYOUT : calendrier (flex:1) + sidebar fixe
+   ══════════════════════════════════════════════════ */
+.gcal-layout { display: flex; flex: 1; overflow: hidden; min-height: 0;  }
+.gcal-main   { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; border-radius: 1px; }
 
-.gcal-main { flex: 1; min-width: 0; overflow: hidden; display: flex; flex-direction: column; }
-
-/* ══════ VUE MOIS ══════ */
-.gcal-mois-wrap { flex: 1; display: flex; flex-direction: column; margin: 10px 0 10px 10px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; }
-
+/* ══ VUE MOIS ══ */
+.gcal-mois-wrap {
+  flex: 1; display: flex; flex-direction: column;
+  margin: 8px 8px 8px 8px;
+  background: var(--bg-card); border: 1px solid var(--border-color);
+  border-radius: 7px; overflow: hidden;
+}
 .gcal-mois-head { display: grid; grid-template-columns: repeat(7,1fr); background: var(--bg-hover); border-bottom: 1px solid var(--border-color); }
-.gcal-mois-dh { padding: 9px 4px; text-align: center; font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); }
-.gcal-we-dh { color: #94a3b8; }
-
+.gcal-mois-dh   { padding: 8px 4px; text-align: center; font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); }
+.gcal-we-dh     { color: #94a3b8; }
 .gcal-mois-grid { display: grid; grid-template-columns: repeat(7,1fr); flex: 1; overflow-y: auto; }
-
-.gcal-cell { min-height: 90px; padding: 5px; border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 2px; cursor: pointer; transition: background .1s; position: relative; }
+.gcal-cell {
+  min-height: 88px; padding: 5px;
+  border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);
+  display: flex; flex-direction: column; gap: 2px; cursor: pointer;
+  transition: background .1s; position: relative;
+}
 .gcal-cell:nth-child(7n) { border-right: none; }
-.gcal-cell:hover { background: rgba(0,0,0,.012); }
+.gcal-cell:hover { background: rgba(192,38,211,.018); }
 .gcal-cell-autre { opacity: .4; background: var(--bg-primary); }
-.gcal-cell-today { background: rgba(192,38,211,.025); }
+.gcal-cell-today { background: rgba(192,38,211,.02); }
 .gcal-cell-we    { background: rgba(148,163,184,.04); }
-
-.gcal-cell-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
-.gcal-cell-n { font-size: .74rem; font-weight: 700; color: var(--text-muted); width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.gcal-cell-head  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+.gcal-cell-n     { font-size: .74rem; font-weight: 700; color: var(--text-muted); width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
 .gcal-cell-n-today { background: var(--accent); color: white; font-weight: 800; }
-.gcal-cell-h { font-size: .56rem; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 1px 4px; border-radius: 3px; }
-
-.gcal-chips { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
-.gcal-chip { border-left: 3px solid; border-radius: 3px; padding: 2px 4px; display: flex; align-items: center; gap: 3px; cursor: pointer; transition: opacity .1s; }
+.gcal-cell-h     { font-size: .56rem; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 1px 4px; border-radius: 3px; }
+.gcal-chips      { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+.gcal-chip       { border-left: 3px solid; border-radius: 3px; padding: 2px 4px; display: flex; align-items: center; gap: 3px; cursor: pointer; transition: opacity .1s; }
 .gcal-chip:hover { opacity: .82; }
-[draggable="true"].gcal-chip { cursor: grab; }
-.gcal-chip-dur  { font-size: .58rem; font-weight: 800; flex-shrink: 0; }
-.gcal-chip-name { font-size: .62rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.gcal-cell-add { position: absolute; bottom: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; display: none; align-items: center; justify-content: center; color: var(--text-muted); background: var(--bg-hover); }
+.gcal-chip-heure { font-size: .58rem; font-weight: 700; flex-shrink: 0; }
+.gcal-chip-name  { font-size: .62rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gcal-cell-add   { position: absolute; bottom: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; display: none; align-items: center; justify-content: center; color: var(--text-muted); background: var(--bg-hover); }
 .gcal-cell-add svg { width: 10px; height: 10px; }
 .gcal-cell:hover .gcal-cell-add { display: flex; }
 
-/* ══════ VUE SEMAINE/JOUR AVEC HEURES ══════ */
-.gcal-sem-wrap, .gcal-jour-wrap {
+/* ══ VUE SEMAINE ══ */
+.gcal-sem-wrap {
   flex: 1; display: flex; flex-direction: column;
-  margin: 10px 0 10px 10px; background: var(--bg-card);
-  border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden;
+  margin: 8px 8px 8px 8px;
+  background: var(--bg-card); border: 1px solid var(--border-color);
+  border-radius: 7px; overflow: hidden;
+}
+.gcal-sem-head     { display: grid; grid-template-columns: 54px repeat(7,1fr); border-bottom: 2px solid var(--border-color); background: var(--bg-hover); flex-shrink: 0; }
+.gcal-sem-time-col { border-right: 1px solid var(--border-color); }
+.gcal-sem-col-head { padding: 8px 4px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; border-left: 1px solid var(--border-color); }
+.gcal-today-th { background: rgba(192,38,211,.04); }
+.gcal-we-th    { background: rgba(148,163,184,.06); }
+.gcal-sem-jnom { font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); }
+.gcal-sem-jnum { font-size: .92rem; font-weight: 800; color: var(--text-secondary); width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.gcal-sem-jnum-today { background: var(--accent); color: white; }
+.gcal-sem-total { font-size: .57rem; color: var(--accent); font-weight: 700; background: var(--accent-soft); padding: 1px 4px; border-radius: 3px; }
+.gcal-sem-body     { display: flex; flex: 1; overflow-y: auto; min-height: 0; }
+
+/* Axe des heures — chaque label = 60px = 1h */
+.gcal-time-col { width: 54px; min-width: 54px; flex-shrink: 0; border-right: 1px solid var(--border-color); }
+.gcal-time-slot-label { height: 60px; display: flex; align-items: flex-start; justify-content: flex-end; padding: 4px 6px 0 0; font-size: .6rem; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border-color); }
+
+/* Colonne d'un jour — position:relative pour les entrées absolues */
+.gcal-day-col      { flex: 1; position: relative; border-left: 1px solid var(--border-color); min-width: 0; }
+.gcal-jour-day-col { flex: 1; }
+.gcal-today-col    { background: rgba(192,38,211,.015); }
+.gcal-we-col       { background: rgba(148,163,184,.04); }
+
+/* Créneau cliquable = 60px = 1 heure */
+.gcal-hour-slot { height: 60px; border-bottom: 1px solid rgba(0,0,0,.04); cursor: pointer; transition: background .1s; }
+.gcal-hour-slot:hover { background: rgba(192,38,211,.05); }
+
+/* ── Entrée positionnée en PX (FIX POSITIONING) ──
+   top.px  = (h*60 + m) - 360   [grille commence à 6h = 360 min]
+   height.px = duréeMinutes      [1 min = 1px, 60min = 1 slot = 60px]
+   Exemple 10h-11h: top=240px, height=60px ✅ */
+.gcal-entry-block {
+  position: absolute; left: 2px; right: 2px;
+  border-left: 3px solid; border-radius: 5px; padding: 3px 5px;
+  cursor: pointer; overflow: hidden;
+  display: flex; flex-direction: column; gap: 1px;
+  z-index: 2; transition: box-shadow .12s, opacity .1s;
+  min-height: 22px; box-sizing: border-box;
+}
+.gcal-entry-block:hover { box-shadow: 0 2px 8px rgba(0,0,0,.14); }
+[draggable="true"].gcal-entry-block { cursor: grab; }
+[draggable="true"].gcal-entry-block:active { cursor: grabbing; opacity: .75; }
+.gcal-entry-block-time { font-size: .58rem; font-weight: 700; white-space: nowrap; }
+.gcal-entry-block-name { font-size: .66rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gcal-entry-block-act  { font-size: .58rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gcal-entry-block-dur  { font-size: .58rem; font-weight: 600; margin-top: auto; }
+
+/* ══ VUE JOUR ══ */
+.gcal-jour-wrap {
+  flex: 1; display: flex; flex-direction: column;
+  margin: 8px 8px 8px 8px;
+  background: var(--bg-card); border: 1px solid var(--border-color);
+  border-radius: 7px; overflow: hidden;
+}
+.gcal-jour-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
+.gcal-jour-title  { font-size: .9rem; font-weight: 700; color: var(--text-primary); text-transform: capitalize; }
+.gcal-add-btn     { display: inline-flex; align-items: center; gap: 5px; padding: 6px 14px; border-radius: 7px; background: var(--accent); color: white; border: none; font-size: .84rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: opacity .14s; }
+.gcal-add-btn:hover { opacity: .88; }
+.gcal-add-btn svg { width: 11px; height: 11px; }
+.gcal-jour-body { display: flex; flex: 1; overflow-y: auto; min-height: 0; }
+
+/* ══════════════════════════════════════════════════
+   SIDEBAR DROITE
+   Deux cartes indépendantes empilées verticalement :
+   1. Carte sélecteur utilisateur (si droits étendus)
+   2. Carte "Reprendre une activité"
+   ══════════════════════════════════════════════════ */
+.gcal-sidebar {
+  width: 240px; min-width: 210px; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  gap: 8px;
+  padding: 8px 8px 8px 0;
+  overflow-y: auto;
+  border-left: none;
 }
 
-/* En-têtes semaine */
-.gcal-sem-head { display: grid; border-bottom: 2px solid var(--border-color); background: var(--bg-hover); flex-shrink: 0; grid-template-columns: 54px repeat(7,1fr); }
+/* ── Carte sélecteur utilisateur ──
+   Carte indépendante avec bordure, background card */
+.gcal-sidebar-user-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+/* Label "Utilisateur" dans la carte */
+.gcal-sidebar-user-label {
+  display: flex; align-items: center; gap: 5px;
+  font-size: .63rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .4px; color: var(--text-muted);
+}
+
+/* Select utilisateur */
+.gcal-sidebar-user-select {
+  width: 100%; border: 1px solid var(--border-color);
+  border-radius: 7px; padding: 6px 8px;
+  font-size: .76rem; background: var(--bg-input);
+  color: var(--text-primary); font-family: inherit;
+  outline: none; cursor: pointer; transition: border-color .12s;
+}
+.gcal-sidebar-user-select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+
+/* Affichage de l'autre user sélectionné */
+.gcal-sidebar-other-user {
+  display: flex; align-items: center; gap: 7px;
+  padding: 5px 8px;
+  background: rgba(245,158,11,.06);
+  border: 1px solid rgba(245,158,11,.2);
+  border-radius: 7px;
+}
+.gcal-sidebar-user-avatar {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .62rem; font-weight: 800; color: white; flex-shrink: 0;
+}
+.gcal-sidebar-user-name { font-size: .72rem; font-weight: 600; color: #f59e0b; }
+
+/* ── Carte "Reprendre une activité" ──
+   Carte indépendante avec bordure */
+.gcal-sidebar-recentes-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  flex: 1; /* Prend l'espace restant */
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* En-tête de la carte activités récentes */
+.gcal-sidebar-recentes-header {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 3px;
+}
+.gcal-sidebar-recentes-title {
+  font-size: .86rem; font-weight: 700; color: var(--text-primary);
+}
+/* Texte d'aide */
+.gcal-sidebar-recentes-hint {
+  font-size: .73rem; color: var(--text-muted);
+  line-height: 1.45; margin: 0 0 10px;
+}
+
+/* Séparateur fin entre les cartes d'activités */
+.gcal-recente-sep {
+  height: 1px; background: var(--border-color);
+  margin: 5px 0; opacity: .55;
+}
+
+/* ── Carte d'une activité récente ──
+   Affiche : nom activité + projet (obligatoire) + client (si dispo)
+   Draggable → ouvre le formulaire pré-rempli (PAS de création directe) */
+.gcal-recente-card {
+  border-left: 3px solid;   /* Couleur du projet définie inline */
+  border-radius: 6px;
+  padding: 8px 8px 10px;
+  background: var(--bg-hover);
+  display: flex; flex-direction: column; gap: 4px;
+  position: relative;
+  transition: box-shadow .12s, background .1s;
+  user-select: none;
+}
+/* État draggable */
+.gcal-recente-draggable { cursor: grab; }
+.gcal-recente-draggable:hover {
+  background: var(--bg-input);
+  box-shadow: 0 2px 10px rgba(0,0,0,.09);
+}
+.gcal-recente-draggable:active { cursor: grabbing; opacity: .7; }
+
+/* Nom de l'activité — coloré, gras, information principale */
+.gcal-recente-activite {
+  font-size: .76rem; font-weight: 700;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  line-height: 1.3;
+}
+
+/* Ligne info (projet / client) : icône + texte */
+.gcal-recente-row {
+  display: flex; align-items: center; gap: 4px;
+  overflow: hidden;
+}
+.gcal-recente-row-icon {
+  width: 10px; height: 10px; flex-shrink: 0; opacity: .4;
+}
+/* Nom du projet */
+.gcal-recente-projet {
+  font-size: .7rem; color: var(--text-secondary); font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* Nom du client */
+.gcal-recente-client {
+  font-size: .67rem; color: var(--text-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Icône drag en bas droite de la carte */
+.gcal-recente-drag-hint {
+  position: absolute; bottom: 5px; right: 5px;
+  color: var(--text-muted); opacity: .3;
+}
+
+/* Vide sidebar */
+.gcal-sidebar-empty {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px; padding: 18px 8px;
+  color: var(--text-muted); text-align: center; font-size: .72rem;
+}
+
+/* Lecture seule */
+.gcal-sidebar-readonly {
+  display: flex; align-items: center; gap: 5px;
+  font-size: .65rem; color: var(--text-muted);
+  margin-top: 8px; padding: 5px 8px;
+  background: var(--bg-hover); border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+/* ══ OVERLAY + POPUPS ══ */
+.gcal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.3); backdrop-filter: blur(3px); z-index: 800; animation: gcalFadeIn .15s ease; }
+@keyframes gcalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.gcal-popup {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px;
+  box-shadow: 0 16px 48px rgba(0,0,0,.22); z-index: 801; overflow: hidden;
+  animation: gcalPopIn .2s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes gcalPopIn { from { opacity:0; transform:translate(-50%,-50%) scale(.9); } to { opacity:1; transform:translate(-50%,-50%) scale(1); } }
+.gcal-popup-detail { width: 320px; max-width: calc(100vw - 32px); }
+.gcal-popup-form   { width: 400px; max-width: calc(100vw - 32px); max-height: calc(100vh - 60px); display: flex; flex-direction: column; }
+.gcal-popup-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 12px 14px 10px 16px; border-top: 4px solid; border-bottom: 1px solid var(--border-color); }
+.gcal-popup-proj-info { display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 0; }
+.gcal-popup-dot    { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+.gcal-popup-proj   { font-size: .88rem; font-weight: 700; }
+.gcal-popup-act    { font-size: .73rem; color: var(--text-secondary); margin-top: 2px; }
+.gcal-popup-client { font-size: .68rem; color: var(--text-muted); margin-top: 1px; }
+.gcal-popup-body   { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+.gcal-popup-row    { display: flex; align-items: flex-start; gap: 8px; font-size: .77rem; color: var(--text-primary); }
+.gcal-popup-icon   { font-size: .84rem; flex-shrink: 0; }
+.gcal-popup-comment { background: var(--bg-hover); padding: 3px 7px; border-radius: 4px; font-size: .73rem; color: var(--text-secondary); }
+.gcal-statut-badge { font-size: .65rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; border: 1px solid; }
+.gcal-s-brouillon  { background: rgba(100,116,139,.1); color: #64748b; border-color: rgba(100,116,139,.2); }
+.gcal-s-soumise    { background: rgba(59,130,246,.1);  color: #3b82f6; border-color: rgba(59,130,246,.2); }
+.gcal-s-validee    { background: rgba(16,185,129,.1);  color: #10b981; border-color: rgba(16,185,129,.2); }
+.gcal-s-rejetee    { background: rgba(239,68,68,.1);   color: #ef4444; border-color: rgba(239,68,68,.2); }
+.gcal-icon-btn { width: 26px; height: 26px; border-radius: 6px; border: none; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all .12s; }
+.gcal-icon-btn svg { width: 12px; height: 12px; }
+.gcal-icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.gcal-btn-edit:hover { color: var(--accent); background: var(--accent-soft); }
+.gcal-btn-del:hover  { color: #ef4444; background: rgba(239,68,68,.1); }
+.gcal-form-body  { padding: 14px 16px; display: flex; flex-direction: column; gap: 11px; overflow-y: auto; flex: 1; }
+.gcal-form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.gcal-form-field { display: flex; flex-direction: column; gap: 4px; }
+.gcal-form-label { font-size: .63rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .4px; }
+.gcal-form-input, .gcal-form-textarea { border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 10px; font-size: .78rem; background: var(--bg-input); color: var(--text-primary); font-family: inherit; outline: none; transition: border-color .12s,box-shadow .12s; width: 100%; box-sizing: border-box; }
+.gcal-form-input:focus, .gcal-form-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.gcal-form-textarea { resize: vertical; min-height: 55px; }
+.gcal-input-min { max-width: 100px; }
+.gcal-duree-display { font-size: .88rem; font-weight: 800; color: var(--accent); }
+.gcal-form-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 11px 16px; border-top: 1px solid var(--border-color); background: var(--bg-hover); flex-shrink: 0; }
+.gcal-form-btn   { display: inline-flex; align-items: center; gap: 5px; padding: 8px 16px; border-radius: 8px; font-size: .77rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; font-family: inherit; transition: all .14s; }
+.gcal-form-btn:disabled { opacity: .5; cursor: not-allowed; }
+.gcal-form-cancel { background: var(--bg-card); color: var(--text-secondary); border-color: var(--border-color); }
+.gcal-form-cancel:hover { background: var(--bg-hover); }
+.gcal-form-save   { background: linear-gradient(135deg,var(--accent),var(--accent-2)); color: white; border: none; box-shadow: 0 2px 8px var(--accent-soft); }
+.gcal-form-save:hover:not(:disabled) { opacity: .88; }/* calendrier.component.css — REDESIGN COMPLET */
+
+/* ── Conteneur racine ── */
+.gcal-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-primary);
+  overflow: hidden;
+  gap: 0;
+}
+
+/* ══════════════════════════════════════════════════
+   CARTE HEADER PRINCIPALE
+   Ligne du haut : titre gauche + navigation droite
+   ══════════════════════════════════════════════════ */
+.gcal-header-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 13px 20px 12px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+  border-radius: 7px;
+}
+
+/* ── Partie gauche : icône + titre ── */
+.gcal-header-left {
+  display: flex;
+  flex-direction: column;   /* titre + sous-titre en colonne */
+  gap: 2px;
+}
+
+
+
+
+
+/* Sous-titre : nom de l'utilisateur courant */
+.gcal-header-sub {
+  font-size: .78rem;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+  font-weight: 500;
+}
+
+/* ── Partie droite : navigation + switcher ── */
+.gcal-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ── Bouton navigation date (< label >) ──
+   Bordure en accent, flèches et label en accent */
+   .gcal-nav-date-btn {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border: 1.5px solid var(--accent);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--bg-input);        /* ← FOND ACCENT PLEIN */
+  }
+
+/* Flèches < et > à l'intérieur du bouton date */
+.gcal-nav-arrow {
+  width: 32px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  background: none;
+  border: none;
+  color:var(--accent);                     /* ← TEXTE BLANC */
+  cursor: pointer;
+  transition: background .12s, opacity .12s;
+  flex-shrink: 0;
+}
+.gcal-nav-arrow:hover {
+  background: rgba(255,255,255,.15);  /* ← Hover blanc transparent */
+  opacity: 1;
+}
+.gcal-nav-arrow svg {
+  width: 12px; height: 12px;
+  stroke-width: 2.2;
+}
+/* Label de la période dans le bouton date */
+.gcal-nav-label {
+  font-size: .82rem;                  /* ← Comme "Rechercher" */
+  font-weight: 600;
+  color: white;                       /* ← TEXTE BLANC */
+  padding: 0 12px;
+  white-space: nowrap;
+  border-left: 1px solid rgba(255,255,255,.25);
+  border-right: 1px solid rgba(255,255,255,.25);
+  height: 34px;
+  display: flex; align-items: center;
+  min-width: 130px;
+  justify-content: center;
+  font-family: 'Space Vacation', sans-serif;  /* ← Même police */
+}
+
+/* Bouton "Aujourd'hui" */
+.gcal-today-pill {
+  padding: 6px 14px;
+  border-radius: 7px;
+  border: 1.5px solid var(--accent);
+  background: var(--bg-input);          /* ← FOND ACCENT */
+  font-size: .82rem;                  /* ← Comme "Rechercher" */
+  font-weight: 600;
+  color: white;                       /* ← TEXTE BLANC */
+  cursor: pointer;
+  font-family: 'Space Vacation', sans-serif;
+  transition: all .14s;
+  height: 34px;
+}
+.gcal-today-pill:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  opacity: .9;
+}
+/* ── Switcher vue Jour / Semaine / Mois ──
+   En accent, avec opacité réduite sur le bouton actif */
+   .gcal-view-switcher {
+    display: flex;
+    gap: 2px;
+    background: var(--accent);        /* ← FOND ACCENT PLEIN */
+    border: 1.5px solid var(--accent);
+    border-radius: 8px;
+    padding: 4px;
+  }
+
+/* Bouton de vue inactif */
+.gcal-view-btn {
+  padding: 4px 13px;
+  border-radius: 5px;
+  border: none;
+  background: none;
+  font-size: .82rem;                  /* ← Comme "Rechercher" */
+  font-weight: 600;
+  color: white;                       /* ← TEXTE BLANC */
+  cursor: pointer;
+  font-family: 'Space Vacation', sans-serif;
+  transition: all .14s;
+}
+.gcal-view-btn:hover {
+  opacity: .8;
+  background: rgba(255,255,255,.1);
+}
+/* Bouton actif : fond accent plein, texte blanc, opacité pleine */
+.gcal-view-btn.active {
+  background: rgba(255,255,255,.25);  /* ← Blanc transparent */
+  color: white;
+  opacity: 1;                         /* ← Actif plein */
+  box-shadow: 0 1px 4px rgba(0,0,0,.15);
+}
+
+/* Tag total heures */
+.gcal-total-tag {
+  display: flex; align-items: center; gap: 5px;
+  font-size: .72rem; font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(192,38,211,.2);
+}
+
+/* ══ PAGE ACCÈS REFUSÉ ══ */
+.gcal-no-perm {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  flex: 1; padding: 60px 24px; gap: 10px; text-align: center;
+}
+.gcal-no-perm-icon {
+  width: 70px; height: 70px; border-radius: 50%;
+  background: var(--bg-hover); border: 2px solid var(--border-color);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted); margin-bottom: 8px;
+}
+.gcal-no-perm-title { font-size: 1rem; font-weight: 700; color: var(--text-primary); margin: 0; }
+.gcal-no-perm-sub   { font-size: .78rem; color: var(--text-muted); margin: 0; max-width: 340px; }
+
+/* ── Loading ── */
+.gcal-loading {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; padding: 80px; color: var(--text-muted); font-size: .82rem; flex: 1;
+}
+.gcal-spinner    { width: 20px; height: 20px; border: 2px solid var(--border-color); border-top-color: var(--accent); border-radius: 50%; animation: gcalSpin .65s linear infinite; }
+.gcal-spinner-sm { width: 11px; height: 11px; border: 2px solid rgba(255,255,255,.3); border-top-color: white; border-radius: 50%; animation: gcalSpin .65s linear infinite; }
+@keyframes gcalSpin { to { transform: rotate(360deg); } }
+
+/* ══════════════════════════════════════════════════
+   LAYOUT : calendrier (flex:1) + sidebar fixe
+   ══════════════════════════════════════════════════ */
+.gcal-layout { display: flex; flex: 1; overflow: hidden; min-height: 0;  }
+.gcal-main   { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; border-radius: 1px; }
+
+/* ══ VUE MOIS ══ */
+.gcal-mois-wrap {
+  flex: 1; display: flex; flex-direction: column;
+  margin: 8px 8px 8px 8px;
+  background: var(--bg-card); border: 1px solid var(--border-color);
+  border-radius: 7px; overflow: hidden;
+}
+.gcal-mois-head { display: grid; grid-template-columns: repeat(7,1fr); background: var(--bg-hover); border-bottom: 1px solid var(--border-color); }
+.gcal-mois-dh   { padding: 8px 4px; text-align: center; font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); }
+.gcal-we-dh     { color: #94a3b8; }
+.gcal-mois-grid { display: grid; grid-template-columns: repeat(7,1fr); flex: 1; overflow-y: auto; }
+.gcal-cell {
+  min-height: 88px; padding: 5px;
+  border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);
+  display: flex; flex-direction: column; gap: 2px; cursor: pointer;
+  transition: background .1s; position: relative;
+}
+.gcal-cell:nth-child(7n) { border-right: none; }
+.gcal-cell:hover { background: rgba(192,38,211,.018); }
+.gcal-cell-autre { opacity: .4; background: var(--bg-primary); }
+.gcal-cell-today { background: rgba(192,38,211,.02); }
+.gcal-cell-we    { background: rgba(148,163,184,.04); }
+.gcal-cell-head  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+.gcal-cell-n     { font-size: .74rem; font-weight: 700; color: var(--text-muted); width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.gcal-cell-n-today { background: var(--accent); color: white; font-weight: 800; }
+.gcal-cell-h     { font-size: .56rem; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 1px 4px; border-radius: 3px; }
+.gcal-chips      { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+.gcal-chip       { border-left: 3px solid; border-radius: 3px; padding: 2px 4px; display: flex; align-items: center; gap: 3px; cursor: pointer; transition: opacity .1s; }
+.gcal-chip:hover { opacity: .82; }
+.gcal-chip-heure { font-size: .58rem; font-weight: 700; flex-shrink: 0; }
+.gcal-chip-name  { font-size: .62rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gcal-cell-add   { position: absolute; bottom: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; display: none; align-items: center; justify-content: center; color: var(--text-muted); background: var(--bg-hover); }
+.gcal-cell-add svg { width: 10px; height: 10px; }
+.gcal-cell:hover .gcal-cell-add { display: flex; }
+
+/* ══ VUE SEMAINE ══ */
+.gcal-sem-wrap {
+  flex: 1; display: flex; flex-direction: column;
+  margin: 8px 8px 8px 8px;
+  background: var(--bg-card); border: 1px solid var(--border-color);
+  border-radius: 7px; overflow: hidden;
+}
+.gcal-sem-head     { display: grid; grid-template-columns: 54px repeat(7,1fr); border-bottom: 2px solid var(--border-color); background: var(--bg-hover); flex-shrink: 0; }
 .gcal-sem-time-col { border-right: 1px solid var(--border-color); }
 .gcal-sem-col-head { padding: 8px 4px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; border-left: 1px solid var(--border-color); }
 .gcal-today-th { background: rgba(192,38,211,.04); }
@@ -85,91 +757,223 @@
 .gcal-sem-jnum { font-size: .88rem; font-weight: 800; color: var(--text-secondary); width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 .gcal-sem-jnum-today { background: var(--accent); color: white; }
 .gcal-sem-total { font-size: .57rem; color: var(--accent); font-weight: 700; background: var(--accent-soft); padding: 1px 4px; border-radius: 3px; }
+.gcal-sem-body     { display: flex; flex: 1; overflow-y: auto; min-height: 0; }
 
-/* Corps semaine/jour avec scroll horizontal des heures */
-.gcal-sem-body, .gcal-jour-body {
-  display: flex; flex: 1; overflow-y: auto; overflow-x: hidden; position: relative;
-}
-
-/* Colonne heures */
+/* Axe des heures — chaque label = 60px = 1h */
 .gcal-time-col { width: 54px; min-width: 54px; flex-shrink: 0; border-right: 1px solid var(--border-color); }
 .gcal-time-slot-label { height: 60px; display: flex; align-items: flex-start; justify-content: flex-end; padding: 4px 6px 0 0; font-size: .6rem; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border-color); }
 
-/* Colonne jour */
-.gcal-day-col { flex: 1; position: relative; border-left: 1px solid var(--border-color); min-width: 0; }
+/* Colonne d'un jour — position:relative pour les entrées absolues */
+.gcal-day-col      { flex: 1; position: relative; border-left: 1px solid var(--border-color); min-width: 0; }
 .gcal-jour-day-col { flex: 1; }
-.gcal-today-col { background: rgba(192,38,211,.015); }
-.gcal-we-col    { background: rgba(148,163,184,.04); }
+.gcal-today-col    { background: rgba(192,38,211,.015); }
+.gcal-we-col       { background: rgba(148,163,184,.04); }
 
-/* Créneaux horaires cliquables */
-.gcal-hour-slot { height: 60px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background .1s; }
-.gcal-hour-slot:hover { background: rgba(192,38,211,.06); }
+/* Créneau cliquable = 60px = 1 heure */
+.gcal-hour-slot { height: 60px; border-bottom: 1px solid rgba(0,0,0,.04); cursor: pointer; transition: background .1s; }
+.gcal-hour-slot:hover { background: rgba(192,38,211,.05); }
 
-/* ✅ Entrées positionnées absolument sur la grille horaire */
+/* ── Entrée positionnée en PX (FIX POSITIONING) ──
+   top.px  = (h*60 + m) - 360   [grille commence à 6h = 360 min]
+   height.px = duréeMinutes      [1 min = 1px, 60min = 1 slot = 60px]
+   Exemple 10h-11h: top=240px, height=60px ✅ */
 .gcal-entry-block {
   position: absolute; left: 2px; right: 2px;
   border-left: 3px solid; border-radius: 5px; padding: 3px 5px;
   cursor: pointer; overflow: hidden;
   display: flex; flex-direction: column; gap: 1px;
   z-index: 2; transition: box-shadow .12s, opacity .1s;
-  min-height: 24px;
+  min-height: 22px; box-sizing: border-box;
 }
-.gcal-entry-block:hover { box-shadow: 0 2px 8px rgba(0,0,0,.14); opacity: .9; }
+.gcal-entry-block:hover { box-shadow: 0 2px 8px rgba(0,0,0,.14); }
 [draggable="true"].gcal-entry-block { cursor: grab; }
-[draggable="true"].gcal-entry-block:active { cursor: grabbing; opacity: .7; }
-
+[draggable="true"].gcal-entry-block:active { cursor: grabbing; opacity: .75; }
 .gcal-entry-block-time { font-size: .58rem; font-weight: 700; white-space: nowrap; }
 .gcal-entry-block-name { font-size: .66rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .gcal-entry-block-act  { font-size: .58rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .gcal-entry-block-dur  { font-size: .58rem; font-weight: 600; margin-top: auto; }
 
-/* Vue jour header */
+/* ══ VUE JOUR ══ */
+.gcal-jour-wrap {
+  flex: 1; display: flex; flex-direction: column;
+  margin: 8px 8px 8px 8px;
+  background: var(--bg-card); border: 1px solid var(--border-color);
+  border-radius: 7px; overflow: hidden;
+}
 .gcal-jour-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
-.gcal-jour-title { font-size: .9rem; font-weight: 700; color: var(--text-primary); text-transform: capitalize; }
-.gcal-add-btn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 14px; border-radius: 20px; background: var(--accent); color: white; border: none; font-size: .74rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity .14s; }
+.gcal-jour-title  { font-size: .9rem; font-weight: 700; color: var(--text-primary); text-transform: capitalize; }
+.gcal-add-btn     { display: inline-flex; align-items: center; gap: 5px; padding: 6px 14px; border-radius: 7px; background: var(--accent); color: white; border: none; font-size: .84rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: opacity .14s; }
 .gcal-add-btn:hover { opacity: .88; }
 .gcal-add-btn svg { width: 11px; height: 11px; }
+.gcal-jour-body { display: flex; flex: 1; overflow-y: auto; min-height: 0; }
 
-/* ══ SIDEBAR ACTIVITÉS ══ */
+/* ══════════════════════════════════════════════════
+   SIDEBAR DROITE
+   Deux cartes indépendantes empilées verticalement :
+   1. Carte sélecteur utilisateur (si droits étendus)
+   2. Carte "Reprendre une activité"
+   ══════════════════════════════════════════════════ */
 .gcal-sidebar {
-  width: 200px; min-width: 200px; flex-shrink: 0;
-  background: var(--bg-card); border-left: 1px solid var(--border-color);
-  display: flex; flex-direction: column; overflow-y: auto;
-  padding: 12px 10px;
+  width: 240px; min-width: 210px; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  gap: 8px;
+  padding: 8px 8px 8px 0;
+  overflow-y: auto;
+  border-left: none;
 }
 
-.gcal-sidebar-title {
+/* ── Carte sélecteur utilisateur ──
+   Carte indépendante avec bordure, background card */
+.gcal-sidebar-user-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+/* Label "Utilisateur" dans la carte */
+.gcal-sidebar-user-label {
+  display: flex; align-items: center; gap: 5px;
+  font-size: .63rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .4px; color: var(--text-muted);
+}
+
+/* Select utilisateur */
+.gcal-sidebar-user-select {
+  width: 100%; border: 1px solid var(--border-color);
+  border-radius: 7px; padding: 6px 8px;
+  font-size: .76rem; background: var(--bg-input);
+  color: var(--text-primary); font-family: inherit;
+  outline: none; cursor: pointer; transition: border-color .12s;
+}
+.gcal-sidebar-user-select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+
+/* Affichage de l'autre user sélectionné */
+.gcal-sidebar-other-user {
+  display: flex; align-items: center; gap: 7px;
+  padding: 5px 8px;
+  background: rgba(245,158,11,.06);
+  border: 1px solid rgba(245,158,11,.2);
+  border-radius: 7px;
+}
+.gcal-sidebar-user-avatar {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .62rem; font-weight: 800; color: white; flex-shrink: 0;
+}
+.gcal-sidebar-user-name { font-size: .72rem; font-weight: 600; color: #f59e0b; }
+
+/* ── Carte "Reprendre une activité" ──
+   Carte indépendante avec bordure */
+.gcal-sidebar-recentes-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  flex: 1; /* Prend l'espace restant */
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* En-tête de la carte activités récentes */
+.gcal-sidebar-recentes-header {
   display: flex; align-items: center; gap: 6px;
-  font-size: .76rem; font-weight: 700; color: var(--text-primary);
-  margin-bottom: 4px; flex-shrink: 0;
+  margin-bottom: 3px;
+}
+.gcal-sidebar-recentes-title {
+  font-size: .86rem; font-weight: 700; color: var(--text-primary);
+}
+/* Texte d'aide */
+.gcal-sidebar-recentes-hint {
+  font-size: .73rem; color: var(--text-muted);
+  line-height: 1.45; margin: 0 0 10px;
 }
 
-.gcal-sidebar-hint { font-size: .64rem; color: var(--text-muted); margin: 0 0 12px; line-height: 1.4; }
+/* Séparateur fin entre les cartes d'activités */
+.gcal-recente-sep {
+  height: 1px; background: var(--border-color);
+  margin: 5px 0; opacity: .55;
+}
 
-.gcal-sidebar-groupe { margin-bottom: 14px; }
-
-.gcal-sidebar-projet-label { display: flex; align-items: center; gap: 5px; font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 5px; }
-
-.gcal-sidebar-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-
-/* ✅ Carte activité draggable */
-.gcal-sidebar-activite {
-  display: flex; align-items: center; justify-content: space-between;
-  border-left: 3px solid; border-radius: 5px; padding: 6px 7px;
-  margin-bottom: 4px; cursor: grab; background: var(--bg-hover);
+/* ── Carte d'une activité récente ──
+   Affiche : nom activité + projet (obligatoire) + client (si dispo)
+   Draggable → ouvre le formulaire pré-rempli (PAS de création directe) */
+.gcal-recente-card {
+  border-left: 3px solid;   /* Couleur du projet définie inline */
+  border-radius: 6px;
+  padding: 8px 8px 10px;
+  background: var(--bg-hover);
+  display: flex; flex-direction: column; gap: 4px;
+  position: relative;
   transition: box-shadow .12s, background .1s;
   user-select: none;
 }
-.gcal-sidebar-activite:hover { background: var(--bg-input); box-shadow: 0 2px 8px rgba(0,0,0,.08); }
-.gcal-sidebar-activite:active { cursor: grabbing; opacity: .7; }
-.gcal-sidebar-act-name { font-size: .72rem; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+/* État draggable */
+.gcal-recente-draggable { cursor: grab; }
+.gcal-recente-draggable:hover {
+  background: var(--bg-input);
+  box-shadow: 0 2px 10px rgba(0,0,0,.09);
+}
+.gcal-recente-draggable:active { cursor: grabbing; opacity: .7; }
 
-.gcal-sidebar-empty { font-size: .73rem; color: var(--text-muted); text-align: center; padding: 20px 0; }
+/* Nom de l'activité — coloré, gras, information principale */
+.gcal-recente-activite {
+  font-size: .76rem; font-weight: 700;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  line-height: 1.3;
+}
+
+/* Ligne info (projet / client) : icône + texte */
+.gcal-recente-row {
+  display: flex; align-items: center; gap: 4px;
+  overflow: hidden;
+}
+.gcal-recente-row-icon {
+  width: 10px; height: 10px; flex-shrink: 0; opacity: .4;
+}
+/* Nom du projet */
+.gcal-recente-projet {
+  font-size: .7rem; color: var(--text-secondary); font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* Nom du client */
+.gcal-recente-client {
+  font-size: .67rem; color: var(--text-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Icône drag en bas droite de la carte */
+.gcal-recente-drag-hint {
+  position: absolute; bottom: 5px; right: 5px;
+  color: var(--text-muted); opacity: .3;
+}
+
+/* Vide sidebar */
+.gcal-sidebar-empty {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px; padding: 18px 8px;
+  color: var(--text-muted); text-align: center; font-size: .72rem;
+}
+
+/* Lecture seule */
+.gcal-sidebar-readonly {
+  display: flex; align-items: center; gap: 5px;
+  font-size: .65rem; color: var(--text-muted);
+  margin-top: 8px; padding: 5px 8px;
+  background: var(--bg-hover); border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
 
 /* ══ OVERLAY + POPUPS ══ */
 .gcal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.3); backdrop-filter: blur(3px); z-index: 800; animation: gcalFadeIn .15s ease; }
 @keyframes gcalFadeIn { from { opacity: 0; } to { opacity: 1; } }
-
 .gcal-popup {
   position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
   background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px;
@@ -177,55 +981,49 @@
   animation: gcalPopIn .2s cubic-bezier(.34,1.56,.64,1);
 }
 @keyframes gcalPopIn { from { opacity:0; transform:translate(-50%,-50%) scale(.9); } to { opacity:1; transform:translate(-50%,-50%) scale(1); } }
-
 .gcal-popup-detail { width: 320px; max-width: calc(100vw - 32px); }
 .gcal-popup-form   { width: 400px; max-width: calc(100vw - 32px); max-height: calc(100vh - 60px); display: flex; flex-direction: column; }
-
 .gcal-popup-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 12px 14px 10px 16px; border-top: 4px solid; border-bottom: 1px solid var(--border-color); }
 .gcal-popup-proj-info { display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 0; }
-.gcal-popup-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; }
-.gcal-popup-proj { font-size: .88rem; font-weight: 700; }
-.gcal-popup-act  { font-size: .73rem; color: var(--text-secondary); margin-top: 2px; }
-
-.gcal-popup-body { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
-.gcal-popup-row  { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; font-size: .77rem; color: var(--text-primary); }
-.gcal-popup-icon { font-size: .84rem; flex-shrink: 0; }
+.gcal-popup-dot    { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+.gcal-popup-proj   { font-size: .88rem; font-weight: 700; }
+.gcal-popup-act    { font-size: .73rem; color: var(--text-secondary); margin-top: 2px; }
+.gcal-popup-client { font-size: .68rem; color: var(--text-muted); margin-top: 1px; }
+.gcal-popup-body   { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+.gcal-popup-row    { display: flex; align-items: flex-start; gap: 8px; font-size: .77rem; color: var(--text-primary); }
+.gcal-popup-icon   { font-size: .84rem; flex-shrink: 0; }
 .gcal-popup-comment { background: var(--bg-hover); padding: 3px 7px; border-radius: 4px; font-size: .73rem; color: var(--text-secondary); }
-
-/* Badges statut */
 .gcal-statut-badge { font-size: .65rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; border: 1px solid; }
-.gcal-s-brouillon { background: rgba(100,116,139,.1); color: #64748b; border-color: rgba(100,116,139,.2); }
-.gcal-s-soumise   { background: rgba(59,130,246,.1);  color: #3b82f6; border-color: rgba(59,130,246,.2); }
-.gcal-s-validee   { background: rgba(16,185,129,.1);  color: #10b981; border-color: rgba(16,185,129,.2); }
-.gcal-s-rejetee   { background: rgba(239,68,68,.1);   color: #ef4444; border-color: rgba(239,68,68,.2); }
-
-/* Boutons icône */
+.gcal-s-brouillon  { background: rgba(100,116,139,.1); color: #64748b; border-color: rgba(100,116,139,.2); }
+.gcal-s-soumise    { background: rgba(59,130,246,.1);  color: #3b82f6; border-color: rgba(59,130,246,.2); }
+.gcal-s-validee    { background: rgba(16,185,129,.1);  color: #10b981; border-color: rgba(16,185,129,.2); }
+.gcal-s-rejetee    { background: rgba(239,68,68,.1);   color: #ef4444; border-color: rgba(239,68,68,.2); }
 .gcal-icon-btn { width: 26px; height: 26px; border-radius: 6px; border: none; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all .12s; }
 .gcal-icon-btn svg { width: 12px; height: 12px; }
 .gcal-icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
-.gcal-btn-edit:hover  { color: var(--accent); background: var(--accent-soft); }
-.gcal-btn-del:hover   { color: #ef4444; background: rgba(239,68,68,.1); }
-
-/* Formulaire */
-.gcal-form-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 11px; overflow-y: auto; flex: 1; }
-.gcal-form-row  { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.gcal-btn-edit:hover { color: var(--accent); background: var(--accent-soft); }
+.gcal-btn-del:hover  { color: #ef4444; background: rgba(239,68,68,.1); }
+.gcal-form-body  { padding: 14px 16px; display: flex; flex-direction: column; gap: 11px; overflow-y: auto; flex: 1; }
+.gcal-form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .gcal-form-field { display: flex; flex-direction: column; gap: 4px; }
 .gcal-form-label { font-size: .63rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .4px; }
-.gcal-form-input, .gcal-form-textarea {
-  border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 10px;
-  font-size: .78rem; background: var(--bg-input); color: var(--text-primary);
-  font-family: inherit; outline: none; transition: border-color .12s, box-shadow .12s; width: 100%;
-}
+.gcal-form-input, .gcal-form-textarea { border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 10px; font-size: .78rem; background: var(--bg-input); color: var(--text-primary); font-family: inherit; outline: none; transition: border-color .12s,box-shadow .12s; width: 100%; box-sizing: border-box; }
 .gcal-form-input:focus, .gcal-form-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
 .gcal-form-textarea { resize: vertical; min-height: 55px; }
 .gcal-input-min { max-width: 100px; }
 .gcal-duree-display { font-size: .88rem; font-weight: 800; color: var(--accent); }
-
 .gcal-form-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 11px 16px; border-top: 1px solid var(--border-color); background: var(--bg-hover); flex-shrink: 0; }
-.gcal-form-btn { display: inline-flex; align-items: center; gap: 5px; padding: 8px 16px; border-radius: 8px; font-size: .77rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; font-family: inherit; transition: all .14s; }
+.gcal-form-btn   { display: inline-flex; align-items: center; gap: 5px; padding: 8px 16px; border-radius: 8px; font-size: .77rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; font-family: inherit; transition: all .14s; }
 .gcal-form-btn:disabled { opacity: .5; cursor: not-allowed; }
 .gcal-form-cancel { background: var(--bg-card); color: var(--text-secondary); border-color: var(--border-color); }
 .gcal-form-cancel:hover { background: var(--bg-hover); }
-.gcal-form-save { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: white; border: none; box-shadow: 0 2px 8px var(--accent-soft); }
+.gcal-form-save   { background: linear-gradient(135deg,var(--accent),var(--accent-2)); color: white; border: none; box-shadow: 0 2px 8px var(--accent-soft); }
+
+.gcal-recente-sep-inline {
+  font-size: .6rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  opacity: .5;
+}
+
 .gcal-form-save:hover:not(:disabled) { opacity: .88; }
-.gcal-spinner-sm { width: 11px; height: 11px; border: 2px solid rgba(255,255,255,.3); border-top-color: white; border-radius: 50%; animation: gcalSpin .65s linear infinite; }
