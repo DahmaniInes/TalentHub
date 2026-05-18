@@ -1,4 +1,4 @@
-// src/main/java/com/talenthub/application_service/Entity/LigneFeuilleTemps.java
+// Entity/LigneFeuilleTemps.java — IDs uniquement, AUCUN nom des autres tables
 package com.talenthub.application_service.Entity;
 
 import jakarta.persistence.*;
@@ -7,11 +7,7 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "lignes_feuille_temps")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class LigneFeuilleTemps {
 
     @Id
@@ -24,36 +20,29 @@ public class LigneFeuilleTemps {
 
     @Column(nullable = false)
     private LocalDate date;
+
     @Column(name = "categorie_code")
     @Builder.Default
     private String categorieCode = "PROJET";
-    // ─── Référence projet/activité (remplace categorieCode) ───
+
+    // ✅ IDs uniquement — AUCUN nom stocké en BD
     @Column(name = "projet_id")
     private Long projetId;
-
-    @Column(name = "projet_nom", length = 200)
-    private String projetNom;
 
     @Column(name = "activite_id")
     private Long activiteId;
 
-    @Column(name = "activite_nom", length = 200)
-    private String activiteNom;
-
     @Column(name = "client_id")
     private Long clientId;
 
-    @Column(name = "client_nom", length = 200)
-    private String clientNom;
-
-    // ─── Horaires ───
+    // ── Horaires ──
     @Column(name = "heure_debut", length = 10)
-    private String heureDebut;   // "08:00"
+    private String heureDebut;
 
     @Column(name = "heure_fin", length = 10)
-    private String heureFin;     // "17:00"
+    private String heureFin;
 
-    // ─── Durée en minutes ───
+    // ── Durée en minutes ──
     @Column(name = "minutes_travaillees")
     @Builder.Default
     private int minutesTravaillees = 0;
@@ -65,7 +54,6 @@ public class LigneFeuilleTemps {
     @Column(length = 500)
     private String commentaire;
 
-    // ─── Weekend flag ───
     @Column(name = "est_weekend")
     @Builder.Default
     private boolean estWeekend = false;

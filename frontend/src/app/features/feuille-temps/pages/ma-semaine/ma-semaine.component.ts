@@ -326,8 +326,14 @@ export class MaSemaineComponent implements OnInit {
   }
 
   getActivitesDuProjet(projetId?: number): Activite[] {
-    if (!projetId) return []; // ← NE PAS afficher les activités sans projet sélectionné
-    return this.activitesParProjet()[projetId] ?? [];
+    if (!projetId) return [];
+    const duProjet = this.activitesParProjet()[projetId] ?? [];
+    const projet   = this.projets().find(p => p.id === projetId);
+    if (projet?.autoriserActivitesGlobales) {
+      const idsProjet = new Set(duProjet.map(a => a.id));
+      return [...duProjet, ...this.activitesGlobales().filter(a => !idsProjet.has(a.id))];
+    }
+    return duProjet; // ← globales exclues si non autorisées
   }
 
   onProjetChange(rowId: string, val: string): void {
@@ -453,58 +459,58 @@ export class MaSemaineComponent implements OnInit {
     return `${f(lundi)} – ${f(samedi)}`;
   }
 
-  // ── Sauvegarde ──
-    sauvegarder(soumettre = false, silencieux = false): void {
-      const targetUser = this.selectedUser() ?? this.currentUser();
-      const me = this.currentUser();
-      if (!targetUser) { this.ui.warning("Utilisateur non identifié."); return; }
-     
-      // ✅ NOUVEAU : valider que chaque ligne avec des heures a un projet ET une activité
-      const lignesAvecHeures = this.lignesMatrice().filter(l => this.getLigneTotalMinutes(l) > 0);
-      const lignesSansProjet  = lignesAvecHeures.filter(l => !l.projetId);
-      const lignesSansActivite = lignesAvecHeures.filter(l => l.projetId && !l.activiteId);
-     
-      if (lignesSansProjet.length > 0) {
-        this.ui.warning("⚠️ Un projet doit être sélectionné pour chaque ligne saisie.");
-        this.submitted.set(true);
-        return;
-      }
-      if (lignesSansActivite.length > 0) {
-        this.ui.warning("⚠️ Une activité doit être sélectionnée pour chaque ligne avec un projet.");
-        this.submitted.set(true);
-        return;
-      }
-    if (soumettre) {
-      this.submitted.set(true);
-      const hasSansProjet = this.lignesMatrice().some(
-        l => this.getLigneTotalMinutes(l) > 0 && !l.projetId
-      );
-      if (hasSansProjet) {
-        this.ui.warning('Certaines lignes avec des heures n\'ont pas de projet sélectionné.');
-        return;
-      }
-    }
 
+
+
+
+
+
+
+
+
+
+  sauvegarder(soumettre = false, silencieux = false): void {
+    const targetUser = this.selectedUser() ?? this.currentUser();
+    const me = this.currentUser();
+    if (!targetUser) { this.ui.warning("Utilisateur non identifié."); return; }
+ 
+    const lignesAvecHeures = this.lignesMatrice().filter(l => this.getLigneTotalMinutes(l) > 0);
+    const lignesSansProjet   = lignesAvecHeures.filter(l => !l.projetId);
+    const lignesSansActivite = lignesAvecHeures.filter(l => l.projetId && !l.activiteId);
+ 
+    if (lignesSansProjet.length > 0) {
+      this.ui.warning("⚠️ Un projet doit être sélectionné pour chaque ligne saisie.");
+      this.submitted.set(true);
+      return;
+    }
+    if (lignesSansActivite.length > 0) {
+      this.ui.warning("⚠️ Une activité doit être sélectionnée pour chaque ligne avec un projet.");
+      this.submitted.set(true);
+      return;
+    }
+ 
+    // ✅ IDs uniquement — AUCUN nom dans LigneFeuilleTempsRequest
     const lignes: LigneFeuilleTempsRequest[] = [];
     for (const l of this.lignesMatrice()) {
       for (const [date, c] of Object.entries(l.jours)) {
         if (c.minutes > 0 || c.minutesSupp > 0) {
           lignes.push({
             date,
-            projetId: l.projetId, projetNom: l.projetNom,
-            activiteId: l.activiteId, activiteNom: l.activiteNom,
-            clientId: l.clientId, clientNom: l.clientNom,
-            minutesTravaillees: c.minutes,
+            projetId:   l.projetId,
+            activiteId: l.activiteId,
+            clientId:   l.clientId,
+            // ← projetNom, activiteNom, clientNom SUPPRIMÉS
+            minutesTravaillees:     c.minutes,
             minutesSupplementaires: c.minutesSupp,
             commentaire: c.commentaire?.trim() || undefined,
-            estWeekend: c.estWeekend
+            estWeekend:  c.estWeekend
           });
         }
       }
     }
-
+ 
     this.saving.set(true);
-
+ 
     const req: FeuilleTempsRequest = {
       utilisateurId: targetUser.id,
       semaineDu: this.lundiCourant(),
@@ -514,11 +520,11 @@ export class MaSemaineComponent implements OnInit {
       commentaireEmploye: this.feuilleCourante()?.commentaireEmploye || '',
       lignes
     };
-
+ 
     const id  = this.feuilleCourante()?.id;
     const obs = id ? this.ftSvc.update(id, req) : this.ftSvc.create(req);
     const isModifyingOther = me && targetUser && me.id !== targetUser.id;
-
+ 
     obs.subscribe({
       next: ft => {
         this.feuilleCourante.set(ft);
@@ -528,15 +534,10 @@ export class MaSemaineComponent implements OnInit {
         }
         this.saving.set(false);
         this.submitted.set(false);
-
-        // ✅ Notification à l'utilisateur cible si modification par quelqu'un d'autre
         if (isModifyingOther && targetUser.keycloakId) {
-          const nomModificateur = `${me!.prenom || ''} ${me!.nom || ''}`.trim() || 'Un administrateur';
-          this.ftSvc.notifierModification(
-            targetUser.keycloakId,
-            nomModificateur,
-            this.lundiCourant()
-          ).subscribe({ error: () => {} }); // silencieux si erreur
+          const nomMod = `${me!.prenom || ''} ${me!.nom || ''}`.trim() || 'Un administrateur';
+          this.ftSvc.notifierModification(targetUser.keycloakId, nomMod, this.lundiCourant())
+              .subscribe({ error: () => {} });
         }
       },
       error: (err: HttpErrorResponse) => {
@@ -545,6 +546,18 @@ export class MaSemaineComponent implements OnInit {
       }
     });
   }
+
+
+
+
+
+
+
+
+
+
+
+
 
   soumettreFeuille(): void {
     this.ui.confirm({

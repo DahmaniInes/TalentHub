@@ -1,6 +1,19 @@
-<!-- projets.component.html — COMPLET FINAL -->
+<!-- projets.component.html — COMPLET avec permissions -->
 <div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh" (click)="closeMenu()">
   <div class="dt-wrap">
+
+    <!-- ══ ACCÈS REFUSÉ ══ -->
+    <div *ngIf="!perms.canSeeAnyProject()"
+         style="padding:80px;text-align:center;color:var(--text-muted)">
+      <svg viewBox="0 0 48 48" fill="none" style="width:48px;height:48px;opacity:.3;margin:0 auto 16px">
+        <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M16 16l16 16M32 16L16 32" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <p style="font-weight:700;font-size:1rem;margin-bottom:6px">Accès refusé</p>
+      <p style="font-size:.83rem">Vous n'avez pas les permissions pour consulter les projets.</p>
+    </div>
+
+    <ng-container *ngIf="perms.canSeeAnyProject()">
 
     <!-- ══ HEADER ══ -->
     <div class="dt-header">
@@ -61,7 +74,9 @@
             </div>
           </div>
         </div>
-        <button class="dt-btn-create" (click)="openAddProjet()">
+
+        <!-- ✅ PERMISSION : créer visible si PROJECT_CREATE -->
+        <button *ngIf="perms.canCreateProject()" class="dt-btn-create" (click)="openAddProjet()">
           <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
             <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
           </svg>
@@ -74,10 +89,12 @@
     <div *ngIf="selectedCount() > 0" class="dt-bulk-bar">
       <span class="dt-bulk-count">{{ selectedCount() }} sélectionné(s)</span>
       <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="clearSelection()">Annuler</button>
-      <button class="mx-btn mx-btn-danger mx-btn-sm" (click)="deleteBulkProjets()">Supprimer ({{ selectedCount() }})</button>
+      <!-- ✅ PERMISSION : supprimer visible si PROJECT_DELETE_ALL -->
+      <button *ngIf="perms.canDeleteAllProjects()" class="mx-btn mx-btn-danger mx-btn-sm" (click)="deleteBulkProjets()">
+        Supprimer ({{ selectedCount() }})
+      </button>
     </div>
 
-    <!-- Loading -->
     <div *ngIf="loading()" class="dt-loading"><div class="dt-spinner"></div> Chargement...</div>
 
     <!-- ══ TABLEAU ══ -->
@@ -91,7 +108,7 @@
             </th>
             <th class="dt-th" style="min-width:200px">
               <div class="dt-th-inner">
-                <svg class="dt-th-icon" viewBox="0 0 52 52" fill="currentColor">
+                <svg class="dt-th-icon" viewBox="0 0 52 52" fill="currentColor" style="width:12px;height:12px">
                   <path d="M39.3,26.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9V25c0-1,0.9-1.9,1.9-1.9h22.9c1,0,1.9,0.9,1.9,1.9v1.9H39.3z"/>
                 </svg>
                 Projet
@@ -148,7 +165,7 @@
                 </svg>
                 <p class="dt-empty-title">Aucun projet trouvé</p>
                 <p class="dt-empty-sub">Modifiez vos filtres ou créez un projet</p>
-                <button class="dt-btn-create" style="margin-top:12px" (click)="openAddProjet()">Nouveau projet</button>
+                <button *ngIf="perms.canCreateProject()" class="dt-btn-create" style="margin-top:12px" (click)="openAddProjet()">Nouveau projet</button>
               </div>
             </td>
           </tr>
@@ -162,7 +179,6 @@
                      [checked]="isSelected(p.id)" (change)="toggleSelect(p.id, $event)">
             </td>
 
-            <!-- Projet -->
             <td class="dt-td">
               <div class="dt-cell-with-avatar">
                 <div style="width:3px;height:36px;border-radius:3px;flex-shrink:0" [style.background]="p.couleur||'#6366f1'"></div>
@@ -173,7 +189,6 @@
               </div>
             </td>
 
-            <!-- Statut -->
             <td class="dt-td">
               <span class="dt-badge"
                     [style.background]="getStatutColor(p.statut)+'18'"
@@ -184,19 +199,41 @@
               </span>
             </td>
 
-            <!-- Avancement -->
             <td class="dt-td">
-              <div style="display:flex;align-items:center;gap:6px">
-                <div style="height:5px;background:var(--bg-hover);border-radius:999px;width:80px;overflow:hidden;flex-shrink:0">
+              <div style="display:flex;flex-direction:column;gap:3px;min-width:120px">
+             
+                <!-- Barre de progression -->
+                <div style="height:5px;background:var(--bg-hover);border-radius:999px;width:100%;max-width:120px;overflow:hidden">
                   <div style="height:100%;border-radius:999px;transition:width .3s"
                        [style.background]="getAvancementCouleur(p.avancement)"
                        [style.width.%]="p.avancement || 0"></div>
                 </div>
-                <span class="dt-cell-sub" style="font-size:.69rem;flex-shrink:0">{{ p.avancement || 0 }}%</span>
+             
+                <!-- Étiquette : heuresPassees / heuresEstimees ou juste heuresPassees -->
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+             
+                  <!-- Cas 1 : heuresEstimees défini → afficher h/H et % -->
+                  <ng-container *ngIf="p.heuresEstimees && p.heuresEstimees > 0">
+                    <span class="dt-cell-sub" style="font-size:.67rem">
+                      {{ fmtHeures(p.heuresPassees || 0) }} / {{ fmtHeures(p.heuresEstimees) }}
+                    </span>
+                    <span style="font-size:.67rem;font-weight:700"
+                          [style.color]="getAvancementCouleur(p.avancement)">
+                      {{ p.avancement || 0 }}%
+                    </span>
+                  </ng-container>
+             
+                  <!-- Cas 2 : pas de heuresEstimees → afficher uniquement les heures passées -->
+                  <ng-container *ngIf="!p.heuresEstimees || p.heuresEstimees === 0">
+                    <span class="dt-cell-sub" style="font-size:.67rem">
+                      {{ fmtHeures(p.heuresPassees || 0) }} travaillées
+                    </span>
+                  </ng-container>
+             
+                </div>
               </div>
             </td>
 
-            <!-- Équipes -->
             <td class="dt-td">
               <div *ngIf="p.groupes && p.groupes.length > 0" style="display:flex;align-items:center;gap:6px">
                 <div style="width:26px;height:26px;border-radius:7px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:.7rem;font-weight:800;flex-shrink:0">
@@ -207,14 +244,12 @@
               <span *ngIf="!p.groupes || p.groupes.length === 0" class="dt-cell-muted">—</span>
             </td>
 
-            <!-- Facturable -->
             <td class="dt-td">
               <span class="dt-badge" [class.dt-badge-delivered]="p.facturable" [class.dt-badge-canceled]="!p.facturable">
                 <span class="dt-badge-dot"></span>{{ p.facturable ? 'Oui' : 'Non' }}
               </span>
             </td>
 
-            <!-- Dates -->
             <td class="dt-td">
               <div class="dt-cell-user">
                 <span class="dt-cell-sub" style="font-size:.69rem">{{ p.dateDebut ? fmtDate(p.dateDebut) : '—' }}</span>
@@ -222,7 +257,6 @@
               </div>
             </td>
 
-            <!-- ✅ Activités count -->
             <td class="dt-td">
               <span *ngIf="p.nombreActivites > 0"
                     style="display:inline-flex;align-items:center;gap:5px;font-size:.72rem;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:2px 9px;border-radius:5px;border:1px solid rgba(192,38,211,.2)">
@@ -231,13 +265,15 @@
               <span *ngIf="!p.nombreActivites || p.nombreActivites === 0" class="dt-cell-muted">—</span>
             </td>
 
-            <!-- Actions -->
+            <!-- ✅ PERMISSIONS : edit si canEditAnyProject, delete si canDeleteAllProjects -->
             <td class="dt-td dt-td-actions" (click)="$event.stopPropagation()">
               <div class="dt-td-actions-wrap">
-                <button class="dt-action-btn dt-action-edit" (click)="openEditProjet(p, $event)" title="Modifier">
+                <button *ngIf="perms.canEditAnyProject()"
+                        class="dt-action-btn dt-action-edit" (click)="openEditProjet(p, $event)" title="Modifier">
                   <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                 </button>
-                <button class="dt-action-btn dt-action-del" (click)="deleteProjet(p, $event)" title="Supprimer">
+                <button *ngIf="perms.canDeleteAllProjects()"
+                        class="dt-action-btn dt-action-del" (click)="deleteProjet(p, $event)" title="Supprimer">
                   <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                 </button>
               </div>
@@ -273,10 +309,11 @@
       </div>
     </div>
 
+    </ng-container><!-- fin ngIf canSeeAnyProject -->
   </div>
 </div>
 
-<!-- ════ MODAL PROJET ════ -->
+<!-- ════ MODAL PROJET (inchangé — voir projets.component.ts déjà fourni) ════ -->
 <div *ngIf="showProjetModal()" class="mx-modal-backdrop" (click)="closeProjetModal()">
   <div class="mx-modal" style="max-width:560px;padding:0;overflow:hidden;max-height:92vh;display:flex;flex-direction:column"
        (click)="$event.stopPropagation()">
@@ -292,33 +329,23 @@
     </div>
 
     <div style="padding:16px 20px;display:flex;flex-direction:column;gap:13px;overflow-y:auto;flex:1">
-
-      <!-- Nom + Description -->
       <div class="mx-field"><label class="mx-field-label">Nom <span style="color:#ef4444">*</span></label><input [(ngModel)]="projetForm().nom" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="Nom du projet"></div>
       <div class="mx-field"><label class="mx-field-label">Description</label><textarea [(ngModel)]="projetForm().description" [ngModelOptions]="{standalone:true}" rows="2" class="mx-field-textarea" placeholder="Description..."></textarea></div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <!-- Client -->
         <div class="mx-field"><label class="mx-field-label">Client</label><select [(ngModel)]="projetFormClientId" [ngModelOptions]="{standalone:true}" class="mx-field-select"><option [ngValue]="null">— Aucun —</option><option *ngFor="let c of clients()" [ngValue]="c.id">{{ c.nom }}</option></select></div>
-        <!-- Statut -->
         <div class="mx-field"><label class="mx-field-label">Statut</label><select [(ngModel)]="projetForm().statut" [ngModelOptions]="{standalone:true}" class="mx-field-select"><option *ngFor="let s of STATUTS_PROJET" [value]="s">{{ getStatutLabel(s) }}</option></select></div>
-        <!-- Budget -->
         <div class="mx-field"><label class="mx-field-label">Budget prévu</label><input type="number" [(ngModel)]="projetForm().budgetPrevu" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="0"></div>
-        <!-- Quota horaire -->
-        <div class="mx-field"><label class="mx-field-label">Quota horaire (h)</label><input type="number" [(ngModel)]="projetForm().quotaHoraire" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="0"></div>
-        <!-- Type budget -->
+        <div class="mx-field"><label class="mx-field-label">Heures Estimées (h)</label><input type="number" [(ngModel)]="projetForm().heuresEstimees" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="0"></div>
         <div class="mx-field"><label class="mx-field-label">Type de budget</label><select [(ngModel)]="projetForm().typeBudget" [ngModelOptions]="{standalone:true}" class="mx-field-select"><option *ngFor="let t of TYPES_BUDGET" [value]="t">{{ t }}</option></select></div>
-        <!-- Seuil alerte -->
         <div class="mx-field">
           <label class="mx-field-label">Seuil d'alerte <span style="font-size:.6rem;color:var(--text-muted)">(%) — défaut 80%</span></label>
           <input type="number" min="0" max="100" [(ngModel)]="projetForm().seuilAlerteHoraire" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="80">
         </div>
-        <!-- Dates -->
         <div class="mx-field"><label class="mx-field-label">Date début</label><input type="date" [(ngModel)]="projetForm().dateDebut" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
         <div class="mx-field"><label class="mx-field-label">Date fin</label><input type="date" [(ngModel)]="projetForm().dateFin" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
       </div>
 
-      <!-- Couleur -->
       <div class="mx-field">
         <label class="mx-field-label">Couleur</label>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
@@ -330,12 +357,8 @@
         </div>
       </div>
 
-      <!-- Équipes -->
       <div class="mx-field">
-        <label class="mx-field-label">
-          Équipes
-          <span style="font-size:.6rem;color:var(--accent);background:var(--accent-soft);padding:1px 5px;border-radius:4px;margin-left:3px">{{ groupesSelectionnes().length }}</span>
-        </label>
+        <label class="mx-field-label">Équipes <span style="font-size:.6rem;color:var(--accent);background:var(--accent-soft);padding:1px 5px;border-radius:4px;margin-left:3px">{{ groupesSelectionnes().length }}</span></label>
         <div *ngIf="groupesSelectionnesInfo().length > 0" style="display:flex;flex-direction:column;gap:4px;margin-bottom:7px">
           <div *ngFor="let g of groupesSelectionnesInfo()"
                style="display:flex;align-items:center;gap:8px;padding:6px 9px;background:var(--bg-hover);border-radius:7px;border:1px solid var(--border-color)">
@@ -351,13 +374,8 @@
         </select>
       </div>
 
-      <!-- ✅ Activités assignées -->
       <div class="mx-field">
-        <label class="mx-field-label">
-          Activités assignées
-          <span style="font-size:.6rem;color:var(--accent);background:var(--accent-soft);padding:1px 5px;border-radius:4px;margin-left:3px">{{ activitesSelectionnees().length }}</span>
-        </label>
-        <!-- Activités déjà sélectionnées -->
+        <label class="mx-field-label">Activités assignées <span style="font-size:.6rem;color:var(--accent);background:var(--accent-soft);padding:1px 5px;border-radius:4px;margin-left:3px">{{ activitesSelectionnees().length }}</span></label>
         <div *ngIf="activitesSelectionneesInfo().length > 0"
              style="display:flex;flex-direction:column;gap:4px;margin-bottom:7px;max-height:140px;overflow-y:auto">
           <div *ngFor="let a of activitesSelectionneesInfo()"
@@ -368,42 +386,22 @@
             <button style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:.9rem;line-height:1;padding:0;flex-shrink:0" (click)="removeActiviteFromProjet(a.id)">×</button>
           </div>
         </div>
-        <!-- Select pour ajouter -->
         <select class="mx-field-select" (change)="addActiviteToProjet(+$any($event.target).value); $any($event.target).value=''">
           <option value="">+ Assigner une activité existante...</option>
           <optgroup *ngIf="activitesGlobalesDispo().length > 0" label="🌐 Activités globales">
-            <option *ngFor="let a of activitesGlobalesDispo()" [value]="a.id">
-              {{ a.nom }}
-            </option>
+            <option *ngFor="let a of activitesGlobalesDispo()" [value]="a.id">{{ a.nom }}</option>
           </optgroup>
           <optgroup *ngIf="activitesNonGlobalesDispo().length > 0" label="Autres activités">
-            <option *ngFor="let a of activitesNonGlobalesDispo()" [value]="a.id">
-              {{ a.nom }}
-              <ng-container *ngIf="a.projets && a.projets.length > 0"> (dans {{ a.projets.length }} projet(s))</ng-container>
-            </option>
+            <option *ngFor="let a of activitesNonGlobalesDispo()" [value]="a.id">{{ a.nom }}</option>
           </optgroup>
         </select>
       </div>
 
-      <!-- Toggles -->
       <div style="display:flex;gap:16px;flex-wrap:wrap;padding:9px 12px;background:var(--bg-input);border-radius:9px;border:1px solid var(--border-color)">
-        <label class="mx-toggle-row" style="cursor:pointer">
-          <input type="checkbox" [(ngModel)]="projetForm().visible" [ngModelOptions]="{standalone:true}" style="display:none">
-          <div class="mx-toggle" [class.on]="projetForm().visible"><div class="mx-toggle-knob"></div></div>
-          <span style="font-size:.78rem">Visible</span>
-        </label>
-        <label class="mx-toggle-row" style="cursor:pointer">
-          <input type="checkbox" [(ngModel)]="projetForm().facturable" [ngModelOptions]="{standalone:true}" style="display:none">
-          <div class="mx-toggle" [class.on]="projetForm().facturable"><div class="mx-toggle-knob"></div></div>
-          <span style="font-size:.78rem">Facturable</span>
-        </label>
-        <label class="mx-toggle-row" style="cursor:pointer">
-          <input type="checkbox" [(ngModel)]="projetForm().autoriserActivitesGlobales" [ngModelOptions]="{standalone:true}" style="display:none">
-          <div class="mx-toggle" [class.on]="projetForm().autoriserActivitesGlobales"><div class="mx-toggle-knob"></div></div>
-          <span style="font-size:.78rem">Activités globales autorisées</span>
-        </label>
+        <label class="mx-toggle-row" style="cursor:pointer"><input type="checkbox" [(ngModel)]="projetForm().visible" [ngModelOptions]="{standalone:true}" style="display:none"><div class="mx-toggle" [class.on]="projetForm().visible"><div class="mx-toggle-knob"></div></div><span style="font-size:.78rem">Visible</span></label>
+        <label class="mx-toggle-row" style="cursor:pointer"><input type="checkbox" [(ngModel)]="projetForm().facturable" [ngModelOptions]="{standalone:true}" style="display:none"><div class="mx-toggle" [class.on]="projetForm().facturable"><div class="mx-toggle-knob"></div></div><span style="font-size:.78rem">Facturable</span></label>
+        <label class="mx-toggle-row" style="cursor:pointer"><input type="checkbox" [(ngModel)]="projetForm().autoriserActivitesGlobales" [ngModelOptions]="{standalone:true}" style="display:none"><div class="mx-toggle" [class.on]="projetForm().autoriserActivitesGlobales"><div class="mx-toggle-knob"></div></div><span style="font-size:.78rem">Activités globales autorisées</span></label>
       </div>
-
     </div>
 
     <div style="display:flex;gap:8px;justify-content:flex-end;padding:12px 20px;border-top:1px solid var(--border-color);background:var(--bg-hover);flex-shrink:0">

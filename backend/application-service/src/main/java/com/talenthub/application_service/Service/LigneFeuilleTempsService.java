@@ -1,4 +1,4 @@
-// src/main/java/com/talenthub/application_service/Service/LigneFeuilleTempsService.java
+// Service/LigneFeuilleTempsService.java — CORRIGÉ sans projetNom/activiteNom/clientNom
 package com.talenthub.application_service.Service;
 
 import com.talenthub.application_service.Entity.LigneFeuilleTemps;
@@ -20,13 +20,9 @@ public class LigneFeuilleTempsService {
         this.repository = repository;
     }
 
-    public List<LigneFeuilleTemps> getAllLignes() {
-        return repository.findAll();
-    }
+    public List<LigneFeuilleTemps> getAllLignes() { return repository.findAll(); }
 
-    public Optional<LigneFeuilleTemps> getLigneById(Long id) {
-        return repository.findById(id);
-    }
+    public Optional<LigneFeuilleTemps> getLigneById(Long id) { return repository.findById(id); }
 
     public List<LigneFeuilleTemps> getLignesByFeuilleTemps(Long feuilleTempsId) {
         return repository.findByFeuilleTempsId(feuilleTempsId);
@@ -41,14 +37,11 @@ public class LigneFeuilleTempsService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Ligne feuille de temps non trouvée avec id: " + id));
 
-        // ✅ Nouveaux champs — categorieCode/minutesNormales/minutesAbsence supprimés
+        // ✅ IDs uniquement — aucun setter de nom
         ligne.setDate(details.getDate());
         ligne.setProjetId(details.getProjetId());
-        ligne.setProjetNom(details.getProjetNom());
         ligne.setActiviteId(details.getActiviteId());
-        ligne.setActiviteNom(details.getActiviteNom());
         ligne.setClientId(details.getClientId());
-        ligne.setClientNom(details.getClientNom());
         ligne.setHeureDebut(details.getHeureDebut());
         ligne.setHeureFin(details.getHeureFin());
         ligne.setMinutesTravaillees(details.getMinutesTravaillees());

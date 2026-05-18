@@ -460,17 +460,29 @@ export class CalendrierFtComponent implements OnInit {
     return { ft, lundiDate };
   }
 
+
+
   private buildLignesExistantes(ft: FeuilleTemps): LigneFeuilleTempsRequest[] {
     return (ft.lignes ?? []).map(l => ({
-      date: l.date, projetId: l.projetId, projetNom: l.projetNom,
-      activiteId: l.activiteId, activiteNom: l.activiteNom,
-      clientId: l.clientId, clientNom: l.clientNom,
-      heureDebut: l.heureDebut, heureFin: l.heureFin,
-      minutesTravaillees: l.minutesTravaillees,
+      date:          l.date,
+      projetId:      l.projetId,
+      activiteId:    l.activiteId,
+      clientId:      l.clientId,
+      // ← projetNom, activiteNom, clientNom SUPPRIMÉS
+      heureDebut:    l.heureDebut,
+      heureFin:      l.heureFin,
+      minutesTravaillees:     l.minutesTravaillees,
       minutesSupplementaires: l.minutesSupplementaires,
-      commentaire: l.commentaire, estWeekend: l.estWeekend ?? false,
+      commentaire:   l.commentaire,
+      estWeekend:    l.estWeekend ?? false
     }));
   }
+
+
+
+
+
+
 
   private notifierSiAutreUser(date: string): void {
     const me  = this.currentUser();
@@ -481,73 +493,163 @@ export class CalendrierFtComponent implements OnInit {
     this.ftSvc.notifierModification(sel.keycloakId, nomMe, lundi).subscribe({ error: () => {} });
   }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   sauvegarderFormulaire(): void {
-    if (!this.canModify()) { this.ui.warning("Vous n'avez pas la permission d'effectuer cette action."); return; }
+    if (!this.canModify()) {
+      this.ui.warning("Vous n'avez pas la permission d'effectuer cette action.");
+      return;
+    }
     if (!this.form.minutesTravaillees || this.form.minutesTravaillees <= 0) {
-      this.ui.warning('La durée doit être supérieure à 0.'); return;
+      this.ui.warning('La durée doit être supérieure à 0.');
+      return;
     }
     const user = this.selectedUser() ?? this.currentUser();
     if (!user) { this.ui.warning('Utilisateur non identifié.'); return; }
-
-    const projet = this.projets().find(p => p.id === this.form.projetId);
-    const act    = this.getActivitesPourForm().find(a => a.id === this.form.activiteId);
-
+ 
+    // ✅ IDs uniquement — AUCUN nom dans la request
     const nouvelleLigne: LigneFeuilleTempsRequest = {
-      date: this.form.date,
-      projetId: projet?.id, projetNom: projet?.nom,
-      activiteId: act?.id,  activiteNom: act?.nom,
-      heureDebut: this.form.heureDebut, heureFin: this.form.heureFin,
-      minutesTravaillees: this.form.minutesTravaillees, minutesSupplementaires: 0,
-      commentaire: this.form.commentaire || undefined,
-      estWeekend: FeuilleTempsService.isWeekend(this.form.date)
+      date:          this.form.date,
+      projetId:      this.form.projetId,
+      activiteId:    this.form.activiteId,
+      // ← projetNom, activiteNom SUPPRIMÉS
+      heureDebut:    this.form.heureDebut,
+      heureFin:      this.form.heureFin,
+      minutesTravaillees:     this.form.minutesTravaillees,
+      minutesSupplementaires: 0,
+      commentaire:   this.form.commentaire || undefined,
+      estWeekend:    FeuilleTempsService.isWeekend(this.form.date)
     };
-
+ 
     this.saving.set(true);
     const mode = this.formulaireMode();
-
+ 
     if (mode === 'ajout') {
       const { ft: ftExist, lundiDate } = this.getOrCreateFeuille(this.form.date);
       if (ftExist) {
-        const lignes = [...this.buildLignesExistantes(ftExist), nouvelleLigne];
+        const lignes = [
+          ...this.buildLignesExistantes(ftExist),
+          nouvelleLigne
+        ];
         this.ftSvc.update(ftExist.id, {
-          utilisateurId: user.id, semaineDu: ftExist.semaineDu, semaineAu: ftExist.semaineAu,
-          statut: 'BROUILLON', lignes
+          utilisateurId: user.id,
+          semaineDu: ftExist.semaineDu,
+          semaineAu: ftExist.semaineAu,
+          statut: 'BROUILLON',
+          lignes
         }).subscribe({
-          next: ft => { this.feuilles.update(fs => fs.map(f => f.id===ft.id ? ft : f)); this.ui.success('Entrée ajoutée ✅'); this.fermerFormulaire(); this.saving.set(false); this.notifierSiAutreUser(this.form.date); },
-          error: (err: HttpErrorResponse) => { this.ui.error(this.errorSvc.parse(err).message); this.saving.set(false); }
+          next: ft => {
+            this.feuilles.update(fs => fs.map(f => f.id === ft.id ? ft : f));
+            this.ui.success('Entrée ajoutée ✅');
+            this.fermerFormulaire();
+            this.saving.set(false);
+            this.notifierSiAutreUser(this.form.date);
+          },
+          error: (err: HttpErrorResponse) => {
+            this.ui.error(this.errorSvc.parse(err).message);
+            this.saving.set(false);
+          }
         });
       } else {
         this.ftSvc.create({
-          utilisateurId: user.id, semaineDu: lundiDate,
+          utilisateurId: user.id,
+          semaineDu: lundiDate,
           semaineAu: FeuilleTempsService.getVendrediSemaine(lundiDate),
-          statut: 'BROUILLON', lignes: [nouvelleLigne]
+          statut: 'BROUILLON',
+          lignes: [nouvelleLigne]
         }).subscribe({
-          next: ft => { this.feuilles.update(fs => [...fs, ft]); this.ui.success('Entrée ajoutée ✅'); this.fermerFormulaire(); this.saving.set(false); this.notifierSiAutreUser(this.form.date); },
-          error: (err: HttpErrorResponse) => { this.ui.error(this.errorSvc.parse(err).message); this.saving.set(false); }
+          next: ft => {
+            this.feuilles.update(fs => [...fs, ft]);
+            this.ui.success('Entrée ajoutée ✅');
+            this.fermerFormulaire();
+            this.saving.set(false);
+            this.notifierSiAutreUser(this.form.date);
+          },
+          error: (err: HttpErrorResponse) => {
+            this.ui.error(this.errorSvc.parse(err).message);
+            this.saving.set(false);
+          }
         });
       }
     } else {
+      // Mode édition
       const edition = this.entreeEnEdition();
       if (!edition) return;
       const ft = this.feuilles().find(f => f.id === edition.feuilleId);
       if (!ft || (ft.statut !== 'BROUILLON' && ft.statut !== 'REJETEE')) {
-        this.ui.warning('Cette feuille ne peut pas être modifiée.'); this.saving.set(false); return;
+        this.ui.warning('Cette feuille ne peut pas être modifiée.');
+        this.saving.set(false);
+        return;
       }
-      const lignes = (ft.lignes ?? []).map(l =>
-        l.id === edition.id ? nouvelleLigne
-        : { date:l.date, projetId:l.projetId, projetNom:l.projetNom, activiteId:l.activiteId,
-            activiteNom:l.activiteNom, heureDebut:l.heureDebut, heureFin:l.heureFin,
-            minutesTravaillees:l.minutesTravaillees, minutesSupplementaires:l.minutesSupplementaires,
-            commentaire:l.commentaire, estWeekend:l.estWeekend ?? false }
+      // ✅ Reconstruire les lignes sans noms
+      const lignes: LigneFeuilleTempsRequest[] = (ft.lignes ?? []).map(l =>
+        l.id === edition.id
+          ? nouvelleLigne
+          : {
+              date:          l.date,
+              projetId:      l.projetId,
+              activiteId:    l.activiteId,
+              clientId:      l.clientId,
+              heureDebut:    l.heureDebut,
+              heureFin:      l.heureFin,
+              minutesTravaillees:     l.minutesTravaillees,
+              minutesSupplementaires: l.minutesSupplementaires,
+              commentaire:   l.commentaire,
+              estWeekend:    l.estWeekend ?? false
+            }
       );
       this.ftSvc.update(ft.id, {
-        utilisateurId: ft.utilisateurId, semaineDu: ft.semaineDu, semaineAu: ft.semaineAu, statut: ft.statut, lignes
+        utilisateurId: ft.utilisateurId,
+        semaineDu: ft.semaineDu,
+        semaineAu: ft.semaineAu,
+        statut: ft.statut,
+        lignes
       }).subscribe({
-        next: u => { this.feuilles.update(fs => fs.map(f => f.id===u.id ? u : f)); this.ui.success('Entrée modifiée ✅'); this.fermerFormulaire(); this.saving.set(false); this.notifierSiAutreUser(this.form.date); },
-        error: (err: HttpErrorResponse) => { this.ui.error(this.errorSvc.parse(err).message); this.saving.set(false); }
+        next: u => {
+          this.feuilles.update(fs => fs.map(f => f.id === u.id ? u : f));
+          this.ui.success('Entrée modifiée ✅');
+          this.fermerFormulaire();
+          this.saving.set(false);
+          this.notifierSiAutreUser(this.form.date);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.ui.error(this.errorSvc.parse(err).message);
+          this.saving.set(false);
+        }
       });
     }
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   supprimerEntree(e: EntreeCal): void {
     if (!this.canModify()) { this.ui.warning("Vous n'avez pas la permission de supprimer."); return; }

@@ -1,4 +1,4 @@
-// Service/UtilisateurService.java — REMPLACE le fichier entier
+// Service/UtilisateurService.java — COMPLET (les guards sont dans le controller)
 package com.talenthub.application_service.Service;
 
 import com.talenthub.application_service.Entity.Groupe;
@@ -9,7 +9,6 @@ import com.talenthub.application_service.Exception.ResourceNotFoundException;
 import com.talenthub.application_service.Repository.GroupeRepository;
 import com.talenthub.application_service.Repository.UtilisateurRepository;
 import com.talenthub.application_service.DTO.UserCreationRequest;
-import com.talenthub.application_service.Service.CloudinaryService;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UsersResource;
@@ -34,11 +33,7 @@ public class UtilisateurService {
     private final EmailService          emailService;
     private final Keycloak              keycloakAdmin;
     private final CloudinaryService     cloudinaryService;
-    private final GroupeRepository groupeRepository;  // ← AJOUTER
-
-
-    // ✅ SUPPRIMÉ : PermissionRepository, ProfilPermissionRepository
-    // Plus besoin — les permissions sont liées au profil, pas à la création user
+    private final GroupeRepository      groupeRepository;
 
     @Value("${keycloak.realm:talenthub}")
     private String realm;
@@ -50,15 +45,15 @@ public class UtilisateurService {
             Keycloak keycloakAdmin,
             CloudinaryService cloudinaryService,
             GroupeRepository groupeRepository) {
-        this.repository       = repository;
-        this.profilService    = profilService;
-        this.emailService     = emailService;
-        this.keycloakAdmin    = keycloakAdmin;
-        this.cloudinaryService= cloudinaryService;
-        this.groupeRepository = groupeRepository;  // ← AJOUTER
-
+        this.repository        = repository;
+        this.profilService     = profilService;
+        this.emailService      = emailService;
+        this.keycloakAdmin     = keycloakAdmin;
+        this.cloudinaryService = cloudinaryService;
+        this.groupeRepository  = groupeRepository;
     }
 
+    // ── Créer un utilisateur ──────────────────────────────────────────────
     public Utilisateur createUserByAdmin(UserCreationRequest request) {
         if (repository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException(
@@ -69,7 +64,6 @@ public class UtilisateurService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Profil non trouvé: " + request.getProfilId()));
 
-        // ✅ profilId injecté dans Keycloak — c'est tout ce dont on a besoin
         String keycloakId = createInKeycloak(request, request.getProfilId());
 
         Utilisateur utilisateur = Utilisateur.builder()
@@ -89,12 +83,11 @@ public class UtilisateurService {
                 .build();
 
         return repository.save(utilisateur);
-        // ✅ SUPPRIMÉ : savePermissions() — inutile
     }
 
     private String createInKeycloak(UserCreationRequest request, Long profilId) {
-        RealmResource  realmResource = keycloakAdmin.realm(realm);
-        UsersResource  usersResource = realmResource.users();
+        RealmResource realmResource = keycloakAdmin.realm(realm);
+        UsersResource usersResource = realmResource.users();
 
         UserRepresentation user = new UserRepresentation();
         user.setUsername(request.getEmail());
@@ -145,7 +138,7 @@ public class UtilisateurService {
         return keycloakId;
     }
 
-    // ✅ Quand on change le profil d'un user, mettre à jour Keycloak aussi
+    // ── Mise à jour admin ─────────────────────────────────────────────────
     public Utilisateur updateByAdmin(Long id, Map<String, Object> body) {
         Utilisateur u = getUtilisateurById(id);
         if (body.containsKey("nom"))         u.setNom(body.get("nom").toString());
@@ -163,14 +156,12 @@ public class UtilisateurService {
             Long profilId = Long.valueOf(body.get("profilId").toString());
             profilService.getProfilById(profilId).ifPresent(p -> {
                 u.setProfil(p);
-                // ✅ Mettre à jour profilId dans Keycloak aussi
                 updateProfilIdInKeycloak(u.getKeycloakId(), profilId);
             });
         }
         return repository.save(u);
     }
 
-    // ✅ NOUVEAU : sync profilId dans Keycloak quand on change le profil d'un user
     private void updateProfilIdInKeycloak(String keycloakId, Long profilId) {
         try {
             UsersResource usersResource = keycloakAdmin.realm(realm).users();
@@ -183,6 +174,7 @@ public class UtilisateurService {
         }
     }
 
+    // ── Getters ───────────────────────────────────────────────────────────
     public List<Utilisateur> getAllUtilisateurs() { return repository.findAll(); }
 
     public Utilisateur getUtilisateurById(Long id) {
@@ -196,14 +188,10 @@ public class UtilisateurService {
                         "Utilisateur non trouvé avec keycloakId: " + keycloakId));
     }
 
-
-
-    // UtilisateurService.java — REMPLACE deleteUtilisateur()
-    // UtilisateurService.java — Remplace uniquement cette méthode
+    // ── Supprimer ─────────────────────────────────────────────────────────
     public void deleteUtilisateur(Long id) {
         Utilisateur u = getUtilisateurById(id);
         System.out.println("🗑️ Suppression user id=" + id + " keycloakId=" + u.getKeycloakId());
-
         String keycloakId = u.getKeycloakId();
 
         // 1. Retirer des groupes
@@ -212,9 +200,7 @@ public class UtilisateurService {
             for (Groupe g : groupes) {
                 g.getMembres().removeIf(membre -> membre.getId().equals(id));
             }
-            if (!groupes.isEmpty()) {
-                groupeRepository.saveAll(groupes);
-            }
+            if (!groupes.isEmpty()) groupeRepository.saveAll(groupes);
         } catch (Exception e) {
             System.err.println("⚠️ Erreur retrait groupes: " + e.getMessage());
         }
@@ -223,29 +209,22 @@ public class UtilisateurService {
         if (keycloakId != null && !keycloakId.isBlank()) {
             try {
                 UsersResource usersResource = keycloakAdmin.realm(realm).users();
-
-                // Vérification optionnelle avant suppression
                 UserRepresentation kcUser = usersResource.get(keycloakId).toRepresentation();
                 if (kcUser != null) {
-                    usersResource.get(keycloakId).remove();   // ← Correct : void
+                    usersResource.get(keycloakId).remove();
                     System.out.println("✅ User supprimé de Keycloak: " + keycloakId);
-                } else {
-                    System.out.println("⚠️ User non trouvé dans Keycloak: " + keycloakId);
                 }
             } catch (Exception e) {
                 System.err.println("❌ Keycloak delete failed pour " + keycloakId + " : " + e.getMessage());
-                // On continue quand même pour supprimer en base locale
             }
         }
 
-        // 3. Supprimer en base de données
+        // 3. Supprimer en BD
         repository.delete(u);
         System.out.println("✅ User supprimé en BD: id=" + id);
     }
 
-
-
-
+    // ── Mise à jour profil personnel ──────────────────────────────────────
     public Utilisateur updateUserProfile(String keycloakId,
                                          Map<String, Object> updates,
                                          MultipartFile photo) throws IOException {
@@ -275,6 +254,7 @@ public class UtilisateurService {
         }
     }
 
+    // ── Toggle actif ──────────────────────────────────────────────────────
     public Utilisateur toggleActif(Long id) {
         Utilisateur u = getUtilisateurById(id);
         u.setActif(!u.isActif());
@@ -288,6 +268,7 @@ public class UtilisateurService {
         return repository.save(u);
     }
 
+    // ── Reset password ────────────────────────────────────────────────────
     public void resetPassword(Long id) {
         Utilisateur u = getUtilisateurById(id);
         try {
@@ -296,51 +277,39 @@ public class UtilisateurService {
                             86400, Collections.singletonList("UPDATE_PASSWORD"));
         } catch (Exception e) {
             throw new RuntimeException("Impossible d'envoyer l'email: " + e.getMessage());
-        }}
+        }
+    }
 
-
-    // Dans UtilisateurService.java — AJOUTE
+    // ── Sync profilIds Keycloak ───────────────────────────────────────────
     public Map<String, Object> syncAllProfilIdsToKeycloak() {
         List<Utilisateur> users = repository.findAll();
         int success = 0, failed = 0;
-
         UsersResource usersResource = keycloakAdmin.realm(realm).users();
 
         for (Utilisateur u : users) {
-            if (u.getKeycloakId() == null || u.getProfil() == null) {
-                failed++;
-                continue;
-            }
+            if (u.getKeycloakId() == null || u.getProfil() == null) { failed++; continue; }
             try {
-                UserRepresentation kcUser = usersResource.get(u.getKeycloakId())
-                        .toRepresentation();
+                UserRepresentation kcUser = usersResource.get(u.getKeycloakId()).toRepresentation();
                 if (kcUser == null) { failed++; continue; }
-
-                // Initialiser les attributs si null
                 java.util.Map<String, List<String>> attrs = kcUser.getAttributes();
                 if (attrs == null) attrs = new java.util.HashMap<>();
-
                 attrs.put("profilId", List.of(String.valueOf(u.getProfil().getId())));
                 kcUser.setAttributes(attrs);
                 usersResource.get(u.getKeycloakId()).update(kcUser);
-
                 System.out.println("✅ Sync profilId=" + u.getProfil().getId()
                         + " pour user=" + u.getEmail());
                 success++;
             } catch (Exception e) {
-                System.err.println("❌ Sync échoué pour " + u.getEmail()
-                        + " : " + e.getMessage());
+                System.err.println("❌ Sync échoué pour " + u.getEmail() + " : " + e.getMessage());
                 failed++;
             }
         }
 
         return Map.of(
-                "total", users.size(),
+                "total",   users.size(),
                 "success", success,
-                "failed", failed,
+                "failed",  failed,
                 "message", "Sync terminé. Reconnectez-vous pour obtenir un nouveau token."
         );
     }
-
-
 }

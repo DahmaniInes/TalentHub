@@ -1,4 +1,4 @@
-// src/main/java/com/talenthub/application_service/DTO/LigneFeuilleTempsDTO.java
+// DTO/LigneFeuilleTempsDTO.java — noms résolus au runtime, pas stockés
 package com.talenthub.application_service.DTO;
 
 import com.talenthub.application_service.Entity.LigneFeuilleTemps;
@@ -11,33 +11,42 @@ public class LigneFeuilleTempsDTO {
     private final Long      id;
     private final LocalDate date;
 
-    // ✅ Nouveaux champs — remplacent categorieCode
-    private final Long   projetId;
+    // IDs (stockés en BD)
+    private final Long projetId;
+    private final Long activiteId;
+    private final Long clientId;
+
+    // Noms résolus au runtime (jamais en BD)
     private final String projetNom;
-    private final Long   activiteId;
     private final String activiteNom;
-    private final Long   clientId;
     private final String clientNom;
 
-    private final String heureDebut;
-    private final String heureFin;
-
-    // ✅ minutesNormales → minutesTravaillees, minutesAbsence supprimé
-    private final int    minutesTravaillees;
-    private final int    minutesSupplementaires;
-    private final String commentaire;
-    private final int    totalMinutes;
+    private final String  heureDebut;
+    private final String  heureFin;
+    private final int     minutesTravaillees;
+    private final int     minutesSupplementaires;
+    private final String  commentaire;
+    private final int     totalMinutes;
     private final boolean estWeekend;
 
+    // Constructeur simple sans résolution
     public LigneFeuilleTempsDTO(LigneFeuilleTemps l) {
+        this(l, null, null, null);
+    }
+
+    // ✅ Constructeur enrichi : noms passés depuis le service
+    public LigneFeuilleTempsDTO(LigneFeuilleTemps l,
+                                String projetNom,
+                                String activiteNom,
+                                String clientNom) {
         this.id                     = l.getId();
         this.date                   = l.getDate();
         this.projetId               = l.getProjetId();
-        this.projetNom              = l.getProjetNom();
         this.activiteId             = l.getActiviteId();
-        this.activiteNom            = l.getActiviteNom();
         this.clientId               = l.getClientId();
-        this.clientNom              = l.getClientNom();
+        this.projetNom              = projetNom;
+        this.activiteNom            = activiteNom;
+        this.clientNom              = clientNom;
         this.heureDebut             = l.getHeureDebut();
         this.heureFin               = l.getHeureFin();
         this.minutesTravaillees     = l.getMinutesTravaillees();

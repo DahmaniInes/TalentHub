@@ -1,8 +1,10 @@
-// src/main/java/com/talenthub/application_service/Controller/ProjetController.java
+// Controller/ProjetController.java — COMPLET avec PermissionContext (pas jwt.getClaim)
 package com.talenthub.application_service.Controller;
 
 import com.talenthub.application_service.DTO.ProjetDTO;
 import com.talenthub.application_service.Entity.Projet;
+import com.talenthub.application_service.Security.PermissionContext;
+import com.talenthub.application_service.Security.RequiresPermission;
 import com.talenthub.application_service.Service.ProjetService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,14 +21,20 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ProjetController {
 
-    private final ProjetService projetService;
+    private final ProjetService     projetService;
+    private final PermissionContext permCtx;
 
-    // ✅ GET /projets — liste complète avec groupes
+    // ── GET liste — PROJECT_VIEW_ALL | PROJECT_VIEW_LEAD | PROJECT_VIEW_OWN ──
     @GetMapping
-    public ResponseEntity<List<ProjetDTO>> getAll(
+    public ResponseEntity<?> getAll(
             @RequestParam(required = false) Long clientId,
             @RequestParam(required = false) String statut,
             @RequestParam(required = false) Long membreId) {
+        if (!permCtx.has("PROJECT_VIEW_ALL") && !permCtx.has("PROJECT_VIEW_LEAD")
+                && !permCtx.has("PROJECT_VIEW_OWN") && !permCtx.has("PROJECT_DETAILS_VIEW")) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Permission PROJECT_VIEW_ALL requise."));
+        }
         try {
             List<ProjetDTO> list;
             if (clientId  != null) list = projetService.getByClient(clientId).stream().map(ProjetDTO::new).toList();
@@ -36,38 +44,42 @@ public class ProjetController {
             return ResponseEntity.ok(list);
         } catch (Exception e) {
             log.error("Erreur GET /projets: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("message", e.getMessage()));
         }
     }
 
-    // ✅ GET /projets/{id} — avec groupes chargés (sans MultipleBagFetchException)
+    // ── GET détail — PROJECT_VIEW_ALL | PROJECT_VIEW_LEAD | PROJECT_VIEW_OWN | PROJECT_DETAILS_VIEW ──
     @GetMapping("/{id}")
-    public ResponseEntity<ProjetDTO> getById(@PathVariable Long id) {
+    public ResponseEntity<?> getById(@PathVariable Long id) {
+        if (!permCtx.has("PROJECT_VIEW_ALL") && !permCtx.has("PROJECT_VIEW_LEAD")
+                && !permCtx.has("PROJECT_VIEW_OWN") && !permCtx.has("PROJECT_DETAILS_VIEW")) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Permission PROJECT_VIEW_ALL requise."));
+        }
         try {
             Projet p = projetService.getByIdWithDetails(id);
             return ResponseEntity.ok(projetService.toDTO(p));
         } catch (Exception e) {
             log.error("Erreur GET /projets/{}: {}", id, e.getMessage(), e);
-            // ✅ Fallback — charger sans JOIN FETCH si la requête détaillée échoue
             try {
-                Projet p = projetService.getById(id);
-                return ResponseEntity.ok(new ProjetDTO(p));
+                return ResponseEntity.ok(new ProjetDTO(projetService.getById(id)));
             } catch (Exception e2) {
-                return ResponseEntity.internalServerError().build();
+                return ResponseEntity.internalServerError()
+                        .body(Map.of("message", e2.getMessage()));
             }
         }
     }
 
-
-
-
+    // ── POST créer — PROJECT_CREATE ───────────────────────────────
+    @RequiresPermission("PROJECT_CREATE")
     @PostMapping
-    public ResponseEntity<ProjetDTO> create(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> create(@RequestBody Map<String, Object> body) {
         try {
             Projet projet          = buildProjetFromBody(body);
             Long   clientId        = extractLong(body, "clientId");
             List<Long> groupeIds   = extractLongList(body, "groupeIds");
-            List<Long> activiteIds = extractLongList(body, "activiteIds"); // ✅ NOUVEAU
+            List<Long> activiteIds = extractLongList(body, "activiteIds");
             Projet saved = projetService.create(projet, clientId, groupeIds, activiteIds);
             try {
                 return new ResponseEntity<>(projetService.toDTO(
@@ -77,20 +89,25 @@ public class ProjetController {
             }
         } catch (Exception e) {
             log.error("Erreur POST /projets: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().build();
-        }}
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("message", e.getMessage()));
+        }
+    }
 
-
-
-
+    // ── PUT modifier — PROJECT_EDIT_ALL | PROJECT_EDIT_LEAD | PROJECT_EDIT_OWN ──
     @PutMapping("/{id}")
-    public ResponseEntity<ProjetDTO> update(@PathVariable Long id,
-                                            @RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> update(@PathVariable Long id,
+                                    @RequestBody Map<String, Object> body) {
+        if (!permCtx.has("PROJECT_EDIT_ALL") && !permCtx.has("PROJECT_EDIT_LEAD")
+                && !permCtx.has("PROJECT_EDIT_OWN")) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Permission PROJECT_EDIT_ALL requise."));
+        }
         try {
             Projet details         = buildProjetFromBody(body);
             Long   clientId        = extractLong(body, "clientId");
             List<Long> groupeIds   = extractLongList(body, "groupeIds");
-            List<Long> activiteIds = extractLongList(body, "activiteIds"); // ✅ NOUVEAU
+            List<Long> activiteIds = extractLongList(body, "activiteIds");
             Projet saved = projetService.update(id, details, clientId, groupeIds, activiteIds);
             try {
                 return ResponseEntity.ok(projetService.toDTO(
@@ -100,23 +117,47 @@ public class ProjetController {
             }
         } catch (Exception e) {
             log.error("Erreur PUT /projets/{}: {}", id, e.getMessage(), e);
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("message", e.getMessage()));
         }
     }
 
+    // ── DELETE — PROJECT_DELETE_ALL ───────────────────────────────
+    @RequiresPermission("PROJECT_DELETE_ALL")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         projetService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
+    // ── DELETE bulk — PROJECT_DELETE_ALL ─────────────────────────
+    @RequiresPermission("PROJECT_DELETE_ALL")
     @DeleteMapping("/bulk")
     public ResponseEntity<Void> deleteBulk(@RequestBody List<Long> ids) {
         ids.forEach(projetService::delete);
         return ResponseEntity.noContent().build();
     }
 
-    // ── Helpers ──
+    // ── PATCH assigner activités — PROJECT_EDIT_ALL | PROJECT_EDIT_LEAD ──
+    @PatchMapping("/{id}/activites")
+    public ResponseEntity<?> assignerActivites(@PathVariable Long id,
+                                               @RequestBody List<Long> activiteIds) {
+        if (!permCtx.has("PROJECT_EDIT_ALL") && !permCtx.has("PROJECT_EDIT_LEAD")) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Permission PROJECT_EDIT_ALL requise."));
+        }
+        try {
+            Projet saved = projetService.assignerActivites(id, activiteIds);
+            return ResponseEntity.ok(projetService.toDTO(
+                    projetService.getByIdWithDetails(saved.getId())));
+        } catch (Exception e) {
+            log.error("Erreur PATCH /projets/{}/activites: {}", id, e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────
     private Projet buildProjetFromBody(Map<String, Object> body) {
         Projet p = new Projet();
         if (body.get("nom")         != null) p.setNom(body.get("nom").toString());
@@ -128,8 +169,8 @@ public class ProjetController {
             p.setResponsableKeycloakId(body.get("responsableKeycloakId").toString());
         if (body.get("budgetPrevu") != null)
             p.setBudgetPrevu(Double.valueOf(body.get("budgetPrevu").toString()));
-        if (body.get("quotaHoraire") != null)
-            p.setQuotaHoraire(Double.valueOf(body.get("quotaHoraire").toString()));
+        if (body.get("heuresEstimees") != null)
+            p.setHeuresEstimees(Double.valueOf(body.get("heuresEstimees").toString()));
         if (body.get("avancement")  != null)
             p.setAvancement(Integer.parseInt(body.get("avancement").toString()));
         if (body.get("seuilAlerteHoraire") != null)
@@ -158,21 +199,4 @@ public class ProjetController {
             return list.stream().map(o -> Long.valueOf(o.toString())).toList();
         return null;
     }
-
-
-    // ✅ NOUVEAU endpoint — assigner des activités à un projet
-    @PatchMapping("/{id}/activites")
-    public ResponseEntity<ProjetDTO> assignerActivites(
-            @PathVariable Long id,
-            @RequestBody List<Long> activiteIds) {
-        try {
-            Projet saved = projetService.assignerActivites(id, activiteIds);
-            return ResponseEntity.ok(projetService.toDTO(
-                    projetService.getByIdWithDetails(saved.getId())));
-        } catch (Exception e) {
-            log.error("Erreur PATCH /projets/{}/activites: {}", id, e.getMessage(), e);
-            return ResponseEntity.internalServerError().build();
-
-        }}
-
 }

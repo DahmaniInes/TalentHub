@@ -59,8 +59,8 @@ public class Projet {
     @Builder.Default
     private Double budgetConsomme = 0.0;
 
-    @Column(name = "quota_horaire")
-    private Double quotaHoraire;
+    @Column(name = "heuresEstimees")
+    private Double heuresEstimees;
 
     @Column(name = "type_budget", length = 20)
     @Builder.Default
@@ -128,6 +128,11 @@ public class Projet {
     @Builder.Default
     private List<Document> documents = new ArrayList<>();
 
+
+
+    @Column(name = "heures_passees")
+    @Builder.Default
+    private Double heuresPassees = 0.0;
     // ────────────────────────────────────────────────────────────
     // ✅ NOUVEAU — Groupes/équipes assignés à ce projet
     // Relation Many-to-Many avec Groupe

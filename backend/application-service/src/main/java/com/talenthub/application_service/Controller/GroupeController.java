@@ -1,11 +1,16 @@
+// Controller/GroupeController.java — COMPLET avec GroupeDTO (casse les cycles JSON)
 package com.talenthub.application_service.Controller;
 
 import com.talenthub.application_service.DTO.GroupeDTO;
 import com.talenthub.application_service.DTO.GroupeRequest;
+import com.talenthub.application_service.Entity.Groupe;
+import com.talenthub.application_service.Security.PermissionContext;
+import com.talenthub.application_service.Security.RequiresPermission;
 import com.talenthub.application_service.Service.GroupeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 import java.util.Map;
 
@@ -14,57 +19,87 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class GroupeController {
 
-    private final GroupeService groupeService;
+    private final GroupeService     groupeService;
+    private final PermissionContext permCtx;
 
+    // ── GET liste — retourne List<GroupeDTO> pour éviter les cycles JSON ──
     @GetMapping
-    public ResponseEntity<List<GroupeDTO>> getAll() {
-        return ResponseEntity.ok(
-                groupeService.getAll().stream().map(GroupeDTO::new).toList()
-        );
+    public ResponseEntity<?> getAll() {
+        if (!permCtx.has("TEAM_VIEW") && !permCtx.has("TEAM_MEMBER_VIEW")
+                && !permCtx.has("PROJECT_VIEW_ALL") && !permCtx.has("PROJECT_VIEW_LEAD")
+                && !permCtx.has("PROJECT_VIEW_OWN") && !permCtx.has("ACTIVITY_VIEW_ALL")
+                && !permCtx.has("USER_VIEW")) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Permission TEAM_VIEW requise."));
+        }
+        List<GroupeDTO> dtos = groupeService.getAll().stream()
+                .map(GroupeDTO::new)
+                .toList();
+        return ResponseEntity.ok(dtos);
     }
 
+    // ── GET par ID ────────────────────────────────────────────────
     @GetMapping("/{id}")
-    public ResponseEntity<GroupeDTO> getById(@PathVariable Long id) {
+    public ResponseEntity<?> getById(@PathVariable Long id) {
+        if (!permCtx.has("TEAM_VIEW") && !permCtx.has("TEAM_MEMBER_VIEW")
+                && !permCtx.has("USER_VIEW")) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Permission TEAM_VIEW requise."));
+        }
         return ResponseEntity.ok(new GroupeDTO(groupeService.getById(id)));
     }
 
-    @GetMapping("/utilisateur/{userId}")
-    public ResponseEntity<List<GroupeDTO>> getByMembre(@PathVariable Long userId) {
-        return ResponseEntity.ok(
-                groupeService.getByMembre(userId).stream().map(GroupeDTO::new).toList()
-        );
+    // ── GET par membre ────────────────────────────────────────────
+    @GetMapping("/membre/{userId}")
+    public ResponseEntity<?> getByMembre(@PathVariable Long userId) {
+        if (!permCtx.has("TEAM_VIEW") && !permCtx.has("TEAM_MEMBER_VIEW")
+                && !permCtx.has("USER_VIEW_GROUPS")) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Permission TEAM_VIEW requise."));
+        }
+        List<GroupeDTO> dtos = groupeService.getByMembre(userId).stream()
+                .map(GroupeDTO::new)
+                .toList();
+        return ResponseEntity.ok(dtos);
     }
 
+    // ── POST créer — TEAM_CREATE ──────────────────────────────────
+    @RequiresPermission("TEAM_CREATE")
     @PostMapping
     public ResponseEntity<GroupeDTO> create(@RequestBody GroupeRequest req) {
-        return new ResponseEntity<>(new GroupeDTO(groupeService.create(req)), HttpStatus.CREATED);
+        return new ResponseEntity<>(
+                new GroupeDTO(groupeService.create(req)), HttpStatus.CREATED);
     }
 
+    // ── PUT modifier — TEAM_UPDATE ────────────────────────────────
+    @RequiresPermission("TEAM_UPDATE")
     @PutMapping("/{id}")
-    public ResponseEntity<GroupeDTO> update(@PathVariable Long id, @RequestBody GroupeRequest req) {
+    public ResponseEntity<GroupeDTO> update(@PathVariable Long id,
+                                            @RequestBody GroupeRequest req) {
         return ResponseEntity.ok(new GroupeDTO(groupeService.update(id, req)));
     }
 
+    // ── DELETE — TEAM_DELETE ──────────────────────────────────────
+    @RequiresPermission("TEAM_DELETE")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         groupeService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{id}/membres/{userId}")
-    public ResponseEntity<GroupeDTO> addMembre(@PathVariable Long id, @PathVariable Long userId) {
-        return ResponseEntity.ok(new GroupeDTO(groupeService.addMembre(id, userId)));
+    // ── Ajouter membre — TEAM_UPDATE ──────────────────────────────
+    @RequiresPermission("TEAM_UPDATE")
+    @PostMapping("/{groupeId}/membres/{userId}")
+    public ResponseEntity<GroupeDTO> addMembre(@PathVariable Long groupeId,
+                                               @PathVariable Long userId) {
+        return ResponseEntity.ok(new GroupeDTO(groupeService.addMembre(groupeId, userId)));
     }
 
-    @DeleteMapping("/{id}/membres/{userId}")
-    public ResponseEntity<GroupeDTO> removeMembre(@PathVariable Long id, @PathVariable Long userId) {
-        return ResponseEntity.ok(new GroupeDTO(groupeService.removeMembre(id, userId)));
-    }
-
-    @PatchMapping("/{id}/team-lead")
-    public ResponseEntity<GroupeDTO> setTeamLead(
-            @PathVariable Long id, @RequestBody Map<String, Long> body) {
-        return ResponseEntity.ok(new GroupeDTO(groupeService.setTeamLead(id, body.get("userId"))));
+    // ── Retirer membre — TEAM_UPDATE ─────────────────────────────
+    @RequiresPermission("TEAM_UPDATE")
+    @DeleteMapping("/{groupeId}/membres/{userId}")
+    public ResponseEntity<GroupeDTO> removeMembre(@PathVariable Long groupeId,
+                                                  @PathVariable Long userId) {
+        return ResponseEntity.ok(new GroupeDTO(groupeService.removeMembre(groupeId, userId)));
     }
 }
-

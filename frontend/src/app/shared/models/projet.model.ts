@@ -5,7 +5,7 @@ export interface GroupeInfo {
   nom:                 string;
   couleur:             string;
   nombreMembres:       number;
-  nombreProjetsActifs: number;   // ✅ NOUVEAU — enrichi par le backend
+  nombreProjetsActifs: number;
 }
 
 export interface Projet {
@@ -20,12 +20,13 @@ export interface Projet {
   dateFin?:                    string;
   dateFinReelle?:              string;
   statut:                      string;
-  avancement:                  number;
+  avancement:                  number;   // % calculé automatiquement
   budgetPrevu?:                number;
   budgetConsomme?:             number;
-  quotaHoraire?:               number;       // ✅ NOUVEAU dans formulaire
+  heuresEstimees?:             number;   // quota horaire alloué
+  heuresPassees?:              number;   // ✅ heures réellement travaillées
   typeBudget?:                 string;
-  seuilAlerteHoraire?:         number;       // ✅ NOUVEAU — seuil en %
+  seuilAlerteHoraire?:         number;
   visible:                     boolean;
   facturable:                  boolean;
   autoriserActivitesGlobales:  boolean;
@@ -33,11 +34,10 @@ export interface Projet {
   projetAdmins?:               string[];
   nombreMembres:               number;
   nombreActivites:             number;
-  groupes?:                    GroupeInfo[]; // ✅ NOUVEAU — équipes assignées
+  groupes?:                    GroupeInfo[];
   dateCreation?:               string;
 }
 
-// projet.model.ts — Ajouter activiteIds dans ProjetRequest
 export interface ProjetRequest {
   nom:                          string;
   description?:                 string;
@@ -45,7 +45,7 @@ export interface ProjetRequest {
   clientId?:                    number | null;
   statut?:                      string;
   budgetPrevu?:                 number;
-  quotaHoraire?:                number;
+  heuresEstimees?:              number;
   typeBudget?:                  string;
   seuilAlerteHoraire?:          number;
   dateDebut?:                   string;
@@ -55,5 +55,5 @@ export interface ProjetRequest {
   autoriserActivitesGlobales?:  boolean;
   responsableKeycloakId?:       string;
   groupeIds?:                   number[];
-  activiteIds?:                 number[];   // ✅ NOUVEAU
+  activiteIds?:                 number[];
 }

@@ -264,13 +264,16 @@ export class MesEntreesComponent implements OnInit {
           const lignesReq: LigneFeuilleTempsRequest[] = ft.lignes
             .filter(l => !idsASuppr.has(l.id))
             .map(l => ({
-              date: l.date, projetId: l.projetId, projetNom: l.projetNom,
-              activiteId: l.activiteId, activiteNom: l.activiteNom,
-              clientId: l.clientId, clientNom: l.clientNom,
-              heureDebut: l.heureDebut, heureFin: l.heureFin,
-              minutesTravaillees: l.minutesTravaillees,
+              date:          l.date,
+              projetId:      l.projetId,
+              activiteId:    l.activiteId,
+              clientId:      l.clientId,
+              // ← projetNom, activiteNom, clientNom SUPPRIMÉS
+              heureDebut:    l.heureDebut,
+              heureFin:      l.heureFin,
+              minutesTravaillees:     l.minutesTravaillees,
               minutesSupplementaires: l.minutesSupplementaires,
-              commentaire: l.commentaire
+              commentaire:   l.commentaire
             }));
 
           this.ftSvc.update(feuilleId, {
@@ -409,31 +412,32 @@ export class MesEntreesComponent implements OnInit {
     const feuilleExistante = this.feuilles().find(f => f.semaineDu === lundi);
 
     const nouvelleLigne: LigneFeuilleTempsRequest = {
-      date: form.date,
-      projetId: form.projetId,
-      projetNom: form.projetNom,
-      activiteId: form.activiteId,
-      activiteNom: form.activiteNom,
-      clientId: form.clientId,
-      clientNom: form.clientNom,
-      heureDebut: form.heureDebut,
-      heureFin: form.heureFin,
-      minutesTravaillees: form.minutesTravaillees || 0,
+      date:          form.date,
+      projetId:      form.projetId,
+      activiteId:    form.activiteId,
+      clientId:      form.clientId,
+      // ← projetNom, activiteNom, clientNom SUPPRIMÉS
+      heureDebut:    form.heureDebut,
+      heureFin:      form.heureFin,
+      minutesTravaillees:     form.minutesTravaillees || 0,
       minutesSupplementaires: form.minutesSupplementaires || 0,
-      commentaire: form.commentaire
+      commentaire:   form.commentaire
     };
 
     if (feuilleExistante) {
       // Ajouter la ligne à la feuille existante
       const lignesReq: LigneFeuilleTempsRequest[] = [
         ...feuilleExistante.lignes.map(l => ({
-          date: l.date, projetId: l.projetId, projetNom: l.projetNom,
-          activiteId: l.activiteId, activiteNom: l.activiteNom,
-          clientId: l.clientId, clientNom: l.clientNom,
-          heureDebut: l.heureDebut, heureFin: l.heureFin,
-          minutesTravaillees: l.minutesTravaillees,
+          date:          l.date,
+          projetId:      l.projetId,
+          activiteId:    l.activiteId,
+          clientId:      l.clientId,
+          // ← projetNom, activiteNom, clientNom SUPPRIMÉS
+          heureDebut:    l.heureDebut,
+          heureFin:      l.heureFin,
+          minutesTravaillees:     l.minutesTravaillees,
           minutesSupplementaires: l.minutesSupplementaires,
-          commentaire: l.commentaire
+          commentaire:   l.commentaire
         })),
         nouvelleLigne
       ];
@@ -488,29 +492,55 @@ export class MesEntreesComponent implements OnInit {
 
     this.ftSvc.getById(entree.feuilleId).subscribe({
       next: ft => {
+
+
         const lignesReq: LigneFeuilleTempsRequest[] = ft.lignes.map(l => {
           if (l.id === entree.id) {
             return {
-              date: form.date || l.date,
-              projetId: form.projetId, projetNom: form.projetNom,
-              activiteId: form.activiteId, activiteNom: form.activiteNom,
-              clientId: form.clientId, clientNom: form.clientNom,
-              heureDebut: form.heureDebut, heureFin: form.heureFin,
-              minutesTravaillees: form.minutesTravaillees || 0,
+              date:          form.date || l.date,
+              projetId:      form.projetId,
+              activiteId:    form.activiteId,
+              clientId:      form.clientId,
+              // ← projetNom, activiteNom, clientNom SUPPRIMÉS
+              heureDebut:    form.heureDebut,
+              heureFin:      form.heureFin,
+              minutesTravaillees:     form.minutesTravaillees || 0,
               minutesSupplementaires: form.minutesSupplementaires || 0,
-              commentaire: form.commentaire
+              commentaire:   form.commentaire
             };
           }
           return {
-            date: l.date, projetId: l.projetId, projetNom: l.projetNom,
-            activiteId: l.activiteId, activiteNom: l.activiteNom,
-            clientId: l.clientId, clientNom: l.clientNom,
-            heureDebut: l.heureDebut, heureFin: l.heureFin,
-            minutesTravaillees: l.minutesTravaillees,
+            date:          l.date,
+            projetId:      l.projetId,
+            activiteId:    l.activiteId,
+            clientId:      l.clientId,
+            // ← projetNom, activiteNom, clientNom SUPPRIMÉS
+            heureDebut:    l.heureDebut,
+            heureFin:      l.heureFin,
+            minutesTravaillees:     l.minutesTravaillees,
             minutesSupplementaires: l.minutesSupplementaires,
-            commentaire: l.commentaire
+            commentaire:   l.commentaire
           };
         });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         this.ftSvc.update(ft.id, {
           utilisateurId: ft.utilisateurId,
@@ -566,16 +596,19 @@ export class MesEntreesComponent implements OnInit {
     this.ftSvc.getById(entree.feuilleId).subscribe({
       next: ft => {
         const lignesReq: LigneFeuilleTempsRequest[] = ft.lignes
-          .filter(l => l.id !== entree.id)
-          .map(l => ({
-            date: l.date, projetId: l.projetId, projetNom: l.projetNom,
-            activiteId: l.activiteId, activiteNom: l.activiteNom,
-            clientId: l.clientId, clientNom: l.clientNom,
-            heureDebut: l.heureDebut, heureFin: l.heureFin,
-            minutesTravaillees: l.minutesTravaillees,
-            minutesSupplementaires: l.minutesSupplementaires,
-            commentaire: l.commentaire
-          }));
+        .filter(l => l.id !== entree.id)
+        .map(l => ({
+          date:          l.date,
+          projetId:      l.projetId,
+          activiteId:    l.activiteId,
+          clientId:      l.clientId,
+          // ← projetNom, activiteNom, clientNom SUPPRIMÉS
+          heureDebut:    l.heureDebut,
+          heureFin:      l.heureFin,
+          minutesTravaillees:     l.minutesTravaillees,
+          minutesSupplementaires: l.minutesSupplementaires,
+          commentaire:   l.commentaire
+        }));
 
         this.ftSvc.update(ft.id, {
           utilisateurId: ft.utilisateurId,

@@ -1,11 +1,27 @@
-<!-- user-creation.component.html -->
+<!-- user-creation.component.html — avec permission USER_CREATE -->
 <div class="uc-wrapper">
 
-  <!-- ══════════════════════════════════════════
-       STEPPER BAR
-       ✅ Les étapes validées RESTENT avec leur icône (pas de checkmark)
-         — currentStep > i+1 → classe "done" mais garde le même rendu visuel
-  ══════════════════════════════════════════ -->
+  <!-- ══ ACCÈS REFUSÉ ══ -->
+  <div *ngIf="!perms.canCreateUser()"
+       style="padding:80px 24px;text-align:center;color:var(--text-muted)">
+    <svg viewBox="0 0 48 48" fill="none" style="width:56px;height:56px;opacity:.3;margin:0 auto 20px">
+      <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M16 16l16 16M32 16L16 32" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <p style="font-weight:800;font-size:1.1rem;margin-bottom:8px;color:var(--text-primary)">Accès refusé</p>
+    <p style="font-size:.85rem;margin-bottom:20px">Vous n'avez pas la permission de créer un utilisateur.</p>
+    <button class="uc-btn uc-btn-ghost" style="display:inline-flex;align-items:center;gap:6px" (click)="goBack()">
+      <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px">
+        <path d="M10 4L6 8l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Retour aux utilisateurs
+    </button>
+  </div>
+
+  <!-- ══ CONTENU PRINCIPAL (seulement si USER_CREATE) ══ -->
+  <ng-container *ngIf="perms.canCreateUser()">
+
+  <!-- STEPPER BAR -->
   <div class="uc-stepper-bar">
     <div class="uc-stepper-track">
       <div class="uc-stepper-progress"
@@ -19,11 +35,9 @@
          (click)="goToStep(i + 1)">
 
       <div class="uc-step-circle">
-        <!-- ✅ Toujours afficher l'icône — PAS de checkmark sur les étapes "done" -->
         <svg *ngIf="i === 0" viewBox="0 0 20 20" fill="none">
           <circle cx="10" cy="7" r="3" stroke="currentColor" stroke-width="1.8"/>
-          <path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6"
-                stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
         </svg>
         <svg *ngIf="i === 1" viewBox="0 0 20 20" fill="none">
           <rect x="2" y="7" width="16" height="11" rx="2" stroke="currentColor" stroke-width="1.8"/>
@@ -36,8 +50,7 @@
         </svg>
         <svg *ngIf="i === 3" viewBox="0 0 20 20" fill="none">
           <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.8"/>
-          <path d="M6.5 10l2.5 2.5 4.5-4.5"
-                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M6.5 10l2.5 2.5 4.5-4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
       <span class="uc-step-label">{{ step }}</span>
@@ -129,7 +142,7 @@
       </div>
     </div>
 
-    <!-- ─── STEP 2 — INFORMATIONS PROFESSIONNELLES (tous optionnels) ─── -->
+    <!-- ─── STEP 2 — INFORMATIONS PROFESSIONNELLES ─── -->
     <div class="uc-step-content" *ngIf="currentStep === 2">
       <div class="uc-step-header">
         <div class="uc-step-icon-lg">
@@ -185,7 +198,7 @@
           </div>
         </div>
 
-        <!-- ✅ Date fin de contrat -->
+        <!-- Date fin de contrat -->
         <div class="uc-field-group">
           <label class="uc-label">Date de fin de contrat <span class="uc-optional">optionnel</span></label>
           <div class="uc-input-wrap" [class.focused]="focusState['dateFinContrat']">
@@ -204,7 +217,7 @@
           <label class="uc-label">Adresse <span class="uc-optional">optionnel</span></label>
           <div class="uc-textarea-wrap" [class.focused]="focusState['adresse']">
             <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none"
-                 style="align-self: flex-start; margin-top: 2px;">
+                 style="align-self:flex-start;margin-top:2px">
               <path d="M10 2C6.686 2 4 4.686 4 8c0 4.5 6 10 6 10s6-5.5 6-10c0-3.314-2.686-6-6-6z"
                     stroke="currentColor" stroke-width="1.6"/>
               <circle cx="10" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/>
@@ -218,7 +231,7 @@
       </div>
     </div>
 
-    <!-- ─── STEP 3 — PROFIL (lecture seule, pas de CRUD) ─── -->
+    <!-- ─── STEP 3 — PROFIL ─── -->
     <div class="uc-step-content" *ngIf="currentStep === 3">
       <div class="uc-step-header">
         <div class="uc-step-icon-lg">
@@ -233,42 +246,33 @@
         </div>
       </div>
 
-      <!-- Liste des profils — sélection simple, lecture seule -->
       <div class="uc-profil-list">
         <label *ngFor="let profil of profils()"
                class="uc-profil-card"
                [class.selected]="userForm.get('profilId')?.value == profil.id">
           <input type="radio" formControlName="profilId" [value]="profil.id" class="sr-only">
-
-          <!-- Radio dot -->
           <div class="uc-profil-radio" [class.active]="userForm.get('profilId')?.value == profil.id">
             <div class="uc-radio-dot" *ngIf="userForm.get('profilId')?.value == profil.id"></div>
           </div>
-
-          <!-- Icône profil -->
           <div class="uc-profil-icon">
             <svg viewBox="0 0 20 20" fill="none" style="width:18px;height:18px">
               <circle cx="10" cy="7" r="3" stroke="currentColor" stroke-width="1.6"/>
-              <path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6"
-                    stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
             </svg>
           </div>
-
-          <!-- Info -->
           <div class="uc-profil-info">
             <span class="uc-profil-name">{{ profil.nom }}</span>
             <span class="uc-profil-desc" *ngIf="profil.description">{{ profil.description }}</span>
           </div>
         </label>
 
-        <!-- Vide -->
         <div *ngIf="profils().length === 0" class="uc-profil-empty">
           <svg viewBox="0 0 40 40" fill="none" style="width:36px;height:36px;color:var(--text-muted)">
             <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
             <path d="M20 12v8M20 24h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
           <p>Aucun profil disponible</p>
-          <span>Créez des profils dans la section Profils & Permissions</span>
+          <span>Créez des profils dans la section Profils &amp; Permissions</span>
         </div>
       </div>
 
@@ -337,7 +341,6 @@
             <span class="uc-recap-key">Embauche</span>
             <span class="uc-recap-val">{{ formatDate('dateEmbauche') }}</span>
           </div>
-          <!-- ✅ Fin de contrat dans le récapitulatif -->
           <div class="uc-recap-row" *ngIf="userForm.get('dateFinContrat')?.value">
             <span class="uc-recap-key">Fin de contrat</span>
             <span class="uc-recap-val">{{ formatDate('dateFinContrat') }}</span>
@@ -402,4 +405,6 @@
       </button>
     </div>
   </form>
+
+  </ng-container><!-- fin canCreateUser() -->
 </div>

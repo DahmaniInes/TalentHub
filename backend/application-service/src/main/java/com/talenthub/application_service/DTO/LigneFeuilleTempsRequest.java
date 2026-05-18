@@ -1,4 +1,4 @@
-// src/main/java/com/talenthub/application_service/DTO/LigneFeuilleTempsRequest.java
+// DTO/LigneFeuilleTempsRequest.java — SANS projetNom et activiteNom
 package com.talenthub.application_service.DTO;
 
 import lombok.Data;
@@ -6,14 +6,18 @@ import java.time.LocalDate;
 
 @Data
 public class LigneFeuilleTempsRequest {
+
     private LocalDate date;
 
-    private Long   projetId;
-    private String projetNom;
-    private Long   activiteId;
-    private String activiteNom;
+    // ✅ IDs uniquement — les noms sont résolus côté backend
+    private Long projetId;
+    // ← projetNom supprimé
+
+    private Long activiteId;
+    // ← activiteNom supprimé
+
     private Long   clientId;
-    private String clientNom;
+    private String clientNom;   // ← client gardé (lookup moins fréquent)
 
     private String heureDebut;
     private String heureFin;

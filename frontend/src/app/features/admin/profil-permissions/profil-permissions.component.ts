@@ -1,15 +1,17 @@
+// profil-permissions.component.ts — COMPLET avec permissions PROFIL_PERMISSION
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PermissionService, ProfilPermission, AssignPermissionRequest } from '../../../services/permission.service';
-import { UserService } from '../../../services/user.service';
-import { UiService } from '../../../services/ui.service';
-import { ErrorService } from '../../../services/error.service';
-import { Permission } from '../../../shared/models/permission.model';
-import { Profil } from '../../../shared/models/profil.model';
+import { UserService }   from '../../../services/user.service';
+import { UiService }     from '../../../services/ui.service';
+import { ErrorService }  from '../../../services/error.service';
+import { Permission }    from '../../../shared/models/permission.model';
+import { Profil }        from '../../../shared/models/profil.model';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Utilisateur } from '../../../shared/models/utilisateur.model';
+import { Utilisateur }   from '../../../shared/models/utilisateur.model';
 import { PermissionContextService } from '../../../services/permission-context.service';
+
 export interface MatrixCell    { assigned: boolean; profilPermId?: number; saving: boolean; }
 export interface MatrixRow     { permission: Permission; cells: MatrixCell[]; }
 export interface ModuleSection { module: string; rows: MatrixRow[]; allAssigned: boolean[]; collapsed: boolean; }
@@ -22,6 +24,7 @@ export interface ModuleSection { module: string; rows: MatrixRow[]; allAssigned:
   styleUrls: ['./profil-permissions.component.css']
 })
 export class ProfilPermissionsComponent implements OnInit {
+
   private permSvc  = inject(PermissionService);
   private userSvc  = inject(UserService);
   private errorSvc = inject(ErrorService);
@@ -34,7 +37,6 @@ export class ProfilPermissionsComponent implements OnInit {
   sections     = signal<ModuleSection[]>([]);
   loading      = signal(true);
 
-  // ✅ Champ de recherche (ngModel, pas signal — pour éviter NG5002)
   permSearch = '';
 
   showProfilModal      = signal(false);
@@ -55,7 +57,6 @@ export class ProfilPermissionsComponent implements OnInit {
     return counts;
   });
 
-  // ✅ Sections filtrées par la recherche (pas de => dans le template)
   filteredSections = computed(() => {
     const q = this.permSearch.toLowerCase().trim();
     if (!q) return this.sections();
@@ -110,63 +111,53 @@ export class ProfilPermissionsComponent implements OnInit {
     });
   }
 
+  // ✅ toggleCell : vérifier PROFIL_PERM_ASSIGN
+  toggleCell(section: ModuleSection, row: MatrixRow, profilIdx: number): void {
+    if (!this.permCtx.canAssignProfil()) { this.ui.warning('Permission PROFIL_PERM_ASSIGN requise.'); return; }
+    if (!row.cells[profilIdx]) return;
+    const cell   = row.cells[profilIdx];
+    const profil = this.profils()[profilIdx];
+    if (!profil || cell.saving) return;
 
+    cell.saving = true;
+    this.sections.set([...this.sections()]);
 
-
-
-
-toggleCell(section: ModuleSection, row: MatrixRow, profilIdx: number): void {
-  if (!row.cells[profilIdx]) return;
-  const cell   = row.cells[profilIdx];
-  const profil = this.profils()[profilIdx];
-  if (!profil || cell.saving) return;
-
-  cell.saving = true;
-  this.sections.set([...this.sections()]);
-
-  if (cell.assigned && cell.profilPermId) {
-      // ✅ Désassigner
+    if (cell.assigned && cell.profilPermId) {
       this.permSvc.removeProfilPermission(cell.profilPermId).subscribe({
-          next: () => {
-              cell.assigned = false;
-              cell.profilPermId = undefined;
-              cell.saving = false;
-              this.updateAllAssigned(section, profilIdx);
-              this.sections.set([...this.sections()]);
-              this.permCtx.reload(); // ← recharge si c'est ton propre profil
-
-          },
-          error: (err: HttpErrorResponse) => {
-              cell.saving = false;
-              this.sections.set([...this.sections()]);
-              this.ui.error(this.errorSvc.parse(err).message);
-          }
+        next: () => {
+          cell.assigned = false;
+          cell.profilPermId = undefined;
+          cell.saving = false;
+          this.updateAllAssigned(section, profilIdx);
+          this.sections.set([...this.sections()]);
+          this.permCtx.reload();
+        },
+        error: (err: HttpErrorResponse) => {
+          cell.saving = false;
+          this.sections.set([...this.sections()]);
+          this.ui.error(this.errorSvc.parse(err).message);
+        }
       });
-  } else if (!cell.assigned) {
-      // ✅ Assigner — plus de canRead/canWrite/etc.
+    } else if (!cell.assigned) {
       this.permSvc.assignPermission({
-          profilId: profil.id,
-          permissionId: row.permission.id
-          // ✅ SUPPRIMÉ : canRead, canWrite, canDelete, canExport
+        profilId: profil.id,
+        permissionId: row.permission.id
       }).subscribe({
-          next: pp => {
-              cell.assigned = true;
-              cell.profilPermId = pp.id;
-              cell.saving = false;
-              this.updateAllAssigned(section, profilIdx);
-              this.sections.set([...this.sections()]);
-          },
-          error: (err: HttpErrorResponse) => {
-              cell.saving = false;
-              this.sections.set([...this.sections()]);
-              this.ui.error(this.errorSvc.parse(err).message);
-          }
+        next: pp => {
+          cell.assigned = true;
+          cell.profilPermId = pp.id;
+          cell.saving = false;
+          this.updateAllAssigned(section, profilIdx);
+          this.sections.set([...this.sections()]);
+        },
+        error: (err: HttpErrorResponse) => {
+          cell.saving = false;
+          this.sections.set([...this.sections()]);
+          this.ui.error(this.errorSvc.parse(err).message);
+        }
       });
+    }
   }
-}
-
-
-
 
   private updateAllAssigned(section: ModuleSection, profilIdx: number): void {
     section.allAssigned[profilIdx] = section.rows.length > 0 && section.rows.every(r => r.cells[profilIdx]?.assigned === true);
@@ -178,8 +169,20 @@ toggleCell(section: ModuleSection, row: MatrixRow, profilIdx: number): void {
   }
 
   // ── CRUD Profils ──
-  openAddProfil(): void { this.editingProfil.set(null); this.profilForm.set({ nom:'', description:'', actif:true }); this.showProfilModal.set(true); }
-  openEditProfil(p: Profil): void { this.editingProfil.set(p); this.profilForm.set({ nom:p.nom, description:p.description||'', actif:p.actif }); this.showProfilModal.set(true); }
+  openAddProfil(): void {
+    if (!this.permCtx.canCreateProfil()) { this.ui.warning('Permission PROFIL_CREATE requise.'); return; }
+    this.editingProfil.set(null);
+    this.profilForm.set({ nom: '', description: '', actif: true });
+    this.showProfilModal.set(true);
+  }
+
+  openEditProfil(p: Profil): void {
+    if (!this.permCtx.canUpdateProfil()) { this.ui.warning('Permission PROFIL_UPDATE requise.'); return; }
+    this.editingProfil.set(p);
+    this.profilForm.set({ nom: p.nom, description: p.description || '', actif: p.actif });
+    this.showProfilModal.set(true);
+  }
+
   saveProfil(): void {
     const f = this.profilForm();
     if (!f.nom.trim()) { this.ui.warning('Le nom est obligatoire.'); return; }
@@ -189,16 +192,36 @@ toggleCell(section: ModuleSection, row: MatrixRow, profilIdx: number): void {
       error: (err: HttpErrorResponse) => this.ui.error(this.errorSvc.parse(err).message)
     });
   }
+
   deleteProfil(p: Profil): void {
-    this.ui.confirm({ title:'Supprimer le profil', message:`Supprimer "${p.nom}" ?`, confirmLabel:'Supprimer', type:'danger',
-      onConfirm: () => this.permSvc.deleteProfil(p.id).subscribe({ next: () => { this.ui.success('Profil supprimé.'); this.loadAll(); }, error: (err: HttpErrorResponse) => this.ui.error(this.errorSvc.parse(err).message) })
+    if (!this.permCtx.canDeleteProfil()) { this.ui.warning('Permission PROFIL_DELETE requise.'); return; }
+    this.ui.confirm({
+      title: 'Supprimer le profil', message: `Supprimer "${p.nom}" ?`,
+      confirmLabel: 'Supprimer', type: 'danger',
+      onConfirm: () => this.permSvc.deleteProfil(p.id).subscribe({
+        next: () => { this.ui.success('Profil supprimé.'); this.loadAll(); },
+        error: (err: HttpErrorResponse) => this.ui.error(this.errorSvc.parse(err).message)
+      })
     });
   }
+
   closeProfilModal(): void { this.showProfilModal.set(false); this.editingProfil.set(null); }
 
   // ── CRUD Permissions ──
-  openAddPerm(): void { this.editingPerm.set(null); this.permForm.set({ code:'', libelle:'', module:'', description:'', actif:true }); this.showPermModal.set(true); }
-  openEditPerm(p: Permission): void { this.editingPerm.set(p); this.permForm.set({ code:p.code||'', libelle:p.libelle, module:p.module||'', description:p.description||'', actif:p.actif??true }); this.showPermModal.set(true); }
+  openAddPerm(): void {
+    if (!this.permCtx.canCreatePermission()) { this.ui.warning('Permission PERMISSION_CREATE requise.'); return; }
+    this.editingPerm.set(null);
+    this.permForm.set({ code: '', libelle: '', module: '', description: '', actif: true });
+    this.showPermModal.set(true);
+  }
+
+  openEditPerm(p: Permission): void {
+    if (!this.permCtx.canUpdatePermission()) { this.ui.warning('Permission PERMISSION_UPDATE requise.'); return; }
+    this.editingPerm.set(p);
+    this.permForm.set({ code: p.code || '', libelle: p.libelle, module: p.module || '', description: p.description || '', actif: p.actif ?? true });
+    this.showPermModal.set(true);
+  }
+
   savePerm(): void {
     const f = this.permForm();
     if (!f.libelle.trim() || !f.module.trim()) { this.ui.warning('Libellé et module requis.'); return; }
@@ -208,15 +231,29 @@ toggleCell(section: ModuleSection, row: MatrixRow, profilIdx: number): void {
       error: (err: HttpErrorResponse) => this.ui.error(this.errorSvc.parse(err).message)
     });
   }
+
   deletePerm(p: Permission): void {
-    this.ui.confirm({ title:'Supprimer', message:`Supprimer "${p.libelle}" ?`, confirmLabel:'Supprimer', type:'danger',
-      onConfirm: () => this.permSvc.deletePermission(p.id).subscribe({ next: () => { this.ui.success('Permission supprimée.'); this.loadAll(); }, error: (err: HttpErrorResponse) => this.ui.error(this.errorSvc.parse(err).message) })
+    if (!this.permCtx.canDeletePermission()) { this.ui.warning('Permission PERMISSION_DELETE requise.'); return; }
+    this.ui.confirm({
+      title: 'Supprimer', message: `Supprimer "${p.libelle}" ?`,
+      confirmLabel: 'Supprimer', type: 'danger',
+      onConfirm: () => this.permSvc.deletePermission(p.id).subscribe({
+        next: () => { this.ui.success('Permission supprimée.'); this.loadAll(); },
+        error: (err: HttpErrorResponse) => this.ui.error(this.errorSvc.parse(err).message)
+      })
     });
   }
+
   closePermModal(): void { this.showPermModal.set(false); this.editingPerm.set(null); }
 
   // ── Ajout dans module ──
-  openAddToModule(moduleName: string): void { this.addToModuleName.set(moduleName); this.addToModuleForm.set({ code:'', libelle:'', description:'', actif:true }); this.showAddToModuleModal.set(true); }
+  openAddToModule(moduleName: string): void {
+    if (!this.permCtx.canCreatePermission()) { this.ui.warning('Permission PERMISSION_CREATE requise.'); return; }
+    this.addToModuleName.set(moduleName);
+    this.addToModuleForm.set({ code: '', libelle: '', description: '', actif: true });
+    this.showAddToModuleModal.set(true);
+  }
+
   saveAddToModule(): void {
     const f = this.addToModuleForm();
     if (!f.libelle.trim()) { this.ui.warning('Le libellé est obligatoire.'); return; }
@@ -225,5 +262,6 @@ toggleCell(section: ModuleSection, row: MatrixRow, profilIdx: number): void {
       error: (err: HttpErrorResponse) => this.ui.error(this.errorSvc.parse(err).message)
     });
   }
+
   closeAddToModuleModal(): void { this.showAddToModuleModal.set(false); }
 }

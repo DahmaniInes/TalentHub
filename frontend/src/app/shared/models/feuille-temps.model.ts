@@ -1,21 +1,27 @@
 // src/app/shared/models/feuille-temps.model.ts
+// BD stocke : projet_id, activite_id, client_id uniquement
+// Backend résout les noms et les retourne dans le DTO
+// Angular envoie uniquement les IDs au backend
 
 export type StatutFT = 'BROUILLON' | 'SOUMISE' | 'VALIDEE' | 'REJETEE';
 
-// ─── Ligne (entrée de temps par projet/activité/jour) ───
+// ─── Ligne REÇUE du backend (DTO) ────────────────────────────────────────────
+// Le backend résout les noms depuis les IDs → Angular les reçoit dans le DTO
 export interface LigneFeuilleTemps {
   id?: number;
-  date: string;              // "YYYY-MM-DD"
+  date: string;
 
   projetId?: number;
-  projetNom?: string;
-  activiteId?: number;
-  activiteNom?: string;
-  clientId?: number;
-  clientNom?: string;
+  projetNom?: string;     // résolu côté backend, jamais en BD
 
-  heureDebut?: string;       // "08:00"
-  heureFin?: string;         // "17:00"
+  activiteId?: number;
+  activiteNom?: string;   // résolu côté backend, jamais en BD
+
+  clientId?: number;
+  clientNom?: string;     // résolu côté backend, jamais en BD
+
+  heureDebut?: string;
+  heureFin?: string;
 
   minutesTravaillees: number;
   minutesSupplementaires: number;
@@ -24,40 +30,44 @@ export interface LigneFeuilleTemps {
   estWeekend?: boolean;
 }
 
-// ─── Feuille de temps ───
+// ─── Feuille de temps reçue du backend ───────────────────────────────────────
 export interface FeuilleTemps {
   id: number;
   utilisateurId: number;
   utilisateurNom?: string;
-  semaineDu: string;         // "YYYY-MM-DD" (lundi)
-  semaineAu: string;         // "YYYY-MM-DD" (vendredi ou samedi)
-  minutesTravaillees: number;
-  minutesSupplementaires: number;
-  minutesAbsence?: number;
+  semaineDu: string;
+  semaineAu: string;
   heuresTravaillees?: number;
+  minutesTravaillees?: number;
+  minutesSupplementaires?: number;
   statut: StatutFT;
   commentaireEmploye?: string;
   commentaireValideur?: string;
   validePar?: string;
   dateValidation?: string;
-  dateCreation?: string;
-  dateMiseAJour?: string;
   lignes: LigneFeuilleTemps[];
 }
 
-// ─── Request ───
+// ─── Request envoyé AU backend ────────────────────────────────────────────────
+// ✅ IDs uniquement — AUCUN nom (projetNom, activiteNom, clientNom supprimés)
 export interface LigneFeuilleTempsRequest {
   date: string;
+
   projetId?: number;
-  projetNom?: string;
+  // projetNom SUPPRIMÉ ← backend résout depuis projetId
+
   activiteId?: number;
-  activiteNom?: string;
+  // activiteNom SUPPRIMÉ ← backend résout depuis activiteId
+
   clientId?: number;
-  clientNom?: string;
+  // clientNom SUPPRIMÉ ← backend résout depuis clientId
+
   heureDebut?: string;
   heureFin?: string;
+
   minutesTravaillees: number;
   minutesSupplementaires: number;
+
   commentaire?: string;
   estWeekend?: boolean;
 }
@@ -73,18 +83,17 @@ export interface FeuilleTempsRequest {
   lignes: LigneFeuilleTempsRequest[];
 }
 
-// ─── Vue matrice Ma Semaine ───
+// ─── Vue matrice Ma Semaine (état local frontend uniquement) ──────────────────
 export interface MatriceLigne {
-  rowId: string;             // uuid temporaire pour identifier la ligne
+  rowId: string;
   projetId?: number;
-  projetNom?: string;
+  projetNom?: string;    // stocké localement dans le composant (depuis le select)
   activiteId?: number;
-  activiteNom?: string;
+  activiteNom?: string;  // stocké localement dans le composant (depuis le select)
   clientId?: number;
-  clientNom?: string;
-  // Jours : lundi(0) → samedi(5)
+  clientNom?: string;    // stocké localement dans le composant
   jours: {
-    [dateStr: string]: {    // "YYYY-MM-DD"
+    [dateStr: string]: {
       minutes: number;
       minutesSupp: number;
       heureDebut: string;

@@ -1,7 +1,7 @@
+// Service/PermissionService.java — COMPLET (les guards sont dans les controllers)
 package com.talenthub.application_service.Service;
 
-import  com.talenthub.application_service.Entity.Permission;
-
+import com.talenthub.application_service.Entity.Permission;
 import com.talenthub.application_service.Exception.ResourceNotFoundException;
 import com.talenthub.application_service.Repository.PermissionRepository;
 import org.springframework.stereotype.Service;
@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-// 8. PermissionService.java
+
 @Service
 @Transactional
 public class PermissionService {
@@ -34,18 +34,15 @@ public class PermissionService {
 
     public Permission updatePermission(Long id, Permission permissionDetails) {
         Permission permission = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Permission non trouvée: " + id));
-
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Permission non trouvée: " + id));
         permission.setCode(permissionDetails.getCode());
         permission.setLibelle(permissionDetails.getLibelle());
         permission.setModule(permissionDetails.getModule());
         permission.setDescription(permissionDetails.getDescription());
         permission.setActif(permissionDetails.isActif());
-
         return repository.save(permission);
     }
-
-
 
     public void deletePermission(Long id) {
         if (!repository.existsById(id)) {

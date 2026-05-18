@@ -1,7 +1,7 @@
-// src/main/java/com/talenthub/application_service/Service/FeuilleTempsService.java
-// ✅ FIX : saveLignes() inclut categorieCode = "PROJET" par défaut
+// Service/FeuilleTempsService.java — COMPLET avec recalcul avancement automatique
 package com.talenthub.application_service.Service;
 
+import com.talenthub.application_service.DTO.FeuilleTempsDTO;
 import com.talenthub.application_service.DTO.FeuilleTempsRequest;
 import com.talenthub.application_service.DTO.LigneFeuilleTempsRequest;
 import com.talenthub.application_service.Entity.FeuilleTemps;
@@ -10,17 +10,14 @@ import com.talenthub.application_service.Entity.Utilisateur;
 import com.talenthub.application_service.Enum.NotificationType;
 import com.talenthub.application_service.Exception.DuplicateResourceException;
 import com.talenthub.application_service.Exception.ResourceNotFoundException;
-import com.talenthub.application_service.Repository.FeuilleTempsRepository;
-import com.talenthub.application_service.Repository.LigneFeuilleTempsRepository;
-import com.talenthub.application_service.Repository.ProfilPermissionRepository;
-import com.talenthub.application_service.Repository.UtilisateurRepository;
+import com.talenthub.application_service.Repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -31,38 +28,58 @@ public class FeuilleTempsService {
     private final LigneFeuilleTempsRepository ligneRepository;
     private final NotificationService         notificationService;
     private final ProfilPermissionRepository  profilPermissionRepository;
+    private final ProjetRepository            projetRepository;
+    private final ActiviteRepository          activiteRepository;
+    private final ClientRepository            clientRepository;
+    private final AvancementService           avancementService;  // ✅ NOUVEAU
 
     public FeuilleTempsService(
             FeuilleTempsRepository repository,
             UtilisateurRepository utilisateurRepository,
             LigneFeuilleTempsRepository ligneRepository,
             NotificationService notificationService,
-            ProfilPermissionRepository profilPermissionRepository) {
+            ProfilPermissionRepository profilPermissionRepository,
+            ProjetRepository projetRepository,
+            ActiviteRepository activiteRepository,
+            ClientRepository clientRepository,
+            AvancementService avancementService) {           // ✅ NOUVEAU
         this.repository                = repository;
         this.utilisateurRepository     = utilisateurRepository;
         this.ligneRepository           = ligneRepository;
         this.notificationService       = notificationService;
         this.profilPermissionRepository = profilPermissionRepository;
+        this.projetRepository          = projetRepository;
+        this.activiteRepository        = activiteRepository;
+        this.clientRepository          = clientRepository;
+        this.avancementService         = avancementService;  // ✅ NOUVEAU
     }
 
-    public List<FeuilleTemps> getAllFeuillesTemps()              { return repository.findAll(); }
-    public Optional<FeuilleTemps> getFeuilleTempsById(Long id)  { return repository.findById(id); }
-    public List<FeuilleTemps> getByStatut(String statut)        { return repository.findByStatut(statut); }
-    public List<FeuilleTemps> getFeuillesSoumises()             { return repository.findByStatut("SOUMISE"); }
-    public List<FeuilleTemps> getPourApprobation()              { return repository.findByStatutIn(List.of("SOUMISE","VALIDEE","REJETEE")); }
+    public FeuilleTempsDTO toDTO(FeuilleTemps ft) {
+        return new FeuilleTempsDTO(ft, projetRepository, activiteRepository, clientRepository);
+    }
 
+    // ── Lecture ──────────────────────────────────────────────────────────────
+    public List<FeuilleTemps> getAllFeuillesTemps()            { return repository.findAll(); }
+    public Optional<FeuilleTemps> getFeuilleTempsById(Long id) { return repository.findById(id); }
+    public List<FeuilleTemps> getByStatut(String statut)       { return repository.findByStatut(statut); }
+    public List<FeuilleTemps> getFeuillesSoumises()            { return repository.findByStatut("SOUMISE"); }
+    public List<FeuilleTemps> getPourApprobation() {
+        return repository.findByStatutIn(List.of("SOUMISE", "VALIDEE", "REJETEE"));
+    }
     public List<FeuilleTemps> getByUtilisateur(Long utilisateurId) {
         return repository.findByUtilisateurIdOrderBySemaineDuDesc(utilisateurId);
     }
 
-    // ─── Créer ───────────────────────────────────────────────────────────────
+    // ── Créer ─────────────────────────────────────────────────────────────────
     public FeuilleTemps create(FeuilleTempsRequest req) {
         Utilisateur utilisateur = utilisateurRepository.findById(req.getUtilisateurId())
-                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé: " + req.getUtilisateurId()));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Utilisateur non trouvé: " + req.getUtilisateurId()));
 
         LocalDate lundiSemaine = toLundi(req.getSemaineDu());
         repository.findByUtilisateurIdAndSemaineDu(req.getUtilisateurId(), lundiSemaine)
-                .ifPresent(e -> { throw new DuplicateResourceException("Une feuille existe déjà pour cette semaine."); });
+                .ifPresent(e -> { throw new DuplicateResourceException(
+                        "Une feuille existe déjà pour cette semaine."); });
 
         int totalTravaillees = calculerTotalTravaillees(req);
         int totalSupp        = calculerTotalSupp(req);
@@ -82,19 +99,25 @@ public class FeuilleTempsService {
         if (req.getLignes() != null && !req.getLignes().isEmpty()) {
             saveLignes(saved, req.getLignes());
         }
-        return repository.findById(saved.getId()).orElse(saved);
+
+        FeuilleTemps result = repository.findById(saved.getId()).orElse(saved);
+
+        // ✅ Recalcul avancement après création
+        recalculerAvancementDeFeuille(result);
+
+        return result;
     }
 
-    // ─── Modifier ────────────────────────────────────────────────────────────
+    // ── Modifier ──────────────────────────────────────────────────────────────
     public FeuilleTemps update(Long id, FeuilleTempsRequest req) {
         FeuilleTemps ft = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Feuille non trouvée: " + id));
 
         if (!"BROUILLON".equals(ft.getStatut()) && !"REJETEE".equals(ft.getStatut())) {
-            throw new RuntimeException("Seules les feuilles en brouillon ou rejetées peuvent être modifiées.");
+            throw new RuntimeException(
+                    "Seules les feuilles en brouillon ou rejetées peuvent être modifiées.");
         }
 
-        // ✅ FIX : semaineDu/semaineAu ne changent JAMAIS lors d'un update
         int totalTravaillees = calculerTotalTravaillees(req);
         int totalSupp        = calculerTotalSupp(req);
 
@@ -112,10 +135,15 @@ public class FeuilleTempsService {
         }
 
         FeuilleTemps saved = repository.save(ft);
-        return repository.findById(saved.getId()).orElse(saved);
+        FeuilleTemps result = repository.findById(saved.getId()).orElse(saved);
+
+        // ✅ Recalcul avancement après modification
+        recalculerAvancementDeFeuille(result);
+
+        return result;
     }
 
-    // ─── Soumettre ───────────────────────────────────────────────────────────
+    // ── Soumettre ─────────────────────────────────────────────────────────────
     public FeuilleTemps soumettre(Long id) {
         FeuilleTemps ft = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Feuille non trouvée: " + id));
@@ -133,7 +161,7 @@ public class FeuilleTempsService {
         return saved;
     }
 
-    // ─── Annuler soumission ──────────────────────────────────────────────────
+    // ── Annuler soumission ────────────────────────────────────────────────────
     public FeuilleTemps annulerSoumission(Long id) {
         FeuilleTemps ft = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Feuille non trouvée: " + id));
@@ -144,7 +172,7 @@ public class FeuilleTempsService {
         return repository.save(ft);
     }
 
-    // ─── Valider ─────────────────────────────────────────────────────────────
+    // ── Valider ───────────────────────────────────────────────────────────────
     public FeuilleTemps valider(Long id, String valideurKeycloakId, String commentaire) {
         FeuilleTemps ft = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Feuille non trouvée: " + id));
@@ -162,13 +190,14 @@ public class FeuilleTempsService {
             notificationService.creer(kcId, NotificationType.FEUILLE_VALIDEE,
                     "Feuille validée ✅",
                     "Votre feuille du " + saved.getSemaineDu() + " a été validée." +
-                            (commentaire != null && !commentaire.isBlank() ? " Commentaire : " + commentaire : ""),
+                            (commentaire != null && !commentaire.isBlank()
+                                    ? " Commentaire : " + commentaire : ""),
                     "/feuille-temps", saved.getId());
         }
         return saved;
     }
 
-    // ─── Rejeter ─────────────────────────────────────────────────────────────
+    // ── Rejeter ───────────────────────────────────────────────────────────────
     public FeuilleTemps rejeter(Long id, String valideurKeycloakId, String commentaire) {
         FeuilleTemps ft = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Feuille non trouvée: " + id));
@@ -187,52 +216,36 @@ public class FeuilleTempsService {
         if (kcId != null) {
             notificationService.creer(kcId, NotificationType.FEUILLE_REJETEE,
                     "Feuille rejetée ❌",
-                    "Votre feuille du " + saved.getSemaineDu() + " a été rejetée. Motif : " + commentaire,
+                    "Votre feuille du " + saved.getSemaineDu() +
+                            " a été rejetée. Motif : " + commentaire,
                     "/feuille-temps", saved.getId());
         }
         return saved;
     }
 
-    // ─── Supprimer ───────────────────────────────────────────────────────────
+    // ── Supprimer ─────────────────────────────────────────────────────────────
     public void delete(Long id) {
         FeuilleTemps ft = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Feuille non trouvée: " + id));
         if (!"BROUILLON".equals(ft.getStatut()) && !"REJETEE".equals(ft.getStatut()))
             throw new RuntimeException("Seules les feuilles en brouillon ou rejetées peuvent être supprimées.");
+
+        // ✅ Collecter les IDs avant suppression pour recalcul post-delete
+        Set<Long> projetIds   = new HashSet<>(ligneRepository.findDistinctProjetIdsByFeuilleTempsId(id));
+        Set<Long> activiteIds = new HashSet<>(ligneRepository.findDistinctActiviteIdsByFeuilleTempsId(id));
+
         ligneRepository.deleteByFeuilleTempsId(id);
         repository.deleteById(id);
+
+        // ✅ Recalcul avancement après suppression
+        avancementService.recalculer(projetIds, activiteIds);
     }
 
-    // ─── Helpers privés ──────────────────────────────────────────────────────
-
-    private LocalDate toLundi(LocalDate date) {
-        if (date == null) return LocalDate.now();
-        int dayOfWeek = date.getDayOfWeek().getValue();
-        return date.minusDays(dayOfWeek - 1);
-    }
-
-    private int calculerTotalTravaillees(FeuilleTempsRequest req) {
-        if (req.getLignes() != null && !req.getLignes().isEmpty()) {
-            return req.getLignes().stream()
-                    .mapToInt(LigneFeuilleTempsRequest::getMinutesTravaillees).sum();
-        }
-        return req.getMinutesTravaillees();
-    }
-
-    private int calculerTotalSupp(FeuilleTempsRequest req) {
-        if (req.getLignes() != null && !req.getLignes().isEmpty()) {
-            return req.getLignes().stream()
-                    .mapToInt(LigneFeuilleTempsRequest::getMinutesSupplementaires).sum();
-        }
-        return req.getMinutesSupplementaires();
-    }
-
-    // ✅ FIX CRITIQUE : categorieCode mis à "PROJET" par défaut
-    // pour éviter la violation NOT NULL de l'ancienne colonne
+    // ── saveLignes — IDs uniquement ───────────────────────────────────────────
     private void saveLignes(FeuilleTemps ft, List<LigneFeuilleTempsRequest> reqs) {
         reqs.forEach(r -> {
             int minutes = r.getMinutesTravaillees();
-            // Calculer depuis heureDebut/heureFin si minutes non fournies
+
             if (minutes == 0 && r.getHeureDebut() != null && r.getHeureFin() != null
                     && !r.getHeureDebut().isBlank() && !r.getHeureFin().isBlank()) {
                 try {
@@ -244,24 +257,17 @@ public class FeuilleTempsService {
                 } catch (Exception ignored) {}
             }
 
-            // ✅ Déduire categorieCode depuis les données disponibles
             String categorieCode = "PROJET";
-            if (r.getProjetId() == null && r.getActiviteId() != null) {
-                categorieCode = "ACTIVITE";
-            } else if (r.getProjetId() == null && r.getActiviteId() == null) {
-                categorieCode = "AUTRE";
-            }
+            if (r.getProjetId() == null && r.getActiviteId() != null) categorieCode = "ACTIVITE";
+            else if (r.getProjetId() == null && r.getActiviteId() == null) categorieCode = "AUTRE";
 
             LigneFeuilleTemps ligne = LigneFeuilleTemps.builder()
                     .feuilleTemps(ft)
                     .date(r.getDate())
-                    .categorieCode(categorieCode)   // ✅ TOUJOURS fourni
+                    .categorieCode(categorieCode)
                     .projetId(r.getProjetId())
-                    .projetNom(r.getProjetNom())
                     .activiteId(r.getActiviteId())
-                    .activiteNom(r.getActiviteNom())
                     .clientId(r.getClientId())
-                    .clientNom(r.getClientNom())
                     .heureDebut(r.getHeureDebut())
                     .heureFin(r.getHeureFin())
                     .minutesTravaillees(minutes)
@@ -269,52 +275,67 @@ public class FeuilleTempsService {
                     .commentaire(r.getCommentaire())
                     .estWeekend(r.isEstWeekend())
                     .build();
+
             ligneRepository.save(ligne);
         });
     }
 
+    // ✅ Helper : collecte les projetIds et activiteIds d'une feuille puis recalcule
+    private void recalculerAvancementDeFeuille(FeuilleTemps ft) {
+        try {
+            Set<Long> projetIds   = new HashSet<>(
+                    ligneRepository.findDistinctProjetIdsByFeuilleTempsId(ft.getId()));
+            Set<Long> activiteIds = new HashSet<>(
+                    ligneRepository.findDistinctActiviteIdsByFeuilleTempsId(ft.getId()));
+            avancementService.recalculer(projetIds, activiteIds);
+        } catch (Exception e) {
+            // Non bloquant — on ne fait pas échouer la sauvegarde si le recalcul échoue
+        }
+    }
 
+    // ── Helpers privés ────────────────────────────────────────────────────────
+    private LocalDate toLundi(LocalDate date) {
+        if (date == null) return LocalDate.now();
+        int dayOfWeek = date.getDayOfWeek().getValue();
+        return date.minusDays(dayOfWeek - 1);
+    }
 
+    private int calculerTotalTravaillees(FeuilleTempsRequest req) {
+        if (req.getLignes() != null && !req.getLignes().isEmpty()) {
+            return req.getLignes().stream()
+                    .mapToInt(LigneFeuilleTempsRequest::getMinutesTravaillees).sum();
+        }
+        Integer val = req.getMinutesTravaillees();
+        return val != null ? val : 0;
+    }
 
-
-
-
-
-    // Remplace uniquement la méthode notifierApprobateurs()
-// Le problème : isCanWrite() n'existe plus → vérifier par code de permission
+    private int calculerTotalSupp(FeuilleTempsRequest req) {
+        if (req.getLignes() != null && !req.getLignes().isEmpty()) {
+            return req.getLignes().stream()
+                    .mapToInt(LigneFeuilleTempsRequest::getMinutesSupplementaires).sum();
+        }
+        Integer val = req.getMinutesSupplementaires();
+        return val != null ? val : 0;
+    }
 
     private void notifierApprobateurs(FeuilleTemps ft) {
         utilisateurRepository.findAll().stream()
                 .filter(u -> u.getProfil() != null && u.getKeycloakId() != null)
                 .filter(u -> !u.getKeycloakId().equals(ft.getUtilisateur().getKeycloakId()))
                 .forEach(u -> {
-                    // ✅ FIX : plus de isCanWrite() — vérifier par code de permission
                     boolean aPermission = profilPermissionRepository
-                            .findByProfilId(u.getProfil().getId())
-                            .stream()
+                            .findByProfilId(u.getProfil().getId()).stream()
                             .anyMatch(pp -> pp.getPermission() != null
-                                    && "FT_APPROVE".equals(pp.getPermission().getCode()));
-                    // OU si tu veux par libellé :
-                    // && "Traiter les feuilles de temps".equals(pp.getPermission().getLibelle())
-
+                                    && "TS_VALIDATE".equals(pp.getPermission().getCode()));
                     if (aPermission) {
                         notificationService.creer(
-                                u.getKeycloakId(),
-                                NotificationType.FEUILLE_SOUMISE,
+                                u.getKeycloakId(), NotificationType.FEUILLE_SOUMISE,
                                 "Nouvelle feuille soumise 📋",
                                 ft.getUtilisateur().getNomComplet()
-                                        + " a soumis sa feuille de la semaine du " + ft.getSemaineDu(),
-                                "/approbations-ft",
-                                ft.getId()
-                        );
+                                        + " a soumis sa feuille de la semaine du "
+                                        + ft.getSemaineDu(),
+                                "/approbations-ft", ft.getId());
                     }
                 });
     }
-
-
-
-
-
-
-
 }

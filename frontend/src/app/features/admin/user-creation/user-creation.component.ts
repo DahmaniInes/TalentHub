@@ -1,14 +1,16 @@
-// src/app/features/user-creation/user-creation.component.ts
+// src/app/features/user-creation/user-creation.component.ts — avec permission USER_CREATE
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
-import { UserService } from '../../../services/user.service';
-import { ProfilService } from '../../../services/profil.service';
-import { UiService } from '../../../services/ui.service';
-import { Profil } from '../../../shared/models/profil.model';
-import { UserCreationRequest } from '../../../shared/models/user-creation-request.model';
-import { ErrorService } from '../../../services/error.service';
-import { HttpErrorResponse } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { UserService }              from '../../../services/user.service';
+import { ProfilService }            from '../../../services/profil.service';
+import { UiService }                from '../../../services/ui.service';
+import { ErrorService }             from '../../../services/error.service';
+import { PermissionContextService } from '../../../services/permission-context.service';
+import { Profil }                   from '../../../shared/models/profil.model';
+import { UserCreationRequest }      from '../../../shared/models/user-creation-request.model';
+import { HttpErrorResponse }        from '@angular/common/http';
 
 @Component({
   selector: 'app-user-creation',
@@ -18,14 +20,18 @@ import { HttpErrorResponse } from '@angular/common/http';
   styleUrls: ['./user-creation.component.css']
 })
 export class UserCreationComponent implements OnInit {
+
   private fb            = inject(FormBuilder);
   private userService   = inject(UserService);
   private profilService = inject(ProfilService);
   private errorService  = inject(ErrorService);
+  private router        = inject(Router);
   readonly ui           = inject(UiService);
+  // ✅ NOUVEAU
+  readonly perms        = inject(PermissionContextService);
 
-  // ── Stepper : 4 étapes, les étapes validées restent dans leur état actif (pas de checkmark) ──
-  steps = ['Identité', 'Poste', 'Accès', 'Récapitulatif'];
+  // ── Stepper ──
+  steps       = ['Identité', 'Poste', 'Accès', 'Récapitulatif'];
   currentStep = 1;
   focusState: Record<string, boolean> = {};
 
@@ -42,7 +48,7 @@ export class UserCreationComponent implements OnInit {
       telephone:      [''],
       // Step 2 — tous optionnels
       dateEmbauche:   [''],
-      dateFinContrat: [''],   // ✅ champ fin de contrat
+      dateFinContrat: [''],
       poste:          [''],
       departement:    [''],
       adresse:        [''],
@@ -51,7 +57,12 @@ export class UserCreationComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void { this.loadProfils(); }
+  ngOnInit(): void {
+    // ✅ Si pas la permission, ne pas charger les profils (accès refusé géré dans le template)
+    if (this.perms.canCreateUser()) {
+      this.loadProfils();
+    }
+  }
 
   private loadProfils(): void {
     this.profilService.getAllProfils().subscribe({
@@ -67,7 +78,7 @@ export class UserCreationComponent implements OnInit {
         return this.userForm.get('prenom')!.valid
             && this.userForm.get('nom')!.valid
             && this.userForm.get('email')!.valid;
-      case 2: return true;    // tous les champs de l'étape 2 sont optionnels
+      case 2: return true;
       case 3: return this.userForm.get('profilId')!.valid;
       default: return true;
     }
@@ -81,7 +92,6 @@ export class UserCreationComponent implements OnInit {
   prevStep(): void { if (this.currentStep > 1) this.currentStep--; }
 
   goToStep(step: number): void {
-    // On peut naviguer uniquement vers les étapes déjà atteintes
     if (step <= this.currentStep) this.currentStep = step;
   }
 
@@ -110,8 +120,12 @@ export class UserCreationComponent implements OnInit {
     } catch { return val; }
   }
 
+  goBack(): void { this.router.navigate(['/users']); }
+
   // ── Soumission ──
   onSubmit(): void {
+    // ✅ Double vérification côté TS
+    if (!this.perms.canCreateUser()) { this.ui.warning('Permission USER_CREATE requise.'); return; }
     if (this.userForm.invalid || this.loading()) return;
     this.loading.set(true);
 
@@ -120,9 +134,9 @@ export class UserCreationComponent implements OnInit {
       nom:            v.nom,
       prenom:         v.prenom,
       email:          v.email,
-      telephone:      v.telephone || null,
+      telephone:      v.telephone  || null,
       dateEmbauche:   v.dateEmbauche   || null,
-      dateFinContrat: v.dateFinContrat || null,   // ✅
+      dateFinContrat: v.dateFinContrat || null,
       poste:          v.poste          || null,
       departement:    v.departement    || null,
       adresse:        v.adresse        || null,
@@ -132,7 +146,7 @@ export class UserCreationComponent implements OnInit {
 
     this.userService.createUser(request).subscribe({
       next: () => {
-        this.ui.success('✅ Utilisateur créé avec succès !');   // ✅ toast
+        this.ui.success('✅ Utilisateur créé avec succès !');
         this.loading.set(false);
         this.userForm.reset();
         this.currentStep = 1;

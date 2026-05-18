@@ -1,28 +1,36 @@
-<!-- users.component.html — Style Orders Status avec classes dt-* -->
+<!-- users.component.html — COMPLET avec permissions USER_MANAGEMENT + design original -->
 <div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh" (click)="closeMenu()">
-
   <div class="dt-wrap">
+
+    <!-- ══ ACCÈS REFUSÉ ══ -->
+    <div *ngIf="!perms.canViewUsers()"
+         style="padding:80px 24px;text-align:center;color:var(--text-muted)">
+      <svg viewBox="0 0 48 48" fill="none" style="width:48px;height:48px;opacity:.3;margin:0 auto 16px">
+        <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M16 16l16 16M32 16L16 32" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <p style="font-weight:700;font-size:1rem;margin-bottom:6px;color:var(--text-primary)">Accès refusé</p>
+      <p style="font-size:.83rem">Vous n'avez pas les permissions pour consulter les utilisateurs.</p>
+    </div>
+
+    <ng-container *ngIf="perms.canViewUsers()">
 
     <!-- ══ HEADER ══ -->
     <div class="dt-header">
       <div>
         <h1 class="dt-title">
-            <svg class="dt-title-icon"  fill="currentColor" width="800px" height="800px" viewBox="0 -64 640 640" xmlns="http://www.w3.org/2000/svg"><path d="M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0 96 57.3 96 128s57.3 128 128 128zm89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h274.9c-2.4-6.8-3.4-14-2.6-21.3l6.8-60.9 1.2-11.1 7.9-7.9 77.3-77.3c-24.5-27.7-60-45.5-99.9-45.5zm45.3 145.3l-6.8 61c-1.1 10.2 7.5 18.8 17.6 17.6l60.9-6.8 137.9-137.9-71.7-71.7-137.9 137.8zM633 268.9L595.1 231c-9.3-9.3-24.5-9.3-33.8 0l-37.8 37.8-4.1 4.1 71.8 71.7 41.8-41.8c9.3-9.4 9.3-24.5 0-33.9z"/></svg>          
+          <svg class="dt-title-icon" fill="currentColor" width="800px" height="800px" viewBox="0 -64 640 640" xmlns="http://www.w3.org/2000/svg">
+            <path d="M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0 96 57.3 96 128s57.3 128 128 128zm89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h274.9c-2.4-6.8-3.4-14-2.6-21.3l6.8-60.9 1.2-11.1 7.9-7.9 77.3-77.3c-24.5-27.7-60-45.5-99.9-45.5zm45.3 145.3l-6.8 61c-1.1 10.2 7.5 18.8 17.6 17.6l60.9-6.8 137.9-137.9-71.7-71.7-137.9 137.8zM633 268.9L595.1 231c-9.3-9.3-24.5-9.3-33.8 0l-37.8 37.8-4.1 4.1 71.8 71.7 41.8-41.8c9.3-9.4 9.3-24.5 0-33.9z"/>
+          </svg>
           Utilisateurs
         </h1>
-        
-        
         <div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap">
-
-
           <span class="dt-badge dt-badge-accent" style="padding:3px 9px;font-size:.66rem">
             <span class="dt-badge-dot"></span>{{ users().length }} Total
           </span>
-
           <span class="dt-badge dt-badge-delivered" style="padding:3px 9px;font-size:.66rem">
             <span class="dt-badge-dot"></span>{{ statsActifs() }} Actifs
           </span>
-
           <span class="dt-badge dt-badge-canceled" style="padding:3px 9px;font-size:.66rem">
             <span class="dt-badge-dot"></span>{{ statsInactifs() }} Inactifs
           </span>
@@ -30,69 +38,53 @@
       </div>
 
       <div class="dt-header-actions">
-        <!-- Recherche -->
-        
-        
-       
+        <div class="dt-search-wrap" (click)="$event.stopPropagation()">
+          <div class="dt-search-bar" style="min-width:240px">
+            <button class="dt-filter-icon-btn"
+                    [class.has-filters]="filterStatut()!=='tous'||filterProfil()||search()"
+                    (click)="filterPanelOpenU.set(!filterPanelOpenU())"
+                    title="Filtres">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7">
+                <path d="M2 3h12l-4.5 5.5V13L6.5 11.5V8.5L2 3z" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <input class="dt-search-input" [value]="search()"
+                   (input)="search.set($any($event.target).value); resetPage()" placeholder="Rechercher...">
+          </div>
 
-<!-- ✅ NOUVEAU : search-wrap avec panel de filtres -->
-<div class="dt-search-wrap" (click)="$event.stopPropagation()">
-  <div class="dt-search-bar" style="min-width:240px">
-    <button class="dt-filter-icon-btn"
-            [class.has-filters]="filterStatut()!=='tous'||filterProfil()||search()"
-            (click)="filterPanelOpenU.set(!filterPanelOpenU())"
-            title="Filtres">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7">
-        <path d="M2 3h12l-4.5 5.5V13L6.5 11.5V8.5L2 3z" stroke-linejoin="round"/>
-      </svg>
-    </button>
-    <input class="dt-search-input" [value]="search()"
-           (input)="search.set($any($event.target).value); resetPage()" placeholder="Rechercher...">
-  </div>
+          <div class="dt-filter-panel" [class.open]="filterPanelOpenU()">
+            <div class="dt-fp-header">
+              <p class="dt-fp-title">Filtres</p>
+              <button *ngIf="filterStatut()!=='tous'||filterProfil()" class="dt-fp-reset"
+                      (click)="filterStatut.set('tous'); filterProfil.set(''); resetPage()">Réinitialiser</button>
+            </div>
+            <div class="dt-fp-body">
+              <div class="dt-fp-field">
+                <label class="dt-fp-label">Statut</label>
+                <select class="dt-fp-select" [value]="filterStatut()"
+                        (change)="filterStatut.set($any($event.target).value); resetPage()">
+                  <option value="tous">Tous les statuts</option>
+                  <option value="actif">Actifs</option>
+                  <option value="inactif">Inactifs</option>
+                </select>
+              </div>
+              <div class="dt-fp-field">
+                <label class="dt-fp-label">Profil</label>
+                <select class="dt-fp-select" [value]="filterProfil()"
+                        (change)="filterProfil.set($any($event.target).value); resetPage()">
+                  <option value="">Tous les profils</option>
+                  <option *ngFor="let p of profilsUniques()" [value]="p">{{ p }}</option>
+                </select>
+              </div>
+            </div>
+            <div class="dt-fp-footer">
+              <button class="mx-btn mx-btn-ghost" style="height:30px;font-size:.73rem" (click)="filterPanelOpenU.set(false)">Fermer</button>
+            </div>
+          </div>
+        </div>
 
-  <div class="dt-filter-panel" [class.open]="filterPanelOpenU()">
-    <div class="dt-fp-header">
-      <p class="dt-fp-title">Filtres</p>
-      <button *ngIf="filterStatut()!=='tous'||filterProfil()" class="dt-fp-reset"
-              (click)="filterStatut.set('tous'); filterProfil.set(''); resetPage()">Réinitialiser</button>
-    </div>
-    <div class="dt-fp-body">
-      <div class="dt-fp-field">
-        <label class="dt-fp-label">Statut</label>
-        <select class="dt-fp-select" [value]="filterStatut()"
-                (change)="filterStatut.set($any($event.target).value); resetPage()">
-          <option value="tous">Tous les statuts</option>
-          <option value="actif">Actifs</option>
-          <option value="inactif">Inactifs</option>
-        </select>
-      </div>
-      <div class="dt-fp-field">
-        <label class="dt-fp-label">Profil</label>
-        <select class="dt-fp-select" [value]="filterProfil()"
-                (change)="filterProfil.set($any($event.target).value); resetPage()">
-          <option value="">Tous les profils</option>
-          <option *ngFor="let p of profilsUniques()" [value]="p">{{ p }}</option>
-        </select>
-      </div>
-    </div>
-    <div class="dt-fp-footer">
-      <button class="mx-btn mx-btn-ghost" style="height:30px;font-size:.73rem" (click)="filterPanelOpenU.set(false)">Fermer</button>
-    </div>
-  </div>
-</div>
-
-
-
-
-
-
-
-
-      
-
-
-        <!-- Bouton créer -->
-        <button class="dt-btn-create" (click)="goToAdd()">
+        <!-- ✅ PERMISSION USER_CREATE -->
+        <button *ngIf="perms.canCreateUser()" class="dt-btn-create" (click)="goToAdd()">
           <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
             <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
@@ -101,14 +93,14 @@
       </div>
     </div>
 
-    <!-- Barre bulk sélection -->
+    <!-- Barre bulk -->
     <div *ngIf="selectedIds().size > 0" class="dt-bulk-bar">
       <span class="dt-bulk-count">{{ selectedIds().size }} sélectionné(s)</span>
       <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="clearSelection()">Désélectionner</button>
-      <button class="mx-btn mx-btn-danger mx-btn-sm">Supprimer</button>
+      <!-- ✅ PERMISSION USER_BULK_DELETE -->
+      <button *ngIf="perms.canBulkDeleteUsers()" class="mx-btn mx-btn-danger mx-btn-sm">Supprimer</button>
     </div>
 
-    <!-- Loading -->
     <div *ngIf="loading()" class="dt-loading">
       <div class="dt-spinner"></div> Chargement...
     </div>
@@ -125,66 +117,53 @@
                      (change)="toggleSelectAll()">
             </th>
 
-
+            <!-- Utilisateur -->
             <th class="dt-th" style="min-width:210px">
               <div class="dt-th-inner">
-                <svg class="dt-th-icon"  viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M8 7C9.65685 7 11 5.65685 11 4C11 2.34315 9.65685 1 8 1C6.34315 1 5 2.34315 5 4C5 5.65685 6.34315 7 8 7Z" fill="#000000"/>
-                  <path d="M14 12C14 10.3431 12.6569 9 11 9H5C3.34315 9 2 10.3431 2 12V15H14V12Z" fill="#000000"/>
-                  </svg>
+                <svg class="dt-th-icon" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8 7C9.65685 7 11 5.65685 11 4C11 2.34315 9.65685 1 8 1C6.34315 1 5 2.34315 5 4C5 5.65685 6.34315 7 8 7Z"/>
+                  <path d="M14 12C14 10.3431 12.6569 9 11 9H5C3.34315 9 2 10.3431 2 12V15H14V12Z"/>
+                </svg>
                 Utilisateur
               </div>
             </th>
-           
-            <!-- ✅ Colonne POSTE séparée -->
-<!-- ✅ Colonne POSTE avec icône dans le titre -->
-<th class="dt-th" style="min-width:140px">
-  <div class="dt-th-inner">
-    <svg class="dt-th-icon" viewBox="0 0 925 925" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-      <path d="M352.9,53.4H441.6c33.601,0,61.601,24,68,55.7H560.2C553.4,49.7,502.8,3.4,441.6,3.4H352.9
-        c-61.2,0-111.8,46.3-118.601,105.7H284.9C291.3,77.3,319.3,53.4,352.9,53.4z"/>
-      <path d="M127.2,322.4c71.8,46.4,167.7,72,270.1,72c102.4,0,198.2-25.6,270.101-72C732,280.7,769.5,226.8,774.1,169.7
-        C756.8,148,730.2,134.1,700.2,134.1H561h-50H283.6h-50H94.4c-29.9,0-56.6,13.9-73.9,35.6C25.1,226.8,62.6,280.6,127.2,322.4z"/>
-      <path d="M363.1,461.1c0,15.601,12.7,28.3,28.301,28.3H403.1c15.601,0,28.301-12.699,28.301-28.3v-22.6H363.1V461.1L363.1,461.1z"/>
-      <path d="M94.4,617.201h419.5V553.5c0-7.699,3.1-15,8.6-20.4L618.2,439c5.399-5.3,12.6-8.2,20.1-8.2h156.2V243
-        c-4.2,8.6-9,17.1-14.5,25.5c-21.5,32.9-52.2,62.3-91,87.4c-60.3,39-135.8,64.4-217.6,74.1v8.399V461
-        c0,37.701-30.601,68.3-68.301,68.3H391.4c-37.7,0-68.301-30.6-68.301-68.3V438.4V430c-81.8-9.601-157.3-35.101-217.6-74.1
-        c-38.8-25.1-69.5-54.5-91-87.4C9,260.1,4.2,251.6,0,243v279.8C0,574.9,42.3,617.201,94.4,617.201z"/>
-      <path d="M659.6,453.6c-13.399,0-26.5,5.5-36,15l-69.1,69.602c-9.5,9.6-14.7,22.199-14.7,35.699v43.301v12.5v12.5V870.9
-        c0,2.4,0.2,4.801,0.5,7.1c3.4,24.6,24.601,43.6,50.2,43.6h283.8c27.9,0,50.7-22.699,50.7-50.699V504.201
-        c0-24.5-17.4-44.901-40.5-49.601c-3.3-0.7-6.7-1-10.1-1h-54.9H807h-12.5H659.6L659.6,453.6z M819.5,503.6h54.8
-        c0.4,0,0.7,0.301,0.7,0.701V871c0,0.1,0,0.1,0,0.201c-0.1,0.299-0.3,0.5-0.6,0.5c0,0,0,0-0.101,0H590.5
-        c-0.4,0-0.7-0.301-0.7-0.701V642.201v-12.5v-12.5v-33h36.7c22.9,0,41.5-18.602,41.5-41.5V503.6h126.5H807H819.5L819.5,503.6z"/>
-      <path d="M750,617.301H641.1c-9.199,0-17.199,5-21.6,12.4c-2.2,3.699-3.4,7.898-3.4,12.5v0.1c0,13.799,11.2,25,25,25h182.7
-        c13.8,0,25-11.201,25-25c0-13.801-11.2-25-25-25h-50.7H750z"/>
-      <path d="M823.8,774.801H641.1c-13.8,0-25,11.199-25,25c0,13.799,11.2,25,25,25h182.7c13.8,0,25-11.201,25-25
-        C848.8,786,837.6,774.801,823.8,774.801z"/>
-      <path d="M823.8,696.1H641.1c-13.8,0-25,11.201-25,25c0,13.801,11.2,25,25,25h182.7c13.8,0,25-11.199,25-25
-        C848.8,707.301,837.6,696.1,823.8,696.1z"/>
-    </svg>
-    Poste
-  </div>
-</th>
-            <!-- ✅ Colonne DÉPARTEMENT séparée -->
+
+            <!-- Poste -->
             <th class="dt-th" style="min-width:140px">
               <div class="dt-th-inner">
-                <svg class="dt-th-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" xmlns="http://www.w3.org/2000/svg">
+                <svg class="dt-th-icon" viewBox="0 0 925 925" fill="currentColor" style="width:13px;height:13px">
+                  <path d="M352.9,53.4H441.6c33.601,0,61.601,24,68,55.7H560.2C553.4,49.7,502.8,3.4,441.6,3.4H352.9c-61.2,0-111.8,46.3-118.601,105.7H284.9C291.3,77.3,319.3,53.4,352.9,53.4z"/>
+                  <path d="M127.2,322.4c71.8,46.4,167.7,72,270.1,72c102.4,0,198.2-25.6,270.101-72C732,280.7,769.5,226.8,774.1,169.7C756.8,148,730.2,134.1,700.2,134.1H561h-50H283.6h-50H94.4c-29.9,0-56.6,13.9-73.9,35.6C25.1,226.8,62.6,280.6,127.2,322.4z"/>
+                  <path d="M363.1,461.1c0,15.601,12.7,28.3,28.301,28.3H403.1c15.601,0,28.301-12.699,28.301-28.3v-22.6H363.1V461.1L363.1,461.1z"/>
+                  <path d="M94.4,617.201h419.5V553.5c0-7.699,3.1-15,8.6-20.4L618.2,439c5.399-5.3,12.6-8.2,20.1-8.2h156.2V243c-4.2,8.6-9,17.1-14.5,25.5c-21.5,32.9-52.2,62.3-91,87.4c-60.3,39-135.8,64.4-217.6,74.1v8.399V461c0,37.701-30.601,68.3-68.301,68.3H391.4c-37.7,0-68.301-30.6-68.301-68.3V438.4V430c-81.8-9.601-157.3-35.101-217.6-74.1c-38.8-25.1-69.5-54.5-91-87.4C9,260.1,4.2,251.6,0,243v279.8C0,574.9,42.3,617.201,94.4,617.201z"/>
+                  <path d="M659.6,453.6c-13.399,0-26.5,5.5-36,15l-69.1,69.602c-9.5,9.6-14.7,22.199-14.7,35.699v43.301v12.5v12.5V870.9c0,2.4,0.2,4.801,0.5,7.1c3.4,24.6,24.601,43.6,50.2,43.6h283.8c27.9,0,50.7-22.699,50.7-50.699V504.201c0-24.5-17.4-44.901-40.5-49.601c-3.3-0.7-6.7-1-10.1-1h-54.9H807h-12.5H659.6L659.6,453.6z"/>
+                </svg>
+                Poste
+              </div>
+            </th>
+
+            <!-- Département -->
+            <th class="dt-th" style="min-width:140px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M3 21h18M5 21V7l8-4 8 4v14M8 21v-9a2 2 0 012-2h4a2 2 0 012 2v9"/>
                 </svg>
                 Département
               </div>
             </th>
 
-            
+            <!-- Profil -->
             <th class="dt-th" style="min-width:120px">
               <div class="dt-th-inner">
-                <svg class="dt-th-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" xmlns="http://www.w3.org/2000/svg">
+                <svg class="dt-th-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
                   <circle cx="12" cy="7" r="4"/>
                 </svg>
                 Profil
               </div>
             </th>
+
+            <!-- Statut -->
             <th class="dt-th" style="min-width:120px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none">
@@ -195,44 +174,35 @@
               </div>
             </th>
 
-           <th class="dt-th" style="min-width:110px">
-  <div class="dt-th-inner">
-    <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="1" y="2" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
-      <path d="M1 6h12M4.5 1v2M9.5 1v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-    </svg>
-    Embauche
-  </div>
-</th>
+            <!-- Embauche -->
+            <th class="dt-th" style="min-width:110px">
+              <div class="dt-th-inner">
+                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none">
+                  <rect x="1" y="2" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+                  <path d="M1 6h12M4.5 1v2M9.5 1v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                </svg>
+                Embauche
+              </div>
+            </th>
 
-
-            <!-- Actions (vide — boutons dans chaque ligne) -->
             <th class="dt-th dt-th-actions"></th>
           </tr>
         </thead>
 
         <tbody>
-          <tr *ngFor="let user of pagedUsers()"
-              class="dt-tr"
-              (click)="openDetail(user)">
+          <tr *ngFor="let user of pagedUsers()" class="dt-tr" (click)="openDetail(user)">
 
-
-            <!-- Checkbox -->
             <td class="dt-td dt-td-cb" (click)="$event.stopPropagation()">
-              <input type="checkbox" 
-              class="dt-checkbox"
-              [class.dt-checkbox-active]="isSelected(user.id)"
-              [checked]="isSelected(user.id)"
-              (change)="toggleSelect(user.id, $event)">
+              <input type="checkbox" class="dt-checkbox"
+                     [class.dt-checkbox-active]="isSelected(user.id)"
+                     [checked]="isSelected(user.id)"
+                     (change)="toggleSelect(user.id, $event)">
             </td>
-
-           
 
             <!-- Utilisateur : avatar + nom + email -->
             <td class="dt-td">
               <div class="dt-cell-with-avatar">
-                <div class="dt-avatar" 
-                     [style.background]="getAvatarColor(user)">
+                <div class="dt-avatar" [style.background]="getAvatarColor(user)">
                   <img *ngIf="user.photoUrl" [src]="user.photoUrl">
                   <span *ngIf="!user.photoUrl">{{ getInitiales(user) }}</span>
                 </div>
@@ -243,20 +213,14 @@
               </div>
             </td>
 
-            <!-- ✅ Poste — colonne propre -->
             <td class="dt-td">
               <span class="dt-cell-text">{{ user.poste || '—' }}</span>
             </td>
 
-
-
-            
-            <!-- ✅ Département — colonne propre -->
             <td class="dt-td">
               <span class="dt-cell-muted">{{ user.departement || '—' }}</span>
             </td>
 
-            <!-- Profil -->
             <td class="dt-td">
               <span *ngIf="user.profilNom" class="dt-badge dt-badge-accent">
                 <span class="dt-badge-dot"></span>{{ user.profilNom }}
@@ -264,7 +228,6 @@
               <span *ngIf="!user.profilNom" class="dt-cell-muted">—</span>
             </td>
 
-            <!-- Statut -->
             <td class="dt-td">
               <span class="dt-badge"
                     [class.dt-badge-delivered]="user.actif"
@@ -274,41 +237,33 @@
               </span>
             </td>
 
-            <!-- Date embauche -->
             <td class="dt-td">
-              <span class="dt-cell-muted">
-                {{ user.dateEmbauche ? fmtDate(user.dateEmbauche) : '—' }}
-              </span>
+              <span class="dt-cell-muted">{{ user.dateEmbauche ? fmtDate(user.dateEmbauche) : '—' }}</span>
             </td>
 
-            <!-- ✅ Actions inline : crayon + poubelle (pas de menu 3 points) -->
-           
-           
-           
+            <!-- ✅ PERMISSIONS sur les boutons d'action -->
             <td class="dt-td dt-td-actions" (click)="$event.stopPropagation()">
-              <div class="dt-td-actions-wrap" style="gap:0px"> <!-- gap réduit -->
-                <button class="dt-action-btn dt-action-edit" (click)="openDetail(user)" title="Modifier">
-                  <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <div class="dt-td-actions-wrap" style="gap:0px">
+                <!-- Edit : visible si USER_UPDATE_INFO -->
+                <button *ngIf="perms.canUpdateUserInfo()"
+                        class="dt-action-btn dt-action-edit" (click)="openDetail(user)" title="Modifier">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
                     <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
                   </svg>
                 </button>
-                <button class="dt-action-btn dt-action-del" (click)="deleteUser(user)" title="Supprimer">
-                  <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <!-- Delete : visible si USER_DELETE -->
+                <button *ngIf="perms.canDeleteUser()"
+                        class="dt-action-btn dt-action-del" (click)="deleteUser(user)" title="Supprimer">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
                     <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                   </svg>
                 </button>
               </div>
             </td>
-
-
-
-
-
           </tr>
         </tbody>
       </table>
 
-      <!-- Vide -->
       <div *ngIf="filteredUsers().length === 0" class="dt-empty">
         <svg class="dt-empty-icon" viewBox="0 0 48 48" fill="none" style="width:40px;height:40px">
           <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
@@ -316,53 +271,40 @@
         </svg>
         <p class="dt-empty-title">Aucun utilisateur trouvé</p>
         <p class="dt-empty-sub">Modifiez vos filtres ou ajoutez un utilisateur</p>
-        <button class="dt-btn-create" style="margin-top:12px" (click)="goToAdd()">Ajouter</button>
+        <button *ngIf="perms.canCreateUser()" class="dt-btn-create" style="margin-top:12px" (click)="goToAdd()">Ajouter</button>
       </div>
     </div>
 
-    <!-- ══ FOOTER PAGINATION ══ -->
+    <!-- Pagination -->
     <div *ngIf="!loading() && filteredUsers().length > 0" class="dt-footer">
-      <!-- "1-10 of 42" -->
       <div class="dt-count-info">
         <strong>{{ (currentPage()-1)*pageSize()+1 }}–{{ minVal(currentPage()*pageSize(), filteredUsers().length) }}</strong>
         of <strong>{{ filteredUsers().length }}</strong>
-        <select style="margin-left:10px;border:1px solid var(--dt-border);border-radius:6px;padding:3px 8px;font-size:.71rem;background:var(--dt-bg);color:var(--dt-text-sub);font-family:Space Vacation, sans-serif;outline:none;cursor:pointer"
-                [value]="pageSize()"
-                (change)="onPageSizeChange(+$any($event.target).value)">
+        <select style="margin-left:10px;border:1px solid var(--dt-border);border-radius:6px;padding:3px 8px;font-size:.71rem;background:var(--dt-bg);color:var(--dt-text-sub);font-family:inherit;outline:none;cursor:pointer"
+                [value]="pageSize()" (change)="onPageSizeChange(+$any($event.target).value)">
           <option value="10">10 / page</option>
           <option value="25">25 / page</option>
           <option value="50">50 / page</option>
         </select>
       </div>
-
-      <!-- Boutons pagination avec cercle violet -->
       <div class="dt-pagination">
         <button class="dt-page-arrow" [disabled]="currentPage()===1" (click)="goToPage(currentPage()-1)">
-          <svg viewBox="0 0 14 14" fill="none">
-            <path d="M9 2L5 7l4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <svg viewBox="0 0 14 14" fill="none"><path d="M9 2L5 7l4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-
         <ng-container *ngFor="let p of pagesArray()">
           <button *ngIf="p===1||p===totalPages()||(p>=currentPage()-1&&p<=currentPage()+1)"
-                  class="dt-page-btn"
-                  [class.dt-page-btn-active]="p===currentPage()"
-                  (click)="goToPage(p)">{{ p }}</button>
-          <span *ngIf="p===currentPage()-2&&p>1"
-                style="color:var(--dt-text-head);padding:0 4px;font-size:.75rem;line-height:34px">…</span>
-          <span *ngIf="p===currentPage()+2&&p<totalPages()"
-                style="color:var(--dt-text-head);padding:0 4px;font-size:.75rem;line-height:34px">…</span>
+                  class="dt-page-btn" [class.dt-page-btn-active]="p===currentPage()" (click)="goToPage(p)">{{ p }}</button>
+          <span *ngIf="p===currentPage()-2&&p>1" style="color:var(--dt-text-head);padding:0 4px;font-size:.75rem;line-height:34px">…</span>
+          <span *ngIf="p===currentPage()+2&&p<totalPages()" style="color:var(--dt-text-head);padding:0 4px;font-size:.75rem;line-height:34px">…</span>
         </ng-container>
-
         <button class="dt-page-arrow" [disabled]="currentPage()===totalPages()" (click)="goToPage(currentPage()+1)">
-          <svg viewBox="0 0 14 14" fill="none">
-            <path d="M5 2l4 5-4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <svg viewBox="0 0 14 14" fill="none"><path d="M5 2l4 5-4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
     </div>
 
-  </div><!-- /.dt-wrap -->
+    </ng-container><!-- fin canViewUsers() -->
+  </div>
 </div>
 
 <!-- ════ SLIDE-OVER DÉTAIL ════ -->
@@ -394,37 +336,67 @@
     </button>
   </div>
 
+  <!-- ✅ Onglets conditionnés par permissions -->
   <div class="mx-so-tabs">
-    <button class="mx-so-tab" [class.active]="detailTab()==='infos'"    (click)="detailTab.set('infos')">Informations</button>
-    <button class="mx-so-tab" [class.active]="detailTab()==='groupes'"  (click)="detailTab.set('groupes')">Groupes ({{ userGroupes().length }})</button>
-    <button class="mx-so-tab" [class.active]="detailTab()==='securite'" (click)="detailTab.set('securite')">Sécurité</button>
+    <button class="mx-so-tab" [class.active]="detailTab()==='infos'" (click)="detailTab.set('infos')">
+      Informations
+    </button>
+    <!-- ✅ USER_VIEW_GROUPS -->
+    <button *ngIf="perms.canViewUserGroups()"
+            class="mx-so-tab" [class.active]="detailTab()==='groupes'" (click)="detailTab.set('groupes')">
+      Groupes ({{ userGroupes().length }})
+    </button>
+    <!-- ✅ USER_SECURE_PWD ou USER_SECURE_TOGGLE -->
+    <button *ngIf="perms.canResetPassword() || perms.canToggleUserActif() || perms.canDeleteUser()"
+            class="mx-so-tab" [class.active]="detailTab()==='securite'" (click)="detailTab.set('securite')">
+      Sécurité
+    </button>
   </div>
 
   <!-- TAB INFOS -->
   <div *ngIf="detailTab()==='infos'" class="mx-so-body">
-    <div class="mx-so-grid">
-      <div class="mx-field"><label class="mx-field-label">Prénom</label><input [(ngModel)]="editForm().prenom" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-      <div class="mx-field"><label class="mx-field-label">Nom</label><input [(ngModel)]="editForm().nom" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-      <div class="mx-field mx-so-full"><label class="mx-field-label">Téléphone</label><input [(ngModel)]="editForm().telephone" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-      <div class="mx-field"><label class="mx-field-label">Poste</label><input [(ngModel)]="editForm().poste" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-      <div class="mx-field"><label class="mx-field-label">Département</label><input [(ngModel)]="editForm().departement" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-      <div class="mx-field mx-so-full"><label class="mx-field-label">Adresse</label><input [(ngModel)]="editForm().adresse" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-      <div class="mx-field">
-        <label class="mx-field-label">Profil</label>
-        <select [(ngModel)]="editForm().profilId" [ngModelOptions]="{standalone:true}" class="mx-field-select">
-          <option [ngValue]="null">— Sélectionner —</option>
-          <option *ngFor="let p of profils()" [ngValue]="p.id">{{ p.nom }}</option>
-        </select>
+    <!-- ✅ Formulaire modifiable seulement si USER_UPDATE_INFO -->
+    <ng-container *ngIf="perms.canUpdateUserInfo()">
+      <div class="mx-so-grid">
+        <div class="mx-field"><label class="mx-field-label">Prénom</label><input [(ngModel)]="editForm().prenom" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        <div class="mx-field"><label class="mx-field-label">Nom</label><input [(ngModel)]="editForm().nom" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        <div class="mx-field mx-so-full"><label class="mx-field-label">Téléphone</label><input [(ngModel)]="editForm().telephone" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        <div class="mx-field"><label class="mx-field-label">Poste</label><input [(ngModel)]="editForm().poste" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        <div class="mx-field"><label class="mx-field-label">Département</label><input [(ngModel)]="editForm().departement" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        <div class="mx-field mx-so-full"><label class="mx-field-label">Adresse</label><input [(ngModel)]="editForm().adresse" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        <div class="mx-field">
+          <label class="mx-field-label">Profil</label>
+          <select [(ngModel)]="editForm().profilId" [ngModelOptions]="{standalone:true}" class="mx-field-select">
+            <option [ngValue]="null">— Sélectionner —</option>
+            <option *ngFor="let p of profils()" [ngValue]="p.id">{{ p.nom }}</option>
+          </select>
+        </div>
+        <div class="mx-field"><label class="mx-field-label">Fin de contrat</label><input type="date" [(ngModel)]="editForm().dateFinContrat" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
       </div>
-      <div class="mx-field"><label class="mx-field-label">Fin de contrat</label><input type="date" [(ngModel)]="editForm().dateFinContrat" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-    </div>
+    </ng-container>
+
+    <!-- ✅ Mode lecture seule si pas USER_UPDATE_INFO -->
+    <ng-container *ngIf="!perms.canUpdateUserInfo()">
+      <div style="padding:12px;background:var(--bg-hover);border-radius:8px;font-size:.78rem;color:var(--text-muted);text-align:center;margin-bottom:12px">
+        Lecture seule — vous n'avez pas la permission de modifier.
+      </div>
+      <div class="mx-info-list">
+        <div class="mx-info-row"><span class="mx-info-key">Prénom</span><span class="mx-info-val">{{ user.prenom }}</span></div>
+        <div class="mx-info-row"><span class="mx-info-key">Nom</span><span class="mx-info-val">{{ user.nom }}</span></div>
+        <div class="mx-info-row" *ngIf="user.telephone"><span class="mx-info-key">Téléphone</span><span class="mx-info-val">{{ user.telephone }}</span></div>
+        <div class="mx-info-row" *ngIf="user.poste"><span class="mx-info-key">Poste</span><span class="mx-info-val">{{ user.poste }}</span></div>
+        <div class="mx-info-row" *ngIf="user.departement"><span class="mx-info-key">Département</span><span class="mx-info-val">{{ user.departement }}</span></div>
+        <div class="mx-info-row" *ngIf="user.profilNom"><span class="mx-info-key">Profil</span><span class="dt-badge dt-badge-accent" style="font-size:.68rem">{{ user.profilNom }}</span></div>
+      </div>
+    </ng-container>
+
     <div class="mx-divider"></div>
     <div>
       <p class="mx-so-section-title">Informations système</p>
       <div class="mx-info-list">
         <div class="mx-info-row" *ngIf="user.dateEmbauche">
           <span class="mx-info-key">Date embauche</span>
-          <span class="mx-info-val">{{ fmtDate(user.dateEmbauche)}}</span>
+          <span class="mx-info-val">{{ fmtDate(user.dateEmbauche) }}</span>
         </div>
         <div class="mx-info-row">
           <span class="mx-info-key">Keycloak ID</span>
@@ -438,8 +410,8 @@
     </div>
   </div>
 
-  <!-- TAB GROUPES -->
-  <div *ngIf="detailTab()==='groupes'" class="mx-so-body">
+  <!-- TAB GROUPES — ✅ USER_VIEW_GROUPS -->
+  <div *ngIf="detailTab()==='groupes' && perms.canViewUserGroups()" class="mx-so-body">
     <div *ngIf="userGroupes().length > 0" class="mx-membre-list">
       <div *ngFor="let g of userGroupes()" class="mx-membre-item">
         <div class="dt-avatar" style="border-radius:8px;width:32px;height:32px;font-size:.66rem"
@@ -466,37 +438,58 @@
 
   <!-- TAB SÉCURITÉ -->
   <div *ngIf="detailTab()==='securite'" class="mx-so-body">
-    <div>
+
+    <!-- ✅ USER_SECURE_PWD -->
+    <div *ngIf="perms.canResetPassword()">
       <p class="mx-so-section-title">Mot de passe</p>
       <p style="font-size:.76rem;color:var(--text-muted);margin:0 0 10px;line-height:1.5">
         Envoyer un email à <strong style="color:var(--text-secondary)">{{ user.email }}</strong>
       </p>
       <button class="mx-btn mx-btn-warning" (click)="resetPassword(user)">Réinitialiser le mot de passe</button>
     </div>
-    <div class="mx-divider"></div>
-    <div>
+
+    <div class="mx-divider" *ngIf="perms.canResetPassword() && perms.canToggleUserActif()"></div>
+
+    <!-- ✅ USER_SECURE_TOGGLE -->
+    <div *ngIf="perms.canToggleUserActif()">
       <p class="mx-so-section-title">Compte</p>
       <p style="font-size:.76rem;color:var(--text-muted);margin:0 0 10px">
         {{ user.actif ? 'Le compte est actif.' : 'Le compte est désactivé.' }}
       </p>
-      <button class="mx-btn" [class.mx-btn-warning]="user.actif" [class.mx-btn-success]="!user.actif"
+      <button class="mx-btn"
+              [class.mx-btn-warning]="user.actif"
+              [class.mx-btn-success]="!user.actif"
               (click)="toggleActif(user)">
         {{ user.actif ? '🔒 Désactiver' : '🔓 Réactiver' }}
       </button>
     </div>
-    <div class="mx-divider"></div>
-    <div class="mx-danger-zone">
-      <p class="mx-danger-title">Zone dangereuse</p>
-      <p class="mx-danger-desc">La suppression est définitive et irréversible.</p>
-      <button class="mx-btn mx-btn-danger" (click)="deleteUser(user)">🗑 Supprimer définitivement</button>
+
+    <!-- ✅ USER_DELETE dans zone dangereuse -->
+    <ng-container *ngIf="perms.canDeleteUser()">
+      <div class="mx-divider"></div>
+      <div class="mx-danger-zone">
+        <p class="mx-danger-title">Zone dangereuse</p>
+        <p class="mx-danger-desc">La suppression est définitive et irréversible.</p>
+        <button class="mx-btn mx-btn-danger" (click)="deleteUser(user)">🗑 Supprimer définitivement</button>
+      </div>
+    </ng-container>
+
+    <!-- Message si aucune permission sécurité -->
+    <div *ngIf="!perms.canResetPassword() && !perms.canToggleUserActif() && !perms.canDeleteUser()"
+         style="padding:24px;text-align:center;color:var(--text-muted);font-size:.8rem">
+      Vous n'avez pas les permissions pour les actions de sécurité.
     </div>
   </div>
 
-  <div *ngIf="detailTab()==='infos'" class="mx-so-footer">
+  <!-- Footer slide-over -->
+  <div *ngIf="detailTab()==='infos' && perms.canUpdateUserInfo()" class="mx-so-footer">
     <button class="mx-btn mx-btn-ghost" (click)="closeDetail()">Annuler</button>
     <button class="mx-btn mx-btn-primary" (click)="saveUser()" [disabled]="saving()">
       <div *ngIf="saving()" class="mx-spinner-sm"></div>
       {{ saving() ? 'Enregistrement...' : 'Enregistrer' }}
     </button>
+  </div>
+  <div *ngIf="detailTab()==='infos' && !perms.canUpdateUserInfo()" class="mx-so-footer">
+    <button class="mx-btn mx-btn-ghost" (click)="closeDetail()">Fermer</button>
   </div>
 </div>

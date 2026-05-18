@@ -1,15 +1,18 @@
-// activites-global.component.ts — COMPLET FINAL
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+// activites-global.component.ts — COMPLET avec permissions
+import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 
-import { ActiviteService }       from '../../services/activite.service';
-import { StatutActiviteService } from '../../services/statutactivite.service';
-import { UserService }           from '../../services/user.service';
-import { UiService }             from '../../services/ui.service';
-import { ErrorService }          from '../../services/error.service';
-import { GroupeService }         from '../../services/groupe.service';
+import { ActiviteService }          from '../../services/activite.service';
+import { StatutActiviteService }    from '../../services/statutactivite.service';
+import { UserService }              from '../../services/user.service';
+import { UiService }                from '../../services/ui.service';
+import { ErrorService }             from '../../services/error.service';
+import { GroupeService }            from '../../services/groupe.service';
+import { PermissionContextService } from '../../services/permission-context.service';
+import { NotificationService }      from '../../services/notification.service';
 
 import { Activite, ActiviteRequest } from '../../shared/models/activite.model';
 import { StatutActivite }            from '../../shared/models/statut-activite.model';
@@ -26,7 +29,7 @@ type FiltreVue = 'toutes' | 'globales' | 'projets';
   templateUrl: './activites-global-component.component.html',
   styleUrls: ['./activites-global-component.component.css']
 })
-export class ActivitesGlobalComponent implements OnInit {
+export class ActivitesGlobalComponent implements OnInit, OnDestroy {
 
   private activiteSvc = inject(ActiviteService);
   private nomencSvc   = inject(StatutActiviteService);
@@ -37,6 +40,11 @@ export class ActivitesGlobalComponent implements OnInit {
   readonly ui         = inject(UiService);
   readonly Math       = Math;
 
+  // ✅ NOUVEAU
+  readonly perms   = inject(PermissionContextService);
+  private notifSvc = inject(NotificationService);
+  private subs     = new Subscription();
+
   // ── Données ──
   activites       = signal<Activite[]>([]);
   statutsActivite = signal<StatutActivite[]>([]);
@@ -44,10 +52,10 @@ export class ActivitesGlobalComponent implements OnInit {
   tousGroupes     = signal<Groupe[]>([]);
 
   // ── UI ──
-  loading          = signal(true);
-  showModal        = signal(false);
-  editingActivite  = signal<Activite | null>(null);
-  filterPanelOpen  = signal(false);
+  loading         = signal(true);
+  showModal       = signal(false);
+  editingActivite = signal<Activite | null>(null);
+  filterPanelOpen = signal(false);
 
   // ── Filtres ──
   search         = signal('');
@@ -96,7 +104,6 @@ export class ActivitesGlobalComponent implements OnInit {
   filteredActivites = computed(() => {
     let list = this.activites();
     const q  = this.search().toLowerCase();
-
     if (this.filterVue() === 'globales') list = list.filter(a => a.estGlobale);
     if (this.filterVue() === 'projets')  list = list.filter(a => a.projets && a.projets.length > 0);
     if (this.filterStatut())   list = list.filter(a => a.statutActiviteId === +this.filterStatut());
@@ -126,19 +133,34 @@ export class ActivitesGlobalComponent implements OnInit {
   statsProjets  = computed(() => this.activites().filter(a => a.projets && a.projets.length > 0).length);
 
   activeFiltersCount = computed(() =>
-    [this.filterStatut() ? '1':'', this.filterPriorite() ? '1':'',
-     this.filterVue() !== 'toutes' ? '1':'', this.search()]
+    [this.filterStatut() ? '1' : '', this.filterPriorite() ? '1' : '',
+     this.filterVue() !== 'toutes' ? '1' : '', this.search()]
       .filter(v => !!v).length
   );
 
-  // Groupes disponibles dans le formulaire (tous sauf déjà sélectionnés)
   groupesDispoActivite = computed(() => {
     const sel = new Set(this.formGroupeIds());
     return this.tousGroupes().filter(g => !sel.has(g.id));
   });
 
   // ── Lifecycle ──
-  ngOnInit(): void { this.loadAll(); }
+  ngOnInit(): void {
+    if (!this.perms.canSeeAnyActivity()) {
+      this.loading.set(false);
+      return;
+    }
+    this.loadAll();
+
+    // ✅ Notifications temps réel
+    this.subs.add(this.notifSvc.newNotification$.subscribe(n => {
+      const t = String(n.type);
+      if (t === 'ACTIVITE_COMMENTAIRE' || t === 'ACTIVITE_STATUT_CHANGE' || t === 'ACTIVITE_ASSIGNEE') {
+        this.loadAll();
+      }
+    }));
+  }
+
+  ngOnDestroy(): void { this.subs.unsubscribe(); }
 
   loadAll(): void {
     this.loading.set(true);
@@ -163,6 +185,7 @@ export class ActivitesGlobalComponent implements OnInit {
 
   // ── Modal ──
   openAdd(): void {
+    if (!this.perms.canCreateActivity()) { this.ui.warning('Permission ACTIVITY_CREATE requise.'); return; }
     this.editingActivite.set(null);
     const s = this.statutsActivite()[0];
     this.form.set({
@@ -176,6 +199,7 @@ export class ActivitesGlobalComponent implements OnInit {
 
   openEdit(a: Activite, e?: Event): void {
     if (e) e.stopPropagation();
+    if (!this.perms.canEditAnyActivity()) { this.ui.warning('Permission de modification requise.'); return; }
     this.editingActivite.set(a);
     this.form.set({
       nom: a.nom, description: a.description || '',
@@ -222,6 +246,7 @@ export class ActivitesGlobalComponent implements OnInit {
   // ── Suppression ──
   delete(a: Activite, e?: Event): void {
     if (e) e.stopPropagation();
+    if (!this.perms.canDeleteAllActivities()) { this.ui.warning('Permission ACTIVITY_DELETE_ALL requise.'); return; }
     this.ui.confirm({
       title: 'Supprimer l\'activité', message: `Supprimer "${a.nom}" ?`,
       confirmLabel: 'Supprimer', type: 'danger',
@@ -236,6 +261,7 @@ export class ActivitesGlobalComponent implements OnInit {
   }
 
   deleteBulk(): void {
+    if (!this.perms.canDeleteAllActivities()) { this.ui.warning('Permission ACTIVITY_DELETE_ALL requise.'); return; }
     const ids = Array.from(this.selectedIds());
     if (!ids.length) return;
     this.ui.confirm({
@@ -331,5 +357,13 @@ export class ActivitesGlobalComponent implements OnInit {
     if (isNaN(date.getTime())) return '—';
     const MOIS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
     return `${String(date.getDate()).padStart(2,'0')} ${MOIS[date.getMonth()]}, ${date.getFullYear()}`;
+  }
+
+
+  fmtHeures(h: number): string {
+    if (!h || h <= 0) return '0h';
+    const heures  = Math.floor(h);
+    const minutes = Math.round((h - heures) * 60);
+    return minutes > 0 ? `${heures}h${String(minutes).padStart(2,'0')}` : `${heures}h`;
   }
 }

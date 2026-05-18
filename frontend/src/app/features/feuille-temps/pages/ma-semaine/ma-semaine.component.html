@@ -193,9 +193,9 @@
     <option *ngFor="let a of getActivitesDuProjet(ligne.projetId)" [value]="a.id">{{ a.nom }}</option>
  
     <!-- Activités globales en optgroup séparé si projet sélectionné -->
-    <optgroup *ngIf="activitesGlobales().length > 0" label="Activités globales">
+   <!-- <optgroup *ngIf="activitesGlobales().length > 0" label="Activités globales">
       <option *ngFor="let a of activitesGlobales()" [value]="a.id">{{ a.nom }}</option>
-    </optgroup>
+    </optgroup> -->
   </select>
  
   <!-- Message si pas de projet sélectionné -->

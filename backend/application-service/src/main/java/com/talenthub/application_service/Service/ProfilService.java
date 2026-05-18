@@ -1,3 +1,4 @@
+// Service/ProfilService.java — COMPLET (les guards sont dans les controllers)
 package com.talenthub.application_service.Service;
 
 import com.talenthub.application_service.Entity.Profil;
@@ -8,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-// 7. ProfilService.java
+
 @Service
 @Transactional
 public class ProfilService {
@@ -33,12 +34,11 @@ public class ProfilService {
 
     public Profil updateProfil(Long id, Profil profilDetails) {
         Profil profil = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Profil non trouvé avec id: " + id));
-
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Profil non trouvé avec id: " + id));
         profil.setNom(profilDetails.getNom());
         profil.setDescription(profilDetails.getDescription());
         profil.setActif(profilDetails.isActif());
-
         return repository.save(profil);
     }
 
@@ -48,6 +48,4 @@ public class ProfilService {
         }
         repository.deleteById(id);
     }
-
-
 }

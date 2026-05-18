@@ -1,8 +1,9 @@
-// projet-detail.component.ts — COMPLET FINAL
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+// projet-detail.component.ts — COMPLET FINAL avec permissions réelles en base
+import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 import { ProjetService }          from '../../../services/projet.service';
 import { ActiviteService }        from '../../../services/activite.service';
@@ -12,6 +13,8 @@ import { GroupeService }          from '../../../services/groupe.service';
 import { KeycloakService }        from '../../../services/keycloak.service';
 import { UserService }            from '../../../services/user.service';
 import { UiService }              from '../../../services/ui.service';
+import { PermissionContextService } from '../../../services/permission-context.service';
+import { NotificationService }    from '../../../services/notification.service';
 
 import { Projet }              from '../../../shared/models/projet.model';
 import { Activite, ActiviteRequest } from '../../../shared/models/activite.model';
@@ -27,7 +30,7 @@ import { HttpErrorResponse }   from '@angular/common/http';
   templateUrl: './projet-detail.component.html',
   styleUrls: ['./projet-detail.component.css']
 })
-export class ProjetDetailComponent implements OnInit {
+export class ProjetDetailComponent implements OnInit, OnDestroy {
 
   private route        = inject(ActivatedRoute);
   private router       = inject(Router);
@@ -39,6 +42,10 @@ export class ProjetDetailComponent implements OnInit {
   private keycloak     = inject(KeycloakService);
   private userSvc      = inject(UserService);
   private ui           = inject(UiService);
+
+  readonly perms    = inject(PermissionContextService);
+  private notifSvc  = inject(NotificationService);
+  private subs      = new Subscription();
 
   // ── Données ──
   projet          = signal<Projet | null>(null);
@@ -82,7 +89,7 @@ export class ProjetDetailComponent implements OnInit {
   ];
   private readonly STATUT_CODE_MAP: Record<string, string> = {
     'A_FAIRE':  'dt-status-a-faire', 'EN_COURS': 'dt-status-en-cours',
-    'EN_REVUE': 'dt-status-en-revue', 'TERMINE':  'dt-status-termine',
+    'EN_REVUE': 'dt-status-en-revue', 'TERMINE': 'dt-status-termine',
     'BLOQUE':   'dt-status-bloque',  'ANNULE':   'dt-status-annule',
   };
 
@@ -105,14 +112,22 @@ export class ProjetDetailComponent implements OnInit {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (!id) { this.router.navigate(['/projets']); return; }
 
-    // Charger les données
+    // Vérifier permission d'accès au détail
+    if (!this.perms.canSeeAnyProject()) {
+      this.ui.error('Accès refusé.');
+      this.router.navigate(['/projets']);
+      return;
+    }
+
     this.projetSvc.getById(id).subscribe({
       next: p => {
         this.projet.set(p);
         this.loading.set(false);
         this.loadActivites(id);
-        this.loadCommentaires(id);
-        // Réinitialiser le formulaire avec le premier statut
+        // Commentaires : seulement si PROJECT_COMMENTS_CREATE, PROJECT_COMMENTS_LEAD, ou PROJECT_DETAILS_VIEW
+        if (this.perms.canCommentAnyProject() || this.perms.canViewProjectDetails() || this.perms.canViewAllProjects()) {
+          this.loadCommentaires(id);
+        }
         this.nomencSvc.getStatutsActivite().subscribe({
           next: s => {
             this.statutsActivite.set(s);
@@ -125,12 +140,32 @@ export class ProjetDetailComponent implements OnInit {
       error: () => { this.ui.error('Projet non trouvé.'); this.router.navigate(['/projets']); }
     });
 
-    this.groupeSvc.getAll().subscribe({ next: g => this.tousGroupes.set(g) });
+    // Groupes : seulement si TEAM_VIEW
+    if (this.perms.canViewTeams()) {
+      this.groupeSvc.getAll().subscribe({ next: g => this.tousGroupes.set(g) });
+    }
+
+    // Notifications temps réel
+    this.subs.add(this.notifSvc.newNotification$.subscribe(n => {
+      const t       = String(n.type);
+      const projetId = this.projet()?.id;
+      if (projetId && t === 'PROJET_COMMENTAIRE' && n.ressourceId === projetId) {
+        this.loadCommentaires(projetId);
+      }
+      if (projetId && t === 'PROJET_STATUT_CHANGE' && n.ressourceId === projetId) {
+        this.projetSvc.getById(projetId).subscribe({ next: p => this.projet.set(p) });
+      }
+    }));
   }
+
+  ngOnDestroy(): void { this.subs.unsubscribe(); }
 
   // ── Chargement ──
   loadActivites(projetId: number): void {
-    this.activiteSvc.getByProjet(projetId).subscribe({ next: a => this.activites.set(a), error: () => {} });
+    // Visible si ACTIVITY_VIEW_ALL, ACTIVITY_VIEW_OWN, ou membre du projet
+    if (this.perms.canSeeAnyActivity()) {
+      this.activiteSvc.getByProjet(projetId).subscribe({ next: a => this.activites.set(a), error: () => {} });
+    }
   }
 
   loadCommentaires(projetId: number): void {
@@ -142,7 +177,13 @@ export class ProjetDetailComponent implements OnInit {
   }
 
   // ── Création activité inline ──
+  // ✅ Visible si ACTIVITY_CREATE (admin activité) OU PROJECT_EDIT_ALL/PROJECT_EDIT_LEAD/PROJECT_EDIT_OWN
+  canCreateActiviteInline(): boolean {
+    return this.perms.canCreateActivity() || this.perms.canEditAnyProject();
+  }
+
   createActiviteForProjet(): void {
+    if (!this.canCreateActiviteInline()) { this.ui.warning('Permission requise pour créer une activité.'); return; }
     const f = this.newActiviteForm();
     if (!f.nom?.trim()) { this.ui.error('Le nom est obligatoire.'); return; }
     const p = this.projet();
@@ -151,14 +192,12 @@ export class ProjetDetailComponent implements OnInit {
 
     this.activiteSvc.create(f).subscribe({
       next: (newActivite) => {
-        // Assigner la nouvelle activité à ce projet
         const currentIds = this.activites().map(a => a.id);
         this.projetSvc.assignerActivites(p.id, [...currentIds, newActivite.id]).subscribe({
           next: () => {
             this.ui.success('Activité créée et assignée au projet.');
             this.showCreateActivite.set(false);
             this.submittingActivite.set(false);
-            // Reset form
             this.newActiviteForm.set({
               nom: '', description: '', couleur: '#10b981',
               statutActiviteId: this.statutsActivite()[0]?.id || 1,
@@ -169,10 +208,7 @@ export class ProjetDetailComponent implements OnInit {
           error: () => { this.ui.error('Activité créée mais erreur d\'assignation.'); this.submittingActivite.set(false); this.loadActivites(p.id); }
         });
       },
-      error: (err: HttpErrorResponse) => {
-        this.ui.error('Erreur création activité.');
-        this.submittingActivite.set(false);
-      }
+      error: () => { this.ui.error('Erreur création activité.'); this.submittingActivite.set(false); }
     });
   }
 
@@ -181,13 +217,15 @@ export class ProjetDetailComponent implements OnInit {
     const s = this.statutsActivite();
     this.newActiviteForm.set({
       nom: '', description: '', couleur: '#10b981',
-      statutActiviteId: s[0]?.id || 1,
-      priorite: 2, estGlobale: false, visible: true, facturable: true
+      statutActiviteId: s[0]?.id || 1, priorite: 2,
+      estGlobale: false, visible: true, facturable: true
     });
   }
 
   // ── Commentaires ──
   submitComment(): void {
+    // ✅ PROJECT_COMMENTS_CREATE (membre) ou PROJECT_COMMENTS_LEAD (team lead)
+    if (!this.perms.canCommentAnyProject()) { this.ui.warning('Permission de commenter requise.'); return; }
     const contenu = this.nouveauCommentaire().trim();
     if (!contenu) return;
     const p = this.projet();
@@ -195,9 +233,9 @@ export class ProjetDetailComponent implements OnInit {
     this.submittingComment.set(true);
     this.commentSvc.createForProjet(p.id, {
       contenu,
-      auteurNom:     this.currentUserNom,
+      auteurNom:      this.currentUserNom,
       auteurPhotoUrl: this.currentUserPhoto || undefined,
-      groupeId:      this.groupeIdComment() || undefined
+      groupeId:       this.groupeIdComment() || undefined
     }).subscribe({
       next: c => {
         this.commentaires.update(list => [c, ...list]);
@@ -239,7 +277,7 @@ export class ProjetDetailComponent implements OnInit {
   isOwn(c: Commentaire): boolean { return c.auteurKeycloakId === this.currentUserKcId; }
 
   // ── Helpers statut ──
-  getStatutCode(id?: number): string { return this.statutsActivite().find(s => s.id === id)?.code || ''; }
+  getStatutCode(id?: number): string    { return this.statutsActivite().find(s => s.id === id)?.code || ''; }
   getStatutLibelle(id?: number): string { return this.statutsActivite().find(s => s.id === id)?.libelle || '—'; }
   getStatutBadgeClass(id?: number): string {
     const code = this.getStatutCode(id);
@@ -247,16 +285,11 @@ export class ProjetDetailComponent implements OnInit {
   }
 
   getPriorite(value: number) { return this.PRIORITES.find(p => p.value === value); }
-
-  getProgressPct(p?: number, e?: number): number {
-    if (!e) return 0;
-    return Math.min(100, Math.round(((p || 0) / e) * 100));
-  }
+  getProgressPct(p?: number, e?: number): number { if (!e) return 0; return Math.min(100, Math.round(((p||0)/e)*100)); }
   getProgressColor(p?: number, e?: number): string {
     const pct = this.getProgressPct(p, e);
     return pct >= 100 ? '#ef4444' : pct >= 80 ? '#f59e0b' : '#10b981';
   }
-
   getStatutProjetColor(s: string): string {
     return ({ PLANIFIE: '#6366f1', EN_COURS: '#10b981', SUSPENDU: '#f97316', TERMINE: '#64748b', ANNULE: '#ef4444' } as any)[s] || '#94a3b8';
   }
@@ -266,25 +299,31 @@ export class ProjetDetailComponent implements OnInit {
   getAvancementColor(pct: number): string {
     if (pct >= 100) return '#10b981'; if (pct >= 60) return '#3b82f6'; if (pct >= 30) return '#f97316'; return '#94a3b8';
   }
-
   getAvatarColor(name: string): string {
     const colors = ['#6366f1','#8b5cf6','#ec4899','#ef4444','#f97316','#10b981','#06b6d4','#3b82f6'];
     return colors[(name || '').charCodeAt(0) % colors.length];
   }
-  getInitiales(nom: string): string { return (nom || '').split(' ').slice(0, 2).map(w => w.charAt(0).toUpperCase()).join(''); }
-
+  getInitiales(nom: string): string { return (nom || '').split(' ').slice(0,2).map(w => w.charAt(0).toUpperCase()).join(''); }
   fmtDate(d?: string): string {
     if (!d) return '—';
     const dt = new Date(d);
-    const m = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+    const m  = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
     return `${String(dt.getDate()).padStart(2,'0')} ${m[dt.getMonth()]}, ${dt.getFullYear()}`;
   }
   fmtDateTime(d?: string): string {
     if (!d) return '—';
     const dt = new Date(d);
-    const m = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+    const m  = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
     return `${String(dt.getDate()).padStart(2,'0')} ${m[dt.getMonth()]} ${dt.getFullYear()} à ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
   }
-
   goBack(): void { this.router.navigate(['/projets']); }
+
+
+
+  fmtHeures(h: number): string {
+    if (!h || h <= 0) return '0h';
+    const heures  = Math.floor(h);
+    const minutes = Math.round((h - heures) * 60);
+    return minutes > 0 ? `${heures}h${String(minutes).padStart(2,'0')}` : `${heures}h`;
+  }
 }

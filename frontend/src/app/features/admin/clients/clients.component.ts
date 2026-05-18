@@ -1,10 +1,11 @@
-// clients.component.ts — VERSION DT-*
+// clients.component.ts — COMPLET avec permissions
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ClientService } from '../../../services/client.service';
 import { UiService } from '../../../services/ui.service';
 import { ErrorService } from '../../../services/error.service';
+import { PermissionContextService } from '../../../services/permission-context.service';
 import { Client } from '../../../shared/models/client.model';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -45,6 +46,8 @@ export class ClientsComponent implements OnInit {
   private clientSvc = inject(ClientService);
   private errorSvc  = inject(ErrorService);
   readonly ui       = inject(UiService);
+  // ✅ NOUVEAU
+  readonly perms    = inject(PermissionContextService);
 
   clients = signal<Client[]>([]);
 
@@ -61,6 +64,8 @@ export class ClientsComponent implements OnInit {
   pageSize    = signal(10);
   currentPage = signal(1);
   openMenuId  = signal<number | null>(null);
+
+  filterPanelOpenC = signal(false);
 
   form = signal<ClientRequest>({
     nom: '', devise: 'TND', couleur: '#6366f1',
@@ -87,8 +92,8 @@ export class ClientsComponent implements OnInit {
   statsActifs   = computed(() => this.clients().filter(c => c.actif).length);
   statsInactifs = computed(() => this.clients().filter(c => !c.actif).length);
 
-  totalPages = computed(() => Math.max(1, Math.ceil(this.filteredClients().length / this.pageSize())));
-  pagesArray = computed(() => Array.from({ length: this.totalPages() }, (_, i) => i + 1));
+  totalPages   = computed(() => Math.max(1, Math.ceil(this.filteredClients().length / this.pageSize())));
+  pagesArray   = computed(() => Array.from({ length: this.totalPages() }, (_, i) => i + 1));
   pagedClients = computed(() => {
     const start = (this.currentPage() - 1) * this.pageSize();
     return this.filteredClients().slice(start, start + this.pageSize());
@@ -115,6 +120,7 @@ export class ClientsComponent implements OnInit {
   }
 
   openAdd(): void {
+    if (!this.perms.canCreateCustomer()) { this.ui.warning('Permission CUSTOMER_CREATE requise.'); return; }
     this.editingClient.set(null);
     this.activeTab.set('general');
     this.form.set({ nom:'', devise:'TND', couleur:'#6366f1', typeBudget:'ILLIMITE', visible:true, facturable:true, actif:true });
@@ -122,6 +128,7 @@ export class ClientsComponent implements OnInit {
   }
 
   openEdit(client: Client): void {
+    if (!this.perms.canUpdateCustomer()) { this.ui.warning('Permission CUSTOMER_UPDATE requise.'); return; }
     this.editingClient.set(client);
     this.activeTab.set('general');
     this.form.set({
@@ -150,6 +157,7 @@ export class ClientsComponent implements OnInit {
   }
 
   delete(client: Client): void {
+    if (!this.perms.canDeleteCustomer()) { this.ui.warning('Permission CUSTOMER_DELETE requise.'); return; }
     this.ui.confirm({
       title:'Supprimer le client', message:`Supprimer "${client.nom}" ?`,
       confirmLabel:'Supprimer', type:'danger',
@@ -179,26 +187,15 @@ export class ClientsComponent implements OnInit {
   isSelected(id: number): boolean { return this.selectedIds().has(id); }
   clearSelection(): void { this.selectedIds.set(new Set()); }
   toggleMenu(id: number, e: Event): void { e.stopPropagation(); this.openMenuId.set(this.openMenuId()===id?null:id); }
-  closeMenu(): void { this.openMenuId.set(null);
-    this.filterPanelOpenC.set(false);
-  }
+  closeMenu(): void { this.openMenuId.set(null); this.filterPanelOpenC.set(false); }
 
   getInitiales(nom: string): string { return (nom||'').split(' ').slice(0,2).map(w=>w.charAt(0).toUpperCase()).join(''); }
   getCouleurStyle(couleur?: string): string { return couleur || '#6366f1'; }
 
-
-
-
   cleanUrl(url: string): string {
     if (!url) return '';
-    return url
-      .replace(/^https?:\/\//, '')
-      .replace(/\/$/, '');
+    return url.replace(/^https?:\/\//, '').replace(/\/$/, '');
   }
-  
 
   filterPanelOpenP = signal(false);
-
-
-  filterPanelOpenC = signal(false);
 }

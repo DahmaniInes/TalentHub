@@ -1,4 +1,4 @@
-// src/app/features/admin/groups/groups.component.ts
+// src/app/features/admin/groups/groups.component.ts — COMPLET avec permissions
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule, SlicePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -6,6 +6,7 @@ import { GroupeService } from '../../services/groupe.service';
 import { UserService } from '../../services/user.service';
 import { UiService } from '../../services/ui.service';
 import { ErrorService } from '../../services/error.service';
+import { PermissionContextService } from '../../services/permission-context.service';
 import { Groupe, GroupeRequest, MembreInfo } from '../../shared/models/groupe.model';
 import { Utilisateur } from '../../shared/models/utilisateur.model';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -22,12 +23,12 @@ export class GroupsComponent implements OnInit {
   private userSvc   = inject(UserService);
   private errorSvc  = inject(ErrorService);
   readonly ui       = inject(UiService);
+  // ✅ NOUVEAU
+  readonly perms    = inject(PermissionContextService);
 
-  // ── Données ──
   groupes      = signal<Groupe[]>([]);
   utilisateurs = signal<Utilisateur[]>([]);
 
-  // ── State ──
   loading        = signal(true);
   search         = signal('');
   filterStatut   = signal<'tous' | 'actif' | 'inactif'>('tous');
@@ -37,17 +38,15 @@ export class GroupsComponent implements OnInit {
   editingGroupe  = signal<Groupe | null>(null);
   saving         = signal(false);
 
-  // ── Sélection ──
   selectedIds = signal<Set<number>>(new Set());
 
-  // ── Pagination ──
   pageSize    = signal(10);
   currentPage = signal(1);
 
-  // ── Menu dropdown ──
   openMenuId = signal<number | null>(null);
 
-  // ── Formulaire ──
+  filterPanelOpenG = signal(false);
+
   form = signal<GroupeRequest>({
     nom: '', description: '', couleur: '#6366f1',
     teamLeadId: undefined, actif: true, membresIds: []
@@ -59,7 +58,6 @@ export class GroupsComponent implements OnInit {
     '#10b981','#06b6d4','#3b82f6','#64748b'
   ];
 
-  // ── Computed : filtrage ──
   filteredGroupes = computed(() => {
     let list = this.groupes();
     const q = this.search().toLowerCase();
@@ -80,7 +78,6 @@ export class GroupsComponent implements OnInit {
     return ids.size;
   });
 
-  // ── Computed : pagination ──
   totalPages = computed(() =>
     Math.max(1, Math.ceil(this.filteredGroupes().length / this.pageSize()))
   );
@@ -95,7 +92,6 @@ export class GroupsComponent implements OnInit {
     return list.slice(start, start + this.pageSize());
   });
 
-  // ── Computed : sélection ──
   allPageSelected = computed(() => {
     const paged = this.pagedGroupes();
     if (paged.length === 0) return false;
@@ -139,14 +135,15 @@ export class GroupsComponent implements OnInit {
     this.openMenuId.set(null);
   }
 
-  // ── CRUD ──
   openAdd(): void {
+    if (!this.perms.canCreateTeam()) { this.ui.warning('Permission TEAM_CREATE requise.'); return; }
     this.editingGroupe.set(null);
     this.form.set({ nom:'', description:'', couleur:'#6366f1', teamLeadId:undefined, actif:true, membresIds:[] });
     this.showModal.set(true);
   }
 
   openEdit(g: Groupe): void {
+    if (!this.perms.canUpdateTeam()) { this.ui.warning('Permission TEAM_UPDATE requise.'); return; }
     this.editingGroupe.set(g);
     this.form.set({
       nom: g.nom, description: g.description || '', couleur: g.couleur || '#6366f1',
@@ -176,6 +173,7 @@ export class GroupsComponent implements OnInit {
   }
 
   delete(g: Groupe): void {
+    if (!this.perms.canDeleteTeam()) { this.ui.warning('Permission TEAM_DELETE requise.'); return; }
     this.ui.confirm({
       title: 'Supprimer le groupe',
       message: `Supprimer "${g.nom}" ? Les membres ne seront pas supprimés.`,
@@ -196,7 +194,6 @@ export class GroupsComponent implements OnInit {
 
   closeModal(): void { this.showModal.set(false); this.editingGroupe.set(null); }
 
-  // ── Membres formulaire ──
   addMembreToForm(userId: number): void {
     if (!userId) return;
     const current = this.form().membresIds || [];
@@ -216,6 +213,7 @@ export class GroupsComponent implements OnInit {
   }
 
   removeMembre(membre: MembreInfo): void {
+    if (!this.perms.canUpdateTeam()) { this.ui.warning('Permission TEAM_UPDATE requise.'); return; }
     const g = this.selectedGroupe();
     if (!g) return;
     this.ui.confirm({
@@ -231,7 +229,6 @@ export class GroupsComponent implements OnInit {
     });
   }
 
-  // ── Pagination ──
   goToPage(page: number): void {
     if (page >= 1 && page <= this.totalPages()) this.currentPage.set(page);
   }
@@ -239,7 +236,6 @@ export class GroupsComponent implements OnInit {
   resetPage(): void { this.currentPage.set(1); }
   minVal(a: number, b: number): number { return Math.min(a, b); }
 
-  // ── Sélection ──
   toggleSelectAll(): void {
     const paged = this.pagedGroupes();
     if (this.allPageSelected()) {
@@ -257,16 +253,12 @@ export class GroupsComponent implements OnInit {
   isSelected(id: number): boolean { return this.selectedIds().has(id); }
   clearSelection(): void { this.selectedIds.set(new Set()); }
 
-  // ── Menu dropdown ──
   toggleMenu(id: number, event: Event): void {
     event.stopPropagation();
     this.openMenuId.set(this.openMenuId() === id ? null : id);
   }
-  closeMenu(): void { this.openMenuId.set(null);
-    this.filterPanelOpenG.set(false);
-  }
+  closeMenu(): void { this.openMenuId.set(null); this.filterPanelOpenG.set(false); }
 
-  // ── Helpers ──
   isTeamLead(g: Groupe, membreId: number): boolean { return g.teamLeadId === membreId; }
 
   getAvatarColor(name: string): string {
@@ -288,14 +280,12 @@ export class GroupsComponent implements OnInit {
     return (lead as any)?.photoUrl || null;
   }
 
-  // ✅ Email du team lead récupéré depuis la liste des utilisateurs
   getTeamLeadEmail(g: Groupe): string {
     if (!g.teamLeadId) return '';
     const u = this.utilisateurs().find(u => u.id === g.teamLeadId);
     return u?.email || '';
   }
 
-  // ✅ Format date "20 Avr, 2026"
   fmtDate(d?: string | Date): string {
     if (!d) return '—';
     const date = typeof d === 'string' ? new Date(d) : d;
@@ -303,7 +293,4 @@ export class GroupsComponent implements OnInit {
     const MOIS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
     return `${String(date.getDate()).padStart(2,'0')} ${MOIS[date.getMonth()]}, ${date.getFullYear()}`;
   }
-
-
-  filterPanelOpenG = signal(false);
 }

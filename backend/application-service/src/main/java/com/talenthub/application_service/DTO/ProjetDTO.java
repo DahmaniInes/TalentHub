@@ -1,4 +1,4 @@
-// src/main/java/com/talenthub/application_service/DTO/ProjetDTO.java
+// DTO/ProjetDTO.java — avec heuresPassees pour l'affichage de la progression
 package com.talenthub.application_service.DTO;
 
 import com.talenthub.application_service.Entity.Groupe;
@@ -6,7 +6,6 @@ import com.talenthub.application_service.Entity.Projet;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,47 +24,42 @@ public class ProjetDTO {
     private String  dateFin;
     private String  dateFinReelle;
     private String  statut;
-    private int     avancement;
+    private int     avancement;         // % calculé depuis heuresPassees/heuresEstimees
     private Double  budgetPrevu;
     private Double  budgetConsomme;
-    private Double  quotaHoraire;
+    private Double  heuresEstimees;     // quota horaire alloué
+    private Double  heuresPassees;      // ✅ heures réellement travaillées (calculées)
     private String  typeBudget;
     private Integer seuilAlerteHoraire;
     private boolean visible;
     private boolean facturable;
     private boolean autoriserActivitesGlobales;
     private String  responsableKeycloakId;
-    private List<String>   projetAdmins = new ArrayList<>();
-    private int            nombreMembres;
-    private int            nombreActivites;
-    private List<GroupeInfoDTO> groupes = new ArrayList<>();
+    private List<String>       projetAdmins  = new ArrayList<>();
+    private int                nombreMembres;
+    private int                nombreActivites;
+    private List<GroupeInfoDTO> groupes      = new ArrayList<>();
     private String dateCreation;
 
     @Data
     @NoArgsConstructor
     public static class GroupeInfoDTO {
-        private Long    id;
-        private String  nom;
-        private String  couleur;
-        private int     nombreMembres;
-        private int     nombreProjetsActifs; // enrichi par ProjetService.toDTO()
+        private Long   id;
+        private String nom;
+        private String couleur;
+        private int    nombreMembres;
+        private int    nombreProjetsActifs;
 
-        // ✅ Constructeur depuis l'entité Groupe
         public GroupeInfoDTO(Groupe g) {
             this.id     = g.getId();
             this.nom    = g.getNom();
             this.couleur = g.getCouleur();
-            // nombreMembres : accès sécurisé (peut être lazy non chargé)
-            try {
-                this.nombreMembres = g.getMembres() != null ? g.getMembres().size() : 0;
-            } catch (Exception e) {
-                this.nombreMembres = 0;
-            }
-            this.nombreProjetsActifs = 0; // sera enrichi par le service
+            try { this.nombreMembres = g.getMembres() != null ? g.getMembres().size() : 0; }
+            catch (Exception e) { this.nombreMembres = 0; }
+            this.nombreProjetsActifs = 0;
         }
     }
 
-    // ✅ Constructeur principal — ROBUSTE : chaque accès lazy est protégé
     public ProjetDTO(Projet p) {
         this.id          = p.getId();
         this.nom         = p.getNom();
@@ -76,7 +70,10 @@ public class ProjetDTO {
         this.avancement  = p.getAvancement();
         this.budgetPrevu = p.getBudgetPrevu();
         this.budgetConsomme = p.getBudgetConsomme();
-        this.quotaHoraire   = p.getQuotaHoraire();
+        this.heuresEstimees  = p.getHeuresEstimees();
+        // ✅ heuresPassees depuis l'entité (calculées par AvancementService)
+        try { this.heuresPassees = p.getHeuresPassees(); }
+        catch (Exception e) { this.heuresPassees = 0.0; }
         this.typeBudget     = p.getTypeBudget();
         this.seuilAlerteHoraire = p.getSeuilAlerteHoraire();
         this.visible     = p.isVisible();
@@ -84,41 +81,26 @@ public class ProjetDTO {
         this.autoriserActivitesGlobales = p.isAutoriserActivitesGlobales();
         this.responsableKeycloakId = p.getResponsableKeycloakId();
 
-        // Dates → String
         this.dateDebut    = p.getDateDebut() != null    ? p.getDateDebut().toString()    : null;
         this.dateFin      = p.getDateFin() != null      ? p.getDateFin().toString()      : null;
         this.dateFinReelle = p.getDateFinReelle() != null ? p.getDateFinReelle().toString() : null;
         this.dateCreation  = p.getDateCreation() != null  ? p.getDateCreation().toString()  : null;
 
-        // Client
-        try {
-            if (p.getClient() != null) {
-                this.clientId  = p.getClient().getId();
-                this.clientNom = p.getClient().getNom();
-            }
-        } catch (Exception ignored) {}
+        try { if (p.getClient() != null) { this.clientId = p.getClient().getId(); this.clientNom = p.getClient().getNom(); } }
+        catch (Exception ignored) {}
 
-        // projetAdmins
-        try {
-            this.projetAdmins = p.getProjetAdmins() != null ? p.getProjetAdmins() : new ArrayList<>();
-        } catch (Exception ignored) { this.projetAdmins = new ArrayList<>(); }
+        try { this.projetAdmins = p.getProjetAdmins() != null ? p.getProjetAdmins() : new ArrayList<>(); }
+        catch (Exception ignored) { this.projetAdmins = new ArrayList<>(); }
 
-        // Membres du projet (pour nombreMembres)
-        try {
-            this.nombreMembres = p.getMembres() != null ? p.getMembres().size() : 0;
-        } catch (Exception ignored) { this.nombreMembres = 0; }
+        try { this.nombreMembres = p.getMembres() != null ? p.getMembres().size() : 0; }
+        catch (Exception ignored) { this.nombreMembres = 0; }
 
-        // Activités du projet (pour nombreActivites)
-        try {
-            this.nombreActivites = p.getActivites() != null ? p.getActivites().size() : 0;
-        } catch (Exception ignored) { this.nombreActivites = 0; }
+        try { this.nombreActivites = p.getActivites() != null ? p.getActivites().size() : 0; }
+        catch (Exception ignored) { this.nombreActivites = 0; }
 
-        // ✅ Groupes — accès direct (doivent être fetch eagerly via findByIdWithDetails)
         try {
             if (p.getGroupes() != null && !p.getGroupes().isEmpty()) {
-                this.groupes = p.getGroupes().stream()
-                        .map(GroupeInfoDTO::new)
-                        .toList();
+                this.groupes = p.getGroupes().stream().map(GroupeInfoDTO::new).toList();
             }
         } catch (Exception ignored) { this.groupes = new ArrayList<>(); }
     }

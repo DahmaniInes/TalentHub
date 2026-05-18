@@ -1,4 +1,4 @@
-// Controller/ProfilPermissionController.java — REMPLACE le fichier entier
+// Controller/ProfilPermissionController.java — COMPLET avec @RequiresPermission + PermissionContext
 package com.talenthub.application_service.Controller;
 
 import com.talenthub.application_service.DTO.ProfilPermissionDTO;
@@ -7,6 +7,8 @@ import com.talenthub.application_service.Entity.Profil;
 import com.talenthub.application_service.Entity.ProfilPermission;
 import com.talenthub.application_service.Repository.PermissionRepository;
 import com.talenthub.application_service.Repository.ProfilRepository;
+import com.talenthub.application_service.Security.RequiresPermission;
+import com.talenthub.application_service.Security.PermissionContext;
 import com.talenthub.application_service.Service.ProfilPermissionService;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -21,15 +23,20 @@ public class ProfilPermissionController {
     private final ProfilPermissionService service;
     private final ProfilRepository        profilRepository;
     private final PermissionRepository    permissionRepository;
+    private final PermissionContext       permCtx;
 
     public ProfilPermissionController(ProfilPermissionService service,
                                       ProfilRepository profilRepository,
-                                      PermissionRepository permissionRepository) {
-        this.service             = service;
-        this.profilRepository    = profilRepository;
-        this.permissionRepository= permissionRepository;
+                                      PermissionRepository permissionRepository,
+                                      PermissionContext permCtx) {
+        this.service              = service;
+        this.profilRepository     = profilRepository;
+        this.permissionRepository = permissionRepository;
+        this.permCtx              = permCtx;
     }
 
+    // ── Toutes les assignations — PROFIL_PERM_VIEW ────────────────────────
+    @RequiresPermission("PROFIL_PERM_VIEW")
     @GetMapping
     public ResponseEntity<List<ProfilPermissionDTO>> getAll() {
         return ResponseEntity.ok(
@@ -37,6 +44,8 @@ public class ProfilPermissionController {
                         .map(ProfilPermissionDTO::new).toList());
     }
 
+    // ── Par profil — PROFIL_PERM_VIEW ─────────────────────────────────────
+    @RequiresPermission("PROFIL_PERM_VIEW")
     @GetMapping("/profil/{profilId}")
     public ResponseEntity<List<ProfilPermissionDTO>> getByProfil(@PathVariable Long profilId) {
         return ResponseEntity.ok(
@@ -44,7 +53,8 @@ public class ProfilPermissionController {
                         .map(ProfilPermissionDTO::new).toList());
     }
 
-    // ✅ Endpoint utilisé par Angular pour charger les codes au démarrage
+    // ── Codes uniquement — pas de guard ──────────────────────────────────
+    // ✅ Endpoint public : chaque utilisateur charge SES propres codes au démarrage Angular
     @GetMapping("/profil/{profilId}/codes")
     public ResponseEntity<List<String>> getPermissionCodes(@PathVariable Long profilId) {
         List<String> codes = service.getPermissionsByProfil(profilId).stream()
@@ -53,7 +63,8 @@ public class ProfilPermissionController {
         return ResponseEntity.ok(codes);
     }
 
-    // ✅ Assigner une permission à un profil — body simple { profilId, permissionId }
+    // ── Assigner une permission — PROFIL_PERM_ASSIGN ──────────────────────
+    @RequiresPermission("PROFIL_PERM_ASSIGN")
     @PostMapping
     public ResponseEntity<ProfilPermissionDTO> create(@RequestBody Map<String, Object> body) {
         Long profilId     = Long.valueOf(body.get("profilId").toString());
@@ -68,10 +79,13 @@ public class ProfilPermissionController {
         pp.setProfil(profil);
         pp.setPermission(permission);
 
-        return new ResponseEntity<>(new ProfilPermissionDTO(service.createProfilPermission(pp)),
+        return new ResponseEntity<>(
+                new ProfilPermissionDTO(service.createProfilPermission(pp)),
                 HttpStatus.CREATED);
     }
 
+    // ── Désassigner — PROFIL_PERM_ASSIGN ─────────────────────────────────
+    @RequiresPermission("PROFIL_PERM_ASSIGN")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.deleteProfilPermission(id);

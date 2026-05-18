@@ -32,7 +32,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   rhMenuOpen = false;
   gestionMenuOpen = false;
   demandeMenuOpen = false;
-
+  readonly perms = inject(PermissionContextService);
   currentUser = signal<Utilisateur | null>(null);
   currentUrl  = signal('');
 

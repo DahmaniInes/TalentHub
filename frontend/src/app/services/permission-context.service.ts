@@ -1,4 +1,4 @@
-// src/app/services/permission-context.service.ts — FINAL
+// src/app/services/permission-context.service.ts — COMPLET FINAL
 import { Injectable, signal } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { KeycloakService } from './keycloak.service';
@@ -6,7 +6,7 @@ import { KeycloakService } from './keycloak.service';
 @Injectable({ providedIn: 'root' })
 export class PermissionContextService {
 
-    private perms  = signal<Set<string>>(new Set());
+    private perms   = signal<Set<string>>(new Set());
     readonly loaded = signal(false);
 
     private profilId: number | null = null;
@@ -39,7 +39,7 @@ export class PermissionContextService {
                 { headers: new HttpHeaders({ Authorization: `Bearer ${token}` }) }
             ).subscribe({
                 next: codes => { this.perms.set(new Set(codes)); this.loaded.set(true); resolve(); },
-                error: ()    => { this.loaded.set(true); resolve(); }
+                error: ()   => { this.loaded.set(true); resolve(); }
             });
         });
     }
@@ -58,7 +58,10 @@ export class PermissionContextService {
     can(code: string): boolean { return this.perms().has(code); }
     getAll(): Set<string>      { return this.perms(); }
 
-    // ── Demandes ──
+    // ════════════════════════════════════════════════════════════════
+    // DEMANDES
+    // ════════════════════════════════════════════════════════════════
+
     canCreateDemande():     boolean { return this.can('DEMANDE_CREATE'); }
     canViewAllDemandes():   boolean { return this.can('DEMANDE_VIEW_ALL'); }
     canViewOwnDemandes():   boolean { return this.can('DEMANDE_VIEW_OWN'); }
@@ -70,6 +73,21 @@ export class PermissionContextService {
     canRejectDemande():     boolean { return this.can('DEMANDE_REJECT'); }
     canExportDemandes():    boolean { return this.can('DEMANDE_EXPORT'); }
 
+    canModifyDemande(isOwn: boolean): boolean {
+        return this.can('DEMANDE_UPDATE_ALL') || (isOwn && this.can('DEMANDE_UPDATE_OWN'));
+    }
+    canDeleteDemande(isOwn: boolean): boolean {
+        return this.can('DEMANDE_DELETE_ALL') || (isOwn && this.can('DEMANDE_DELETE_OWN'));
+    }
+
+    canSeeDemandeMenu():   boolean {
+        return this.canCreateDemande() || this.canViewOwnDemandes()
+            || this.canViewAllDemandes() || this.canApproveDemande();
+    }
+    canSeeOwnDemandes():   boolean { return this.canViewOwnDemandes() || this.canCreateDemande(); }
+    canSeeAdminDemandes(): boolean { return this.canViewAllDemandes() || this.canApproveDemande(); }
+    canSeeTypesDemandes(): boolean { return this.canReadType() || this.canCreateType(); }
+
     // ── Types demandes ──
     canCreateType():     boolean { return this.can('DEMANDE_TYPE_CREATE'); }
     canReadType():       boolean { return this.can('DEMANDE_TYPE_READ'); }
@@ -79,7 +97,10 @@ export class PermissionContextService {
     canDeactivateType(): boolean { return this.can('DEMANDE_TYPE_DEACTIVATE'); }
     canExportTypes():    boolean { return this.can('DEMANDE_TYPE_EXPORT'); }
 
-    // ── Notifications ──
+    // ════════════════════════════════════════════════════════════════
+    // NOTIFICATIONS
+    // ════════════════════════════════════════════════════════════════
+
     canViewNotifs():      boolean { return this.can('NOTIFICATION_VIEW_OWN'); }
     canMarkRead():        boolean { return this.can('NOTIFICATION_MARK_READ'); }
     canDeleteOwnNotifs(): boolean { return this.can('NOTIFICATION_DELETE_OWN'); }
@@ -87,102 +108,217 @@ export class PermissionContextService {
     canExportNotifs():    boolean { return this.can('NOTIFICATION_EXPORT'); }
     canSendManualNotif(): boolean { return this.can('NOTIFICATION_SEND_MANUAL'); }
 
-    // ── Feuilles de temps ──
-    // Peut lire sa propre feuille
+    // ════════════════════════════════════════════════════════════════
+    // FEUILLES DE TEMPS
+    // ════════════════════════════════════════════════════════════════
+
     canReadOwnTS():    boolean { return this.can('TS_OWN_READ'); }
-    // Peut créer sa propre feuille
     canCreateOwnTS():  boolean { return this.can('TS_OWN_CREATE'); }
-    // Peut modifier sa propre feuille
     canUpdateOwnTS():  boolean { return this.can('TS_OWN_UPDATE'); }
-    // Peut supprimer sa propre feuille
     canDeleteOwnTS():  boolean { return this.can('TS_OWN_DELETE'); }
-    // Peut exporter sa propre feuille
     canExportOwnTS():  boolean { return this.can('TS_OWN_EXPORT'); }
-    // Peut lire toutes les feuilles
     canReadAllTS():    boolean { return this.can('TS_ALL_READ'); }
-    // Peut modifier toutes les feuilles
     canUpdateAllTS():  boolean { return this.can('TS_ALL_UPDATE'); }
-    // Peut exporter toutes les feuilles
     canExportAllTS():  boolean { return this.can('TS_ALL_EXPORT'); }
-    // Peut lire les feuilles du groupe
     canReadGroupTS():  boolean { return this.can('TS_GROUP_READ'); }
-    // Peut modifier les feuilles du groupe
     canUpdateGroupTS(): boolean { return this.can('TS_GROUP_UPDATE'); }
-    // Peut exporter les feuilles du groupe
     canExportGroupTS(): boolean { return this.can('TS_GROUP_EXPORT'); }
-    // Peut valider / rejeter des feuilles de temps
     canValidateTS():   boolean { return this.can('TS_VALIDATE'); }
 
-    // ── Navigation sidebar — Feuilles de temps ──
-
-    /** Afficher le menu Feuilles de temps si au moins 1 permission TS_* */
     canSeeFTMenu(): boolean {
-        return this.canReadOwnTS()   || this.canCreateOwnTS() ||
-               this.canReadAllTS()   || this.canReadGroupTS() ||
+        return this.canReadOwnTS()  || this.canCreateOwnTS() ||
+               this.canReadAllTS()  || this.canReadGroupTS() ||
                this.canValidateTS();
     }
-
-    /** Voir "Ma semaine" */
-    canSeeMaSemaine(): boolean { return this.canReadOwnTS() || this.canCreateOwnTS(); }
-
-    /** Voir "Calendrier" */
-    canSeeCalendrier(): boolean {
-        return this.canReadOwnTS() || this.canReadAllTS() || this.canReadGroupTS();
-    }
-
-    /** Voir "Fiches de temps" */
-    canSeeFiches(): boolean {
-        return this.canReadAllTS() || this.canReadGroupTS() || this.canReadOwnTS();
-    }
-
-    /** Voir "Approbations" = TS_VALIDATE */
+    canSeeMaSemaine():   boolean { return this.canReadOwnTS() || this.canCreateOwnTS(); }
+    canSeeCalendrier():  boolean { return this.canReadOwnTS() || this.canReadAllTS() || this.canReadGroupTS(); }
+    canSeeFiches():      boolean { return this.canReadAllTS() || this.canReadGroupTS() || this.canReadOwnTS(); }
     canSeeApprobations(): boolean { return this.canValidateTS(); }
 
-    // ── Helpers combinés ──
-    canModifyDemande(isOwn: boolean): boolean {
-        return this.can('DEMANDE_UPDATE_ALL') || (isOwn && this.can('DEMANDE_UPDATE_OWN'));
+    // ════════════════════════════════════════════════════════════════
+    // RÉCLAMATIONS
+    // ════════════════════════════════════════════════════════════════
+
+    canCreateReclamation():    boolean { return this.can('RECLAMATION_CREATE'); }
+    canViewOwnRec():           boolean { return this.can('RECLAMATION_VIEW_OWN'); }
+    canViewAllRec():           boolean { return this.can('RECLAMATION_VIEW_ALL'); }
+    canUpdateOwnRec():         boolean { return this.can('RECLAMATION_UPDATE_OWN'); }
+    canUpdateAllRec():         boolean { return this.can('RECLAMATION_UPDATE_ALL'); }
+    canDeleteOwnRec():         boolean { return this.can('RECLAMATION_DELETE_OWN'); }
+    canDeleteAllRec():         boolean { return this.can('RECLAMATION_DELETE_ALL'); }
+    canCommentRec():           boolean { return this.can('RECLAMATION_COMMENT'); }
+    canTreatRec():             boolean { return this.can('RECLAMATION_TREAT'); }
+    canExportRec():            boolean { return this.can('RECLAMATION_EXPORT'); }
+    canReadStatutRec():        boolean { return this.can('RECLAMATION_STATUT_READ'); }
+    canCreateStatutRec():      boolean { return this.can('RECLAMATION_STATUT_CREATE'); }
+    canUpdateStatutRec():      boolean { return this.can('RECLAMATION_STATUT_UPDATE'); }
+    canDeleteStatutRec():      boolean { return this.can('RECLAMATION_STATUT_DELETE'); }
+    canActivateStatutRec():    boolean { return this.can('RECLAMATION_STATUT_ACTIVATE'); }
+    canDeactivateStatutRec():  boolean { return this.can('RECLAMATION_STATUT_DEACTIVATE'); }
+    canReadServiceRec():       boolean { return this.can('RECLAMATION_SERVICE_READ'); }
+    canCreateServiceRec():     boolean { return this.can('RECLAMATION_SERVICE_CREATE'); }
+    canUpdateServiceRec():     boolean { return this.can('RECLAMATION_SERVICE_UPDATE'); }
+    canDeleteServiceRec():     boolean { return this.can('RECLAMATION_SERVICE_DELETE'); }
+    canActivateServiceRec():   boolean { return this.can('RECLAMATION_SERVICE_ACTIVATE'); }
+    canDeactivateServiceRec(): boolean { return this.can('RECLAMATION_SERVICE_DEACTIVATE'); }
+
+    canSeeReclamationMenu():    boolean {
+        return this.canCreateReclamation() || this.canViewOwnRec()
+            || this.canViewAllRec()        || this.canTreatRec();
     }
-    canDeleteDemande(isOwn: boolean): boolean {
-        return this.can('DEMANDE_DELETE_ALL') || (isOwn && this.can('DEMANDE_DELETE_OWN'));
+    canSeeGererReclamations():  boolean { return this.canViewAllRec() || this.canTreatRec(); }
+    canSeeStatutReclamation():  boolean { return this.canReadStatutRec() || this.canCreateStatutRec(); }
+    canSeeServiceReclamation(): boolean { return this.canReadServiceRec() || this.canCreateServiceRec(); }
+
+    // ════════════════════════════════════════════════════════════════
+    // PROJETS — Admin
+    // ════════════════════════════════════════════════════════════════
+
+    canCreateProject():     boolean { return this.can('PROJECT_CREATE'); }
+    canDeleteAllProjects(): boolean { return this.can('PROJECT_DELETE_ALL'); }
+    canViewAllProjects():   boolean { return this.can('PROJECT_VIEW_ALL'); }
+    canEditAllProjects():   boolean { return this.can('PROJECT_EDIT_ALL'); }
+
+    // ── Projets — Team Lead ──
+    canViewLeadProjects():   boolean { return this.can('PROJECT_VIEW_LEAD'); }
+    canEditLeadProjects():   boolean { return this.can('PROJECT_EDIT_LEAD'); }
+    canManageLeadComments(): boolean { return this.can('PROJECT_COMMENTS_LEAD'); }
+
+    // ── Projets — Membre ──
+    canViewOwnProject():     boolean { return this.can('PROJECT_VIEW_OWN'); }
+    canEditOwnProject():     boolean { return this.can('PROJECT_EDIT_OWN'); }
+    canTrackTime():          boolean { return this.can('PROJECT_TIME_TRACK'); }
+    canCommentProject():     boolean { return this.can('PROJECT_COMMENTS_CREATE'); }
+    canViewProjectDetails(): boolean { return this.can('PROJECT_DETAILS_VIEW'); }
+
+    // ── Agrégats projets ──
+    canSeeAnyProject(): boolean {
+        return this.canViewAllProjects() || this.canViewLeadProjects()
+            || this.canViewOwnProject()  || this.canViewProjectDetails();
+    }
+    canEditAnyProject(): boolean {
+        return this.canEditAllProjects() || this.canEditLeadProjects() || this.canEditOwnProject();
+    }
+    canCommentAnyProject(): boolean {
+        return this.canCommentProject() || this.canManageLeadComments();
+    }
+    canSeeProjectMenu(): boolean { return this.canSeeAnyProject() || this.canCreateProject(); }
+
+    // ════════════════════════════════════════════════════════════════
+    // ACTIVITÉS — Admin
+    // ════════════════════════════════════════════════════════════════
+
+    canCreateActivity():      boolean { return this.can('ACTIVITY_CREATE'); }
+    canDeleteAllActivities(): boolean { return this.can('ACTIVITY_DELETE_ALL'); }
+    canEditAllActivities():   boolean { return this.can('ACTIVITY_EDIT_ALL'); }
+    canViewAllActivities():   boolean { return this.can('ACTIVITY_VIEW_ALL'); }
+    canManageAllTime():       boolean { return this.can('ACTIVITY_TIME_ALL'); }
+
+    // ── Activités — Team Lead ──
+    canViewLeadActivities(): boolean { return this.can('ACTIVITY_VIEW_LEAD'); }
+    canEditLeadActivities(): boolean { return this.can('ACTIVITY_EDIT_LEAD'); }
+
+    // ── Activités — Membre ──
+    canViewOwnActivities(): boolean { return this.can('ACTIVITY_VIEW_OWN'); }
+    canEditOwnActivities(): boolean { return this.can('ACTIVITY_EDIT_OWN'); }
+
+    // ── Agrégats activités ──
+    canSeeAnyActivity(): boolean {
+        return this.canViewAllActivities() || this.canViewLeadActivities()
+            || this.canViewOwnActivities() || this.canViewAllProjects()
+            || this.canViewLeadProjects()  || this.canViewOwnProject();
+    }
+    canEditAnyActivity(): boolean {
+        return this.canEditAllActivities() || this.canEditLeadActivities() || this.canEditOwnActivities();
+    }
+    canSeeActivityMenu(): boolean { return this.canSeeAnyActivity() || this.canCreateActivity(); }
+
+    // ════════════════════════════════════════════════════════════════
+    // ÉQUIPES (TEAMS)
+    // ════════════════════════════════════════════════════════════════
+
+    canCreateTeam():      boolean { return this.can('TEAM_CREATE'); }
+    canDeleteTeam():      boolean { return this.can('TEAM_DELETE'); }
+    canUpdateTeam():      boolean { return this.can('TEAM_UPDATE'); }
+    canViewTeams():       boolean { return this.can('TEAM_VIEW') || this.can('TEAM_MEMBER_VIEW'); }
+    canViewTeamMembers(): boolean { return this.can('TEAM_MEMBER_VIEW') || this.can('TEAM_VIEW'); }
+
+    canSeeTeamsMenu(): boolean {
+        return this.canViewTeams() || this.canCreateTeam()
+            || this.canUpdateTeam() || this.canDeleteTeam();
     }
 
-    // ── Navigation sidebar ──
-    canSeeDemandeMenu(): boolean {
-        return this.canCreateDemande() || this.canViewOwnDemandes()
-            || this.canViewAllDemandes() || this.canApproveDemande();
+    // ════════════════════════════════════════════════════════════════
+    // CLIENTS (CUSTOMER)
+    // ════════════════════════════════════════════════════════════════
+
+    canCreateCustomer():        boolean { return this.can('CUSTOMER_CREATE'); }
+    canDeleteCustomer():        boolean { return this.can('CUSTOMER_DELETE'); }
+    canViewCustomerDetails():   boolean { return this.can('CUSTOMER_DETAILS') || this.can('CUSTOMER_VIEW'); }
+    canUpdateCustomer():        boolean { return this.can('CUSTOMER_UPDATE'); }
+    canViewCustomers():         boolean { return this.can('CUSTOMER_VIEW') || this.can('CUSTOMER_DETAILS'); }
+
+    canSeeClientsMenu(): boolean {
+        return this.canViewCustomers()  || this.canCreateCustomer()
+            || this.canUpdateCustomer() || this.canDeleteCustomer();
     }
-    canSeeOwnDemandes():   boolean { return this.canViewOwnDemandes() || this.canCreateDemande(); }
-    canSeeAdminDemandes(): boolean { return this.canViewAllDemandes() || this.canApproveDemande(); }
-    canSeeTypesDemandes(): boolean { return this.canReadType() || this.canCreateType(); }
 
 
-    canCreateReclamation():  boolean { return this.can("RECLAMATION_CREATE"); }
-canViewOwnRec():         boolean { return this.can("RECLAMATION_VIEW_OWN"); }
-canViewAllRec():         boolean { return this.can("RECLAMATION_VIEW_ALL"); }
-canUpdateOwnRec():       boolean { return this.can("RECLAMATION_UPDATE_OWN"); }
-canUpdateAllRec():       boolean { return this.can("RECLAMATION_UPDATE_ALL"); }
-canDeleteOwnRec():       boolean { return this.can("RECLAMATION_DELETE_OWN"); }
-canDeleteAllRec():       boolean { return this.can("RECLAMATION_DELETE_ALL"); }
-canCommentRec():         boolean { return this.can("RECLAMATION_COMMENT"); }
-canTreatRec():           boolean { return this.can("RECLAMATION_TREAT"); }
-canExportRec():          boolean { return this.can("RECLAMATION_EXPORT"); }
-canReadStatutRec():      boolean { return this.can("RECLAMATION_STATUT_READ"); }
-canCreateStatutRec():    boolean { return this.can("RECLAMATION_STATUT_CREATE"); }
-canUpdateStatutRec():    boolean { return this.can("RECLAMATION_STATUT_UPDATE"); }
-canDeleteStatutRec():    boolean { return this.can("RECLAMATION_STATUT_DELETE"); }
-canActivateStatutRec():  boolean { return this.can("RECLAMATION_STATUT_ACTIVATE"); }
-canDeactivateStatutRec(): boolean { return this.can("RECLAMATION_STATUT_DEACTIVATE"); }
-canReadServiceRec():     boolean { return this.can("RECLAMATION_SERVICE_READ"); }
-canCreateServiceRec():   boolean { return this.can("RECLAMATION_SERVICE_CREATE"); }
-canUpdateServiceRec():   boolean { return this.can("RECLAMATION_SERVICE_UPDATE"); }
-canDeleteServiceRec():   boolean { return this.can("RECLAMATION_SERVICE_DELETE"); }
-canActivateServiceRec(): boolean { return this.can("RECLAMATION_SERVICE_ACTIVATE"); }
-canDeactivateServiceRec(): boolean { return this.can("RECLAMATION_SERVICE_DEACTIVATE"); }
+    // ════════════════════════════════════════════════════════════════
+  // USER_MANAGEMENT — Gestion des utilisateurs
+  // ════════════════════════════════════════════════════════════════
+  // ✅ USER_VIEW | USER_CREATE | USER_UPDATE_INFO | USER_DELETE
+  //    USER_BULK_DELETE | USER_VIEW_GROUPS | USER_SECURE_PWD | USER_SECURE_TOGGLE
  
-canSeeReclamationMenu(): boolean {
-  return this.canCreateReclamation() || this.canViewOwnRec() || this.canViewAllRec() || this.canTreatRec();
-}
-canSeeGererReclamations(): boolean { return this.canViewAllRec() || this.canTreatRec(); }
-canSeeStatutReclamation(): boolean { return this.canReadStatutRec() || this.canCreateStatutRec(); }
-canSeeServiceReclamation(): boolean { return this.canReadServiceRec() || this.canCreateServiceRec(); }
+  /** Voir la liste des utilisateurs */
+  canViewUsers():       boolean { return this.can('USER_VIEW'); }
+  /** Créer un utilisateur (bouton + page /add-user) */
+  canCreateUser():      boolean { return this.can('USER_CREATE'); }
+  /** Modifier les infos (onglet Informations du slide-over) */
+  canUpdateUserInfo():  boolean { return this.can('USER_UPDATE_INFO'); }
+  /** Supprimer un utilisateur */
+  canDeleteUser():      boolean { return this.can('USER_DELETE'); }
+  /** Suppression en masse */
+  canBulkDeleteUsers(): boolean { return this.can('USER_BULK_DELETE'); }
+  /** Voir l'onglet Groupes dans le slide-over */
+  canViewUserGroups():  boolean { return this.can('USER_VIEW_GROUPS'); }
+  /** Réinitialiser le mot de passe */
+  canResetPassword():   boolean { return this.can('USER_SECURE_PWD'); }
+  /** Activer / Désactiver un compte */
+  canToggleUserActif(): boolean { return this.can('USER_SECURE_TOGGLE'); }
+ 
+  /** Menu Système visible si au moins USER_VIEW ou USER_CREATE */
+  canSeeUserMenu(): boolean {
+    return this.canViewUsers() || this.canCreateUser()
+        || this.canUpdateUserInfo() || this.canDeleteUser();
+  }
+ 
+  // ════════════════════════════════════════════════════════════════
+  // PROFIL_PERMISSION — Gestion de la matrice d'accès
+  // ════════════════════════════════════════════════════════════════
+  // ✅ PROFIL_PERM_VIEW | PROFIL_CREATE | PROFIL_UPDATE | PROFIL_DELETE
+  //    PERMISSION_CREATE | PERMISSION_UPDATE | PERMISSION_DELETE | PROFIL_PERM_ASSIGN
+ 
+  /** Consulter la page matrice */
+  canViewProfilPerm():    boolean { return this.can('PROFIL_PERM_VIEW'); }
+  /** Créer un profil */
+  canCreateProfil():      boolean { return this.can('PROFIL_CREATE'); }
+  /** Modifier un profil */
+  canUpdateProfil():      boolean { return this.can('PROFIL_UPDATE'); }
+  /** Supprimer un profil */
+  canDeleteProfil():      boolean { return this.can('PROFIL_DELETE'); }
+  /** Créer une permission */
+  canCreatePermission():  boolean { return this.can('PERMISSION_CREATE'); }
+  /** Modifier une permission */
+  canUpdatePermission():  boolean { return this.can('PERMISSION_UPDATE'); }
+  /** Supprimer une permission */
+  canDeletePermission():  boolean { return this.can('PERMISSION_DELETE'); }
+  /** Cocher/décocher les cases (assigner/désassigner) */
+  canAssignProfil():      boolean { return this.can('PROFIL_PERM_ASSIGN'); }
+ 
+  /** Menu Permissions visible si au moins PROFIL_PERM_VIEW */
+  canSeePermissionsMenu(): boolean {
+    return this.canViewProfilPerm() || this.canCreateProfil()
+        || this.canCreatePermission() || this.canAssignProfil();
+  }
 }
