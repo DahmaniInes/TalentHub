@@ -66,4 +66,14 @@ export class UserService {
   deleteUser(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
+
+  // Ajouter à la fin de user.service.ts
+getSuperviseurs(): Observable<Utilisateur[]> {
+  return this.http.get<Utilisateur[]>('http://localhost:8085/api/stagiaires/superviseurs');
+}
+
+getTypesStage(): Observable<any[]> {
+  return this.http.get<any[]>('http://localhost:8085/api/nomenclature/types-stage/actifs');
+}
+
 }

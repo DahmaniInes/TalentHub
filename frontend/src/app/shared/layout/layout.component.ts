@@ -32,6 +32,8 @@ export class LayoutComponent implements OnInit, OnDestroy {
   rhMenuOpen = false;
   gestionMenuOpen = false;
   demandeMenuOpen = false;
+  stagiaireMenuOpen = false;
+
   readonly perms = inject(PermissionContextService);
   currentUser = signal<Utilisateur | null>(null);
   currentUrl  = signal('');
@@ -118,6 +120,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   toggleRHMenu(): void      { this.rhMenuOpen      = !this.rhMenuOpen; }
   toggleGestionMenu(): void { this.gestionMenuOpen = !this.gestionMenuOpen; }
   toggleDemandeMenu(): void { this.demandeMenuOpen = !this.demandeMenuOpen; }
+  toggleStagiaireMenu() { this.stagiaireMenuOpen = !this.stagiaireMenuOpen; }
 
   toggleNotifPanel(event: Event): void {
     event.stopPropagation();

@@ -321,4 +321,28 @@ export class PermissionContextService {
     return this.canViewProfilPerm() || this.canCreateProfil()
         || this.canCreatePermission() || this.canAssignProfil();
   }
+
+
+
+  // Ajouter dans PermissionContextService
+
+// ════ ESPACE STAGIAIRE ════
+canViewAllInterns():     boolean { return this.can('INT_ADMIN_VIEW_ALL_INTERNS'); }
+canAssignSupervisor():   boolean { return this.can('INT_ADMIN_ASSIGN_SUPERVISOR'); }
+canCreateTypeStage():    boolean { return this.can('INT_TYPE_CREATE'); }
+canViewTypeStage():      boolean { return this.can('INT_TYPE_VIEW'); }
+canEditTypeStage():      boolean { return this.can('INT_TYPE_EDIT'); }
+canDeleteTypeStage():    boolean { return this.can('INT_TYPE_DELETE'); }
+canViewMyInterns():      boolean { return this.can('INT_SUPER_VIEW_MY_INTERNS'); }
+canSupervise():          boolean { return this.can('INT_SUPER_CAN_SUPERVISE'); }
+
+canSeeEspaceStagiaire(): boolean {
+    return this.canViewAllInterns() || this.canViewMyInterns()
+        || this.canViewTypeStage()  || this.canCreateTypeStage();
+}
+canSeeGestionStagiaires(): boolean { return this.canViewAllInterns() || this.canViewMyInterns(); }
+canSeeTypeStageMenu():     boolean { return this.canViewTypeStage() || this.canCreateTypeStage(); }
+
+
+
 }

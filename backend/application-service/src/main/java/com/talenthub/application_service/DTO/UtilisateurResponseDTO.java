@@ -4,6 +4,7 @@ import com.talenthub.application_service.Entity.Utilisateur;
 import lombok.Getter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 public class UtilisateurResponseDTO {
@@ -29,6 +30,28 @@ public class UtilisateurResponseDTO {
     private final Long profilId;
     private final String profilNom;
 
+
+
+
+    private final String universite;
+    private final String specialite;
+    private final String niveauEtude;
+    private final LocalDate dateDebutStage;
+    private final LocalDate dateFinStage;
+    private final LocalDate dateSoutenance;
+    private final Long typeStageId;
+    private final List<Long> superviseurIds;
+    private final List<String> superviseurNoms;
+
+
+
+
+
+
+
+
+
+
     public UtilisateurResponseDTO(Utilisateur u) {
         this.id = u.getId();
         this.keycloakId = u.getKeycloakId();
@@ -50,5 +73,19 @@ public class UtilisateurResponseDTO {
         // ✅ Extraire uniquement ce dont le front a besoin
         this.profilId = u.getProfil() != null ? u.getProfil().getId() : null;
         this.profilNom = u.getProfil() != null ? u.getProfil().getNom() : null;
+
+
+// Dans le constructeur, ajouter :
+        this.universite     = u.getUniversite();
+        this.specialite     = u.getSpecialite();
+        this.niveauEtude    = u.getNiveauEtude();
+        this.dateDebutStage = u.getDateDebutStage();
+        this.dateFinStage   = u.getDateFinStage();
+        this.dateSoutenance = u.getDateSoutenance();
+        this.typeStageId    = u.getTypeStageId();
+        this.superviseurIds = u.getSuperviseurs() != null
+                ? u.getSuperviseurs().stream().map(Utilisateur::getId).toList() : List.of();
+        this.superviseurNoms = u.getSuperviseurs() != null
+                ? u.getSuperviseurs().stream().map(Utilisateur::getNomComplet).toList() : List.of();
     }
 }

@@ -28,6 +28,10 @@ import { GererReclamationsComponent }   from './reclamation/gerer-reclamations/g
 import { StatutReclamationComponent }   from './reclamation/statut-reclamation/statut-reclamation.component';
 import { ServiceReclamationComponent }  from './reclamation/service-reclamation/service-reclamation.component';
 
+import { StagiairesComponent }  from './stage/stagiaires/stagiaires.component';
+
+import { TypeStageComponent }  from './stage/type-stage/type-stage.component';
+
 const routes: Routes = [
   { path: 'home', component: HomeComponent },
   { path: 'dashboard', component: DashboardComponent },
@@ -76,7 +80,16 @@ const routes: Routes = [
 {
   path: 'reclamations/services',
   component: ServiceReclamationComponent   // RECLAMATION_SERVICE_READ
+},
+{
+  path: 'stagiaires',
+  component: StagiairesComponent    // RECLAMATION_STATUT_READ
+},
+{
+  path: 'types-stage',
+  component: TypeStageComponent   // RECLAMATION_SERVICE_READ
 }
+// Dans app.routes.ts
 
 ];
 

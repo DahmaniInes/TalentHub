@@ -127,4 +127,49 @@ public class Utilisateur {
     public String getNomComplet() {
         return prenom + " " + nom;
     }
+
+
+
+
+
+
+    // Ajouter ces champs dans Utilisateur.java après "private String photoUrl;"
+
+    // ══ CHAMPS STAGIAIRE ══
+
+    @Column(name = "universite", length = 150)
+    private String universite;
+
+    @Column(name = "specialite", length = 150)
+    private String specialite;
+
+    @Column(name = "niveau_etude", length = 50)
+    private String niveauEtude;
+
+    @Column(name = "date_debut_stage")
+    private LocalDate dateDebutStage;
+
+    @Column(name = "date_fin_stage")
+    private LocalDate dateFinStage;
+
+    @Column(name = "date_soutenance")
+    private LocalDate dateSoutenance;
+
+    @Column(name = "type_stage_id")
+    private Long typeStageId;
+
+    // Relation superviseurs (ManyToMany — un stagiaire peut avoir plusieurs superviseurs)
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "stagiaire_superviseurs",
+            joinColumns = @JoinColumn(name = "stagiaire_id"),
+            inverseJoinColumns = @JoinColumn(name = "superviseur_id")
+    )
+    @Builder.Default
+    private List<Utilisateur> superviseurs = new ArrayList<>();
+
+    // Relation inverse — stagiaires encadrés par ce superviseur
+    @ManyToMany(mappedBy = "superviseurs", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Utilisateur> stagiairesEncadres = new ArrayList<>();
 }

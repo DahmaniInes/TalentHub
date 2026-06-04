@@ -38,14 +38,14 @@ export interface FeuilleTemps {
   semaineDu: string;
   semaineAu: string;
   heuresTravaillees?: number;
-  minutesTravaillees?: number;
-  minutesSupplementaires?: number;
+  minutesTravaillees: number;        // ← supprimer le ?
+  minutesSupplementaires: number;    // ← supprimer le ?
   statut: StatutFT;
   commentaireEmploye?: string;
   commentaireValideur?: string;
   validePar?: string;
   dateValidation?: string;
-  lignes: LigneFeuilleTemps[];
+  lignes: LigneFeuilleTemps[];       // déjà non-optionnel ✅
 }
 
 // ─── Request envoyé AU backend ────────────────────────────────────────────────

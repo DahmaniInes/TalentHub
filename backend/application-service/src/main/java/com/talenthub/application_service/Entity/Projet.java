@@ -128,8 +128,6 @@ public class Projet {
     @Builder.Default
     private List<Document> documents = new ArrayList<>();
 
-
-
     @Column(name = "heures_passees")
     @Builder.Default
     private Double heuresPassees = 0.0;

@@ -1,0 +1,357 @@
+<div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh" (click)="closeMenu()">
+    <div class="dt-wrap">
+  
+      <!-- ACCÈS REFUSÉ -->
+      <div *ngIf="!perms.canSeeGestionStagiaires()"
+           style="padding:80px 24px;text-align:center;color:var(--text-muted)">
+        <svg viewBox="0 0 48 48" fill="none" style="width:48px;height:48px;opacity:.3;margin:0 auto 16px">
+          <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M16 16l16 16M32 16L16 32" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <p style="font-weight:700;font-size:1rem;margin-bottom:6px;color:var(--text-primary)">Accès refusé</p>
+        <p style="font-size:.83rem">Permission requise pour consulter les stagiaires.</p>
+      </div>
+  
+      <ng-container *ngIf="perms.canSeeGestionStagiaires()">
+  
+      <!-- HEADER -->
+      <div class="dt-header">
+        <div>
+          <h1 class="dt-title">
+            <svg class="dt-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M12 14l9-5-9-5-9 5 9 5z"/>
+              <path d="M12 14l6.16-3.422A12.083 12.083 0 0112 21.5a12.083 12.083 0 01-6.16-10.922L12 14z" stroke-linecap="round"/>
+            </svg>
+            Stagiaires
+          </h1>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+            <span class="dt-badge dt-badge-accent" style="font-size:.66rem;padding:3px 9px">
+              <span class="dt-badge-dot"></span>{{ stagiaires().length }} total
+            </span>
+            <span class="dt-badge dt-badge-delivered" style="font-size:.66rem;padding:3px 9px">
+              <span class="dt-badge-dot"></span>{{ statsActifs() }} actifs
+            </span>
+          </div>
+        </div>
+  
+        <div class="dt-header-actions">
+          <!-- Recherche + Filtre -->
+          <div class="dt-search-wrap" (click)="$event.stopPropagation()">
+            <div class="dt-search-bar" style="min-width:240px">
+              <button class="dt-filter-icon-btn"
+                      [class.has-filters]="hasFilters()"
+                      (click)="filterOpen.set(!filterOpen())" title="Filtres">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M2 3h12l-4.5 5.5V13L6.5 11.5V8.5L2 3z" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <input class="dt-search-input" [value]="search()"
+                     (input)="search.set($any($event.target).value); page.set(1)"
+                     placeholder="Rechercher un stagiaire...">
+            </div>
+  
+            <div class="dt-filter-panel" [class.open]="filterOpen()">
+              <div class="dt-fp-header">
+                <p class="dt-fp-title">Filtres</p>
+                <button *ngIf="hasFilters()" class="dt-fp-reset" (click)="resetFilters()">Réinitialiser</button>
+              </div>
+              <div class="dt-fp-body">
+                <div class="dt-fp-field">
+                  <label class="dt-fp-label">Type de stage</label>
+                  <select class="dt-fp-select" [value]="filterTypeStage()"
+                          (change)="filterTypeStage.set($any($event.target).value); page.set(1)">
+                    <option value="">Tous les types</option>
+                    <option *ngFor="let t of typesStage()" [value]="t.id">{{ t.libelle }}</option>
+                  </select>
+                </div>
+                <div class="dt-fp-field">
+                  <label class="dt-fp-label">Statut</label>
+                  <select class="dt-fp-select" [value]="filterStatut()"
+                          (change)="filterStatut.set($any($event.target).value); page.set(1)">
+                    <option value="">Tous</option>
+                    <option value="actif">Actifs</option>
+                    <option value="inactif">Inactifs</option>
+                  </select>
+                </div>
+              </div>
+              <div class="dt-fp-footer">
+                <button class="mx-btn mx-btn-ghost" style="height:30px;font-size:.73rem" (click)="filterOpen.set(false)">Fermer</button>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Bouton Ajouter → redirige vers /add-user avec flag stagiaire -->
+          <button *ngIf="perms.canViewAllInterns()" class="dt-btn-create" (click)="goToAdd()">
+            <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+              <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+            Ajouter
+          </button>
+        </div>
+      </div>
+  
+      <div *ngIf="loading()" class="dt-loading"><div class="dt-spinner"></div> Chargement...</div>
+  
+      <!-- TABLEAU -->
+      <div *ngIf="!loading()" class="dt-scroll">
+        <table class="dt-table">
+          <thead>
+            <tr>
+              <th class="dt-th" style="min-width:220px">
+                <div class="dt-th-inner">
+                  <svg class="dt-th-icon" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8 7a3 3 0 100-6 3 3 0 000 6zm-5 6a5 5 0 0110 0H3z"/>
+                  </svg>
+                  Stagiaire
+                </div>
+              </th>
+              <th class="dt-th" style="min-width:130px">
+                <div class="dt-th-inner">Université</div>
+              </th>
+              <th class="dt-th" style="min-width:130px">
+                <div class="dt-th-inner">Spécialité</div>
+              </th>
+              <th class="dt-th" style="min-width:110px">
+                <div class="dt-th-inner">Type stage</div>
+              </th>
+              <th class="dt-th" style="min-width:120px">
+                <div class="dt-th-inner">Période</div>
+              </th>
+              <th class="dt-th" style="min-width:160px">
+                <div class="dt-th-inner">Superviseurs</div>
+              </th>
+              <th class="dt-th" style="min-width:100px">
+                <div class="dt-th-inner">Statut</div>
+              </th>
+              <th class="dt-th dt-th-actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="pagedStagiaires().length === 0">
+              <td colspan="8" class="dt-td">
+                <div class="dt-empty">
+                  <svg viewBox="0 0 48 48" fill="none" style="width:38px;height:38px;opacity:.35">
+                    <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+                    <path d="M24 16v8M24 28h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  <p class="dt-empty-title">Aucun stagiaire trouvé</p>
+                  <p class="dt-empty-sub">Modifiez vos filtres ou ajoutez un stagiaire</p>
+                  <button *ngIf="perms.canViewAllInterns()" class="dt-btn-create" style="margin-top:12px" (click)="goToAdd()">Ajouter</button>
+                </div>
+              </td>
+            </tr>
+  
+            <tr *ngFor="let s of pagedStagiaires()" class="dt-tr" (click)="openDetail(s)">
+  
+              <!-- Stagiaire -->
+              <td class="dt-td">
+                <div class="dt-cell-with-avatar">
+                  <div class="dt-avatar" [style.background]="getAvatarColor(s.nomComplet || '')">
+                    <img *ngIf="s.photoUrl" [src]="s.photoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                    <span *ngIf="!s.photoUrl">{{ getInitiales(s.nomComplet) }}</span>
+                  </div>
+                  <div class="dt-cell-user">
+                    <span class="dt-cell-name">{{ s.nomComplet }}</span>
+                    <span class="dt-cell-sub">{{ s.email }}</span>
+                  </div>
+                </div>
+              </td>
+  
+              <!-- Université -->
+              <td class="dt-td">
+                <span class="dt-cell-text">{{ s.universite || '—' }}</span>
+              </td>
+  
+              <!-- Spécialité -->
+              <td class="dt-td">
+                <span class="dt-cell-muted">{{ s.specialite || '—' }}</span>
+              </td>
+  
+              <!-- Type stage -->
+              <td class="dt-td">
+                <span *ngIf="s.typeStageId" class="dt-badge dt-badge-accent" style="font-size:.65rem">
+                  <span class="dt-badge-dot"></span>{{ getTypeStageLibelle(s.typeStageId) }}
+                </span>
+                <span *ngIf="!s.typeStageId" class="dt-cell-muted">—</span>
+              </td>
+  
+              <!-- Période -->
+              <td class="dt-td">
+                <div class="dt-cell-user">
+                  <span *ngIf="s.dateDebutStage" class="dt-cell-name" style="font-size:.76rem">{{ fmtDate(s.dateDebutStage) }}</span>
+                  <span *ngIf="s.dateFinStage" class="dt-cell-sub">→ {{ fmtDate(s.dateFinStage) }}</span>
+                  <span *ngIf="!s.dateDebutStage" class="dt-cell-muted">—</span>
+                </div>
+              </td>
+  
+              <!-- Superviseurs -->
+              <td class="dt-td">
+                <div *ngIf="s.superviseurNoms && s.superviseurNoms.length > 0" style="display:flex;flex-direction:column;gap:3px">
+                  <span *ngFor="let nom of s.superviseurNoms.slice(0,2)"
+                        class="dt-cell-sub" style="font-size:.72rem">{{ nom }}</span>
+                  <span *ngIf="s.superviseurNoms.length > 2" class="dt-cell-muted" style="font-size:.68rem">
+                    +{{ s.superviseurNoms.length - 2 }} autre(s)
+                  </span>
+                </div>
+                <span *ngIf="!s.superviseurNoms || s.superviseurNoms.length === 0" class="dt-cell-muted">—</span>
+              </td>
+  
+              <!-- Statut -->
+              <td class="dt-td">
+                <span class="dt-badge"
+                      [class.dt-badge-delivered]="s.actif"
+                      [class.dt-badge-canceled]="!s.actif">
+                  <span class="dt-badge-dot"></span>{{ s.actif ? 'Actif' : 'Inactif' }}
+                </span>
+              </td>
+  
+              <!-- Actions -->
+              <td class="dt-td dt-td-actions" (click)="$event.stopPropagation()">
+                <div class="dt-td-actions-wrap" style="gap:0">
+                  <button *ngIf="perms.canViewAllInterns()"
+                          class="dt-action-btn dt-action-edit" (click)="openDetail(s)" title="Modifier">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+  
+      <!-- PAGINATION -->
+      <div *ngIf="!loading() && filteredStagiaires().length > 0" class="dt-footer">
+        <div class="dt-count-info">
+          <strong>{{ (page()-1)*pageSize+1 }}–{{ minVal(page()*pageSize, filteredStagiaires().length) }}</strong>
+          of <strong>{{ filteredStagiaires().length }}</strong>
+        </div>
+        <div class="dt-pagination">
+          <button class="dt-page-arrow" [disabled]="page()===1" (click)="goPage(page()-1)">
+            <svg viewBox="0 0 14 14" fill="none"><path d="M9 2L5 7l4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+          <button *ngFor="let p of pagesArr()" class="dt-page-btn"
+                  [class.dt-page-btn-active]="p===page()" (click)="goPage(p)">{{ p }}</button>
+          <button class="dt-page-arrow" [disabled]="page()===totalPages()" (click)="goPage(page()+1)">
+            <svg viewBox="0 0 14 14" fill="none"><path d="M5 2l4 5-4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+  
+      </ng-container>
+    </div>
+  </div>
+  
+  <!-- SLIDE-OVER DÉTAIL STAGIAIRE -->
+  <div *ngIf="detailStagiaire()" class="mx-overlay" (click)="fermerDetail()"></div>
+  <div *ngIf="detailStagiaire() as s" class="mx-slideover">
+    <div class="mx-so-header">
+      <div class="dt-avatar" [style.background]="getAvatarColor(s.nomComplet || '')"
+           style="width:44px;height:44px;border-radius:11px">
+        <img *ngIf="s.photoUrl" [src]="s.photoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:11px">
+        <span *ngIf="!s.photoUrl" style="color:white;font-weight:800">{{ getInitiales(s.nomComplet) }}</span>
+      </div>
+      <div class="mx-so-title-block">
+        <p class="mx-so-name">{{ s.nomComplet }}</p>
+        <p class="mx-so-sub">{{ s.email }}</p>
+        <div class="mx-so-badges">
+          <span class="dt-badge" [class.dt-badge-delivered]="s.actif" [class.dt-badge-canceled]="!s.actif" style="font-size:.62rem">
+            <span class="dt-badge-dot"></span>{{ s.actif ? 'Actif' : 'Inactif' }}
+          </span>
+        </div>
+      </div>
+      <button class="mx-so-close" (click)="fermerDetail()">
+        <svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  
+    <div class="mx-so-tabs">
+      <button class="mx-so-tab" [class.active]="tab()==='infos'" (click)="tab.set('infos')">Informations</button>
+      <button class="mx-so-tab" [class.active]="tab()==='stage'" (click)="tab.set('stage')">Stage</button>
+      <button *ngIf="perms.canAssignSupervisor()" class="mx-so-tab" [class.active]="tab()==='superviseurs'" (click)="tab.set('superviseurs')">Superviseurs</button>
+    </div>
+  
+    <!-- TAB INFOS -->
+    <div *ngIf="tab()==='infos'" class="mx-so-body">
+      <div class="mx-so-grid">
+        <div class="mx-field"><label class="mx-field-label">Prénom</label><input [(ngModel)]="editForm().prenom" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        <div class="mx-field"><label class="mx-field-label">Nom</label><input [(ngModel)]="editForm().nom" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        <div class="mx-field mx-so-full"><label class="mx-field-label">Téléphone</label><input [(ngModel)]="editForm().telephone" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        <div class="mx-field"><label class="mx-field-label">Université</label><input [(ngModel)]="editForm().universite" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="Ex: ESPRIT"></div>
+        <div class="mx-field"><label class="mx-field-label">Spécialité</label><input [(ngModel)]="editForm().specialite" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="Ex: Informatique"></div>
+        <div class="mx-field"><label class="mx-field-label">Niveau d'étude</label>
+          <select [(ngModel)]="editForm().niveauEtude" [ngModelOptions]="{standalone:true}" class="mx-field-select">
+            <option value="">— Sélectionner —</option>
+            <option value="Licence 1">Licence 1</option>
+            <option value="Licence 2">Licence 2</option>
+            <option value="Licence 3">Licence 3</option>
+            <option value="Master 1">Master 1</option>
+            <option value="Master 2">Master 2</option>
+            <option value="Ingénierie">Ingénierie</option>
+            <option value="Doctorat">Doctorat</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  
+    <!-- TAB STAGE -->
+    <div *ngIf="tab()==='stage'" class="mx-so-body">
+      <div class="mx-so-grid">
+        <div class="mx-field mx-so-full">
+          <label class="mx-field-label">Type de stage</label>
+          <select [(ngModel)]="editForm().typeStageId" [ngModelOptions]="{standalone:true}" class="mx-field-select">
+            <option [ngValue]="null">— Sélectionner —</option>
+            <option *ngFor="let t of typesStage()" [ngValue]="t.id">{{ t.libelle }}</option>
+          </select>
+        </div>
+        <div class="mx-field"><label class="mx-field-label">Date début</label><input type="date" [(ngModel)]="editForm().dateDebutStage" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        <div class="mx-field"><label class="mx-field-label">Date fin</label><input type="date" [(ngModel)]="editForm().dateFinStage" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+        <div class="mx-field mx-so-full"><label class="mx-field-label">Date soutenance</label><input type="date" [(ngModel)]="editForm().dateSoutenance" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
+      </div>
+    </div>
+  
+    <!-- TAB SUPERVISEURS -->
+    <div *ngIf="tab()==='superviseurs' && perms.canAssignSupervisor()" class="mx-so-body">
+      <p class="mx-so-section-title">Superviseurs assignés</p>
+      <div class="mx-membre-list">
+        <div *ngFor="let sup of superviseursAssignes()" class="mx-membre-item">
+          <div class="dt-avatar" [style.background]="getAvatarColor(sup.nomComplet || '')"
+               style="width:32px;height:32px;border-radius:8px;font-size:.62rem">
+            <img *ngIf="sup.photoUrl" [src]="sup.photoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:8px">
+            <span *ngIf="!sup.photoUrl">{{ getInitiales(sup.nomComplet) }}</span>
+          </div>
+          <div class="mx-membre-info">
+            <span class="mx-membre-nom">{{ sup.nomComplet }}</span>
+            <span class="mx-membre-sub">{{ sup.poste || sup.email || '—' }}</span>
+          </div>
+          <button class="dt-action-btn dt-action-del" style="width:24px;height:24px"
+                  (click)="retirerSuperviseur(sup.id)" title="Retirer">
+            <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+              <path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div *ngIf="superviseursAssignes().length === 0" class="dt-empty" style="padding:20px">
+          <p class="dt-empty-sub">Aucun superviseur assigné</p>
+        </div>
+      </div>
+  
+      <div class="mx-divider"></div>
+      <p class="mx-so-section-title">Ajouter un superviseur</p>
+      <select class="mx-field-select" (change)="ajouterSuperviseur(+$any($event.target).value); $any($event.target).value=''">
+        <option value="">+ Sélectionner un superviseur éligible...</option>
+        <option *ngFor="let sup of superviseursDispo()" [value]="sup.id">
+          {{ sup.nomComplet }} {{ sup.poste ? '— ' + sup.poste : '' }}
+        </option>
+      </select>
+    </div>
+  
+    <div class="mx-so-footer">
+      <button class="mx-btn mx-btn-ghost" (click)="fermerDetail()">Annuler</button>
+      <button class="mx-btn mx-btn-primary" (click)="sauvegarder()" [disabled]="saving()">
+        <div *ngIf="saving()" class="mx-spinner-sm"></div>
+        {{ saving() ? 'Enregistrement...' : 'Enregistrer' }}
+      </button>
+    </div>
+  </div>

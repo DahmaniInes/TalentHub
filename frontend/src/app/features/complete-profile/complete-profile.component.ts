@@ -27,15 +27,27 @@ export class CompleteProfileComponent implements OnInit {
   selectedFile: File | null = null;
   previewUrl   = signal<string | null>(null);
   currentUser  = signal<Utilisateur | null>(null);
+  typesStage   = signal<any[]>([]);
   isDark       = false;
 
-  // ✅ Propriétés de focus pour les effets visuels des inputs
+  // Focus states
   dateNaissanceFocused = false;
   dateFinFocused       = false;
   telFocused           = false;
   posteFocused         = false;
   deptFocused          = false;
   adresseFocused       = false;
+  universiteFocused    = false;
+  specialiteFocused    = false;
+  niveauEtudeFocused   = false;
+  dateDebutStageFocused = false;
+  dateFinStageFocused   = false;
+  dateSoutenanceFocused = false;
+
+  // Détecte si stagiaire selon le profil
+  get estStagiaire(): boolean {
+    return this.currentUser()?.profilNom?.toLowerCase().includes('stagiaire') ?? false;
+  }
 
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {
     this.profileForm = this.fb.group({
@@ -44,7 +56,16 @@ export class CompleteProfileComponent implements OnInit {
       telephone:      [''],
       adresse:        [''],
       poste:          [''],
-      departement:    ['']
+      departement:    [''],
+      // Académique
+      universite:     [''],
+      specialite:     [''],
+      niveauEtude:    [''],
+      // Stage
+      typeStageId:    [null],
+      dateDebutStage: [''],
+      dateFinStage:   [''],
+      dateSoutenance: [''],
     });
   }
 
@@ -55,6 +76,7 @@ export class CompleteProfileComponent implements OnInit {
       this.applyTheme(this.isDark);
     }
     this.loadExistingProfile();
+    this.userSvc.getTypesStage().subscribe({ next: d => this.typesStage.set(d) });
   }
 
   toggleTheme(): void {
@@ -72,9 +94,7 @@ export class CompleteProfileComponent implements OnInit {
   }
 
   private applyTheme(dark: boolean): void {
-    dark
-      ? document.documentElement.classList.add('dark')
-      : document.documentElement.classList.remove('dark');
+    dark ? document.documentElement.classList.add('dark') : document.documentElement.classList.remove('dark');
     localStorage.setItem('theme', dark ? 'dark' : 'light');
   }
 
@@ -90,7 +110,14 @@ export class CompleteProfileComponent implements OnInit {
           telephone:      u.telephone      || '',
           adresse:        u.adresse        || '',
           poste:          u.poste          || '',
-          departement:    u.departement    || ''
+          departement:    u.departement    || '',
+          universite:     u.universite     || '',
+          specialite:     u.specialite     || '',
+          niveauEtude:    u.niveauEtude    || '',
+          typeStageId:    u.typeStageId    || null,
+          dateDebutStage: u.dateDebutStage || '',
+          dateFinStage:   u.dateFinStage   || '',
+          dateSoutenance: u.dateSoutenance || '',
         });
         if (u.photoUrl) this.previewUrl.set(u.photoUrl);
       },

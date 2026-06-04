@@ -28,4 +28,13 @@ public class UserCreationRequest {
     @NotNull
     private Long profilId;
 
+
+    private String universite;
+    private String specialite;
+    private String niveauEtude;
+    private LocalDate dateDebutStage;
+    private LocalDate dateFinStage;
+    private LocalDate dateSoutenance;
+    private Long typeStageId;
+
 }

@@ -80,6 +80,13 @@ public class UtilisateurService {
                 .adresse(request.getAdresse())
                 .actif(true)
                 .profil(profil)
+                .universite(request.getUniversite())
+                .specialite(request.getSpecialite())
+                .niveauEtude(request.getNiveauEtude())
+                .dateDebutStage(request.getDateDebutStage())
+                .dateFinStage(request.getDateFinStage())
+                .dateSoutenance(request.getDateSoutenance())
+                .typeStageId(request.getTypeStageId())
                 .build();
 
         return repository.save(utilisateur);

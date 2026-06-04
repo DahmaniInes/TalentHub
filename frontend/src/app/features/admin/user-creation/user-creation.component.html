@@ -1,4 +1,3 @@
-<!-- user-creation.component.html — avec permission USER_CREATE -->
 <div class="uc-wrapper">
 
   <!-- ══ ACCÈS REFUSÉ ══ -->
@@ -18,7 +17,6 @@
     </button>
   </div>
 
-  <!-- ══ CONTENU PRINCIPAL (seulement si USER_CREATE) ══ -->
   <ng-container *ngIf="perms.canCreateUser()">
 
   <!-- STEPPER BAR -->
@@ -27,13 +25,11 @@
       <div class="uc-stepper-progress"
            [style.width.%]="((currentStep - 1) / (steps.length - 1)) * 100"></div>
     </div>
-
     <div class="uc-step-node"
          *ngFor="let step of steps; let i = index"
          [class.active]="currentStep === i + 1"
          [class.done]="currentStep > i + 1"
          (click)="goToStep(i + 1)">
-
       <div class="uc-step-circle">
         <svg *ngIf="i === 0" viewBox="0 0 20 20" fill="none">
           <circle cx="10" cy="7" r="3" stroke="currentColor" stroke-width="1.8"/>
@@ -74,7 +70,6 @@
           <p class="uc-step-subtitle">Identité et coordonnées de l'utilisateur</p>
         </div>
       </div>
-
       <div class="uc-fields-grid">
         <!-- Prénom -->
         <div class="uc-field-group">
@@ -92,7 +87,6 @@
             Minimum 2 caractères requis
           </p>
         </div>
-
         <!-- Nom -->
         <div class="uc-field-group">
           <label class="uc-label">Nom <span class="uc-required">*</span></label>
@@ -109,7 +103,6 @@
             Minimum 2 caractères requis
           </p>
         </div>
-
         <!-- Email -->
         <div class="uc-field-group uc-field-full">
           <label class="uc-label">Email professionnel <span class="uc-required">*</span></label>
@@ -126,7 +119,6 @@
             Adresse email invalide
           </p>
         </div>
-
         <!-- Téléphone -->
         <div class="uc-field-group uc-field-full">
           <label class="uc-label">Téléphone <span class="uc-optional">optionnel</span></label>
@@ -142,7 +134,7 @@
       </div>
     </div>
 
-    <!-- ─── STEP 2 — INFORMATIONS PROFESSIONNELLES ─── -->
+    <!-- ─── STEP 2 — POSTE & ÉTUDES ─── -->
     <div class="uc-step-content" *ngIf="currentStep === 2">
       <div class="uc-step-header">
         <div class="uc-step-icon-lg">
@@ -153,7 +145,7 @@
           </svg>
         </div>
         <div>
-          <h2 class="uc-step-title">Informations professionnelles</h2>
+          <h2 class="uc-step-title">Poste & Études</h2>
           <p class="uc-step-subtitle">Tous les champs sont optionnels</p>
         </div>
       </div>
@@ -171,7 +163,6 @@
                    (focus)="focusState['poste']=true" (blur)="focusState['poste']=false">
           </div>
         </div>
-
         <!-- Département -->
         <div class="uc-field-group">
           <label class="uc-label">Département <span class="uc-optional">optionnel</span></label>
@@ -184,7 +175,6 @@
                    (focus)="focusState['departement']=true" (blur)="focusState['departement']=false">
           </div>
         </div>
-
         <!-- Date embauche -->
         <div class="uc-field-group">
           <label class="uc-label">Date d'embauche <span class="uc-optional">optionnel</span></label>
@@ -197,7 +187,6 @@
                    (focus)="focusState['dateEmbauche']=true" (blur)="focusState['dateEmbauche']=false">
           </div>
         </div>
-
         <!-- Date fin de contrat -->
         <div class="uc-field-group">
           <label class="uc-label">Date de fin de contrat <span class="uc-optional">optionnel</span></label>
@@ -211,23 +200,192 @@
                    (focus)="focusState['dateFinContrat']=true" (blur)="focusState['dateFinContrat']=false">
           </div>
         </div>
-
         <!-- Adresse -->
         <div class="uc-field-group uc-field-full">
           <label class="uc-label">Adresse <span class="uc-optional">optionnel</span></label>
           <div class="uc-textarea-wrap" [class.focused]="focusState['adresse']">
-            <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none"
-                 style="align-self:flex-start;margin-top:2px">
-              <path d="M10 2C6.686 2 4 4.686 4 8c0 4.5 6 10 6 10s6-5.5 6-10c0-3.314-2.686-6-6-6z"
-                    stroke="currentColor" stroke-width="1.6"/>
+            <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none" style="align-self:flex-start;margin-top:2px">
+              <path d="M10 2C6.686 2 4 4.686 4 8c0 4.5 6 10 6 10s6-5.5 6-10c0-3.314-2.686-6-6-6z" stroke="currentColor" stroke-width="1.6"/>
               <circle cx="10" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/>
             </svg>
-            <textarea formControlName="adresse" rows="3" placeholder="Adresse complète"
+            <textarea formControlName="adresse" rows="2" placeholder="Adresse complète"
                       class="uc-textarea"
-                      (focus)="focusState['adresse']=true"
-                      (blur)="focusState['adresse']=false"></textarea>
+                      (focus)="focusState['adresse']=true" (blur)="focusState['adresse']=false"></textarea>
           </div>
         </div>
+
+        <!-- ══ SÉPARATEUR ACADÉMIQUE ══ -->
+        <div class="uc-field-full" style="border-top:1px solid var(--uc-border);padding-top:16px;margin-top:4px">
+          <p style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--uc-text-muted);margin:0 0 14px">
+            Informations académiques
+          </p>
+        </div>
+
+        <!-- Université -->
+        <div class="uc-field-group">
+          <label class="uc-label">Université <span class="uc-optional">optionnel</span></label>
+          <div class="uc-input-wrap" [class.focused]="focusState['universite']">
+            <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
+              <path d="M10 2l8 4v5c0 4-3.5 7-8 8-4.5-1-8-4-8-8V6l8-4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            </svg>
+            <input formControlName="universite" placeholder="Ex: ESPRIT, ENSI, ENIT..." class="uc-input"
+                   (focus)="focusState['universite']=true" (blur)="focusState['universite']=false">
+          </div>
+        </div>
+
+        <!-- Spécialité -->
+        <div class="uc-field-group">
+          <label class="uc-label">Spécialité <span class="uc-optional">optionnel</span></label>
+          <div class="uc-input-wrap" [class.focused]="focusState['specialite']">
+            <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
+              <path d="M9 3H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M17 3l-6 6M11 3h6v6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+            <input formControlName="specialite" placeholder="Ex: Informatique, Génie Civil..." class="uc-input"
+                   (focus)="focusState['specialite']=true" (blur)="focusState['specialite']=false">
+          </div>
+        </div>
+
+        <!-- Niveau d'étude -->
+        <div class="uc-field-group uc-field-full">
+          <label class="uc-label">Niveau d'étude <span class="uc-optional">optionnel</span></label>
+          <div class="uc-input-wrap" [class.focused]="focusState['niveauEtude']">
+            <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
+              <path d="M10 2l8 4-8 4-8-4 8-4zM2 10l8 4 8-4" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            </svg>
+            <select formControlName="niveauEtude" class="uc-input" style="cursor:pointer"
+                    (focus)="focusState['niveauEtude']=true" (blur)="focusState['niveauEtude']=false">
+              <option value="">— Sélectionner —</option>
+              <option value="Licence 1">Licence 1</option>
+              <option value="Licence 2">Licence 2</option>
+              <option value="Licence 3">Licence 3</option>
+              <option value="Master 1">Master 1</option>
+              <option value="Master 2">Master 2</option>
+              <option value="Ingénierie">Ingénierie</option>
+              <option value="Doctorat">Doctorat</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ══ SECTION STAGE — visible uniquement si profil = stagiaire ══ -->
+        <ng-container *ngIf="estStagiaire()">
+
+          <div class="uc-field-full" style="border-top:1px solid var(--uc-border);padding-top:16px;margin-top:4px">
+            <p style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--accent);margin:0 0 14px;display:flex;align-items:center;gap:6px">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px">
+                <path d="M8 1l7 3.5v4c0 3.5-3 6-7 7-4-1-7-3.5-7-7v-4L8 1z" stroke-linejoin="round"/>
+              </svg>
+              Informations du stage
+            </p>
+          </div>
+
+          <!-- Type de stage -->
+          <div class="uc-field-group uc-field-full">
+            <label class="uc-label">Type de stage <span class="uc-optional">optionnel</span></label>
+            <div class="uc-input-wrap" [class.focused]="focusState['typeStageId']">
+              <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
+                <path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <select formControlName="typeStageId" class="uc-input" style="cursor:pointer"
+                      (focus)="focusState['typeStageId']=true" (blur)="focusState['typeStageId']=false">
+                <option [ngValue]="null">— Sélectionner —</option>
+                <option *ngFor="let t of typesStage()" [ngValue]="t.id">{{ t.libelle }}</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Date début stage -->
+          <div class="uc-field-group">
+            <label class="uc-label">Date début stage <span class="uc-optional">optionnel</span></label>
+            <div class="uc-input-wrap"
+                 [class.focused]="focusState['dateDebutStage']"
+                 [class.error]="userForm.hasError('dateRange') && userForm.get('dateDebutStage')?.touched">
+              <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
+                <rect x="2" y="4" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/>
+                <path d="M2 9h16M6 2v3M14 2v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              </svg>
+              <input type="date" formControlName="dateDebutStage" class="uc-input"
+                     (focus)="focusState['dateDebutStage']=true" (blur)="focusState['dateDebutStage']=false">
+            </div>
+          </div>
+
+          <!-- Date fin stage -->
+          <div class="uc-field-group">
+            <label class="uc-label">Date fin stage <span class="uc-optional">optionnel</span></label>
+            <div class="uc-input-wrap"
+                 [class.focused]="focusState['dateFinStage']"
+                 [class.error]="userForm.hasError('dateRange') && userForm.get('dateFinStage')?.touched">
+              <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
+                <rect x="2" y="4" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/>
+                <path d="M2 9h16M6 2v3M14 2v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                <path d="M7 13l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+              </svg>
+              <input type="date" formControlName="dateFinStage" class="uc-input"
+                     (focus)="focusState['dateFinStage']=true" (blur)="focusState['dateFinStage']=false">
+            </div>
+          </div>
+
+          <!-- Erreur date range -->
+          <div class="uc-field-full" *ngIf="userForm.hasError('dateRange') && (userForm.get('dateDebutStage')?.touched || userForm.get('dateFinStage')?.touched)">
+            <p class="uc-field-error">⚠️ La date de début doit être antérieure à la date de fin</p>
+          </div>
+
+          <!-- Date soutenance -->
+          <div class="uc-field-group uc-field-full">
+            <label class="uc-label">Date de soutenance <span class="uc-optional">optionnel</span></label>
+            <div class="uc-input-wrap" [class.focused]="focusState['dateSoutenance']">
+              <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
+                <rect x="2" y="4" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/>
+                <path d="M2 9h16M6 2v3M14 2v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                <circle cx="10" cy="13" r="2" stroke="currentColor" stroke-width="1.4"/>
+              </svg>
+              <input type="date" formControlName="dateSoutenance" class="uc-input"
+                     (focus)="focusState['dateSoutenance']=true" (blur)="focusState['dateSoutenance']=false">
+            </div>
+          </div>
+
+          <!-- Superviseurs -->
+          <div class="uc-field-group uc-field-full">
+            <label class="uc-label">Superviseurs <span class="uc-optional">optionnel</span></label>
+
+            <!-- Superviseurs sélectionnés -->
+            <div *ngIf="superviseurSelectionnes().length > 0"
+                 style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
+              <div *ngFor="let supId of superviseurSelectionnes()"
+                   style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--uc-input-bg);border:1.5px solid var(--uc-border);border-radius:var(--uc-radius-sm)">
+                <svg viewBox="0 0 16 16" fill="currentColor" style="width:14px;height:14px;color:var(--uc-accent);flex-shrink:0">
+                  <path d="M8 7a3 3 0 100-6 3 3 0 000 6zm-5 6a5 5 0 0110 0H3z"/>
+                </svg>
+                <span style="flex:1;font-size:.82rem;font-weight:600;color:var(--uc-text)">{{ superviseurNomById(supId) }}</span>
+                <button type="button"
+                        style="background:none;border:none;cursor:pointer;color:var(--uc-text-muted);font-size:1.1rem;line-height:1;padding:0;transition:color .15s"
+                        (click)="retirerSuperviseur(supId)">×</button>
+              </div>
+            </div>
+
+            <!-- Select pour ajouter -->
+            <div class="uc-input-wrap">
+              <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.6"/>
+                <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              </svg>
+              <select class="uc-input" style="cursor:pointer"
+                      (change)="ajouterSuperviseur($any($event.target).value); $any($event.target).value=''">
+                <option value="">+ Ajouter un superviseur éligible...</option>
+                <option *ngFor="let sup of superviseursDispo()" [value]="sup.id">
+                  {{ sup.nomComplet }}{{ sup.poste ? ' — ' + sup.poste : '' }}
+                </option>
+              </select>
+            </div>
+            <p style="font-size:.68rem;color:var(--uc-text-muted);margin-top:4px">
+              Seuls les utilisateurs ayant la permission "Superviseur - Éligible encadrement" apparaissent.
+            </p>
+          </div>
+
+        </ng-container>
+        <!-- ══ FIN SECTION STAGE ══ -->
+
       </div>
     </div>
 
@@ -264,16 +422,34 @@
             <span class="uc-profil-name">{{ profil.nom }}</span>
             <span class="uc-profil-desc" *ngIf="profil.description">{{ profil.description }}</span>
           </div>
+          <!-- Badge stagiaire -->
+          <span *ngIf="profil.nom?.toLowerCase()?.includes('stagiaire')"
+          style="font-size:.6rem;font-weight:700;padding:2px 8px;border-radius:99px;background:rgba(192,38,211,.12);color:var(--uc-accent);border:1px solid rgba(192,38,211,.25);flex-shrink:0">
+            Stage
+          </span>
         </label>
-
         <div *ngIf="profils().length === 0" class="uc-profil-empty">
           <svg viewBox="0 0 40 40" fill="none" style="width:36px;height:36px;color:var(--text-muted)">
             <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
             <path d="M20 12v8M20 24h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
           <p>Aucun profil disponible</p>
-          <span>Créez des profils dans la section Profils &amp; Permissions</span>
         </div>
+      </div>
+
+      <!-- Info contextuelle si profil stagiaire -->
+      <div *ngIf="estStagiaire()"
+           style="margin:16px 0 0;padding:12px 16px;background:rgba(192,38,211,.06);border:1px solid rgba(192,38,211,.2);border-radius:10px;display:flex;align-items:flex-start;gap:10px">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"
+             style="width:15px;height:15px;color:var(--accent);flex-shrink:0;margin-top:1px">
+          <circle cx="8" cy="8" r="6"/><path d="M8 5v4M8 11h.01" stroke-linecap="round"/>
+        </svg>
+        <p style="font-size:.77rem;color:var(--text-secondary);margin:0;line-height:1.5">
+          Les informations de stage saisies à l'étape précédente seront associées à ce stagiaire.
+          <span *ngIf="superviseurSelectionnes().length > 0">
+            {{ superviseurSelectionnes().length }} superviseur(s) assigné(s).
+          </span>
+        </p>
       </div>
 
       <p class="uc-field-error" *ngIf="userForm.get('profilId')?.invalid && userForm.get('profilId')?.touched">
@@ -341,9 +517,58 @@
             <span class="uc-recap-key">Embauche</span>
             <span class="uc-recap-val">{{ formatDate('dateEmbauche') }}</span>
           </div>
-          <div class="uc-recap-row" *ngIf="userForm.get('dateFinContrat')?.value">
-            <span class="uc-recap-key">Fin de contrat</span>
-            <span class="uc-recap-val">{{ formatDate('dateFinContrat') }}</span>
+        </div>
+
+        <!-- Académique (si renseigné) -->
+        <div class="uc-recap-card"
+             *ngIf="userForm.get('universite')?.value || userForm.get('specialite')?.value || userForm.get('niveauEtude')?.value">
+          <div class="uc-recap-card-header">
+            <svg viewBox="0 0 18 18" fill="none">
+              <path d="M9 1.5l7 3.5v4c0 3.5-3 5.5-7 6.5-4-1-7-3-7-6.5V5L9 1.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            </svg>
+            Études
+          </div>
+          <div class="uc-recap-row" *ngIf="userForm.get('universite')?.value">
+            <span class="uc-recap-key">Université</span>
+            <span class="uc-recap-val">{{ userForm.get('universite')?.value }}</span>
+          </div>
+          <div class="uc-recap-row" *ngIf="userForm.get('specialite')?.value">
+            <span class="uc-recap-key">Spécialité</span>
+            <span class="uc-recap-val">{{ userForm.get('specialite')?.value }}</span>
+          </div>
+          <div class="uc-recap-row" *ngIf="userForm.get('niveauEtude')?.value">
+            <span class="uc-recap-key">Niveau</span>
+            <span class="uc-recap-val">{{ userForm.get('niveauEtude')?.value }}</span>
+          </div>
+        </div>
+
+        <!-- Stage (si stagiaire) -->
+        <div class="uc-recap-card" *ngIf="estStagiaire()">
+          <div class="uc-recap-card-header">
+            <svg viewBox="0 0 18 18" fill="none">
+              <path d="M7 7h.01M7 3h5c.45 0 .9.17 1.24.51l6 6a2 2 0 010 2.83l-6 6a2 2 0 01-2.83 0l-6-6A1.75 1.75 0 013 11V7a4 4 0 014-4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            Stage
+          </div>
+          <div class="uc-recap-row" *ngIf="userForm.get('typeStageId')?.value">
+            <span class="uc-recap-key">Type</span>
+            <span class="uc-recap-val">{{ getTypeStageLibelle(userForm.get('typeStageId')?.value) }}</span>
+          </div>
+          <div class="uc-recap-row" *ngIf="userForm.get('dateDebutStage')?.value">
+            <span class="uc-recap-key">Début</span>
+            <span class="uc-recap-val">{{ formatDate('dateDebutStage') }}</span>
+          </div>
+          <div class="uc-recap-row" *ngIf="userForm.get('dateFinStage')?.value">
+            <span class="uc-recap-key">Fin</span>
+            <span class="uc-recap-val">{{ formatDate('dateFinStage') }}</span>
+          </div>
+          <div class="uc-recap-row" *ngIf="userForm.get('dateSoutenance')?.value">
+            <span class="uc-recap-key">Soutenance</span>
+            <span class="uc-recap-val">{{ formatDate('dateSoutenance') }}</span>
+          </div>
+          <div class="uc-recap-row" *ngIf="superviseurSelectionnes().length > 0">
+            <span class="uc-recap-key">Superviseurs</span>
+            <span class="uc-recap-val">{{ superviseurSelectionnes().length }} assigné(s)</span>
           </div>
         </div>
 
@@ -406,5 +631,5 @@
     </div>
   </form>
 
-  </ng-container><!-- fin canCreateUser() -->
+  </ng-container>
 </div>
