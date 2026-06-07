@@ -29,8 +29,20 @@ import { StatutReclamationComponent }   from './reclamation/statut-reclamation/s
 import { ServiceReclamationComponent }  from './reclamation/service-reclamation/service-reclamation.component';
 
 import { StagiairesComponent }  from './stage/stagiaires/stagiaires.component';
-
 import { TypeStageComponent }  from './stage/type-stage/type-stage.component';
+
+import { ProjetsStageComponent }  from './stage/projets-stage/projets-stage.component';
+import { ProjetStageDetailComponent }  from './stage/projet-stage-detail/projet-stage-detail.component';
+import { ActivitesStageComponent }  from './stage/activites-stage/activites-stage.component';
+import { MonProfilStagiaireComponent }  from './stage/mon-profil-stagiaire/mon-profil-stagiaire.component';
+
+import { NomenclatureAcademiqueComponent }  from './stage/nomenclature-academique/nomenclature-academique.component';
+
+
+
+
+
+
 
 const routes: Routes = [
   { path: 'home', component: HomeComponent },
@@ -88,8 +100,33 @@ const routes: Routes = [
 {
   path: 'types-stage',
   component: TypeStageComponent   // RECLAMATION_SERVICE_READ
+},
+
+{
+  path: 'projets-stage',
+  component: ProjetsStageComponent   // RECLAMATION_SERVICE_READ
+},
+
+{
+  path: 'projets-stage/:id',
+  component: ProjetStageDetailComponent   // RECLAMATION_SERVICE_READ
+},
+
+{
+  path: 'activites-stage',
+  component: ActivitesStageComponent   // RECLAMATION_SERVICE_READ
+},
+
+{
+  path: 'mon-profil-stagiaire',
+  component: MonProfilStagiaireComponent   // RECLAMATION_SERVICE_READ
+},
+
+
+{
+  path: 'admin/nomenclature-academique',
+  component: NomenclatureAcademiqueComponent   // RECLAMATION_SERVICE_READ
 }
-// Dans app.routes.ts
 
 ];
 

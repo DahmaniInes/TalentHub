@@ -510,8 +510,8 @@ routerLink="/Demande" routerLinkActive="active" class="nav-item" (click)="closeS
 <!-- ══ ESPACE STAGIAIRE ══ -->
 <div class="nav-group" *ngIf="perms.canSeeEspaceStagiaire()">
   <button class="nav-item nav-group-btn"
-          [class.active]="isAnyRouteActive('/stagiaires', '/types-stage')"
-          (click)="toggleStagiaireMenu()">
+  [class.active]="isAnyRouteActive('/stagiaires', '/types-stage', '/projets-stage', '/activites-stage', '/mon-profil-stagiaire')"
+  (click)="toggleStagiaireMenu()">
     <span class="nav-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20">
         <path d="M12 14l9-5-9-5-9 5 9 5z"/>
@@ -526,9 +526,23 @@ routerLink="/Demande" routerLinkActive="active" class="nav-item" (click)="closeS
     <span class="nav-tooltip">Espace Stagiaire</span>
   </button>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   <div class="nav-submenu" [class.nav-submenu-open]="stagiaireMenuOpen">
 
-    <!-- Stagiaires : INT_ADMIN_VIEW_ALL_INTERNS ou INT_SUPER_VIEW_MY_INTERNS -->
+    <!-- Stagiaires — admin/superviseur uniquement -->
     <a *ngIf="perms.canSeeGestionStagiaires()"
        routerLink="/stagiaires" routerLinkActive="active"
        class="nav-item nav-subitem-full" (click)="closeSidebar()">
@@ -542,21 +556,85 @@ routerLink="/Demande" routerLinkActive="active" class="nav-item" (click)="closeS
       <span class="nav-label">Stagiaires</span>
       <span class="nav-tooltip">Stagiaires</span>
     </a>
-
-    <!-- Types de stage : INT_TYPE_VIEW ou INT_TYPE_CREATE -->
+  
+    <!-- Types de stage — admin uniquement -->
     <a *ngIf="perms.canSeeTypeStageMenu()"
        routerLink="/types-stage" routerLinkActive="active"
        class="nav-item nav-subitem-full" (click)="closeSidebar()">
       <span class="nav-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="18" height="18">
-          <path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"
+                stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </span>
       <span class="nav-label">Types de stage</span>
       <span class="nav-tooltip">Types de stage</span>
     </a>
+  
+    <!-- ✅ Projets — admin + superviseur + stagiaire -->
+    <a *ngIf="perms.canSeeProjetsStageMenu()"
+       routerLink="/projets-stage" routerLinkActive="active"
+       class="nav-item nav-subitem-full" (click)="closeSidebar()">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="18" height="18">
+          <rect x="3" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="14" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/>
+        </svg>
+      </span>
+      <span class="nav-label">Projets</span>
+      <span class="nav-tooltip">Projets de stage</span>
+    </a>
+  
+    <!-- ✅ Activités — admin + superviseur + stagiaire -->
+    <a *ngIf="perms.canSeeProjetsStageMenu()"
+       routerLink="/activites-stage" routerLinkActive="active"
+       class="nav-item nav-subitem-full" (click)="closeSidebar()">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="18" height="18">
+          <path d="M9 11l3 3 5-5M4 6h16M4 12h7M4 18h7"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <span class="nav-label">Activités</span>
+      <span class="nav-tooltip">Activités de stage</span>
+    </a>
+  
+    <!-- ✅ Mon profil — stagiaire uniquement -->
+    <a *ngIf="perms.canSeeMonProfilStagiaire()"
+       routerLink="/mon-profil-stagiaire" routerLinkActive="active"
+       class="nav-item nav-subitem-full" (click)="closeSidebar()">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="18" height="18">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="nav-label">Mon profil</span>
+      <span class="nav-tooltip">Mon profil stagiaire</span>
+    </a>
+  
+<!-- Dans le nav-submenu du groupe Système -->
+<a *ngIf="perms.canSeeNomenclatureAcademique()"
+   routerLink="/admin/nomenclature-academique" routerLinkActive="active"
+   class="nav-item nav-subitem-full" (click)="closeSidebar()">
+  <span class="nav-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="18" height="18">
+      <path d="M12 14l9-5-9-5-9 5 9 5z"/>
+      <path d="M12 14l6.16-3.422A12.083 12.083 0 0112 21.5a12.083 12.083 0 01-6.16-10.922L12 14z" stroke-linecap="round"/>
+    </svg>
+  </span>
+  <span class="nav-label">Nomenclature académique</span>
+  <span class="nav-tooltip">Universités, Spécialités, Niveaux</span>
+</a>
+
+
 
   </div>
+
+
+
 </div>
 
 

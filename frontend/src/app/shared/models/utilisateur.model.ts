@@ -1,3 +1,11 @@
+export interface SuperviseurMin {
+  id: number;
+  nomComplet: string;
+  email: string;
+  photoUrl?: string;
+  poste?: string;
+}
+
 export interface Utilisateur {
   id: number;
   keycloakId: string;
@@ -18,15 +26,18 @@ export interface Utilisateur {
   profilNom: string;
   createdAt?: string;
   updatedAt?: string;
-  // Champs académiques
+  // Académique
   universite?: string;
   specialite?: string;
   niveauEtude?: string;
-  // Champs stage
+  // Stage
   typeStageId?: number;
   dateDebutStage?: string;
   dateFinStage?: string;
   dateSoutenance?: string;
+  // Superviseurs — compatibilité
   superviseurIds?: number[];
   superviseurNoms?: string[];
+  // Superviseurs — objets complets
+  superviseurs?: SuperviseurMin[];
 }

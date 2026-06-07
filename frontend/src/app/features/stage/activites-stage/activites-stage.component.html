@@ -1,0 +1,423 @@
+<div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh" (click)="closeAllMenus()">
+    <div class="dt-wrap">
+  
+      <!-- ══ HEADER ══ -->
+      <div class="dt-header">
+        <div>
+          <h1 class="dt-title">
+            <svg class="dt-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M9 11l3 3 5-5M4 6h16M4 12h7M4 18h7" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Activités de stage
+          </h1>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+            <span class="dt-badge dt-badge-accent" style="font-size:.66rem;padding:3px 9px">
+              <span class="dt-badge-dot"></span>{{ activites().length }} total
+            </span>
+            <span class="dt-badge dt-badge-default" style="font-size:.66rem;padding:3px 9px;cursor:pointer"
+                  (click)="filterStatut.set(filterStatut()==='A_FAIRE'?'':'A_FAIRE'); page.set(1)">
+              <span class="dt-badge-dot"></span>{{ statsAFaire() }} à faire
+            </span>
+            <span class="dt-badge dt-badge-pending" style="font-size:.66rem;padding:3px 9px;cursor:pointer"
+                  (click)="filterStatut.set(filterStatut()==='EN_COURS'?'':'EN_COURS'); page.set(1)">
+              <span class="dt-badge-dot"></span>{{ statsEnCours() }} en cours
+            </span>
+            <span class="dt-badge dt-badge-delivered" style="font-size:.66rem;padding:3px 9px;cursor:pointer"
+                  (click)="filterStatut.set(filterStatut()==='TERMINE'?'':'TERMINE'); page.set(1)">
+              <span class="dt-badge-dot"></span>{{ statsTermines() }} terminées
+            </span>
+          </div>
+        </div>
+  
+        <div class="dt-header-actions">
+          <!-- Recherche + Filtres -->
+          <div class="dt-search-wrap" (click)="$event.stopPropagation()">
+            <div class="dt-search-bar" style="min-width:250px">
+              <button class="dt-filter-icon-btn"
+                      [class.has-filters]="hasFilters()"
+                      (click)="filterOpen.set(!filterOpen())" title="Filtres">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M2 3h12l-4.5 5.5V13L6.5 11.5V8.5L2 3z" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <input class="dt-search-input"
+                     [value]="search()"
+                     (input)="search.set($any($event.target).value); page.set(1)"
+                     placeholder="Rechercher une activité, projet...">
+            </div>
+  
+            <!-- Panel filtres -->
+            <div class="dt-filter-panel" [class.open]="filterOpen()">
+              <div class="dt-fp-header">
+                <p class="dt-fp-title">Filtres</p>
+                <button *ngIf="hasFilters()" class="dt-fp-reset" (click)="resetFilters()">Réinitialiser</button>
+              </div>
+              <div class="dt-fp-body">
+                <div class="dt-fp-field">
+                  <label class="dt-fp-label">Statut</label>
+                  <select class="dt-fp-select" [value]="filterStatut()"
+                          (change)="filterStatut.set($any($event.target).value); page.set(1)">
+                    <option value="">Tous les statuts</option>
+                    <option value="A_FAIRE">À faire</option>
+                    <option value="EN_COURS">En cours</option>
+                    <option value="TERMINE">Terminé</option>
+                  </select>
+                </div>
+                <div class="dt-fp-field">
+                  <label class="dt-fp-label">Projet</label>
+                  <select class="dt-fp-select" [value]="filterProjet()"
+                          (change)="filterProjet.set($any($event.target).value); page.set(1)">
+                    <option value="">Tous les projets</option>
+                    <option *ngFor="let p of projets()" [value]="p.id">{{ p.titre }}</option>
+                  </select>
+                </div>
+              </div>
+              <div class="dt-fp-footer">
+                <button class="mx-btn mx-btn-ghost" style="height:30px;font-size:.73rem"
+                        (click)="filterOpen.set(false)">Fermer</button>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Bouton créer -->
+          <button *ngIf="canAdd()" class="dt-btn-create" (click)="openCreate()">
+            <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+              <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+            Nouvelle activité
+          </button>
+        </div>
+      </div>
+  
+      <!-- Loading -->
+      <div *ngIf="loading()" class="dt-loading"><div class="dt-spinner"></div> Chargement...</div>
+  
+      <!-- ══ TABLEAU ══ -->
+      <div *ngIf="!loading()" class="dt-scroll">
+        <table class="dt-table">
+          <thead>
+            <tr>
+              <!-- Activité -->
+              <th class="dt-th" style="min-width:220px">
+                <div class="dt-th-inner">
+                  <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
+                    <path d="M2 4h10M2 7h10M2 10h6" stroke-linecap="round"/>
+                  </svg>
+                  Activité
+                </div>
+              </th>
+              <!-- Projet -->
+              <th class="dt-th" style="min-width:160px">
+                <div class="dt-th-inner">
+                  <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
+                    <rect x="1" y="1" width="5" height="5" rx="1"/>
+                    <rect x="8" y="1" width="5" height="5" rx="1"/>
+                    <rect x="1" y="8" width="5" height="5" rx="1"/>
+                    <rect x="8" y="8" width="5" height="5" rx="1"/>
+                  </svg>
+                  Projet
+                </div>
+              </th>
+              <!-- Assigné -->
+              <th class="dt-th" style="min-width:140px">
+                <div class="dt-th-inner">
+                  <svg class="dt-th-icon" viewBox="0 0 14 14" fill="currentColor">
+                    <path d="M7 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm-4 6a4 4 0 118 0H3z"/>
+                  </svg>
+                  Assigné à
+                </div>
+              </th>
+              <!-- Avancement -->
+              <th class="dt-th" style="min-width:160px">
+                <div class="dt-th-inner">
+                  <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
+                    <circle cx="7" cy="7" r="5.5"/>
+                    <path d="M7 4v3l2 1.5" stroke-linecap="round"/>
+                  </svg>
+                  Avancement
+                </div>
+              </th>
+              <!-- Statut -->
+              <th class="dt-th" style="min-width:110px">
+                <div class="dt-th-inner">
+                  <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
+                    <circle cx="7" cy="7" r="5.5"/>
+                    <path d="M4.5 7l2 2 3-3" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Statut
+                </div>
+              </th>
+              <!-- Échéance -->
+              <th class="dt-th" style="min-width:100px">
+                <div class="dt-th-inner">
+                  <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
+                    <rect x="1" y="2" width="12" height="11" rx="1.5"/>
+                    <path d="M1 6h12M4.5 1v2M9.5 1v2" stroke-linecap="round"/>
+                  </svg>
+                  Échéance
+                </div>
+              </th>
+              <!-- Actions -->
+              <th class="dt-th dt-th-actions" style="width:48px"></th>
+            </tr>
+          </thead>
+  
+          <tbody>
+            <!-- Ligne vide -->
+            <tr *ngIf="paged().length === 0">
+              <td colspan="7" class="dt-td">
+                <div class="dt-empty">
+                  <svg viewBox="0 0 48 48" fill="none" style="width:38px;height:38px;opacity:.35">
+                    <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+                    <path d="M24 16v8M24 28h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  <p class="dt-empty-title">Aucune activité</p>
+                  <p class="dt-empty-sub">
+                    {{ hasFilters() ? 'Modifiez vos filtres pour voir plus de résultats.' : 'Créez la première activité de stage.' }}
+                  </p>
+                  <button *ngIf="canAdd() && !hasFilters()" class="dt-btn-create" style="margin-top:12px" (click)="openCreate()">
+                    Nouvelle activité
+                  </button>
+                </div>
+              </td>
+            </tr>
+  
+            <!-- Lignes -->
+            <tr *ngFor="let a of paged()" class="dt-tr">
+  
+              <!-- Activité : titre + créateur -->
+              <td class="dt-td">
+                <div class="dt-cell-user">
+                  <span class="dt-cell-name">{{ a.titre }}</span>
+                  <span *ngIf="a.createurNom" class="dt-cell-sub">
+                    par {{ a.createurNom }}
+                  </span>
+                  <span *ngIf="a.commentaire" class="dt-cell-sub"
+                        style="font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px">
+                    {{ a.commentaire }}
+                  </span>
+                </div>
+              </td>
+  
+              <!-- Projet -->
+              <td class="dt-td">
+                <button *ngIf="a.projetTitre"
+                        style="background:var(--accent-soft);color:var(--accent);border:1px solid rgba(192,38,211,.2);border-radius:99px;padding:3px 10px;font-size:.68rem;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap"
+                        (click)="goToProjet(a, $event)">
+                  {{ a.projetTitre }}
+                </button>
+                <span *ngIf="!a.projetTitre" class="dt-cell-muted">—</span>
+              </td>
+  
+              <!-- Assigné -->
+              <td class="dt-td">
+                <span *ngIf="a.assigneNom" class="dt-cell-text">{{ a.assigneNom }}</span>
+                <span *ngIf="!a.assigneNom" class="dt-cell-muted">—</span>
+              </td>
+  
+              <!-- Avancement -->
+              <td class="dt-td">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="flex:1;height:6px;background:var(--bg-hover);border-radius:99px;overflow:hidden;min-width:60px">
+                    <div style="height:100%;border-radius:99px;transition:width .3s"
+                         [style.width.%]="a.avancement"
+                         [style.background]="avancementColor(a.avancement)">
+                    </div>
+                  </div>
+                  <span style="font-size:.72rem;font-weight:800;min-width:28px;text-align:right"
+                        [style.color]="avancementColor(a.avancement)">
+                    {{ a.avancement }}%
+                  </span>
+                </div>
+              </td>
+  
+              <!-- Statut -->
+              <td class="dt-td">
+                <span class="dt-badge"
+                      [class.dt-badge-default]="a.statut==='A_FAIRE'"
+                      [class.dt-badge-pending]="a.statut==='EN_COURS'"
+                      [class.dt-badge-delivered]="a.statut==='TERMINE'">
+                  <span class="dt-badge-dot"></span>{{ statutLabel(a.statut) }}
+                </span>
+              </td>
+  
+              <!-- Échéance -->
+              <td class="dt-td">
+                <span class="dt-cell-muted" style="font-size:.75rem">{{ fmtDate(a.dateFin) }}</span>
+              </td>
+  
+              <!-- Actions 3 points -->
+              <td class="dt-td dt-td-actions" (click)="$event.stopPropagation()">
+                <div style="position:relative;display:flex;justify-content:center">
+                  <button class="dt-action-btn" (click)="toggleMenu(a.id, $event)">
+                    <svg viewBox="0 0 4 18" fill="currentColor" style="width:4px;height:18px">
+                      <circle cx="2" cy="2"  r="1.8"/>
+                      <circle cx="2" cy="9"  r="1.8"/>
+                      <circle cx="2" cy="16" r="1.8"/>
+                    </svg>
+                  </button>
+  
+                  <!-- Dropdown menu -->
+                  <div *ngIf="openMenuId() === a.id" class="appro-dropdown">
+                    <!-- Voir projet -->
+                    <button *ngIf="a.projetId" class="appro-dropdown-item" (click)="goToProjet(a, $event)">
+                      <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+                        <rect x="1" y="1" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/>
+                        <rect x="8" y="1" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/>
+                        <rect x="1" y="8" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/>
+                        <rect x="8" y="8" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/>
+                      </svg>
+                      Voir le projet
+                    </button>
+                    <!-- Modifier -->
+                    <button *ngIf="canEdit()" class="appro-dropdown-item" (click)="openEdit(a, $event)">
+                      <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+                        <path d="M2 10l7.5-7.5 2 2L4 12H2v-2z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+                      </svg>
+                      Modifier
+                    </button>
+                    <!-- Supprimer -->
+                    <button *ngIf="canEdit()" class="appro-dropdown-item" style="color:#ef4444" (click)="delete(a, $event)">
+                      <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+                        <path d="M2 3h10M5 3V2h4v1M4 3l.5 8h5L10 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      Supprimer
+                    </button>
+                  </div>
+                </div>
+              </td>
+  
+            </tr>
+          </tbody>
+        </table>
+      </div>
+  
+      <!-- ══ PAGINATION ══ -->
+      <div *ngIf="!loading() && filtered().length > 0" class="dt-footer">
+        <div class="dt-count-info">
+          <strong>{{ (page()-1)*pageSize+1 }}–{{ minVal(page()*pageSize, filtered().length) }}</strong>
+          of <strong>{{ filtered().length }}</strong>
+        </div>
+        <div class="dt-pagination">
+          <button class="dt-page-arrow" [disabled]="page()===1" (click)="goPage(page()-1)">
+            <svg viewBox="0 0 14 14" fill="none">
+              <path d="M9 2L5 7l4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <ng-container *ngFor="let p of pagesArr()">
+            <button *ngIf="p===1 || p===totalPages() || (p>=page()-1 && p<=page()+1)"
+                    class="dt-page-btn" [class.dt-page-btn-active]="p===page()" (click)="goPage(p)">
+              {{ p }}
+            </button>
+            <span *ngIf="p===page()-2 && p>1"           style="padding:0 4px;font-size:.75rem;color:var(--dt-text-head)">…</span>
+            <span *ngIf="p===page()+2 && p<totalPages()" style="padding:0 4px;font-size:.75rem;color:var(--dt-text-head)">…</span>
+          </ng-container>
+          <button class="dt-page-arrow" [disabled]="page()===totalPages()" (click)="goPage(page()+1)">
+            <svg viewBox="0 0 14 14" fill="none">
+              <path d="M5 2l4 5-4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+  
+    </div>
+  </div>
+  
+  <!-- ════ SLIDE-OVER CRÉATION / ÉDITION ════ -->
+  <div *ngIf="slideOpen()" class="dm-slide-overlay" (click)="slideOpen.set(false)">
+    <div class="dm-slide-panel" (click)="$event.stopPropagation()">
+  
+      <div class="dm-slide-header">
+        <h3 class="dm-slide-title">{{ editingId() ? 'Modifier l\'activité' : 'Nouvelle activité de stage' }}</h3>
+        <button class="dm-slide-close" (click)="slideOpen.set(false)">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M2 2l12 12M14 2L2 14" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+  
+      <div class="dm-slide-body">
+  
+        <!-- Titre -->
+        <div class="dm-field">
+          <label class="dm-label">Titre <span style="color:#ef4444">*</span></label>
+          <input [(ngModel)]="form().titre" class="dm-input" placeholder="Ex: Analyse des besoins">
+        </div>
+  
+        <!-- Description -->
+        <div class="dm-field">
+          <label class="dm-label">Description</label>
+          <textarea [(ngModel)]="form().description" class="dm-input" rows="3"
+                    placeholder="Description de l'activité..."></textarea>
+        </div>
+  
+        <!-- Projet -->
+        <div class="dm-field">
+          <label class="dm-label">Projet <span style="color:#ef4444">*</span></label>
+          <select [(ngModel)]="form().projetId" class="dm-input">
+            <option [ngValue]="null">— Sélectionner un projet —</option>
+            <option *ngFor="let p of projets()" [ngValue]="p.id">{{ p.titre }}</option>
+          </select>
+        </div>
+  
+        <!-- Statut + Avancement -->
+        <div class="dm-grid2">
+          <div class="dm-field">
+            <label class="dm-label">Statut</label>
+            <select [(ngModel)]="form().statut" class="dm-input">
+              <option value="A_FAIRE">À faire</option>
+              <option value="EN_COURS">En cours</option>
+              <option value="TERMINE">Terminé</option>
+            </select>
+          </div>
+          <div class="dm-field">
+            <label class="dm-label">Avancement (%)</label>
+            <input type="number" [(ngModel)]="form().avancement" class="dm-input" min="0" max="100" placeholder="0">
+          </div>
+        </div>
+  
+        <!-- Dates -->
+        <div class="dm-grid2">
+          <div class="dm-field">
+            <label class="dm-label">Date début</label>
+            <input type="date" [(ngModel)]="form().dateDebut" class="dm-input">
+          </div>
+          <div class="dm-field">
+            <label class="dm-label">Date fin</label>
+            <input type="date" [(ngModel)]="form().dateFin" class="dm-input">
+          </div>
+        </div>
+  
+        <!-- Assigné -->
+        <div class="dm-field">
+          <label class="dm-label">Assigner à</label>
+          <select [(ngModel)]="form().assigneId" class="dm-input">
+            <option [ngValue]="null">— Non assigné —</option>
+            <option *ngFor="let s of stagiaires()" [ngValue]="s.id">
+              {{ s.nomComplet }}
+            </option>
+          </select>
+        </div>
+  
+        <!-- Commentaire -->
+        <div class="dm-field">
+          <label class="dm-label">Commentaire</label>
+          <textarea [(ngModel)]="form().commentaire" class="dm-input" rows="2"
+                    placeholder="Note ou remarque..."></textarea>
+        </div>
+  
+      </div>
+  
+      <div class="dm-slide-footer">
+        <button class="dm-btn-cancel" (click)="slideOpen.set(false)">Annuler</button>
+        <button class="dm-btn-save" (click)="save()" [disabled]="saving()">
+          <div *ngIf="saving()"
+               class="dt-spinner"
+               style="width:14px;height:14px;border-width:1.5px;border-color:rgba(255,255,255,.3);border-top-color:white">
+          </div>
+          {{ editingId() ? 'Enregistrer' : 'Créer' }}
+        </button>
+      </div>
+  
+    </div>
+  </div>

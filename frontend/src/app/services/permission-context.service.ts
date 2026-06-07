@@ -324,8 +324,9 @@ export class PermissionContextService {
 
 
 
-  // Ajouter dans PermissionContextService
 
+
+  // Ajouter dans PermissionContextService
 // ════ ESPACE STAGIAIRE ════
 canViewAllInterns():     boolean { return this.can('INT_ADMIN_VIEW_ALL_INTERNS'); }
 canAssignSupervisor():   boolean { return this.can('INT_ADMIN_ASSIGN_SUPERVISOR'); }
@@ -335,13 +336,124 @@ canEditTypeStage():      boolean { return this.can('INT_TYPE_EDIT'); }
 canDeleteTypeStage():    boolean { return this.can('INT_TYPE_DELETE'); }
 canViewMyInterns():      boolean { return this.can('INT_SUPER_VIEW_MY_INTERNS'); }
 canSupervise():          boolean { return this.can('INT_SUPER_CAN_SUPERVISE'); }
+canTrackIntern():        boolean { return this.can('INT_SUPER_TRACK'); }
+canEvaluateIntern():     boolean { return this.can('INT_SUPER_EVALUATE'); }
 
-canSeeEspaceStagiaire(): boolean {
-    return this.canViewAllInterns() || this.canViewMyInterns()
-        || this.canViewTypeStage()  || this.canCreateTypeStage();
+// Stagiaire
+canViewMyProjet():       boolean { return this.can('INT_INTERN_VIEW_PROJ'); }
+canViewMySuperviseur():  boolean { return this.can('INT_INTERN_VIEW_SUPERVISOR'); }
+canSubmitLivrables():    boolean { return this.can('INT_INTERN_SUBMIT'); }
+
+// Projets stage
+canManageProjetsStage(): boolean {
+    return this.can('INT_ADMIN_PROJ_CREATE') || this.can('INT_ADMIN_PROJ_EDIT');
 }
-canSeeGestionStagiaires(): boolean { return this.canViewAllInterns() || this.canViewMyInterns(); }
-canSeeTypeStageMenu():     boolean { return this.canViewTypeStage() || this.canCreateTypeStage(); }
+canViewProjetsStage(): boolean {
+    return this.can('INT_ADMIN_PROJ_VIEW')
+        || this.can('INT_SUPER_TRACK')
+        || this.can('INT_INTERN_VIEW_PROJ');
+}
+
+// ✅ CORRIGÉ — couvre TOUS les rôles de l'espace stagiaire
+canSeeEspaceStagiaire(): boolean {
+    return this.canViewAllInterns()
+        || this.canViewMyInterns()
+        || this.canViewTypeStage()
+        || this.canCreateTypeStage()
+        || this.canSupervise()
+        || this.canTrackIntern()
+        || this.canViewMyProjet()        // ← stagiaire
+        || this.canViewMySuperviseur()   // ← stagiaire
+        || this.canSubmitLivrables()     // ← stagiaire
+        || this.canViewProjetsStage();   // ← tous
+}
+
+canSeeGestionStagiaires(): boolean {
+    return this.canViewAllInterns() || this.canViewMyInterns();
+}
+
+canSeeTypeStageMenu(): boolean {
+    return this.canViewTypeStage() || this.canCreateTypeStage();
+}
+
+// ✅ NOUVEAU — qui peut voir les projets de stage dans le menu
+
+
+// ✅ NOUVEAU — qui peut voir "Mon profil stagiaire"
+canSeeMonProfilStagiaire(): boolean {
+    return this.canViewMyProjet()
+        || this.canViewMySuperviseur()
+        || this.canSubmitLivrables();
+}
+
+
+// ════ NOMENCLATURE ACADÉMIQUE ════
+canCreateUniv():  boolean { return this.can('ACAD_UNIV_CREATE'); }
+canViewUniv():    boolean { return this.can('ACAD_UNIV_VIEW'); }
+canEditUniv():    boolean { return this.can('ACAD_UNIV_EDIT'); }
+canDeleteUniv():  boolean { return this.can('ACAD_UNIV_DELETE'); }
+
+canCreateSpec():  boolean { return this.can('ACAD_SPEC_CREATE'); }
+canViewSpec():    boolean { return this.can('ACAD_SPEC_VIEW'); }
+canEditSpec():    boolean { return this.can('ACAD_SPEC_EDIT'); }
+canDeleteSpec():  boolean { return this.can('ACAD_SPEC_DELETE'); }
+
+canCreateLevel(): boolean { return this.can('ACAD_LEVEL_CREATE'); }
+canViewLevel():   boolean { return this.can('ACAD_LEVEL_VIEW'); }
+canEditLevel():   boolean { return this.can('ACAD_LEVEL_EDIT'); }
+canDeleteLevel(): boolean { return this.can('ACAD_LEVEL_DELETE'); }
+
+canSeeNomenclatureAcademique(): boolean {
+    return this.canViewUniv() || this.canViewSpec() || this.canViewLevel()
+        || this.canCreateUniv() || this.canCreateSpec() || this.canCreateLevel();
+}
+
+// ════ PROJETS STAGE — refactorés ════
+canCreateProjetStage():      boolean { return this.can('INT_ADMIN_PROJ_CREATE'); }
+canViewAllProjetsStage():    boolean { return this.can('INT_ADMIN_PROJ_VIEW_ALL'); }
+canEditProjetStage():        boolean { return this.can('INT_ADMIN_PROJ_EDIT'); }
+canDeleteProjetStage():      boolean { return this.can('INT_ADMIN_PROJ_DELETE'); }
+canAssignProject():          boolean { return this.can('INT_ADMIN_ASSIGN_PROJECT'); }
+canViewMyProjetsStage():     boolean { return this.can('INT_SUPER_PROJ_VIEW_MY'); }
+canManageProjetStage():      boolean { return this.can('INT_SUPER_PROJ_MANAGE'); }
+
+canSeeProjetsStageMenu(): boolean {
+    return this.canViewAllProjetsStage() || this.canViewMyProjetsStage()
+        || this.canViewMyProjet() || this.canCreateProjetStage();
+}
+
+// ════ ACTIVITÉS STAGE — refactorés ════
+canAdminCreateActivite():   boolean { return this.can('INT_ADMIN_ACT_CREATE'); }
+canAdminViewAllActivites(): boolean { return this.can('INT_ADMIN_ACT_VIEW_ALL'); }
+canAdminEditActivite():     boolean { return this.can('INT_ADMIN_ACT_EDIT'); }
+canAdminDeleteActivite():   boolean { return this.can('INT_ADMIN_ACT_DELETE'); }
+
+canSuperCreateActivite():   boolean { return this.can('INT_SUPER_ACT_CREATE'); }
+canSuperViewActivites():    boolean { return this.can('INT_SUPER_ACT_VIEW'); }
+canSuperEditActivite():     boolean { return this.can('INT_SUPER_ACT_EDIT'); }
+canSuperDeleteActivite():   boolean { return this.can('INT_SUPER_ACT_DELETE'); }
+
+canInternCreateActivite():  boolean { return this.can('INT_INTERN_ACT_CREATE'); }
+canInternViewActivites():   boolean { return this.can('INT_INTERN_ACT_VIEW'); }
+canInternEditActivite():    boolean { return this.can('INT_INTERN_ACT_EDIT'); }
+
+canCreateActiviteStage(): boolean {
+    return this.canAdminCreateActivite() || this.canSuperCreateActivite() || this.canInternCreateActivite();
+}
+canViewActivitesStage(): boolean {
+    return this.canAdminViewAllActivites() || this.canSuperViewActivites() || this.canInternViewActivites();
+}
+canEditActiviteStage(isMine: boolean): boolean {
+    return this.canAdminEditActivite() || this.canSuperEditActivite() || (isMine && this.canInternEditActivite());
+}
+canDeleteActiviteStage(): boolean {
+    return this.canAdminDeleteActivite() || this.canSuperDeleteActivite();
+}
+
+canSeeActivitesStageMenu(): boolean {
+    return this.canViewActivitesStage() || this.canCreateActiviteStage();
+}
+
 
 
 
