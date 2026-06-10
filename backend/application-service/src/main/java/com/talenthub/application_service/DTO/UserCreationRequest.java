@@ -1,4 +1,3 @@
-// DTO/UserCreationRequest.java — REMPLACE le fichier entier
 package com.talenthub.application_service.DTO;
 
 import jakarta.validation.constraints.Email;
@@ -10,31 +9,27 @@ import java.time.LocalDate;
 @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
 public class UserCreationRequest {
 
-    @NotBlank
-    private String nom;
-    @NotBlank
-    private String prenom;
-    @Email
-    @NotBlank
-    private String email;
-    private String telephone;
+    @NotBlank private String nom;
+    @NotBlank private String prenom;
+    @Email @NotBlank private String email;
+    private String    telephone;
     private LocalDate dateNaissance;
     private LocalDate dateEmbauche;
     private LocalDate dateFinContrat;
-    private String poste;
-    private String departement;
-    private String adresse;
+    private String    poste;
+    private String    departement;
+    private String    adresse;
 
-    @NotNull
-    private Long profilId;
+    @NotNull private Long profilId;
 
+    // ✅ IDs vers nomenclature (remplacent les String)
+    private Long universiteId;
+    private Long specialiteId;
+    private Long niveauEtudeId;
 
-    private String universite;
-    private String specialite;
-    private String niveauEtude;
+    // Infos stage (pour créer le premier Stage)
+    private Long      typeStageId;
     private LocalDate dateDebutStage;
     private LocalDate dateFinStage;
     private LocalDate dateSoutenance;
-    private Long typeStageId;
-
 }

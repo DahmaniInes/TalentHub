@@ -1,20 +1,12 @@
-// src/main/java/com/talenthub/application_service/Entity/MembreEquipe.java
 package com.talenthub.application_service.Entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
-/**
- * Table porteuse entre Projet et Utilisateur.
- * Représente l'équipe qui travaille sur un projet.
- */
 @Entity
 @Table(name = "membres_equipe",
-        uniqueConstraints = @UniqueConstraint(
-                columnNames = {"projet_id", "utilisateur_id"}
-        ))
+        uniqueConstraints = @UniqueConstraint(columnNames = {"projet_id", "utilisateur_id"}))
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class MembreEquipe {
 
@@ -30,12 +22,19 @@ public class MembreEquipe {
     @JoinColumn(name = "utilisateur_id", nullable = false)
     private Utilisateur utilisateur;
 
-    // Rôle dans le projet : MEMBRE | LEAD | OBSERVATEUR | ADMIN
+    // ✅ NOUVEAU — lien optionnel vers le Stage
+    // Si null : c'est un employé normal sur le projet
+    // Si renseigné : c'est un stagiaire, rattaché à une session de stage précise
+
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "stage_id")
+    private Stage stage;
+
     @Column(length = 30)
     @Builder.Default
-    private String role = "MEMBRE";
+    private String role = "MEMBRE"; // MEMBRE | LEAD | OBSERVATEUR | ADMIN | STAGIAIRE
 
-    // Quota horaire spécifique au membre sur ce projet (optionnel)
     @Column(name = "quota_horaire")
     private Double quotaHoraire;
 
@@ -47,7 +46,5 @@ public class MembreEquipe {
     private boolean actif = true;
 
     @PrePersist
-    protected void onCreate() {
-        this.dateAjout = LocalDateTime.now();
-    }
+    protected void onCreate() { this.dateAjout = LocalDateTime.now(); }
 }

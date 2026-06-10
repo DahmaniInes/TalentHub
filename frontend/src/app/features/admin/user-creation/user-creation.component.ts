@@ -2,24 +2,25 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
+
 import { UserService }              from '../../../services/user.service';
 import { ProfilService }            from '../../../services/profil.service';
+import { StagiaireService }         from '../../../services/stagiaire.service';
 import { UiService }                from '../../../services/ui.service';
 import { ErrorService }             from '../../../services/error.service';
 import { PermissionContextService } from '../../../services/permission-context.service';
-import { Profil }                   from '../../../shared/models/profil.model';
-import { Utilisateur }              from '../../../shared/models/utilisateur.model';
-import { UserCreationRequest }      from '../../../shared/models/user-creation-request.model';
-import { HttpErrorResponse }        from '@angular/common/http';
 
-// Validator : date début < date fin
+import { Profil }              from '../../../shared/models/profil.model';
+import { Utilisateur }         from '../../../shared/models/utilisateur.model';
+import { UserCreationRequest } from '../../../shared/models/user-creation-request.model';
+import { HttpErrorResponse }   from '@angular/common/http';
+
 function dateRangeValidator(startKey: string, endKey: string) {
   return (group: AbstractControl): ValidationErrors | null => {
     const start = group.get(startKey)?.value;
     const end   = group.get(endKey)?.value;
-    if (start && end && new Date(start) >= new Date(end)) {
+    if (start && end && new Date(start) >= new Date(end))
       return { dateRange: true };
-    }
     return null;
   };
 }
@@ -36,6 +37,7 @@ export class UserCreationComponent implements OnInit {
   private fb            = inject(FormBuilder);
   private userService   = inject(UserService);
   private profilService = inject(ProfilService);
+  private stagSvc       = inject(StagiaireService);
   private errorService  = inject(ErrorService);
   private router        = inject(Router);
   private route         = inject(ActivatedRoute);
@@ -47,15 +49,13 @@ export class UserCreationComponent implements OnInit {
   focusState: Record<string, boolean> = {};
 
   userForm: FormGroup;
-  profils      = signal<Profil[]>([]);
+  profils    = signal<Profil[]>([]);
   superviseurs = signal<Utilisateur[]>([]);
   typesStage   = signal<any[]>([]);
   loading      = signal(false);
 
-  // IDs superviseurs sélectionnés
   superviseurSelectionnes = signal<number[]>([]);
 
-  // Détecte si le profil sélectionné est "stagiaire"
   estStagiaire = computed(() => {
     const id = this.userForm?.get('profilId')?.value;
     if (!id) return false;
@@ -71,29 +71,25 @@ export class UserCreationComponent implements OnInit {
     return this.superviseurs().find(s => s.id === id)?.nomComplet ?? `#${id}`;
   }
 
+  private _preselectStagiaire = false;
+
   constructor() {
     this.userForm = this.fb.group({
-      // Step 1
       nom:            ['', [Validators.required, Validators.minLength(2)]],
       prenom:         ['', [Validators.required, Validators.minLength(2)]],
       email:          ['', [Validators.required, Validators.email]],
       telephone:      [''],
-      // Step 2 — professionnel
       dateEmbauche:   [''],
       dateFinContrat: [''],
       poste:          [''],
       departement:    [''],
       adresse:        [''],
-      // Step 2 — académique (tous profils, optionnel)
-      universite:     [''],
-      specialite:     [''],
-      niveauEtude:    [''],
-      // Step 2 — stage (uniquement si stagiaire, optionnel)
+      // Stage
       typeStageId:    [null],
       dateDebutStage: [''],
       dateFinStage:   [''],
       dateSoutenance: [''],
-      // Step 3
+      // Profil
       profilId:       [null, Validators.required]
     }, {
       validators: [
@@ -106,19 +102,13 @@ export class UserCreationComponent implements OnInit {
   ngOnInit(): void {
     if (this.perms.canCreateUser()) {
       this.loadProfils();
-      this.userService.getSuperviseurs().subscribe({ next: d => this.superviseurs.set(d) });
-      this.userService.getTypesStage().subscribe({ next: d => this.typesStage.set(d) });
+      this.stagSvc.getSuperviseurs().subscribe({ next: d => this.superviseurs.set(d) });
+      this.stagSvc.getTypesStage().subscribe({ next: d => this.typesStage.set(d) });
     }
-    // Pré-sélectionner profil stagiaire si redirigé depuis /stagiaires
     this.route.queryParams.subscribe(params => {
-      if (params['stagiaire'] === 'true') {
-        // On cherchera le profil stagiaire après chargement
-        this._preselectStagiaire = true;
-      }
+      if (params['stagiaire'] === 'true') this._preselectStagiaire = true;
     });
   }
-
-  private _preselectStagiaire = false;
 
   private loadProfils(): void {
     this.profilService.getAllProfils().subscribe({
@@ -133,7 +123,6 @@ export class UserCreationComponent implements OnInit {
     });
   }
 
-  // Superviseurs
   ajouterSuperviseur(idStr: string): void {
     const id = +idStr;
     if (!id || this.superviseurSelectionnes().includes(id)) return;
@@ -144,7 +133,6 @@ export class UserCreationComponent implements OnInit {
     this.superviseurSelectionnes.update(list => list.filter(x => x !== id));
   }
 
-  // Validation par étape
   isStepValid(): boolean {
     switch (this.currentStep) {
       case 1:
@@ -152,11 +140,7 @@ export class UserCreationComponent implements OnInit {
             && this.userForm.get('nom')!.valid
             && this.userForm.get('email')!.valid;
       case 2:
-        // Si stagiaire : vérifier que dateDebutStage < dateFinStage
-        if (this.estStagiaire()) {
-          const hasRangeError = this.userForm.hasError('dateRange');
-          return !hasRangeError;
-        }
+        if (this.estStagiaire()) return !this.userForm.hasError('dateRange');
         return true;
       case 3: return this.userForm.get('profilId')!.valid;
       default: return true;
@@ -170,9 +154,7 @@ export class UserCreationComponent implements OnInit {
 
   prevStep(): void { if (this.currentStep > 1) this.currentStep--; }
 
-  goToStep(step: number): void {
-    if (step <= this.currentStep) this.currentStep = step;
-  }
+  goToStep(step: number): void { if (step <= this.currentStep) this.currentStep = step; }
 
   private touchCurrentStep(): void {
     const stepFields: Record<number, string[]> = {
@@ -208,6 +190,10 @@ export class UserCreationComponent implements OnInit {
     this.loading.set(true);
 
     const v = this.userForm.value;
+
+    // ✅ UserCreationRequest sans champs String académiques (IDs uniquement)
+    // Note : universiteId, specialiteId, niveauEtudeId ne sont pas dans le formulaire
+    // car ils viennent de la nomenclature. On les laisse null pour l'instant.
     const request: UserCreationRequest = {
       nom:            v.nom,
       prenom:         v.prenom,
@@ -219,17 +205,15 @@ export class UserCreationComponent implements OnInit {
       departement:    v.departement    || null,
       adresse:        v.adresse        || null,
       profilId:       v.profilId,
-      permissions:    [],
-      // Académique
-      universite:     v.universite     || null,
-      specialite:     v.specialite     || null,
-      niveauEtude:    v.niveauEtude    || null,
+      // Académique — null pour l'instant (à renseigner via la fiche stagiaire)
+      universiteId:  null,
+      specialiteId:  null,
+      niveauEtudeId: null,
       // Stage
-      typeStageId:    this.estStagiaire() ? (v.typeStageId || null) : null,
+      typeStageId:    this.estStagiaire() ? (v.typeStageId  || null) : null,
       dateDebutStage: this.estStagiaire() ? (v.dateDebutStage || null) : null,
       dateFinStage:   this.estStagiaire() ? (v.dateFinStage   || null) : null,
       dateSoutenance: this.estStagiaire() ? (v.dateSoutenance || null) : null,
-      superviseurIds: this.estStagiaire() ? this.superviseurSelectionnes() : [],
     };
 
     this.userService.createUser(request).subscribe({
@@ -239,6 +223,7 @@ export class UserCreationComponent implements OnInit {
         this.userForm.reset();
         this.superviseurSelectionnes.set([]);
         this.currentStep = 1;
+        this.router.navigate(['/users']);
       },
       error: (err: HttpErrorResponse) => {
         this.ui.error(this.errorService.parse(err).message);

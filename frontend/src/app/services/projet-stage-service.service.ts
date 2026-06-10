@@ -1,35 +1,83 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ProjetStage } from '../shared/models/projet-stage.model';
-import { ActiviteStage } from '../shared/models/activite-stage.model';
+import { Projet, ProjetRequest } from '../shared/models/projet.model';
+import { Activite, ActiviteRequest } from '../shared/models/activite.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProjetStageService {
 
-  private api        = 'http://localhost:8085/api/projets-stage';
-  private apiActivite = 'http://localhost:8085/api/activites-stage';
+  private http = inject(HttpClient);
+  private apiProjets   = 'http://localhost:8085/api/projets';
+  private apiActivites = 'http://localhost:8085/api/activites';
+  private apiMembres   = 'http://localhost:8085/api/membres-equipe';
 
-  constructor(private http: HttpClient) {}
+  // ── Projets de stage (typeProjetId = 3) ──────────────────────
 
-  // ── Projets ──
-  getAll(): Observable<ProjetStage[]>                      { return this.http.get<ProjetStage[]>(this.api); }
-  getById(id: number): Observable<ProjetStage>             { return this.http.get<ProjetStage>(`${this.api}/${id}`); }
-  getByStagiaire(id: number): Observable<ProjetStage[]>    { return this.http.get<ProjetStage[]>(`${this.api}/stagiaire/${id}`); }
-  getBySuperviseur(id: number): Observable<ProjetStage[]>  { return this.http.get<ProjetStage[]>(`${this.api}/superviseur/${id}`); }
-  create(body: any): Observable<ProjetStage>               { return this.http.post<ProjetStage>(this.api, body); }
-  update(id: number, body: any): Observable<ProjetStage>   { return this.http.put<ProjetStage>(`${this.api}/${id}`, body); }
-  delete(id: number): Observable<void>                     { return this.http.delete<void>(`${this.api}/${id}`); }
-  assignerAStagiaire(projetId: number, stagiaireId: number): Observable<ProjetStage> {
-    return this.http.patch<ProjetStage>(`${this.api}/${projetId}/assigner/${stagiaireId}`, {});
+  getAll(): Observable<Projet[]> {
+    return this.http.get<Projet[]>(`${this.apiProjets}/stage`);
   }
 
-  // ── Activités ──
-  getAllActivites(): Observable<ActiviteStage[]>                       { return this.http.get<ActiviteStage[]>(this.apiActivite); }
-  getActiviteById(id: number): Observable<ActiviteStage>              { return this.http.get<ActiviteStage>(`${this.apiActivite}/${id}`); }
-  getActivitesByProjet(projetId: number): Observable<ActiviteStage[]> { return this.http.get<ActiviteStage[]>(`${this.apiActivite}/projet/${projetId}`); }
-  getActivitesByUser(userId: number): Observable<ActiviteStage[]>     { return this.http.get<ActiviteStage[]>(`${this.apiActivite}/user/${userId}`); }
-  createActivite(body: any): Observable<ActiviteStage>                { return this.http.post<ActiviteStage>(this.apiActivite, body); }
-  updateActivite(id: number, body: any): Observable<ActiviteStage>    { return this.http.put<ActiviteStage>(`${this.apiActivite}/${id}`, body); }
-  deleteActivite(id: number): Observable<void>                        { return this.http.delete<void>(`${this.apiActivite}/${id}`); }
+  getById(id: number): Observable<Projet> {
+    return this.http.get<Projet>(`${this.apiProjets}/${id}`);
+  }
+
+  getByStagiaire(utilisateurId: number): Observable<Projet[]> {
+    return this.http.get<Projet[]>(
+        `${this.apiProjets}/stagiaire/${utilisateurId}`);
+  }
+
+  getBySuperviseur(superviseurId: number): Observable<Projet[]> {
+    return this.http.get<Projet[]>(
+        `${this.apiProjets}/superviseur/${superviseurId}`);
+  }
+
+  create(body: Partial<ProjetRequest> & { nom: string }): Observable<Projet> {
+    // Force typeProjetId = 3 (STAGE_ACADEMIQUE)
+    const payload: ProjetRequest = {
+      ...body,
+      typeProjetId:   3,
+      statutProjetId: body.statutProjetId ?? 2  // 2 = EN_COURS par défaut
+    };
+    return this.http.post<Projet>(this.apiProjets, payload);
+  }
+
+  update(id: number, body: Partial<ProjetRequest>): Observable<Projet> {
+    return this.http.put<Projet>(`${this.apiProjets}/${id}`, body);
+  }
+
+  delete(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiProjets}/${id}`);
+  }
+
+  // Assigner un stagiaire via MembreEquipe
+  assignerAStagiaire(projetId: number, stagiaireId: number,
+                     stageId?: number): Observable<any> {
+    return this.http.post<any>(`${this.apiMembres}/stagiaire`, {
+      projetId, utilisateurId: stagiaireId, stageId
+    });
+  }
+
+  // ── Activités ─────────────────────────────────────────────────
+
+  getActivitesByProjet(projetId: number): Observable<Activite[]> {
+    return this.http.get<Activite[]>(
+        `${this.apiActivites}/projet/${projetId}`);
+  }
+
+  getAllActivites(): Observable<Activite[]> {
+    return this.http.get<Activite[]>(this.apiActivites);
+  }
+
+  createActivite(req: ActiviteRequest): Observable<Activite> {
+    return this.http.post<Activite>(this.apiActivites, req);
+  }
+
+  updateActivite(id: number, req: Partial<ActiviteRequest>): Observable<Activite> {
+    return this.http.put<Activite>(`${this.apiActivites}/${id}`, req);
+  }
+
+  deleteActivite(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiActivites}/${id}`);
+  }
 }

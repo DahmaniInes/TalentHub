@@ -11,11 +11,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "utilisateurs")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Utilisateur {
 
     @Id
@@ -33,8 +29,7 @@ public class Utilisateur {
     @Column(nullable = false, length = 100)
     private String prenom;
 
-    @Email
-    @NotBlank
+    @Email @NotBlank
     @Column(nullable = false, unique = true, length = 150)
     private String email;
 
@@ -72,11 +67,12 @@ public class Utilisateur {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Relations
+    // ── Profil ──
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profil_id")
     private Profil profil;
 
+    // ── Relations métier ──
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<FeuilleTemps> feuillesTemps = new ArrayList<>();
@@ -88,8 +84,6 @@ public class Utilisateur {
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<Reclamation> reclamations = new ArrayList<>();
-
-
 
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
@@ -107,11 +101,47 @@ public class Utilisateur {
     @Builder.Default
     private List<Rapport> rapports = new ArrayList<>();
 
-
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<MembreEquipe> membresEquipe = new ArrayList<>();
-    // Lifecycle hooks
+
+    // ══ CHAMPS ACADÉMIQUES — appartiennent à la personne, pas au stage ══
+    // Ces champs sont archivés via HistoriqueUtilisateur
+    // universite, specialite, niveauEtude sont maintenant des IDs vers nomenclature
+    @Column(name = "universite_id")
+    private Long universiteId;       // → Universite dans nomenclature-service
+
+    @Column(name = "specialite_id")
+    private Long specialiteId;       // → Specialite dans nomenclature-service
+
+    @Column(name = "niveau_etude_id")
+    private Long niveauEtudeId;      // → NiveauEtude dans nomenclature-service
+
+    // ══ STAGES — un utilisateur peut faire plusieurs stages ══
+    @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY, orphanRemoval = true)
+    @Builder.Default
+    private List<Stage> stages = new ArrayList<>();
+
+    // ══ SUPERVISEURS — table intermédiaire dédiée StagiaireSuperviseur ══
+    // La relation ManyToMany brute est remplacée par une entité intermédiaire
+    // pour pouvoir ajouter des métadonnées (dateDebut, dateFin, etc.)
+    @OneToMany(mappedBy = "stagiaire", cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY, orphanRemoval = true)
+    @Builder.Default
+    private List<StagiaireSuperviseur> superviseurLinks = new ArrayList<>();
+
+    // Relation inverse — stagiaires encadrés par ce superviseur
+    @OneToMany(mappedBy = "superviseur", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<StagiaireSuperviseur> stagiairesEncadresLinks = new ArrayList<>();
+
+    // ══ HISTORIQUE ══
+    @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY, orphanRemoval = true)
+    @Builder.Default
+    private List<HistoriqueUtilisateur> historique = new ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -119,57 +149,20 @@ public class Utilisateur {
     }
 
     @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+    protected void onUpdate() { this.updatedAt = LocalDateTime.now(); }
+
+    public String getNomComplet() { return prenom + " " + nom; }
+
+    // Helpers pour compatibilité
+    public List<Utilisateur> getSuperviseurs() {
+        return superviseurLinks.stream()
+                .map(StagiaireSuperviseur::getSuperviseur)
+                .toList();
     }
 
-    // Helper method
-    public String getNomComplet() {
-        return prenom + " " + nom;
+    public List<Utilisateur> getStagiairesEncadres() {
+        return stagiairesEncadresLinks.stream()
+                .map(StagiaireSuperviseur::getStagiaire)
+                .toList();
     }
-
-
-
-
-
-
-    // Ajouter ces champs dans Utilisateur.java après "private String photoUrl;"
-
-    // ══ CHAMPS STAGIAIRE ══
-
-    @Column(name = "universite", length = 150)
-    private String universite;
-
-    @Column(name = "specialite", length = 150)
-    private String specialite;
-
-    @Column(name = "niveau_etude", length = 50)
-    private String niveauEtude;
-
-    @Column(name = "date_debut_stage")
-    private LocalDate dateDebutStage;
-
-    @Column(name = "date_fin_stage")
-    private LocalDate dateFinStage;
-
-    @Column(name = "date_soutenance")
-    private LocalDate dateSoutenance;
-
-    @Column(name = "type_stage_id")
-    private Long typeStageId;
-
-    // Relation superviseurs (ManyToMany — un stagiaire peut avoir plusieurs superviseurs)
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "stagiaire_superviseurs",
-            joinColumns = @JoinColumn(name = "stagiaire_id"),
-            inverseJoinColumns = @JoinColumn(name = "superviseur_id")
-    )
-    @Builder.Default
-    private List<Utilisateur> superviseurs = new ArrayList<>();
-
-    // Relation inverse — stagiaires encadrés par ce superviseur
-    @ManyToMany(mappedBy = "superviseurs", fetch = FetchType.LAZY)
-    @Builder.Default
-    private List<Utilisateur> stagiairesEncadres = new ArrayList<>();
 }

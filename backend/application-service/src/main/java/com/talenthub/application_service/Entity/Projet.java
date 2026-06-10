@@ -43,9 +43,9 @@ public class Projet {
     private LocalDate dateFinReelle;
 
     // ── Statut ──
-    @Column(nullable = false, length = 20)
+   /* @Column(nullable = false, length = 20)
     @Builder.Default
-    private String statut = "PLANIFIE";
+    private String statut = "PLANIFIE"; */
 
     @Column(nullable = false)
     @Builder.Default
@@ -131,6 +131,18 @@ public class Projet {
     @Column(name = "heures_passees")
     @Builder.Default
     private Double heuresPassees = 0.0;
+
+
+
+    // ── Type de projet (ID vers nomenclature-service) ──
+// ENTREPRISE_INTERNE | ENTREPRISE_CLIENT | STAGE_ACADEMIQUE
+    @Column(name = "type_projet_id")
+    private Long typeProjetId;
+
+    // ── Statut via nomenclature (remplace le String statut à terme) ──
+// On garde le String pour compatibilité, on ajoute l'ID
+    @Column(name = "statut_projet_id")
+    private Long statutProjetId;
     // ────────────────────────────────────────────────────────────
     // ✅ NOUVEAU — Groupes/équipes assignés à ce projet
     // Relation Many-to-Many avec Groupe

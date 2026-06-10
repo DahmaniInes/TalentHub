@@ -1,9 +1,10 @@
-// DTO/ProjetDTO.java — avec heuresPassees pour l'affichage de la progression
 package com.talenthub.application_service.DTO;
 
 import com.talenthub.application_service.Entity.Groupe;
+import com.talenthub.application_service.Entity.MembreEquipe;
 import com.talenthub.application_service.Entity.Projet;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
@@ -23,26 +24,37 @@ public class ProjetDTO {
     private String  dateDebut;
     private String  dateFin;
     private String  dateFinReelle;
-    private String  statut;
-    private int     avancement;         // % calculé depuis heuresPassees/heuresEstimees
+
+    // ✅ Statut via nomenclature (plus de String statut direct)
+    private Long    statutProjetId;
+
+    // ✅ Type de projet via nomenclature
+    private Long    typeProjetId;
+
+    private int     avancement;
     private Double  budgetPrevu;
     private Double  budgetConsomme;
-    private Double  heuresEstimees;     // quota horaire alloué
-    private Double  heuresPassees;      // ✅ heures réellement travaillées (calculées)
+    private Double  heuresEstimees;
+    private Double  heuresPassees;
     private String  typeBudget;
     private Integer seuilAlerteHoraire;
     private boolean visible;
     private boolean facturable;
     private boolean autoriserActivitesGlobales;
     private String  responsableKeycloakId;
-    private List<String>       projetAdmins  = new ArrayList<>();
-    private int                nombreMembres;
-    private int                nombreActivites;
-    private List<GroupeInfoDTO> groupes      = new ArrayList<>();
+    private List<String>        projetAdmins    = new ArrayList<>();
+    private int                 nombreMembres;
+    private int                 nombreActivites;
+    private List<GroupeInfoDTO> groupes         = new ArrayList<>();
+
+    // ✅ Stagiaires membres (ceux avec un stage associé)
+    private List<StagiaireMembreDTO> stagiaires = new ArrayList<>();
+
     private String dateCreation;
 
-    @Data
-    @NoArgsConstructor
+    // ── Inner DTOs ─────────────────────────────────────────────────────────
+
+    @Data @NoArgsConstructor
     public static class GroupeInfoDTO {
         private Long   id;
         private String nom;
@@ -60,36 +72,62 @@ public class ProjetDTO {
         }
     }
 
+    @Getter
+    public static class StagiaireMembreDTO {
+        private final Long   id;
+        private final String nomComplet;
+        private final String email;
+        private final String photoUrl;
+        private final Long   stageId;
+        private final String role;
+
+        public StagiaireMembreDTO(MembreEquipe m) {
+            this.id         = m.getUtilisateur().getId();
+            this.nomComplet = m.getUtilisateur().getNomComplet();
+            this.email      = m.getUtilisateur().getEmail();
+            this.photoUrl   = m.getUtilisateur().getPhotoUrl();
+            this.stageId    = m.getStage() != null ? m.getStage().getId() : null;
+            this.role       = m.getRole();
+        }
+    }
+
+    // ── Constructeur depuis entité ────────────────────────────────────────
+
     public ProjetDTO(Projet p) {
-        this.id          = p.getId();
-        this.nom         = p.getNom();
-        this.description = p.getDescription();
-        this.numeroProjet = p.getNumeroProjet();
-        this.couleur     = p.getCouleur();
-        this.statut      = p.getStatut();
-        this.avancement  = p.getAvancement();
-        this.budgetPrevu = p.getBudgetPrevu();
-        this.budgetConsomme = p.getBudgetConsomme();
-        this.heuresEstimees  = p.getHeuresEstimees();
-        // ✅ heuresPassees depuis l'entité (calculées par AvancementService)
+        this.id            = p.getId();
+        this.nom           = p.getNom();
+        this.description   = p.getDescription();
+        this.numeroProjet  = p.getNumeroProjet();
+        this.couleur       = p.getCouleur();
+        this.typeProjetId  = p.getTypeProjetId();
+        this.statutProjetId = p.getStatutProjetId();
+        this.avancement    = p.getAvancement();
+        this.budgetPrevu   = p.getBudgetPrevu();
+        this.budgetConsomme   = p.getBudgetConsomme();
+        this.heuresEstimees   = p.getHeuresEstimees();
         try { this.heuresPassees = p.getHeuresPassees(); }
         catch (Exception e) { this.heuresPassees = 0.0; }
-        this.typeBudget     = p.getTypeBudget();
-        this.seuilAlerteHoraire = p.getSeuilAlerteHoraire();
-        this.visible     = p.isVisible();
-        this.facturable  = p.isFacturable();
+        this.typeBudget           = p.getTypeBudget();
+        this.seuilAlerteHoraire   = p.getSeuilAlerteHoraire();
+        this.visible              = p.isVisible();
+        this.facturable           = p.isFacturable();
         this.autoriserActivitesGlobales = p.isAutoriserActivitesGlobales();
         this.responsableKeycloakId = p.getResponsableKeycloakId();
 
-        this.dateDebut    = p.getDateDebut() != null    ? p.getDateDebut().toString()    : null;
-        this.dateFin      = p.getDateFin() != null      ? p.getDateFin().toString()      : null;
+        this.dateDebut    = p.getDateDebut()    != null ? p.getDateDebut().toString()    : null;
+        this.dateFin      = p.getDateFin()      != null ? p.getDateFin().toString()      : null;
         this.dateFinReelle = p.getDateFinReelle() != null ? p.getDateFinReelle().toString() : null;
-        this.dateCreation  = p.getDateCreation() != null  ? p.getDateCreation().toString()  : null;
+        this.dateCreation  = p.getDateCreation()  != null ? p.getDateCreation().toString()  : null;
 
-        try { if (p.getClient() != null) { this.clientId = p.getClient().getId(); this.clientNom = p.getClient().getNom(); } }
-        catch (Exception ignored) {}
+        try {
+            if (p.getClient() != null) {
+                this.clientId  = p.getClient().getId();
+                this.clientNom = p.getClient().getNom();
+            }
+        } catch (Exception ignored) {}
 
-        try { this.projetAdmins = p.getProjetAdmins() != null ? p.getProjetAdmins() : new ArrayList<>(); }
+        try { this.projetAdmins = p.getProjetAdmins() != null
+                ? p.getProjetAdmins() : new ArrayList<>(); }
         catch (Exception ignored) { this.projetAdmins = new ArrayList<>(); }
 
         try { this.nombreMembres = p.getMembres() != null ? p.getMembres().size() : 0; }
@@ -103,5 +141,15 @@ public class ProjetDTO {
                 this.groupes = p.getGroupes().stream().map(GroupeInfoDTO::new).toList();
             }
         } catch (Exception ignored) { this.groupes = new ArrayList<>(); }
+
+        // ✅ Stagiaires (membres avec stage non null)
+        try {
+            if (p.getMembres() != null) {
+                this.stagiaires = p.getMembres().stream()
+                        .filter(m -> m.getStage() != null)
+                        .map(StagiaireMembreDTO::new)
+                        .toList();
+            }
+        } catch (Exception ignored) { this.stagiaires = new ArrayList<>(); }
     }
 }

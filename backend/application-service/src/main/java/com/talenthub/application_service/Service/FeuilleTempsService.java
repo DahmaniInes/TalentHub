@@ -13,6 +13,7 @@ import com.talenthub.application_service.Exception.ResourceNotFoundException;
 import com.talenthub.application_service.Repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.talenthub.application_service.Repository.ActiviteRepository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

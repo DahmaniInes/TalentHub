@@ -1,8 +1,8 @@
 package com.talenthub.nomenclature_service.Controller;
 
-
 import com.talenthub.nomenclature_service.Entity.StatutActivité;
 import com.talenthub.nomenclature_service.Repository.StatutActiviteRepository;
+import com.talenthub.nomenclature_service.Security.RequiresPermission;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -13,22 +13,14 @@ import java.util.List;
 @RestController
 @RequestMapping("/statut-activite")
 @RequiredArgsConstructor
-@Slf4j  // ← Ajouter Lombok @Slf4j
-
+@Slf4j
 public class StatutActiviteController {
+
     private final StatutActiviteRepository repo;
 
     @GetMapping
     public ResponseEntity<List<StatutActivité>> getAll() {
-        try {
-            log.info("Récupération des statuts actifs...");
-            List<StatutActivité> list = repo.findByActifTrueOrderByOrdre();
-            log.info("Nombre de statuts trouvés: {}", list.size());
-            return ResponseEntity.ok(list);
-        } catch (Exception e) {
-            log.error("Erreur lors de la récupération des statuts", e);
-            throw e; // Relancer pour voir l'erreur complète dans les logs
-        }
+        return ResponseEntity.ok(repo.findByActifTrueOrderByOrdre());
     }
 
     @GetMapping("/{id}")
@@ -45,13 +37,16 @@ public class StatutActiviteController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @RequiresPermission("ACT_STATUS_CREATE")
     @PostMapping
     public ResponseEntity<StatutActivité> create(@RequestBody StatutActivité statut) {
         return new ResponseEntity<>(repo.save(statut), HttpStatus.CREATED);
     }
 
+    @RequiresPermission("ACT_STATUS_EDIT")
     @PutMapping("/{id}")
-    public ResponseEntity<StatutActivité> update(@PathVariable Long id, @RequestBody StatutActivité details) {
+    public ResponseEntity<StatutActivité> update(@PathVariable Long id,
+                                                 @RequestBody StatutActivité details) {
         return repo.findById(id).map(s -> {
             s.setCode(details.getCode());
             s.setLibelle(details.getLibelle());
@@ -62,15 +57,28 @@ public class StatutActiviteController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @RequiresPermission("ACT_STATUS_EDIT")
+    @PatchMapping("/{id}/activate")
+    public ResponseEntity<StatutActivité> activate(@PathVariable Long id) {
+        return repo.findById(id).map(e -> {
+            e.setActif(true);
+            return ResponseEntity.ok(repo.save(e));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @RequiresPermission("ACT_STATUS_EDIT")
+    @PatchMapping("/{id}/deactivate")
+    public ResponseEntity<StatutActivité> deactivate(@PathVariable Long id) {
+        return repo.findById(id).map(e -> {
+            e.setActif(false);
+            return ResponseEntity.ok(repo.save(e));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @RequiresPermission("ACT_STATUS_DELETE")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         repo.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 }
-
-
-
-
-
-

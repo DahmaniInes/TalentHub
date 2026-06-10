@@ -63,4 +63,19 @@ public class MembreEquipeController {
         membreService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    // ✅ NOUVEAU — Ajouter un stagiaire avec son stage sur un projet
+    @PostMapping("/stagiaire")
+    public ResponseEntity<MembreEquipeDTO> addStagiaire(@RequestBody Map<String, Object> body) {
+        Long projetId      = Long.valueOf(body.get("projetId").toString());
+        Long utilisateurId = Long.valueOf(body.get("utilisateurId").toString());
+        Long stageId       = body.containsKey("stageId") && body.get("stageId") != null
+                ? Long.valueOf(body.get("stageId").toString()) : null;
+        Double quota       = body.containsKey("quotaHoraire") && body.get("quotaHoraire") != null
+                ? Double.valueOf(body.get("quotaHoraire").toString()) : null;
+        return new ResponseEntity<>(
+                new MembreEquipeDTO(membreService.addStagiaire(projetId, utilisateurId, stageId, quota)),
+                HttpStatus.CREATED
+        );
+    }
 }

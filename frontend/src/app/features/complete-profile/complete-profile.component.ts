@@ -2,9 +2,11 @@ import { Component, OnInit, inject, signal, PLATFORM_ID, Inject } from '@angular
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { KeycloakService } from '../../services/keycloak.service';
-import { UserService } from '../../services/user.service';
-import { Utilisateur } from '../../shared/models/utilisateur.model';
+import { KeycloakService }              from '../../services/keycloak.service';
+import { UserService }                  from '../../services/user.service';
+import { StagiaireService }             from '../../services/stagiaire.service';
+import { NomenclatureAcademiqueService } from '../../services/nomenclature-academique-service.service';
+import { Utilisateur }                  from '../../shared/models/utilisateur.model';
 
 @Component({
   selector: 'app-complete-profile',
@@ -15,10 +17,12 @@ import { Utilisateur } from '../../shared/models/utilisateur.model';
 })
 export class CompleteProfileComponent implements OnInit {
 
-  private keycloak = inject(KeycloakService);
-  private userSvc  = inject(UserService);
-  private router   = inject(Router);
-  private fb       = inject(FormBuilder);
+  private keycloak   = inject(KeycloakService);
+  private userSvc    = inject(UserService);
+  private stagSvc    = inject(StagiaireService);
+  private nomencSvc  = inject(NomenclatureAcademiqueService);
+  private router     = inject(Router);
+  private fb         = inject(FormBuilder);
 
   profileForm: FormGroup;
   loading      = signal(false);
@@ -28,23 +32,25 @@ export class CompleteProfileComponent implements OnInit {
   previewUrl   = signal<string | null>(null);
   currentUser  = signal<Utilisateur | null>(null);
   typesStage   = signal<any[]>([]);
+  universites  = signal<any[]>([]);
+  specialites  = signal<any[]>([]);
+  niveaux      = signal<any[]>([]);
   isDark       = false;
 
   // Focus states
-  dateNaissanceFocused = false;
-  dateFinFocused       = false;
-  telFocused           = false;
-  posteFocused         = false;
-  deptFocused          = false;
-  adresseFocused       = false;
-  universiteFocused    = false;
-  specialiteFocused    = false;
-  niveauEtudeFocused   = false;
+  dateNaissanceFocused  = false;
+  dateFinFocused        = false;
+  telFocused            = false;
+  posteFocused          = false;
+  deptFocused           = false;
+  adresseFocused        = false;
+  universiteFocused     = false;
+  specialiteFocused     = false;
+  niveauEtudeFocused    = false;
   dateDebutStageFocused = false;
   dateFinStageFocused   = false;
   dateSoutenanceFocused = false;
 
-  // Détecte si stagiaire selon le profil
   get estStagiaire(): boolean {
     return this.currentUser()?.profilNom?.toLowerCase().includes('stagiaire') ?? false;
   }
@@ -57,10 +63,10 @@ export class CompleteProfileComponent implements OnInit {
       adresse:        [''],
       poste:          [''],
       departement:    [''],
-      // Académique
-      universite:     [''],
-      specialite:     [''],
-      niveauEtude:    [''],
+      // ✅ Champs académiques — IDs vers nomenclature
+      universiteId:   [null],
+      specialiteId:   [null],
+      niveauEtudeId:  [null],
       // Stage
       typeStageId:    [null],
       dateDebutStage: [''],
@@ -75,8 +81,14 @@ export class CompleteProfileComponent implements OnInit {
       this.isDark = saved === 'dark';
       this.applyTheme(this.isDark);
     }
+
+    // ✅ Charger nomenclature via StagiaireService et NomenclatureAcademiqueService
+    this.stagSvc.getTypesStage().subscribe({ next: (d: any[]) => this.typesStage.set(d) });
+    this.nomencSvc.getUniversites().subscribe({ next: d => this.universites.set(d) });
+    this.nomencSvc.getSpecialites().subscribe({ next: d => this.specialites.set(d) });
+    this.nomencSvc.getNiveaux().subscribe({ next: d => this.niveaux.set(d) });
+
     this.loadExistingProfile();
-    this.userSvc.getTypesStage().subscribe({ next: d => this.typesStage.set(d) });
   }
 
   toggleTheme(): void {
@@ -94,7 +106,9 @@ export class CompleteProfileComponent implements OnInit {
   }
 
   private applyTheme(dark: boolean): void {
-    dark ? document.documentElement.classList.add('dark') : document.documentElement.classList.remove('dark');
+    dark
+      ? document.documentElement.classList.add('dark')
+      : document.documentElement.classList.remove('dark');
     localStorage.setItem('theme', dark ? 'dark' : 'light');
   }
 
@@ -104,6 +118,7 @@ export class CompleteProfileComponent implements OnInit {
     this.userSvc.getUserByKeycloakId(kcId).subscribe({
       next: (u: Utilisateur) => {
         this.currentUser.set(u);
+        // ✅ Utilise les IDs nomenclature — plus de Strings universite/specialite/niveauEtude
         this.profileForm.patchValue({
           dateNaissance:  u.dateNaissance  || '',
           dateFinContrat: u.dateFinContrat || '',
@@ -111,13 +126,14 @@ export class CompleteProfileComponent implements OnInit {
           adresse:        u.adresse        || '',
           poste:          u.poste          || '',
           departement:    u.departement    || '',
-          universite:     u.universite     || '',
-          specialite:     u.specialite     || '',
-          niveauEtude:    u.niveauEtude    || '',
-          typeStageId:    u.typeStageId    || null,
-          dateDebutStage: u.dateDebutStage || '',
-          dateFinStage:   u.dateFinStage   || '',
-          dateSoutenance: u.dateSoutenance || '',
+          universiteId:   u.universiteId   || null,
+          specialiteId:   u.specialiteId   || null,
+          niveauEtudeId:  u.niveauEtudeId  || null,
+          // ✅ Stage via le premier stage actif
+          typeStageId:    u.stages?.[0]?.typeStageId    || null,
+          dateDebutStage: u.stages?.[0]?.dateDebut      || '',
+          dateFinStage:   u.stages?.[0]?.dateFin        || '',
+          dateSoutenance: u.stages?.[0]?.dateSoutenance || '',
         });
         if (u.photoUrl) this.previewUrl.set(u.photoUrl);
       },

@@ -455,6 +455,52 @@ canSeeActivitesStageMenu(): boolean {
 }
 
 
+// ════════════════════════════════════════════════════════════════
+// STATUT ACTIVITÉ
+// ════════════════════════════════════════════════════════════════
+canCreateStatutActivite():     boolean { return this.can('ACT_STATUS_CREATE'); }
+canViewStatutActivite():       boolean { return this.can('ACT_STATUS_VIEW'); }
+canEditStatutActivite():       boolean { return this.can('ACT_STATUS_EDIT'); }
+canDeleteStatutActivite():     boolean { return this.can('ACT_STATUS_DELETE'); }
 
+canSeeStatutActiviteMenu(): boolean {
+  return this.canViewStatutActivite() || this.canCreateStatutActivite();
+}
+
+// ════════════════════════════════════════════════════════════════
+// STATUT PROJET
+// ════════════════════════════════════════════════════════════════
+canCreateStatutProjet():   boolean { return this.can('PROJECT_STATUS_CREATE'); }
+canViewStatutProjet():     boolean { return this.can('PROJECT_STATUS_VIEW'); }
+canEditStatutProjet():     boolean { return this.can('PROJECT_STATUS_EDIT'); }
+canDeleteStatutProjet():   boolean { return this.can('PROJECT_STATUS_DELETE'); }
+
+canSeeStatutProjetMenu(): boolean {
+  return this.canViewStatutProjet() || this.canCreateStatutProjet();
+}
+
+// ════════════════════════════════════════════════════════════════
+// TYPE PROJET
+// ════════════════════════════════════════════════════════════════
+canCreateTypeProjet():   boolean { return this.can('PROJECT_TYPE_CREATE'); }
+canViewTypeProjet():     boolean { return this.can('PROJECT_TYPE_VIEW'); }
+canEditTypeProjet():     boolean { return this.can('PROJECT_TYPE_EDIT'); }
+canDeleteTypeProjet():   boolean { return this.can('PROJECT_TYPE_DELETE'); }
+
+canSeeTypeProjetMenu(): boolean {
+  return this.canViewTypeProjet() || this.canCreateTypeProjet();
+}
+
+// ════════════════════════════════════════════════════════════════
+// STATUT STAGE
+// ════════════════════════════════════════════════════════════════
+canCreateStatutStage():   boolean { return this.can('INT_STATUS_CREATE'); }
+canViewStatutStage():     boolean { return this.can('INT_STATUS_VIEW'); }
+canEditStatutStage():     boolean { return this.can('INT_STATUS_EDIT'); }
+canDeleteStatutStage():   boolean { return this.can('INT_STATUS_DELETE'); }
+
+canSeeStatutStageMenu(): boolean {
+  return this.canViewStatutStage() || this.canCreateStatutStage();
+}
 
 }

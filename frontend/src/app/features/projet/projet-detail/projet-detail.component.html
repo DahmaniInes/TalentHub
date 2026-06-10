@@ -1,0 +1,389 @@
+<!-- projet-detail.component.html — COMPLET avec permissions -->
+<div class="pd-page" *ngIf="!loading(); else loadingTpl">
+  <div class="pd-container" *ngIf="projet() as p">
+
+    <!-- BREADCRUMB -->
+    <div class="pd-breadcrumb">
+      <button class="pd-back-btn" (click)="goBack()">
+        <svg viewBox="0 0 14 14" fill="none"><path d="M9 2L5 7l4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Projets
+      </button>
+      <span class="pd-sep">/</span>
+      <span class="pd-current">{{ p.nom }}</span>
+    </div>
+
+    <!-- HERO -->
+    <div class="dt-wrap pd-hero-card">
+      <div class="pd-hero-inner">
+        <div class="pd-hero-icon" [style.background]="p.couleur || 'var(--accent)'">
+          <svg viewBox="0 0 52 52" fill="white" style="width:26px;height:26px">
+            <path d="M39.3,26.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9V25c0-1,0.9-1.9,1.9-1.9h22.9c1,0,1.9,0.9,1.9,1.9v1.9H39.3z M35.5,38.3c0,1-0.9,1.9-1.9,1.9h-19c-1,0-1.9-0.9-1.9-1.9v-1.9c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9H35.5z M12.7,13.5c0-1,0.9-1.9,1.9-1.9h19.1c1,0,1.9,0.9,1.9,1.9v1.9c0,1-0.9,1.9-1.9,1.9H14.6c-1,0-1.9-0.9-1.9-1.9C12.7,15.4,12.7,13.5,12.7,13.5z M41.2,4H10.8C7.6,4,5,6.6,5,9.7v32.4c0,3.1,2.6,5.7,5.7,5.7h30.5c3.1,0,5.7-2.6,5.7-5.7V9.7C47,6.6,44.4,4,41.2,4z"/>
+          </svg>
+        </div>
+        <div class="pd-hero-meta">
+          <div class="pd-hero-badges">
+            <span class="pd-statut-pill"
+                  [style.background]=" getStatutProjetColor(p.statutProjetId)+'1a'"
+                  [style.color]="getStatutProjetColor(p.statutProjetId)"
+                  [style.border-color]="getStatutProjetColor(p.statutProjetId)+'55'">
+              <span class="pd-dot" [style.background]="getStatutProjetColor(p.statutProjetId)"></span>
+              {{ getStatutProjetLabel(p.statutProjetId) }}
+            </span>
+            <span *ngIf="p.numeroProjet" class="dt-badge dt-badge-default" style="font-size:.65rem">{{ p.numeroProjet }}</span>
+            <span *ngIf="p.clientNom" class="dt-badge dt-badge-accent" style="font-size:.65rem">{{ p.clientNom }}</span>
+          </div>
+          <h1 class="pd-hero-title">{{ p.nom }}</h1>
+          <p *ngIf="p.description" class="pd-hero-desc">{{ p.description }}</p>
+        </div>
+        <div class="pd-hero-kpis">
+          <div class="pd-kpi"><span class="pd-kpi-val">{{ statsActivites().total }}</span><span class="pd-kpi-lab">Activités</span></div>
+          <div class="pd-kpi pd-kpi-green"><span class="pd-kpi-val">{{ statsActivites().terminees }}</span><span class="pd-kpi-lab">Terminées</span></div>
+          <div class="pd-kpi pd-kpi-blue"><span class="pd-kpi-val">{{ statsActivites().enCours }}</span><span class="pd-kpi-lab">En cours</span></div>
+          <div class="pd-kpi pd-kpi-red"><span class="pd-kpi-val">{{ statsActivites().bloquees }}</span><span class="pd-kpi-lab">Bloquées</span></div>
+          <div class="pd-kpi"><span class="pd-kpi-val">{{ p.groupes?.length || 0 }}</span><span class="pd-kpi-lab">Équipes</span></div>
+          <div class="pd-kpi"><span class="pd-kpi-val">{{ commentaires().length }}</span><span class="pd-kpi-lab">Commentaires</span></div>
+        </div>
+      </div>
+
+
+
+     <!-- PAR : -->
+<div class="pd-avancement-row">
+  <div class="pd-avancement-header">
+    <span class="pd-avancement-label">
+      Avancement
+      <ng-container *ngIf="p.heuresEstimees && p.heuresEstimees > 0">
+        — {{ fmtHeures(p.heuresPassees || 0) }} / {{ fmtHeures(p.heuresEstimees) }}h
+      </ng-container>
+      <ng-container *ngIf="!p.heuresEstimees || p.heuresEstimees === 0">
+        — {{ fmtHeures(p.heuresPassees || 0) }} travaillées
+      </ng-container>
+    </span>
+    <span *ngIf="p.heuresEstimees && p.heuresEstimees > 0"
+          class="pd-avancement-pct"
+          [style.color]="getAvancementColor(p.avancement||0)">
+      {{ p.avancement || 0 }}%
+    </span>
+  </div>
+  <div class="pd-avancement-bar">
+    <div class="pd-avancement-fill"
+         [style.background]="getAvancementColor(p.avancement||0)"
+         [style.width.%]="p.avancement || 0"></div>
+  </div>
+  <!-- Seuil d'alerte si heuresEstimees défini -->
+  <div *ngIf="p.seuilAlerteHoraire && p.heuresEstimees && (p.avancement || 0) >= p.seuilAlerteHoraire"
+       style="margin-top:6px;display:flex;align-items:center;gap:6px;font-size:.73rem;color:#f59e0b">
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" style="width:13px;height:13px;flex-shrink:0">
+      <path d="M7 2L1 12h12L7 2z" stroke-linejoin="round"/>
+      <path d="M7 6v3M7 10.5h.01" stroke-linecap="round"/>
+    </svg>
+    ⚠️ Seuil d'alerte atteint ({{ p.seuilAlerteHoraire }}%)
+  </div>
+</div>
+ 
+
+
+
+
+
+
+
+    </div>
+
+
+
+
+
+    <!-- GRILLE PRINCIPALE -->
+    <div class="pd-main-grid">
+
+      <!-- COL GAUCHE -->
+      <div class="pd-col-left">
+
+        <!-- Informations -->
+        <div class="dt-wrap pd-section">
+          <div class="pd-section-header">
+            <h3 class="pd-section-title">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 7v4M8 5.5h.01" stroke-linecap="round"/></svg>
+              Informations
+            </h3>
+          </div>
+          <div class="pd-info-table" style="padding:0 18px">
+            <div class="pd-info-row" *ngIf="p.clientNom"><span class="pd-info-key">Client</span><span class="pd-info-val">{{ p.clientNom }}</span></div>
+            <div class="pd-info-row" *ngIf="p.dateDebut"><span class="pd-info-key">Début</span><span class="pd-info-val">{{ fmtDate(p.dateDebut) }}</span></div>
+            <div class="pd-info-row" *ngIf="p.dateFin"><span class="pd-info-key">Fin prévue</span><span class="pd-info-val">{{ fmtDate(p.dateFin) }}</span></div>
+            <div class="pd-info-row"><span class="pd-info-key">Facturable</span><span class="dt-badge" [class.dt-badge-delivered]="p.facturable" [class.dt-badge-canceled]="!p.facturable"><span class="dt-badge-dot"></span>{{ p.facturable ? 'Oui' : 'Non' }}</span></div>
+            <div class="pd-info-row" *ngIf="p.typeBudget"><span class="pd-info-key">Type budget</span><span class="dt-badge dt-badge-default">{{ p.typeBudget }}</span></div>
+            <div class="pd-info-row" *ngIf="p.budgetPrevu"><span class="pd-info-key">Budget prévu</span><span class="pd-info-val">{{ p.budgetPrevu | number:'1.0-0' }} €</span></div>
+            <div class="pd-info-row" *ngIf="p.heuresEstimees"><span class="pd-info-key">Quota horaire</span><span class="pd-info-val">{{ p.heuresEstimees}} h</span></div>
+            <div class="pd-info-row" *ngIf="p.seuilAlerteHoraire !== null && p.seuilAlerteHoraire !== undefined"><span class="pd-info-key">Seuil alerte</span><span class="dt-badge dt-badge-pending">{{ p.seuilAlerteHoraire }}%</span></div>
+            <div class="pd-info-row"><span class="pd-info-key">Activités globales</span><span class="dt-badge" [class.dt-badge-delivered]="p.autoriserActivitesGlobales" [class.dt-badge-default]="!p.autoriserActivitesGlobales"><span class="dt-badge-dot"></span>{{ p.autoriserActivitesGlobales ? 'Autorisées' : 'Non autorisées' }}</span></div>
+            <div class="pd-info-row" *ngIf="p.dateCreation"><span class="pd-info-key">Créé le</span><span class="pd-info-val pd-info-muted">{{ fmtDate(p.dateCreation) }}</span></div>
+          </div>
+        </div>
+
+        <!-- Équipes -->
+        <div class="dt-wrap pd-section" *ngIf="p.groupes && p.groupes.length > 0">
+          <div class="pd-section-header">
+            <h3 class="pd-section-title">
+              <svg viewBox="0 0 16 16" fill="currentColor" style="opacity:.7"><path d="M8 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm-4.5 7a4.5 4.5 0 119 0H3.5z"/></svg>
+              Équipes assignées
+              <span class="pd-section-count">{{ p.groupes.length }}</span>
+            </h3>
+          </div>
+          <div class="pd-groupes-list" style="padding:12px 18px">
+            <div *ngFor="let g of p.groupes" class="pd-groupe-item">
+              <div class="pd-groupe-avatar" [style.background]="g.couleur || 'var(--accent)'">{{ g.nom.charAt(0).toUpperCase() }}</div>
+              <div class="pd-groupe-info">
+                <span class="pd-groupe-nom">{{ g.nom }}</span>
+                <span class="pd-groupe-sub">{{ g.nombreMembres || 0 }} membre(s)</span>
+              </div>
+              <span class="dt-badge dt-badge-accent" style="font-size:.6rem">{{ g.nombreProjetsActifs || 0 }} projet(s)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ✅ Activités -->
+        <div class="dt-wrap pd-section">
+          <div class="pd-section-header" style="display:flex;align-items:center;justify-content:space-between">
+            <h3 class="pd-section-title">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h8M2 12h6" stroke-linecap="round"/></svg>
+              Activités
+              <span class="pd-section-count">{{ activites().length }}</span>
+            </h3>
+            <!-- ✅ PERMISSION : créer activité visible si ACTIVITY_CREATE ou édition de projet -->
+            <button *ngIf="perms.canCreateActivity() || perms.canEditAnyProject()"
+                    class="dt-btn-create"
+                    style="height:30px;padding:0 12px;font-size:.73rem;border-radius:7px"
+                    (click)="showCreateActivite.set(!showCreateActivite())">
+              <svg viewBox="0 0 14 14" fill="none" style="width:10px;height:10px">
+                <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              Nouvelle
+            </button>
+          </div>
+
+          <!-- Formulaire création activité inline -->
+          <div *ngIf="showCreateActivite()"
+               style="padding:14px 18px;background:var(--bg-input);border-bottom:1px solid var(--border-color)">
+            <p style="font-size:.72rem;font-weight:700;color:var(--dt-text-sub);text-transform:uppercase;letter-spacing:.4px;margin:0 0 11px">
+              Nouvelle activité pour ce projet
+            </p>
+            <div class="mx-field" style="margin-bottom:10px">
+              <label class="mx-field-label">Nom <span style="color:#ef4444">*</span></label>
+              <input [(ngModel)]="newActiviteForm().nom" [ngModelOptions]="{standalone:true}"
+                     class="mx-field-input" placeholder="Nom de l'activité">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+              <div class="mx-field">
+                <label class="mx-field-label">Statut</label>
+                <select [(ngModel)]="newActiviteForm().statutActiviteId" [ngModelOptions]="{standalone:true}" class="mx-field-select">
+                  <option *ngFor="let s of statutsActivite()" [ngValue]="s.id">{{ s.libelle }}</option>
+                </select>
+              </div>
+              <div class="mx-field">
+                <label class="mx-field-label">Priorité</label>
+                <select [(ngModel)]="newActiviteForm().priorite" [ngModelOptions]="{standalone:true}" class="mx-field-select">
+                  <option *ngFor="let pr of PRIORITES" [ngValue]="pr.value">{{ pr.label }}</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap">
+              <button *ngFor="let c of COULEURS_ACTIVITE" type="button"
+                      [style.background]="c" [style.width]="'22px'" [style.height]="'22px'"
+                      [style.border-radius]="'5px'" [style.cursor]="'pointer'"
+                      [style.border]="newActiviteForm().couleur === c ? '2.5px solid var(--text-primary)' : '2.5px solid transparent'"
+                      [style.outline]="'none'"
+                      (click)="newActiviteForm().couleur = c">
+              </button>
+            </div>
+            <label class="mx-toggle-row" style="cursor:pointer;margin-bottom:12px">
+              <input type="checkbox" [(ngModel)]="newActiviteForm().estGlobale" [ngModelOptions]="{standalone:true}" style="display:none">
+              <div class="mx-toggle" [class.on]="newActiviteForm().estGlobale"><div class="mx-toggle-knob"></div></div>
+              <span style="font-size:.76rem;color:var(--dt-text)">Activité globale</span>
+            </label>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="cancelCreateActivite()">Annuler</button>
+              <button class="dt-btn-create"
+                      style="height:30px;padding:0 14px;font-size:.75rem;border-radius:7px"
+                      [disabled]="submittingActivite()"
+                      (click)="createActiviteForProjet()">
+                <div class="dt-spinner" *ngIf="submittingActivite()" style="width:11px;height:11px;border-width:1.5px;border-color:rgba(255,255,255,.3);border-top-color:white"></div>
+                Créer et assigner
+              </button>
+            </div>
+          </div>
+
+          <!-- Tableau activités -->
+          <div *ngIf="activites().length === 0 && !showCreateActivite()" class="dt-empty" style="padding:28px 16px">
+            <p class="dt-empty-title">Aucune activité</p>
+            <p class="dt-empty-sub">Cliquez sur "Nouvelle" pour créer une activité liée à ce projet</p>
+          </div>
+
+          <div *ngIf="activites().length > 0" class="dt-scroll">
+            <table class="dt-table">
+              <thead>
+                <tr>
+                  <th class="dt-th"><div class="dt-th-inner">Activité</div></th>
+                  <th class="dt-th"><div class="dt-th-inner">Statut</div></th>
+                  <th class="dt-th"><div class="dt-th-inner">Priorité</div></th>
+                  <th class="dt-th"><div class="dt-th-inner">Groupes</div></th>
+                  <th class="dt-th"><div class="dt-th-inner">Progression</div></th>
+                  <th class="dt-th"><div class="dt-th-inner">Échéance</div></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let a of activites()" class="dt-tr"
+                    [routerLink]="['/activites', a.id]" style="cursor:pointer">
+                  <td class="dt-td">
+                    <div class="dt-cell-with-avatar">
+                      <div style="width:3px;height:34px;border-radius:3px;flex-shrink:0" [style.background]="a.couleur || '#94a3b8'"></div>
+                      <div class="dt-cell-user">
+                        <span class="dt-cell-name">{{ a.nom }}</span>
+                        <span class="dt-cell-sub" style="font-family:monospace;display:flex;align-items:center;gap:4px">
+                          {{ a.numeroActivite }}
+                          <span *ngIf="a.estGlobale" style="font-family:inherit;font-size:.52rem;background:rgba(139,92,246,.12);color:#8b5cf6;padding:0 4px;border-radius:3px;border:1px solid rgba(139,92,246,.25)">GLOBALE</span>
+                        </span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="dt-td">
+                    <span [class]="getStatutBadgeClass(a.statutActiviteId)">
+                      <span class="dt-badge-dot"></span>{{ getStatutLibelle(a.statutActiviteId) }}
+                    </span>
+                  </td>
+                  <td class="dt-td">
+                    <div *ngIf="getPriorite(a.priorite) as pr" style="display:flex;align-items:center;gap:5px">
+                      <span style="width:7px;height:7px;border-radius:50%;flex-shrink:0" [style.background]="pr.couleur"></span>
+                      <span class="dt-cell-text" style="font-size:.75rem">{{ pr.label }}</span>
+                    </div>
+                  </td>
+                  <td class="dt-td">
+                    <div *ngIf="a.groupes && a.groupes.length > 0" style="display:flex;gap:4px;flex-wrap:wrap">
+                      <span *ngFor="let g of a.groupes.slice(0,2)" class="dt-badge dt-badge-accent" style="font-size:.6rem;padding:2px 7px">{{ g.nom }}</span>
+                      <span *ngIf="a.groupes.length > 2" class="dt-badge dt-badge-default" style="font-size:.6rem">+{{ a.groupes.length - 2 }}</span>
+                    </div>
+                    <span *ngIf="!a.groupes || a.groupes.length === 0" class="dt-cell-sub">—</span>
+                  </td>
+                  <td class="dt-td">
+                    <div *ngIf="a.heuresEstimees && a.heuresEstimees > 0" style="display:flex;align-items:center;gap:7px">
+                      <div style="width:60px;height:4px;background:var(--bg-hover);border-radius:999px;overflow:hidden;flex-shrink:0">
+                        <div style="height:100%;border-radius:999px" [style.background]="getProgressColor(a.heuresPassees, a.heuresEstimees)" [style.width.%]="getProgressPct(a.heuresPassees, a.heuresEstimees)"></div>
+                      </div>
+                      <span class="dt-cell-sub" style="font-size:.67rem">{{ getProgressPct(a.heuresPassees, a.heuresEstimees) }}%</span>
+                    </div>
+                    <span *ngIf="!a.heuresEstimees" class="dt-cell-sub">—</span>
+                  </td>
+                  <td class="dt-td"><span class="dt-cell-sub">{{ fmtDate(a.dateEcheance) }}</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /col-left -->
+
+      <!-- COL DROITE — Commentaires -->
+      <div class="pd-col-right">
+        <div class="dt-wrap pd-section pd-comments-section">
+          <div class="pd-section-header">
+            <h3 class="pd-section-title">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2h12v10H9l-3 3v-3H2z" stroke-linejoin="round"/></svg>
+              Commentaires
+              <span class="pd-section-count">{{ commentaires().length }}</span>
+            </h3>
+          </div>
+
+          <div style="padding:14px 16px">
+            <!-- ✅ PERMISSION : formulaire visible si canCommentAnyProject -->
+            <div *ngIf="perms.canCommentAnyProject()" class="pd-comment-form">
+              <div class="pd-comment-avatar-sm" [style.background]="getAvatarColor(currentUserNom)">
+                {{ getInitiales(currentUserNom) }}
+              </div>
+              <div class="pd-comment-form-body">
+                <select *ngIf="p.groupes && p.groupes.length > 0"
+                        class="pd-comment-groupe-sel"
+                        [value]="groupeIdComment() ?? ''"
+                        (change)="groupeIdComment.set($any($event.target).value ? +$any($event.target).value : null)">
+                  <option value="">Commentaire général</option>
+                  <option *ngFor="let g of p.groupes" [value]="g.id">Au nom de : {{ g.nom }}</option>
+                </select>
+                <textarea class="pd-comment-ta"
+                          placeholder="Écrire un commentaire..."
+                          [value]="nouveauCommentaire()"
+                          (input)="nouveauCommentaire.set($any($event.target).value)"
+                          rows="3"></textarea>
+                <div style="display:flex;justify-content:flex-end;margin-top:8px">
+                  <button class="dt-btn-create"
+                          style="height:33px;padding:0 16px;font-size:.76rem;border-radius:7px"
+                          [disabled]="!nouveauCommentaire().trim() || submittingComment()"
+                          (click)="submitComment()">
+                    <div class="dt-spinner" *ngIf="submittingComment()" style="width:12px;height:12px;border-width:1.5px;border-color:rgba(255,255,255,.3);border-top-color:white"></div>
+                    Envoyer
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Message si pas de permission pour commenter -->
+            <div *ngIf="!perms.canCommentAnyProject()"
+                 style="padding:10px 12px;background:var(--bg-hover);border-radius:8px;font-size:.76rem;color:var(--text-muted);text-align:center;margin-bottom:12px">
+              Lecture seule — vous ne pouvez pas commenter.
+            </div>
+
+            <!-- Liste commentaires -->
+            <div class="pd-comments-list">
+              <div *ngIf="loadingComments()" class="dt-loading" style="padding:20px">
+                <div class="dt-spinner"></div> Chargement...
+              </div>
+              <div *ngIf="!loadingComments() && commentaires().length === 0" class="dt-empty" style="padding:24px 16px">
+                <svg viewBox="0 0 48 48" fill="none" style="width:30px;height:30px" class="dt-empty-icon">
+                  <path d="M6 6h36v26H27l-9 8v-8H6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                </svg>
+                <p class="dt-empty-title">Aucun commentaire</p>
+                <p class="dt-empty-sub">Soyez le premier à commenter</p>
+              </div>
+
+              <div *ngFor="let c of commentaires()" class="pd-comment-item">
+                <div class="pd-comment-avatar-sm" [style.background]="getAvatarColor(c.auteurNom)">
+                  <img *ngIf="c.auteurPhotoUrl" [src]="c.auteurPhotoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                  <span *ngIf="!c.auteurPhotoUrl">{{ getInitiales(c.auteurNom) }}</span>
+                </div>
+                <div class="pd-comment-body-wrap">
+                  <div class="pd-comment-meta">
+                    <span class="pd-comment-auteur">{{ c.auteurNom }}</span>
+                    <span *ngIf="c.groupeNom" class="dt-badge dt-badge-accent" style="font-size:.58rem;padding:1px 7px">{{ c.groupeNom }}</span>
+                    <span class="pd-comment-date">{{ fmtDateTime(c.dateCreation) }}</span>
+                    <span *ngIf="c.edite" class="pd-comment-edite">(modifié)</span>
+                  </div>
+                  <div *ngIf="editingCommentId() !== c.id" class="pd-comment-text">{{ c.contenu }}</div>
+                  <div *ngIf="editingCommentId() === c.id" style="margin-top:6px;display:flex;flex-direction:column;gap:8px">
+                    <textarea class="pd-comment-ta" [value]="editContenu()"
+                              (input)="editContenu.set($any($event.target).value)" rows="3"></textarea>
+                    <div style="display:flex;gap:8px">
+                      <button class="mx-btn mx-btn-primary mx-btn-sm" (click)="saveEdit(c)">Enregistrer</button>
+                      <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="editingCommentId.set(null)">Annuler</button>
+                    </div>
+                  </div>
+                  <div *ngIf="isOwn(c) && editingCommentId() !== c.id" class="pd-comment-actions">
+                    <button class="pd-comment-action" (click)="startEdit(c)">Modifier</button>
+                    <span style="color:var(--border-color)">·</span>
+                    <button class="pd-comment-action pd-comment-danger" (click)="deleteComment(c)">Supprimer</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /col-right -->
+
+    </div><!-- /pd-main-grid -->
+  </div>
+</div>
+
+<ng-template #loadingTpl>
+  <div style="display:flex;align-items:center;justify-content:center;min-height:60vh;gap:14px;color:var(--text-muted)">
+    <div class="dt-spinner" style="width:28px;height:28px;border-width:2.5px"></div>
+    <span style="font-size:.88rem">Chargement du projet...</span>
+  </div>
+</ng-template>

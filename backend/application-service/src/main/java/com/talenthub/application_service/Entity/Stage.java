@@ -16,7 +16,6 @@ public class Stage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Lien vers le stagiaire
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "utilisateur_id", nullable = false)
     private Utilisateur utilisateur;
@@ -24,6 +23,13 @@ public class Stage {
     // Type de stage (ID vers nomenclature-service)
     @Column(name = "type_stage_id")
     private Long typeStageId;
+
+    // ✅ NOUVEAU — Statut via nomenclature-service (remplace le String statut)
+    @Column(name = "statut_stage_id")
+    private Long statutStageId; // pointe vers statut_stage dans nomenclature
+
+    // Garde le String pour compatibilité transitoire
+
 
     @Column(name = "date_debut")
     private LocalDate dateDebut;
@@ -34,23 +40,27 @@ public class Stage {
     @Column(name = "date_soutenance")
     private LocalDate dateSoutenance;
 
-    // Statut du stage
-    @Column(length = 30)
-    @Builder.Default
-    private String statut = "EN_COURS"; // EN_COURS, TERMINE, ABANDONNE
-
     @Column(length = 500)
     private String description;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @PrePersist
-    protected void onCreate() { this.createdAt = LocalDateTime.now(); }
+    // ✅ NOUVEAU — Relation inverse vers MembreEquipe
+    // Permet de savoir sur quels projets ce stage a travaillé
+    @OneToMany(mappedBy = "stage", cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY, orphanRemoval = true)
+    @Builder.Default
+    private List<MembreEquipe> affectationsProjets = new ArrayList<>();
 
     @OneToMany(mappedBy = "stage", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<Document> documents = new ArrayList<>();
+
+    @PrePersist
+    protected void onCreate() { this.createdAt = LocalDateTime.now(); }
+
+
 
 
 }

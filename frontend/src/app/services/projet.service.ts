@@ -1,23 +1,30 @@
-// src/app/services/projet.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Projet, ProjetRequest } from '../shared/models/projet.model';
+import {
+  Projet, ProjetRequest,
+  StatutProjet, TypeProjet
+} from '../shared/models/projet.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProjetService {
+
   private http = inject(HttpClient);
   private base = 'http://localhost:8085/api/projets';
+  private nomenclatureBase = 'http://localhost:8085/api/nomenclature';
 
-  getAll(params?: { clientId?: number; statut?: string; membreId?: number }): Observable<Projet[]> {
+  getAll(params?: {
+    clientId?: number;
+    statutId?: number;
+    membreId?: number;
+  }): Observable<Projet[]> {
     let p = new HttpParams();
     if (params?.clientId) p = p.set('clientId', String(params.clientId));
-    if (params?.statut)   p = p.set('statut',   params.statut);
+    if (params?.statutId) p = p.set('statutId', String(params.statutId));
     if (params?.membreId) p = p.set('membreId', String(params.membreId));
     return this.http.get<Projet[]>(this.base, { params: p });
   }
 
-  // ✅ Charge le projet COMPLET avec groupes, membres, activités
   getById(id: number): Observable<Projet> {
     return this.http.get<Projet>(`${this.base}/${id}`);
   }
@@ -34,14 +41,43 @@ export class ProjetService {
     return this.http.delete<void>(`${this.base}/${id}`);
   }
 
-  // ✅ Suppression bulk
   deleteBulk(ids: number[]): Observable<void> {
     return this.http.delete<void>(`${this.base}/bulk`, { body: ids });
   }
 
-assignerActivites(projetId: number, activiteIds: number[]): Observable<Projet> {
-  return this.http.patch<Projet>(
-      `${this.base}/${projetId}/activites`, activiteIds);
-}
+  assignerActivites(projetId: number, activiteIds: number[]): Observable<Projet> {
+    return this.http.patch<Projet>(
+        `${this.base}/${projetId}/activites`, activiteIds);
+  }
 
+  // Projets de stage
+  getProjetsStage(): Observable<Projet[]> {
+    return this.http.get<Projet[]>(`${this.base}/stage`);
+  }
+
+  getProjetsParStagiaire(utilisateurId: number): Observable<Projet[]> {
+    return this.http.get<Projet[]>(
+        `${this.base}/stagiaire/${utilisateurId}`);
+  }
+
+  getProjetsParSuperviseur(superviseurId: number): Observable<Projet[]> {
+    return this.http.get<Projet[]>(
+        `${this.base}/superviseur/${superviseurId}`);
+  }
+
+  // Nomenclature
+  getStatutsProjet(): Observable<StatutProjet[]> {
+    return this.http.get<StatutProjet[]>(
+        `${this.nomenclatureBase}/statut-projet/actifs`);
+  }
+
+  getAllStatutsProjet(): Observable<StatutProjet[]> {
+    return this.http.get<StatutProjet[]>(
+        `${this.nomenclatureBase}/statut-projet`);
+  }
+
+  getTypesProjet(): Observable<TypeProjet[]> {
+    return this.http.get<TypeProjet[]>(
+        `${this.nomenclatureBase}/type-projet/actifs`);
+  }
 }

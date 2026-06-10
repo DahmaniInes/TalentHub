@@ -12,7 +12,11 @@ import java.util.Optional;
 public interface ProjetRepository extends JpaRepository<Projet, Long> {
 
     List<Projet> findByClientId(Long clientId);
-    List<Projet> findByStatut(String statut);
+
+
+    @Query("SELECT p FROM Projet p WHERE p.statutProjetId = :statutId")
+    List<Projet> findByStatutProjetId(@Param("statutId") Long statutId);
+
 
     @Query("SELECT DISTINCT p FROM Projet p JOIN p.membres m WHERE m.utilisateur.id = :userId")
     List<Projet> findByMembreUtilisateurId(@Param("userId") Long userId);
@@ -41,9 +45,15 @@ public interface ProjetRepository extends JpaRepository<Projet, Long> {
     @Query("SELECT MAX(p.numeroProjet) FROM Projet p WHERE p.numeroProjet LIKE 'PRJ-%'")
     String findMaxNumeroProjet();
 
-    @Query("SELECT COUNT(p) FROM Projet p JOIN p.groupes g WHERE g.id = :groupeId AND p.statut = 'EN_COURS'")
+    @Query("SELECT COUNT(p) FROM Projet p JOIN p.groupes g WHERE g.id = :groupeId AND p.statutProjetId = 2")
     int countProjetsActifsByGroupeId(@Param("groupeId") Long groupeId);
 
     @Query("SELECT p FROM Projet p JOIN p.groupes g WHERE g.id = :groupeId")
     List<Projet> findByGroupeId(@Param("groupeId") Long groupeId);
+
+
+
+    // Ajouter dans ProjetRepository
+    @Query("SELECT p FROM Projet p WHERE p.typeProjetId = :typeId")
+    List<Projet> findByTypeProjetId(@Param("typeId") Long typeId);
 }

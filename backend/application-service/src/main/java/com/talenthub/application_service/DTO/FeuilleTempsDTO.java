@@ -68,7 +68,7 @@ public class FeuilleTempsDTO {
     private List<LigneFeuilleTempsDTO> buildLignes(
             List<LigneFeuilleTemps> lignes,
             ProjetRepository    projetRepo,
-            ActiviteRepository  activiteRepo,
+            ActiviteRepository activiteRepo,
             ClientRepository    clientRepo) {
 
         if (lignes == null || lignes.isEmpty()) return List.of();

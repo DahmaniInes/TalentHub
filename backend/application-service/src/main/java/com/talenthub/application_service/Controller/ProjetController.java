@@ -1,4 +1,3 @@
-// Controller/ProjetController.java — COMPLET avec PermissionContext (pas jwt.getClaim)
 package com.talenthub.application_service.Controller;
 
 import com.talenthub.application_service.DTO.ProjetDTO;
@@ -24,12 +23,13 @@ public class ProjetController {
     private final ProjetService     projetService;
     private final PermissionContext permCtx;
 
-    // ── GET liste — PROJECT_VIEW_ALL | PROJECT_VIEW_LEAD | PROJECT_VIEW_OWN ──
+    // ── GET liste ─────────────────────────────────────────────────
     @GetMapping
     public ResponseEntity<?> getAll(
             @RequestParam(required = false) Long clientId,
-            @RequestParam(required = false) String statut,
+            @RequestParam(required = false) Long statutId,  // ✅ Long — plus de String statut
             @RequestParam(required = false) Long membreId) {
+
         if (!permCtx.has("PROJECT_VIEW_ALL") && !permCtx.has("PROJECT_VIEW_LEAD")
                 && !permCtx.has("PROJECT_VIEW_OWN") && !permCtx.has("PROJECT_DETAILS_VIEW")) {
             return ResponseEntity.status(403)
@@ -37,10 +37,18 @@ public class ProjetController {
         }
         try {
             List<ProjetDTO> list;
-            if (clientId  != null) list = projetService.getByClient(clientId).stream().map(ProjetDTO::new).toList();
-            else if (statut   != null) list = projetService.getByStatut(statut).stream().map(ProjetDTO::new).toList();
-            else if (membreId != null) list = projetService.getByMembre(membreId).stream().map(ProjetDTO::new).toList();
-            else                       list = projetService.getAllDTO();
+            if (clientId  != null)
+                list = projetService.getByClient(clientId).stream()
+                        .map(ProjetDTO::new).toList();
+            else if (statutId != null)                              // ✅ statutId remplace statut
+                list = projetService.getByStatutId(statutId).stream()
+                        .map(ProjetDTO::new).toList();
+            else if (membreId != null)
+                list = projetService.getByMembre(membreId).stream()
+                        .map(ProjetDTO::new).toList();
+            else
+                list = projetService.getAllDTO();
+
             return ResponseEntity.ok(list);
         } catch (Exception e) {
             log.error("Erreur GET /projets: {}", e.getMessage(), e);
@@ -49,7 +57,7 @@ public class ProjetController {
         }
     }
 
-    // ── GET détail — PROJECT_VIEW_ALL | PROJECT_VIEW_LEAD | PROJECT_VIEW_OWN | PROJECT_DETAILS_VIEW ──
+    // ── GET détail ────────────────────────────────────────────────
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable Long id) {
         if (!permCtx.has("PROJECT_VIEW_ALL") && !permCtx.has("PROJECT_VIEW_LEAD")
@@ -76,14 +84,16 @@ public class ProjetController {
     @PostMapping
     public ResponseEntity<?> create(@RequestBody Map<String, Object> body) {
         try {
-            Projet projet          = buildProjetFromBody(body);
-            Long   clientId        = extractLong(body, "clientId");
-            List<Long> groupeIds   = extractLongList(body, "groupeIds");
+            Projet     projet     = buildProjetFromBody(body);
+            Long       clientId   = extractLong(body, "clientId");
+            List<Long> groupeIds  = extractLongList(body, "groupeIds");
             List<Long> activiteIds = extractLongList(body, "activiteIds");
+
             Projet saved = projetService.create(projet, clientId, groupeIds, activiteIds);
             try {
-                return new ResponseEntity<>(projetService.toDTO(
-                        projetService.getByIdWithDetails(saved.getId())), HttpStatus.CREATED);
+                return new ResponseEntity<>(
+                        projetService.toDTO(projetService.getByIdWithDetails(saved.getId())),
+                        HttpStatus.CREATED);
             } catch (Exception e) {
                 return new ResponseEntity<>(new ProjetDTO(saved), HttpStatus.CREATED);
             }
@@ -94,7 +104,7 @@ public class ProjetController {
         }
     }
 
-    // ── PUT modifier — PROJECT_EDIT_ALL | PROJECT_EDIT_LEAD | PROJECT_EDIT_OWN ──
+    // ── PUT modifier ──────────────────────────────────────────────
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable Long id,
                                     @RequestBody Map<String, Object> body) {
@@ -104,14 +114,15 @@ public class ProjetController {
                     .body(Map.of("message", "Permission PROJECT_EDIT_ALL requise."));
         }
         try {
-            Projet details         = buildProjetFromBody(body);
-            Long   clientId        = extractLong(body, "clientId");
+            Projet     details     = buildProjetFromBody(body);
+            Long       clientId    = extractLong(body, "clientId");
             List<Long> groupeIds   = extractLongList(body, "groupeIds");
             List<Long> activiteIds = extractLongList(body, "activiteIds");
+
             Projet saved = projetService.update(id, details, clientId, groupeIds, activiteIds);
             try {
-                return ResponseEntity.ok(projetService.toDTO(
-                        projetService.getByIdWithDetails(saved.getId())));
+                return ResponseEntity.ok(
+                        projetService.toDTO(projetService.getByIdWithDetails(saved.getId())));
             } catch (Exception e) {
                 return ResponseEntity.ok(new ProjetDTO(saved));
             }
@@ -130,7 +141,7 @@ public class ProjetController {
         return ResponseEntity.noContent().build();
     }
 
-    // ── DELETE bulk — PROJECT_DELETE_ALL ─────────────────────────
+    // ── DELETE bulk ───────────────────────────────────────────────
     @RequiresPermission("PROJECT_DELETE_ALL")
     @DeleteMapping("/bulk")
     public ResponseEntity<Void> deleteBulk(@RequestBody List<Long> ids) {
@@ -138,7 +149,7 @@ public class ProjetController {
         return ResponseEntity.noContent().build();
     }
 
-    // ── PATCH assigner activités — PROJECT_EDIT_ALL | PROJECT_EDIT_LEAD ──
+    // ── PATCH assigner activités ──────────────────────────────────
     @PatchMapping("/{id}/activites")
     public ResponseEntity<?> assignerActivites(@PathVariable Long id,
                                                @RequestBody List<Long> activiteIds) {
@@ -148,13 +159,50 @@ public class ProjetController {
         }
         try {
             Projet saved = projetService.assignerActivites(id, activiteIds);
-            return ResponseEntity.ok(projetService.toDTO(
-                    projetService.getByIdWithDetails(saved.getId())));
+            return ResponseEntity.ok(
+                    projetService.toDTO(projetService.getByIdWithDetails(saved.getId())));
         } catch (Exception e) {
             log.error("Erreur PATCH /projets/{}/activites: {}", id, e.getMessage(), e);
             return ResponseEntity.internalServerError()
                     .body(Map.of("message", e.getMessage()));
         }
+    }
+
+    // ── Projets de stage (type STAGE_ACADEMIQUE) ──────────────────
+    @GetMapping("/stage")
+    public ResponseEntity<?> getProjetsStage() {
+        if (!permCtx.has("INT_ADMIN_PROJ_VIEW_ALL") && !permCtx.has("INT_SUPER_PROJ_VIEW_MY")
+                && !permCtx.has("INT_INTERN_VIEW_PROJ")) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Permission requise."));
+        }
+        return ResponseEntity.ok(
+                projetService.getProjetsStage().stream()
+                        .map(ProjetDTO::new).toList());
+    }
+
+    // ── Projets d'un stagiaire ────────────────────────────────────
+    @GetMapping("/stagiaire/{utilisateurId}")
+    public ResponseEntity<?> getByStag(@PathVariable Long utilisateurId) {
+        if (!permCtx.has("INT_INTERN_VIEW_PROJ") && !permCtx.has("INT_ADMIN_PROJ_VIEW_ALL")) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Permission requise."));
+        }
+        return ResponseEntity.ok(
+                projetService.getProjetsParStagiaire(utilisateurId).stream()
+                        .map(ProjetDTO::new).toList());
+    }
+
+    // ── Projets des stagiaires d'un superviseur ───────────────────
+    @GetMapping("/superviseur/{superviseurId}")
+    public ResponseEntity<?> getBySuperviseur(@PathVariable Long superviseurId) {
+        if (!permCtx.has("INT_SUPER_PROJ_VIEW_MY") && !permCtx.has("INT_ADMIN_PROJ_VIEW_ALL")) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Permission requise."));
+        }
+        return ResponseEntity.ok(
+                projetService.getProjetsParSuperviseur(superviseurId).stream()
+                        .map(ProjetDTO::new).toList());
     }
 
     // ── Helpers ───────────────────────────────────────────────────
@@ -163,22 +211,31 @@ public class ProjetController {
         if (body.get("nom")         != null) p.setNom(body.get("nom").toString());
         if (body.get("description") != null) p.setDescription(body.get("description").toString());
         if (body.get("couleur")     != null) p.setCouleur(body.get("couleur").toString());
-        if (body.get("statut")      != null) p.setStatut(body.get("statut").toString());
-        if (body.get("typeBudget")  != null) p.setTypeBudget(body.get("typeBudget").toString());
+
+        // ✅ IDs nomenclature — plus de String statut
+        if (body.get("statutProjetId") != null)
+            p.setStatutProjetId(Long.valueOf(body.get("statutProjetId").toString()));
+        if (body.get("typeProjetId") != null)
+            p.setTypeProjetId(Long.valueOf(body.get("typeProjetId").toString()));
+
+        if (body.get("typeBudget")  != null)
+            p.setTypeBudget(body.get("typeBudget").toString());
         if (body.get("responsableKeycloakId") != null)
             p.setResponsableKeycloakId(body.get("responsableKeycloakId").toString());
         if (body.get("budgetPrevu") != null)
             p.setBudgetPrevu(Double.valueOf(body.get("budgetPrevu").toString()));
         if (body.get("heuresEstimees") != null)
             p.setHeuresEstimees(Double.valueOf(body.get("heuresEstimees").toString()));
-        if (body.get("avancement")  != null)
+        if (body.get("avancement") != null)
             p.setAvancement(Integer.parseInt(body.get("avancement").toString()));
         if (body.get("seuilAlerteHoraire") != null)
-            p.setSeuilAlerteHoraire(Integer.parseInt(body.get("seuilAlerteHoraire").toString()));
+            p.setSeuilAlerteHoraire(
+                    Integer.parseInt(body.get("seuilAlerteHoraire").toString()));
         if (body.get("visible")    != null) p.setVisible((Boolean) body.get("visible"));
         if (body.get("facturable") != null) p.setFacturable((Boolean) body.get("facturable"));
         if (body.get("autoriserActivitesGlobales") != null)
-            p.setAutoriserActivitesGlobales((Boolean) body.get("autoriserActivitesGlobales"));
+            p.setAutoriserActivitesGlobales(
+                    (Boolean) body.get("autoriserActivitesGlobales"));
         if (body.get("dateDebut") != null)
             p.setDateDebut(LocalDate.parse(body.get("dateDebut").toString()));
         if (body.get("dateFin") != null)

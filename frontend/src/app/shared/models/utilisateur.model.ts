@@ -6,6 +6,28 @@ export interface SuperviseurMin {
   poste?: string;
 }
 
+export interface StageMin {
+  id: number;
+  utilisateurId: number;
+  typeStageId?: number;
+  statutStageId?: number;
+  dateDebut?: string;
+  dateFin?: string;
+  dateSoutenance?: string;
+  description?: string;
+  createdAt?: string;
+  projetIds?: number[];
+}
+
+export interface StagiaireMembreMin {
+  id: number;
+  nomComplet: string;
+  email: string;
+  photoUrl?: string;
+  stageId?: number;
+  role?: string;
+}
+
 export interface Utilisateur {
   id: number;
   keycloakId: string;
@@ -26,18 +48,20 @@ export interface Utilisateur {
   profilNom: string;
   createdAt?: string;
   updatedAt?: string;
-  // Académique
-  universite?: string;
-  specialite?: string;
-  niveauEtude?: string;
-  // Stage
-  typeStageId?: number;
-  dateDebutStage?: string;
-  dateFinStage?: string;
-  dateSoutenance?: string;
-  // Superviseurs — compatibilité
+
+  // ✅ Académique — IDs vers nomenclature (plus de Strings libres)
+  universiteId?: number;
+  specialiteId?: number;
+  niveauEtudeId?: number;
+
+  // ✅ Stages — liste (un user peut avoir plusieurs stages)
+  stages?: StageMin[];
+
+  // ✅ Superviseurs
   superviseurIds?: number[];
   superviseurNoms?: string[];
-  // Superviseurs — objets complets
   superviseurs?: SuperviseurMin[];
+
+  // ✅ Projets de stage via membresEquipe
+  projetsStage?: StagiaireMembreMin[];
 }

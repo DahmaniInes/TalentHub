@@ -214,29 +214,42 @@
             </td>
 
             <!-- Université -->
-            <td class="dt-td"><span class="dt-cell-text">{{ s.universite || '—' }}</span></td>
+            <td class="dt-td">
+              <span class="dt-cell-text">{{ getUniversiteLibelle(s.universiteId) }}</span>
+            </td>
+
 
             <!-- Spécialité -->
-            <td class="dt-td"><span class="dt-cell-muted">{{ s.specialite || '—' }}</span></td>
+           <td class="dt-td">
+           <span class="dt-cell-muted">{{ getSpecialiteLibelle(s.specialiteId) }}</span>
+           </td>
+
 
             <!-- Type stage -->
-            <td class="dt-td">
-              <span *ngIf="s.typeStageId" class="dt-badge dt-badge-accent" style="font-size:.65rem">
-                <span class="dt-badge-dot"></span>{{ getTypeStageLibelle(s.typeStageId) }}
-              </span>
-              <span *ngIf="!s.typeStageId" class="dt-cell-muted">—</span>
-            </td>
+          <td class="dt-td">
+  <span *ngIf="getPremierTypeStage(s)"
+        class="dt-badge dt-badge-accent" style="font-size:.65rem">
+    <span class="dt-badge-dot"></span>
+    {{ getTypeStageLibelle(getPremierTypeStage(s)) }}
+  </span>
+  <span *ngIf="!getPremierTypeStage(s)" class="dt-cell-muted">—</span>
+</td>
+
+
 
             <!-- Période -->
             <td class="dt-td">
               <div class="dt-cell-user">
-                <span *ngIf="s.dateDebutStage" class="dt-cell-name" style="font-size:.75rem">
-                  {{ fmtDate(s.dateDebutStage) }}
+                <span *ngIf="getPremierDateDebut(s)" class="dt-cell-name" style="font-size:.75rem">
+                  {{ fmtDate(getPremierDateDebut(s)) }}
                 </span>
-                <span *ngIf="s.dateFinStage" class="dt-cell-sub">→ {{ fmtDate(s.dateFinStage) }}</span>
-                <span *ngIf="!s.dateDebutStage" class="dt-cell-muted">—</span>
+                <span *ngIf="getPremierDateFin(s)" class="dt-cell-sub">
+                  → {{ fmtDate(getPremierDateFin(s)) }}
+                </span>
+                <span *ngIf="!getPremierDateDebut(s)" class="dt-cell-muted">—</span>
               </div>
             </td>
+
 
             <!-- Superviseurs — exactement même style que colonne Stagiaire -->
             <td class="dt-td">
@@ -277,14 +290,11 @@
             <!-- Projet assigné -->
             <td class="dt-td">
               <div *ngIf="getPremierProjet(s) as proj" class="dt-cell-user">
-                <span class="dt-cell-name" style="font-size:.8rem">{{ proj.titre }}</span>
-                <span *ngIf="proj.description" class="dt-cell-sub"
-                      style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">
-                  {{ proj.description }}
-                </span>
+                <span class="dt-cell-name" style="font-size:.8rem">{{ proj.nom }}</span>
               </div>
               <span *ngIf="!getPremierProjet(s)" class="dt-cell-muted">—</span>
             </td>
+
 
             <!-- Actions : edit + delete -->
             <td class="dt-td dt-td-actions" (click)="$event.stopPropagation()">
@@ -377,6 +387,8 @@
     </button>
   </div>
 
+
+
   <div *ngIf="tab()==='infos'" class="mx-so-body">
     <div class="mx-so-grid">
       <div class="mx-field"><label class="mx-field-label">Prénom</label>
@@ -387,24 +399,40 @@
                [readonly]="!perms.canViewAllInterns()"></div>
       <div class="mx-field mx-so-full"><label class="mx-field-label">Téléphone</label>
         <input [(ngModel)]="editForm().telephone" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-      <div class="mx-field"><label class="mx-field-label">Université</label>
-        <input [(ngModel)]="editForm().universite" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-      <div class="mx-field"><label class="mx-field-label">Spécialité</label>
-        <input [(ngModel)]="editForm().specialite" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
-      <div class="mx-field"><label class="mx-field-label">Niveau d'étude</label>
-        <select [(ngModel)]="editForm().niveauEtude" [ngModelOptions]="{standalone:true}" class="mx-field-select">
-          <option value="">— Sélectionner —</option>
-          <option value="Licence 1">Licence 1</option>
-          <option value="Licence 2">Licence 2</option>
-          <option value="Licence 3">Licence 3</option>
-          <option value="Master 1">Master 1</option>
-          <option value="Master 2">Master 2</option>
-          <option value="Ingénierie">Ingénierie</option>
-          <option value="Doctorat">Doctorat</option>
+  
+      <!-- ✅ Université — select depuis nomenclature -->
+      <div class="mx-field">
+        <label class="mx-field-label">Université</label>
+        <select [(ngModel)]="editForm().universiteId" [ngModelOptions]="{standalone:true}" class="mx-field-select">
+          <option [ngValue]="null">— Sélectionner —</option>
+          <option *ngFor="let u of universites()" [ngValue]="u.id">{{ u.libelle }}</option>
+        </select>
+      </div>
+  
+      <!-- ✅ Spécialité — select depuis nomenclature -->
+      <div class="mx-field">
+        <label class="mx-field-label">Spécialité</label>
+        <select [(ngModel)]="editForm().specialiteId" [ngModelOptions]="{standalone:true}" class="mx-field-select">
+          <option [ngValue]="null">— Sélectionner —</option>
+          <option *ngFor="let s of specialites()" [ngValue]="s.id">{{ s.libelle }}</option>
+        </select>
+      </div>
+  
+      <!-- ✅ Niveau d'étude — select depuis nomenclature -->
+      <div class="mx-field">
+        <label class="mx-field-label">Niveau d'étude</label>
+        <select [(ngModel)]="editForm().niveauEtudeId" [ngModelOptions]="{standalone:true}" class="mx-field-select">
+          <option [ngValue]="null">— Sélectionner —</option>
+          <option *ngFor="let n of niveaux()" [ngValue]="n.id">{{ n.libelle }}</option>
         </select>
       </div>
     </div>
   </div>
+
+
+
+
+
 
   <div *ngIf="tab()==='stage'" class="mx-so-body">
     <div class="mx-so-grid">
@@ -424,6 +452,7 @@
     </div>
   </div>
 
+
   <div *ngIf="tab()==='superviseurs'" class="mx-so-body">
     <p class="mx-so-section-title">Superviseurs assignés</p>
     <div class="mx-membre-list">
@@ -434,6 +463,7 @@
                style="width:100%;height:100%;object-fit:cover;border-radius:9px">
           <span *ngIf="!sup.photoUrl">{{ getInitiales(sup.nomComplet) }}</span>
         </div>
+
         <div class="mx-membre-info">
           <span class="mx-membre-nom">
             {{ sup.nomComplet }}
@@ -487,7 +517,7 @@
       <div style="display:flex;gap:8px;align-items:center">
         <select [(ngModel)]="projetAssignId" class="mx-field-select" style="flex:1">
           <option [ngValue]="null">— Sélectionner un projet —</option>
-          <option *ngFor="let p of projetsDispoAAssigner()" [ngValue]="p.id">{{ p.titre }}</option>
+          <option *ngFor="let p of projetsDispoAAssigner()" [ngValue]="p.id">{{ p.nom }}</option>
         </select>
         <button class="mx-btn mx-btn-primary" style="height:36px;padding:0 12px;font-size:.76rem"
                 (click)="assignerProjetExistant()">Assigner</button>
@@ -519,8 +549,8 @@
     </div>
     <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px">
       <div class="mx-field">
-        <label class="mx-field-label">Titre <span style="color:#ef4444">*</span></label>
-        <input [(ngModel)]="projetPopupForm().titre" class="mx-field-input" placeholder="Titre du projet">
+        <label class="mx-field-label">Nom <span style="color:#ef4444">*</span></label>
+        <input [(ngModel)]="projetPopupForm().nom" class="mx-field-input" placeholder="Nom du projet">
       </div>
       <div class="mx-field">
         <label class="mx-field-label">Description</label>

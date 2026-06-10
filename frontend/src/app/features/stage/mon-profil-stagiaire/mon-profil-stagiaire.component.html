@@ -1,172 +1,212 @@
 <div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh">
 
-    <div *ngIf="loading()" class="dt-loading"><div class="dt-spinner"></div> Chargement...</div>
-  
-    <ng-container *ngIf="!loading() && currentUser() as u">
-  
-      <!-- HERO PROFIL -->
-      <div style="background:linear-gradient(135deg,var(--accent),var(--accent-2));border-radius:16px;padding:28px;margin-bottom:20px;color:white;position:relative;overflow:hidden">
-        <div style="position:absolute;top:-30px;right:-30px;width:140px;height:140px;background:rgba(255,255,255,.08);border-radius:50%"></div>
-        <div style="position:absolute;bottom:-20px;left:40%;width:80px;height:80px;background:rgba(255,255,255,.06);border-radius:50%"></div>
-        <div style="display:flex;align-items:center;gap:18px;position:relative">
-          <div style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:800;flex-shrink:0;border:3px solid rgba(255,255,255,.4)">
-            <img *ngIf="u.photoUrl" [src]="u.photoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
-            <span *ngIf="!u.photoUrl">{{ getInitiales(u.nomComplet) }}</span>
-          </div>
-          <div>
-            <h1 style="font-size:1.3rem;font-weight:800;margin:0 0 4px">{{ u.nomComplet }}</h1>
-            <p style="font-size:.82rem;opacity:.85;margin:0">{{ u.email }}</p>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-              <span style="font-size:.68rem;padding:2px 10px;border-radius:99px;background:rgba(255,255,255,.2);font-weight:600">
-                {{ u.profilNom }}
-              </span>
-              <span *ngIf="u.universite" style="font-size:.68rem;padding:2px 10px;border-radius:99px;background:rgba(255,255,255,.2);font-weight:600">
-                {{ u.universite }}
-              </span>
-            </div>
+  <div *ngIf="loading()" class="dt-loading"><div class="dt-spinner"></div> Chargement...</div>
+
+  <ng-container *ngIf="!loading() && currentUser() as u">
+
+    <!-- HERO PROFIL -->
+    <div style="background:linear-gradient(135deg,var(--accent),var(--accent-2));border-radius:16px;padding:28px;margin-bottom:20px;color:white;position:relative;overflow:hidden">
+      <div style="position:absolute;top:-30px;right:-30px;width:140px;height:140px;background:rgba(255,255,255,.08);border-radius:50%"></div>
+      <div style="position:absolute;bottom:-20px;left:40%;width:80px;height:80px;background:rgba(255,255,255,.06);border-radius:50%"></div>
+      <div style="display:flex;align-items:center;gap:18px;position:relative">
+        <div style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:800;flex-shrink:0;border:3px solid rgba(255,255,255,.4)">
+          <img *ngIf="u.photoUrl" [src]="u.photoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+          <span *ngIf="!u.photoUrl">{{ getInitiales(u.nomComplet) }}</span>
+        </div>
+        <div>
+          <h1 style="font-size:1.3rem;font-weight:800;margin:0 0 4px">{{ u.nomComplet }}</h1>
+          <p style="font-size:.82rem;opacity:.85;margin:0">{{ u.email }}</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+            <span style="font-size:.68rem;padding:2px 10px;border-radius:99px;background:rgba(255,255,255,.2);font-weight:600">
+              {{ u.profilNom }}
+            </span>
+            <!-- ✅ Université via helper nomenclature -->
+            <span *ngIf="u.universiteId"
+                  style="font-size:.68rem;padding:2px 10px;border-radius:99px;background:rgba(255,255,255,.2);font-weight:600">
+              {{ getUniversiteLibelle(u.universiteId) }}
+            </span>
           </div>
         </div>
       </div>
-  
-      <!-- STATS RAPIDES -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
-        <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px;text-align:center">
-          <p style="font-size:1.5rem;font-weight:800;color:var(--accent);margin:0">{{ projets().length }}</p>
-          <p style="font-size:.68rem;color:var(--text-muted);margin:4px 0 0;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Projets</p>
-        </div>
-        <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px;text-align:center">
-          <p style="font-size:1.5rem;font-weight:800;color:var(--accent);margin:0">{{ activites().length }}</p>
-          <p style="font-size:.68rem;color:var(--text-muted);margin:4px 0 0;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Activités</p>
-        </div>
-        <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px;text-align:center">
-          <p style="font-size:1.5rem;font-weight:800;margin:0" [style.color]="avancementColor(avancementMoyen())">{{ avancementMoyen() }}%</p>
-          <p style="font-size:.68rem;color:var(--text-muted);margin:4px 0 0;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Avancement</p>
-        </div>
+    </div>
+
+    <!-- STATS RAPIDES -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+      <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px;text-align:center">
+        <p style="font-size:1.5rem;font-weight:800;color:var(--accent);margin:0">{{ projets().length }}</p>
+        <p style="font-size:.68rem;color:var(--text-muted);margin:4px 0 0;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Projets</p>
       </div>
-  
-      <!-- ONGLETS -->
-      <div class="mx-so-tabs" style="margin-bottom:16px">
-        <button class="mx-so-tab" [class.active]="tab()==='profil'" (click)="tab.set('profil')">Mon profil</button>
-        <button class="mx-so-tab" [class.active]="tab()==='projets'" (click)="tab.set('projets')">Projets ({{ projets().length }})</button>
-        <button class="mx-so-tab" [class.active]="tab()==='activites'" (click)="tab.set('activites')">Activités ({{ activites().length }})</button>
+      <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px;text-align:center">
+        <p style="font-size:1.5rem;font-weight:800;color:var(--accent);margin:0">{{ activites().length }}</p>
+        <p style="font-size:.68rem;color:var(--text-muted);margin:4px 0 0;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Activités</p>
       </div>
-  
-      <!-- TAB PROFIL -->
-      <ng-container *ngIf="tab()==='profil'">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-  
-          <!-- Infos personnelles -->
-          <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;overflow:hidden">
-            <div style="padding:12px 16px;background:var(--bg-hover);border-bottom:1px solid var(--border-color);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary)">
-              Informations personnelles
-            </div>
-            <div class="mx-info-row"><span class="mx-info-key">Nom complet</span><span class="mx-info-val">{{ u.nomComplet }}</span></div>
-            <div class="mx-info-row"><span class="mx-info-key">Email</span><span class="mx-info-val">{{ u.email }}</span></div>
-            <div class="mx-info-row" *ngIf="u.telephone"><span class="mx-info-key">Téléphone</span><span class="mx-info-val">{{ u.telephone }}</span></div>
-            <div class="mx-info-row" *ngIf="u.adresse"><span class="mx-info-key">Adresse</span><span class="mx-info-val">{{ u.adresse }}</span></div>
+      <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px;text-align:center">
+        <p style="font-size:1.5rem;font-weight:800;margin:0" [style.color]="avancementColor(avancementMoyen())">{{ avancementMoyen() }}%</p>
+        <p style="font-size:.68rem;color:var(--text-muted);margin:4px 0 0;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Avancement</p>
+      </div>
+    </div>
+
+    <!-- ONGLETS -->
+    <div class="mx-so-tabs" style="margin-bottom:16px">
+      <button class="mx-so-tab" [class.active]="tab()==='profil'" (click)="tab.set('profil')">Mon profil</button>
+      <button class="mx-so-tab" [class.active]="tab()==='projets'" (click)="tab.set('projets')">Projets ({{ projets().length }})</button>
+      <button class="mx-so-tab" [class.active]="tab()==='activites'" (click)="tab.set('activites')">Activités ({{ activites().length }})</button>
+    </div>
+
+    <!-- TAB PROFIL -->
+    <ng-container *ngIf="tab()==='profil'">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+        <!-- Infos personnelles -->
+        <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;overflow:hidden">
+          <div style="padding:12px 16px;background:var(--bg-hover);border-bottom:1px solid var(--border-color);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary)">
+            Informations personnelles
           </div>
-  
-          <!-- Infos académiques -->
-          <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;overflow:hidden">
-            <div style="padding:12px 16px;background:var(--bg-hover);border-bottom:1px solid var(--border-color);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary)">
-              Études & Stage
-            </div>
-            <div class="mx-info-row"><span class="mx-info-key">Université</span><span class="mx-info-val">{{ u.universite || '—' }}</span></div>
-            <div class="mx-info-row"><span class="mx-info-key">Spécialité</span><span class="mx-info-val">{{ u.specialite || '—' }}</span></div>
-            <div class="mx-info-row"><span class="mx-info-key">Niveau</span><span class="mx-info-val">{{ u.niveauEtude || '—' }}</span></div>
-            <div class="mx-info-row"><span class="mx-info-key">Type stage</span><span class="mx-info-val">{{ getTypeStageLibelle(u.typeStageId) }}</span></div>
-            <div class="mx-info-row"><span class="mx-info-key">Début stage</span><span class="mx-info-val">{{ fmtDate(u.dateDebutStage) }}</span></div>
-            <div class="mx-info-row"><span class="mx-info-key">Fin stage</span><span class="mx-info-val">{{ fmtDate(u.dateFinStage) }}</span></div>
-            <div class="mx-info-row"><span class="mx-info-key">Soutenance</span><span class="mx-info-val">{{ fmtDate(u.dateSoutenance) }}</span></div>
+          <div class="mx-info-row"><span class="mx-info-key">Nom complet</span><span class="mx-info-val">{{ u.nomComplet }}</span></div>
+          <div class="mx-info-row"><span class="mx-info-key">Email</span><span class="mx-info-val">{{ u.email }}</span></div>
+          <div class="mx-info-row" *ngIf="u.telephone"><span class="mx-info-key">Téléphone</span><span class="mx-info-val">{{ u.telephone }}</span></div>
+          <div class="mx-info-row" *ngIf="u.adresse"><span class="mx-info-key">Adresse</span><span class="mx-info-val">{{ u.adresse }}</span></div>
+        </div>
+
+        <!-- Infos académiques — ✅ tous via helpers nomenclature -->
+        <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;overflow:hidden">
+          <div style="padding:12px 16px;background:var(--bg-hover);border-bottom:1px solid var(--border-color);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary)">
+            Études & Stage
           </div>
-  
-          <!-- Superviseurs -->
-          <div *ngIf="superviseurs().length > 0"
-               style="grid-column:1/-1;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;overflow:hidden">
-            <div style="padding:12px 16px;background:var(--bg-hover);border-bottom:1px solid var(--border-color);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary)">
-              Mes superviseurs ({{ superviseurs().length }})
-            </div>
-            <div class="mx-membre-list">
-              <div *ngFor="let sup of superviseurs()" class="mx-membre-item">
-                <div class="dt-avatar" style="width:36px;height:36px;border-radius:9px;font-size:.7rem">
-                  <img *ngIf="sup.photoUrl" [src]="sup.photoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:9px">
-                  <span *ngIf="!sup.photoUrl">{{ getInitiales(sup.nomComplet) }}</span>
-                </div>
-                <div class="mx-membre-info">
-                  <span class="mx-membre-nom">{{ sup.nomComplet }}</span>
-                  <span class="mx-membre-sub">{{ sup.poste || sup.email }}</span>
-                </div>
-                <span class="dt-badge dt-badge-delivered" style="font-size:.6rem">
-                  <span class="dt-badge-dot"></span>Superviseur
-                </span>
+          <div class="mx-info-row">
+            <span class="mx-info-key">Université</span>
+            <span class="mx-info-val">{{ getUniversiteLibelle(u.universiteId) }}</span>
+          </div>
+          <div class="mx-info-row">
+            <span class="mx-info-key">Spécialité</span>
+            <span class="mx-info-val">{{ getSpecialiteLibelle(u.specialiteId) }}</span>
+          </div>
+          <div class="mx-info-row">
+            <span class="mx-info-key">Niveau</span>
+            <span class="mx-info-val">{{ getNiveauLibelle(u.niveauEtudeId) }}</span>
+          </div>
+          <!-- ✅ Données du stage via getPremierXxx() -->
+          <div class="mx-info-row">
+            <span class="mx-info-key">Type stage</span>
+            <span class="mx-info-val">{{ getTypeStageLibelle(getPremierTypeStage()) }}</span>
+          </div>
+          <div class="mx-info-row">
+            <span class="mx-info-key">Début stage</span>
+            <span class="mx-info-val">{{ fmtDate(getPremierDateDebut()) }}</span>
+          </div>
+          <div class="mx-info-row">
+            <span class="mx-info-key">Fin stage</span>
+            <span class="mx-info-val">{{ fmtDate(getPremierDateFin()) }}</span>
+          </div>
+          <div class="mx-info-row">
+            <span class="mx-info-key">Soutenance</span>
+            <span class="mx-info-val">{{ fmtDate(getPremierDateSoutenance()) }}</span>
+          </div>
+        </div>
+
+        <!-- Superviseurs -->
+        <div *ngIf="superviseurs().length > 0"
+             style="grid-column:1/-1;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;overflow:hidden">
+          <div style="padding:12px 16px;background:var(--bg-hover);border-bottom:1px solid var(--border-color);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary)">
+            Mes superviseurs ({{ superviseurs().length }})
+          </div>
+          <div class="mx-membre-list">
+            <div *ngFor="let sup of superviseurs()" class="mx-membre-item">
+              <div class="dt-avatar" style="width:36px;height:36px;border-radius:9px;font-size:.7rem">
+                <img *ngIf="sup.photoUrl" [src]="sup.photoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:9px">
+                <span *ngIf="!sup.photoUrl">{{ getInitiales(sup.nomComplet) }}</span>
               </div>
-            </div>
-          </div>
-  
-        </div>
-      </ng-container>
-  
-      <!-- TAB PROJETS -->
-      <ng-container *ngIf="tab()==='projets'">
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <div *ngIf="projets().length === 0" class="dt-empty"><p class="dt-empty-title">Aucun projet assigné</p></div>
-          <div *ngFor="let p of projets()"
-               style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px;cursor:pointer"
-               (click)="goProjet(p.id)">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap">
-              <span style="font-size:.9rem;font-weight:700;color:var(--text-primary)">{{ p.titre }}</span>
-              <span class="dt-badge"
-                    [class.dt-badge-pending]="p.statut==='EN_COURS'"
-                    [class.dt-badge-delivered]="p.statut==='TERMINE'"
-                    style="font-size:.62rem">
-                <span class="dt-badge-dot"></span>{{ ({ EN_COURS:'En cours', TERMINE:'Terminé', SUSPENDU:'Suspendu' })[p.statut] }}
-              </span>
-            </div>
-            <div style="height:6px;background:var(--bg-hover);border-radius:99px;overflow:hidden">
-              <div style="height:100%;border-radius:99px;transition:width .4s"
-                   [style.width.%]="p.avancement"
-                   [style.background]="avancementColor(p.avancement)"></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;margin-top:6px">
-              <span style="font-size:.68rem;color:var(--text-muted)">{{ p.nombreActivites }} activité(s)</span>
-              <span style="font-size:.72rem;font-weight:800" [style.color]="avancementColor(p.avancement)">{{ p.avancement }}%</span>
-            </div>
-          </div>
-        </div>
-      </ng-container>
-  
-      <!-- TAB ACTIVITÉS -->
-      <ng-container *ngIf="tab()==='activites'">
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div *ngIf="activites().length === 0" class="dt-empty"><p class="dt-empty-title">Aucune activité</p></div>
-          <div *ngFor="let a of activites()"
-               style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;flex-wrap:wrap">
-              <div>
-                <span style="font-size:.85rem;font-weight:700;color:var(--text-primary)">{{ a.titre }}</span>
-                <span *ngIf="a.projetTitre" style="font-size:.7rem;color:var(--text-muted);margin-left:8px">— {{ a.projetTitre }}</span>
+              <div class="mx-membre-info">
+                <span class="mx-membre-nom">{{ sup.nomComplet }}</span>
+                <span class="mx-membre-sub">{{ sup.poste || sup.email }}</span>
               </div>
-              <span class="dt-badge"
-                    [class.dt-badge-default]="a.statut==='A_FAIRE'"
-                    [class.dt-badge-pending]="a.statut==='EN_COURS'"
-                    [class.dt-badge-delivered]="a.statut==='TERMINE'"
-                    style="font-size:.6rem">
-                <span class="dt-badge-dot"></span>
-                {{ ({ A_FAIRE:'À faire', EN_COURS:'En cours', TERMINE:'Terminé' })[a.statut] }}
+              <span class="dt-badge dt-badge-delivered" style="font-size:.6rem">
+                <span class="dt-badge-dot"></span>Superviseur
               </span>
             </div>
-            <p *ngIf="a.description" style="font-size:.74rem;color:var(--text-secondary);margin:0 0 8px">{{ a.description }}</p>
+          </div>
+        </div>
+
+      </div>
+    </ng-container>
+
+    <!-- TAB PROJETS -->
+    <ng-container *ngIf="tab()==='projets'">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div *ngIf="projets().length === 0" class="dt-empty"><p class="dt-empty-title">Aucun projet assigné</p></div>
+        <div *ngFor="let p of projets()"
+             style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px;cursor:pointer"
+             (click)="goProjet(p.id)">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+            <!-- ✅ p.nom au lieu de p.titre -->
+            <span style="font-size:.9rem;font-weight:700;color:var(--text-primary)">{{ p.nom }}</span>
+            <!-- ✅ Statut via helper nomenclature au lieu de p.statut String -->
+            <span class="dt-badge"
+                  [style.background]="getStatutProjetColor(p.statutProjetId)+'18'"
+                  [style.color]="getStatutProjetColor(p.statutProjetId)"
+                  [style.border-color]="getStatutProjetColor(p.statutProjetId)+'55'"
+                  style="font-size:.62rem">
+              <span class="dt-badge-dot"
+                    [style.background]="getStatutProjetColor(p.statutProjetId)"></span>
+              {{ getStatutProjetLabel(p.statutProjetId) }}
+            </span>
+          </div>
+          <div style="height:6px;background:var(--bg-hover);border-radius:99px;overflow:hidden">
+            <div style="height:100%;border-radius:99px;transition:width .4s"
+                 [style.width.%]="p.avancement"
+                 [style.background]="avancementColor(p.avancement)"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px">
+            <span style="font-size:.68rem;color:var(--text-muted)">{{ p.nombreActivites }} activité(s)</span>
+            <span style="font-size:.72rem;font-weight:800" [style.color]="avancementColor(p.avancement)">{{ p.avancement }}%</span>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- TAB ACTIVITÉS -->
+    <ng-container *ngIf="tab()==='activites'">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div *ngIf="activites().length === 0" class="dt-empty"><p class="dt-empty-title">Aucune activité</p></div>
+        <div *ngFor="let a of activites()"
+             style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;flex-wrap:wrap">
+            <div>
+              <!-- ✅ a.nom au lieu de a.titre -->
+              <span style="font-size:.85rem;font-weight:700;color:var(--text-primary)">{{ a.nom }}</span>
+              <!-- ✅ a.projets[0].nom au lieu de a.projetTitre -->
+              <span *ngIf="a.projets && a.projets.length > 0"
+                    style="font-size:.7rem;color:var(--text-muted);margin-left:8px">
+                — {{ a.projets[0].nom }}
+              </span>
+            </div>
+            <!-- ✅ Statut via helper nomenclature au lieu de a.statut String -->
+            <span class="dt-badge"
+                  [class.dt-badge-default]="getStatutActiviteCode(a.statutActiviteId)==='A_FAIRE'"
+                  [class.dt-badge-pending]="getStatutActiviteCode(a.statutActiviteId)==='EN_COURS'"
+                  [class.dt-badge-delivered]="getStatutActiviteCode(a.statutActiviteId)==='TERMINE'"
+                  style="font-size:.6rem">
+              <span class="dt-badge-dot"></span>
+              {{ getStatutActiviteLabel(a.statutActiviteId) }}
+            </span>
+          </div>
+          <p *ngIf="a.description" style="font-size:.74rem;color:var(--text-secondary);margin:0 0 8px">{{ a.description }}</p>
+          <div *ngIf="a.heuresEstimees && a.heuresEstimees > 0">
             <div style="height:5px;background:var(--bg-hover);border-radius:99px;overflow:hidden">
               <div style="height:100%;border-radius:99px"
-                   [style.width.%]="a.avancement"
-                   [style.background]="avancementColor(a.avancement)"></div>
+                   [style.width.%]="((a.heuresPassees || 0) / a.heuresEstimees) * 100"
+                   [style.background]="avancementColor(((a.heuresPassees || 0) / a.heuresEstimees) * 100)"></div>
             </div>
             <div style="display:flex;justify-content:flex-end;margin-top:4px">
-              <span style="font-size:.7rem;font-weight:800" [style.color]="avancementColor(a.avancement)">{{ a.avancement }}%</span>
+              <span style="font-size:.7rem;font-weight:800"
+                    [style.color]="avancementColor(((a.heuresPassees || 0) / a.heuresEstimees) * 100)">
+                {{ ((a.heuresPassees || 0) / a.heuresEstimees * 100) | number:'1.0-0' }}%
+              </span>
             </div>
           </div>
         </div>
-      </ng-container>
-  
+      </div>
     </ng-container>
-  </div>
+
+  </ng-container>
+</div>

@@ -2,15 +2,20 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+
 import { ProjetStageService }       from '../../../services/projet-stage-service.service';
 import { StagiaireService }         from '../../../services/stagiaire.service';
 import { UserService }              from '../../../services/user.service';
 import { KeycloakService }          from '../../../services/keycloak.service';
 import { PermissionContextService } from '../../../services/permission-context.service';
 import { UiService }                from '../../../services/ui.service';
-import { ActiviteStage }            from '../../../shared/models/activite-stage.model';
-import { ProjetStage }              from '../../../shared/models/projet-stage.model';
-import { Utilisateur }              from '../../../shared/models/utilisateur.model';
+import { ProjetService }            from '../../../services/projet.service';
+import { StatutActiviteService }    from '../../../services/statutactivite.service';
+
+import { Activite, ActiviteRequest } from '../../../shared/models/activite.model';
+import { Projet }                    from '../../../shared/models/projet.model';
+import { Utilisateur }               from '../../../shared/models/utilisateur.model';
+import { StatutActivite }            from '../../../shared/models/statut-activite.model';
 
 @Component({
   selector: 'app-activites-stage',
@@ -20,52 +25,69 @@ import { Utilisateur }              from '../../../shared/models/utilisateur.mod
 })
 export class ActivitesStageComponent implements OnInit {
 
-  private svc      = inject(ProjetStageService);
-  private stagSvc  = inject(StagiaireService);
-  private userSvc  = inject(UserService);
-  private keycloak = inject(KeycloakService);
-  readonly perms   = inject(PermissionContextService);
-  readonly ui      = inject(UiService);
-  private router   = inject(Router);
+  private svc       = inject(ProjetStageService);
+  private projetSvc = inject(ProjetService);
+  private stagSvc   = inject(StagiaireService);
+  private userSvc   = inject(UserService);
+  private keycloak  = inject(KeycloakService);
+  private nomencSvc = inject(StatutActiviteService);
+  readonly perms    = inject(PermissionContextService);
+  readonly ui       = inject(UiService);
+  private router    = inject(Router);
 
-  activites  = signal<ActiviteStage[]>([]);
-  projets    = signal<ProjetStage[]>([]);
-  stagiaires = signal<Utilisateur[]>([]);
-  loading    = signal(false);
-  saving     = signal(false);
+  activites       = signal<Activite[]>([]);
+  projets         = signal<Projet[]>([]);
+  stagiaires      = signal<Utilisateur[]>([]);
+  statutsActivite = signal<StatutActivite[]>([]);
+  loading         = signal(false);
+  saving          = signal(false);
 
-  currentUserId    = signal<number | null>(null);
+  currentUserId     = signal<number | null>(null);
   currentUserProfil = signal<string>('');
 
-  // Filtres
-  search       = signal('');
-  filterStatut = signal('');
-  filterProjet = signal('');
-  filterOpen   = signal(false);
-  page         = signal(1);
+  // ✅ filterStatut garde le code String (A_FAIRE, EN_COURS, TERMINE)
+  // utilisé dans le template via les badges cliquables du header
+  filterStatut   = signal('');
+  filterProjetId = signal<number | ''>('');
+  // filterStatutId utilisé dans le panel filtre
+  filterStatutId = signal<number | ''>('');
+  filterOpen     = signal(false);
+  search         = signal('');
+  page           = signal(1);
   readonly pageSize = 15;
 
-  // Slide-over
-  slideOpen   = signal(false);
-  editingId   = signal<number | null>(null);
-  openMenuId  = signal<number | null>(null);
+  slideOpen  = signal(false);
+  editingId  = signal<number | null>(null);
+  openMenuId = signal<number | null>(null);
 
-  form = signal<any>({
-    titre: '', description: '', statut: 'A_FAIRE',
-    avancement: 0, dateDebut: '', dateFin: '',
-    commentaire: '', projetId: null, assigneId: null
+  form = signal<ActiviteRequest & { assigneId?: number }>({
+    nom: '', description: '', couleur: '#10b981',
+    statutActiviteId: undefined, priorite: 2,
+    estGlobale: false, visible: true, facturable: true
   });
 
   // ── Computed ──
   filtered = computed(() => {
     let list = this.activites();
-    const q = this.search().toLowerCase();
+    const q  = this.search().toLowerCase();
     if (q) list = list.filter(a =>
-      a.titre.toLowerCase().includes(q) ||
-      (a.projetTitre || '').toLowerCase().includes(q) ||
-      (a.assigneNom  || '').toLowerCase().includes(q));
-    if (this.filterStatut()) list = list.filter(a => a.statut === this.filterStatut());
-    if (this.filterProjet()) list = list.filter(a => String(a.projetId) === this.filterProjet());
+        a.nom.toLowerCase().includes(q) ||
+        (a.projets?.[0]?.nom || '').toLowerCase().includes(q));
+
+    // Filtre par code String (depuis les badges du header)
+    if (this.filterStatut()) {
+      list = list.filter(a => {
+        const code = this.statutsActivite().find(s => s.id === a.statutActiviteId)?.code;
+        return code === this.filterStatut();
+      });
+    }
+    // Filtre par ID (depuis le panel filtre)
+    if (this.filterStatutId())
+      list = list.filter(a => a.statutActiviteId === +this.filterStatutId());
+
+    if (this.filterProjetId())
+      list = list.filter(a => a.projets?.some(p => p.id === +this.filterProjetId()));
+
     return list;
   });
 
@@ -74,20 +96,48 @@ export class ActivitesStageComponent implements OnInit {
     return this.filtered().slice(s, s + this.pageSize);
   });
 
-  totalPages = computed(() => Math.max(1, Math.ceil(this.filtered().length / this.pageSize)));
-  pagesArr   = computed(() => Array.from({ length: this.totalPages() }, (_, i) => i + 1));
+  totalPages = computed(() =>
+      Math.max(1, Math.ceil(this.filtered().length / this.pageSize)));
+  pagesArr   = computed(() =>
+      Array.from({ length: this.totalPages() }, (_, i) => i + 1));
 
-  hasFilters = computed(() => !!this.filterStatut() || !!this.filterProjet() || !!this.search());
+  hasFilters = computed(() =>
+      !!this.filterStatut() || !!this.filterStatutId() ||
+      !!this.filterProjetId() || !!this.search());
 
-  statsAFaire   = computed(() => this.activites().filter(a => a.statut === 'A_FAIRE').length);
-  statsEnCours  = computed(() => this.activites().filter(a => a.statut === 'EN_COURS').length);
-  statsTermines = computed(() => this.activites().filter(a => a.statut === 'TERMINE').length);
+  // ✅ Stats via codes depuis statutsActivite
+  statsAFaire = computed(() => this.activites().filter(a => {
+    const s = this.statutsActivite().find(st => st.id === a.statutActiviteId);
+    return s?.code === 'A_FAIRE';
+  }).length);
 
-  canEdit = computed(() => this.perms.canViewAllInterns() || this.perms.canSupervise());
-  canAdd  = computed(() => this.perms.canSupervise() || this.perms.can('INT_INTERN_SUBMIT') || this.perms.canViewAllInterns());
+  statsEnCours = computed(() => this.activites().filter(a => {
+    const s = this.statutsActivite().find(st => st.id === a.statutActiviteId);
+    return s?.code === 'EN_COURS';
+  }).length);
+
+  statsTermines = computed(() => this.activites().filter(a => {
+    const s = this.statutsActivite().find(st => st.id === a.statutActiviteId);
+    return s?.code === 'TERMINE';
+  }).length);
+
+  canEdit = computed(() =>
+      this.perms.canViewAllInterns() || this.perms.canSupervise());
+  canAdd  = computed(() =>
+      this.perms.canSupervise() ||
+      this.perms.can('INT_INTERN_SUBMIT') ||
+      this.perms.canViewAllInterns());
 
   // ── Init ──
   ngOnInit(): void {
+    this.nomencSvc.getStatutsActivite().subscribe({
+      next: d => {
+        this.statutsActivite.set(d);
+        const defaut = d[0]?.id;
+        this.form.update(f => ({ ...f, statutActiviteId: defaut }));
+      }
+    });
+
     const kcId = this.keycloak.getKeycloakUserId();
     if (kcId) {
       this.userSvc.getUserByKeycloakId(kcId).subscribe({
@@ -98,8 +148,9 @@ export class ActivitesStageComponent implements OnInit {
         }
       });
     }
+
     this.stagSvc.getAll().subscribe({ next: d => this.stagiaires.set(d) });
-    this.svc.getAll().subscribe({ next: d => this.projets.set(d) });
+    this.projetSvc.getProjetsStage().subscribe({ next: d => this.projets.set(d) });
   }
 
   private loadActivites(u: Utilisateur): void {
@@ -108,10 +159,8 @@ export class ActivitesStageComponent implements OnInit {
       next: all => {
         const profil = (u.profilNom || '').toLowerCase();
         let list = all;
-        // Stagiaire → voir seulement ses activités
-        if (profil.includes('stagiaire')) {
-          list = all.filter(a => a.assigneId === u.id || a.createurId === u.id);
-        }
+        if (profil.includes('stagiaire'))
+          list = list.filter(a => a.utilisateurId === u.id);
         this.activites.set(list);
         this.loading.set(false);
       },
@@ -122,61 +171,84 @@ export class ActivitesStageComponent implements OnInit {
   // ── CRUD ──
   openCreate(): void {
     this.editingId.set(null);
+    const defaut = this.statutsActivite()[0]?.id;
     this.form.set({
-      titre: '', description: '', statut: 'A_FAIRE',
-      avancement: 0, dateDebut: '', dateFin: '',
-      commentaire: '', projetId: null, assigneId: null
+      nom: '', description: '', couleur: '#10b981',
+      statutActiviteId: defaut, priorite: 2,
+      estGlobale: false, visible: true, facturable: true,
+      assigneId: undefined
     });
     this.slideOpen.set(true);
   }
 
-  openEdit(a: ActiviteStage, e: Event): void {
+  openEdit(a: Activite, e: Event): void {
     e.stopPropagation();
     this.editingId.set(a.id);
     this.form.set({
-      titre:       a.titre,
-      description: a.description  || '',
-      statut:      a.statut,
-      avancement:  a.avancement,
-      dateDebut:   a.dateDebut    || '',
-      dateFin:     a.dateFin      || '',
-      commentaire: a.commentaire  || '',
-      projetId:    a.projetId     || null,
-      assigneId:   a.assigneId    || null
+      nom:              a.nom,
+      description:      a.description || '',
+      couleur:          a.couleur || '#10b981',
+      statutActiviteId: a.statutActiviteId,
+      priorite:         a.priorite || 2,
+      estGlobale:       a.estGlobale || false,
+      visible:          a.visible,
+      facturable:       a.facturable,
+      heuresEstimees:   a.heuresEstimees,
+      dateEcheance:     a.dateEcheance,
+      utilisateurId:    a.utilisateurId
     });
     this.openMenuId.set(null);
     this.slideOpen.set(true);
   }
 
   save(): void {
-    if (!this.form().titre?.trim())   { this.ui.warning('Le titre est obligatoire.'); return; }
-    if (!this.form().projetId)        { this.ui.warning('Sélectionnez un projet.');   return; }
+    const f = this.form();
+    if (!f.nom?.trim()) { this.ui.warning('Le nom est obligatoire.'); return; }
     this.saving.set(true);
-    const body = { ...this.form(), createurId: this.currentUserId() };
-    const obs = this.editingId()
-      ? this.svc.updateActivite(this.editingId()!, body)
-      : this.svc.createActivite(body);
+
+    const req: ActiviteRequest = {
+      nom:              f.nom,
+      description:      f.description,
+      couleur:          f.couleur,
+      statutActiviteId: f.statutActiviteId,
+      priorite:         f.priorite,
+      estGlobale:       f.estGlobale,
+      visible:          f.visible ?? true,
+      facturable:       f.facturable ?? true,
+      heuresEstimees:   f.heuresEstimees,
+      dateEcheance:     f.dateEcheance,
+      utilisateurId:    (f as any).assigneId || this.currentUserId() || undefined
+    };
+
+    const editId = this.editingId();
+    const obs = editId
+        ? this.svc.updateActivite(editId, req)
+        : this.svc.createActivite(req);
+
     obs.subscribe({
       next: saved => {
         this.activites.update(list =>
-          this.editingId()
-            ? list.map(a => a.id === saved.id ? saved : a)
-            : [...list, saved]
+            editId
+                ? list.map(a => a.id === saved.id ? saved : a)
+                : [...list, saved]
         );
         this.slideOpen.set(false);
         this.saving.set(false);
-        this.ui.success(this.editingId() ? 'Activité mise à jour ✅' : 'Activité créée ✅');
+        this.ui.success(editId ? 'Activité mise à jour ✅' : 'Activité créée ✅');
       },
-      error: () => { this.saving.set(false); this.ui.error('Erreur lors de la sauvegarde.'); }
+      error: () => {
+        this.saving.set(false);
+        this.ui.error('Erreur lors de la sauvegarde.');
+      }
     });
   }
 
-  delete(a: ActiviteStage, e: Event): void {
+  delete(a: Activite, e: Event): void {
     e.stopPropagation();
     this.openMenuId.set(null);
     this.ui.confirm({
       title: 'Supprimer',
-      message: `Supprimer "${a.titre}" ?`,
+      message: `Supprimer "${a.nom}" ?`,
       confirmLabel: 'Supprimer',
       type: 'danger',
       onConfirm: () => this.svc.deleteActivite(a.id).subscribe({
@@ -188,9 +260,31 @@ export class ActivitesStageComponent implements OnInit {
     });
   }
 
-  goToProjet(a: ActiviteStage, e: Event): void {
+  // ✅ Navigue vers le projet via projets[0].id
+  goToProjet(a: Activite, e: Event): void {
     e.stopPropagation();
-    if (a.projetId) this.router.navigate(['/projets-stage', a.projetId]);
+    const projetId = a.projets?.[0]?.id;
+    if (projetId) this.router.navigate(['/projets-stage', projetId]);
+  }
+
+  // ── Helpers statut ──
+  getStatutLibelle(id?: number): string {
+    return this.statutsActivite().find(s => s.id === id)?.libelle || '—';
+  }
+
+  getStatutCode(id?: number): string {
+    return this.statutsActivite().find(s => s.id === id)?.code || '';
+  }
+
+  getStatutBadgeClass(id?: number): string {
+    const code = this.getStatutCode(id);
+    const map: Record<string, string> = {
+      'A_FAIRE':  'dt-badge dt-badge-default',
+      'EN_COURS': 'dt-badge dt-badge-pending',
+      'TERMINE':  'dt-badge dt-badge-delivered',
+      'BLOQUE':   'dt-badge dt-badge-canceled'
+    };
+    return map[code] || 'dt-badge dt-badge-default';
   }
 
   // ── UI helpers ──
@@ -207,7 +301,8 @@ export class ActivitesStageComponent implements OnInit {
   resetFilters(): void {
     this.search.set('');
     this.filterStatut.set('');
-    this.filterProjet.set('');
+    this.filterStatutId.set('');
+    this.filterProjetId.set('');
     this.page.set(1);
   }
 
@@ -217,10 +312,6 @@ export class ActivitesStageComponent implements OnInit {
 
   minVal(a: number, b: number): number { return Math.min(a, b); }
 
-  statutLabel(s: string): string {
-    return ({ A_FAIRE: 'À faire', EN_COURS: 'En cours', TERMINE: 'Terminé' } as any)[s] ?? s;
-  }
-
   avancementColor(v: number): string {
     if (v >= 80) return '#10b981';
     if (v >= 40) return '#f59e0b';
@@ -229,6 +320,8 @@ export class ActivitesStageComponent implements OnInit {
 
   fmtDate(d?: string): string {
     if (!d) return '—';
-    return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return new Date(d).toLocaleDateString('fr-FR', {
+      day: '2-digit', month: '2-digit', year: 'numeric'
+    });
   }
 }

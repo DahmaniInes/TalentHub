@@ -151,48 +151,53 @@
         </p>
       </div>
 
-      <!-- Ligne : Université + Spécialité -->
+      <!-- ✅ Ligne : Université + Spécialité — selects depuis nomenclature -->
       <div class="cp-row">
         <div class="cp-field">
           <label class="cp-label">Université</label>
           <div class="cp-input-wrap" [class.focused]="universiteFocused">
             <svg class="cp-ico" viewBox="0 0 16 16" fill="none">
-              <path d="M8 1l7 3.5v4c0 3.5-3 5.5-7 6.5-4-1-7-3-7-6.5V4.5L8 1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+              <path d="M8 1l7 3.5v4c0 3.5-3 5.5-7 6.5-4-1-7-3-7-6.5V4.5L8 1z"
+                    stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
             </svg>
-            <input type="text" formControlName="universite" placeholder="Ex: ESPRIT, ENSI..." class="cp-input"
-                   (focus)="universiteFocused=true" (blur)="universiteFocused=false">
+            <!-- ✅ select avec universiteId depuis nomenclature -->
+            <select formControlName="universiteId" class="cp-input" style="cursor:pointer"
+                    (focus)="universiteFocused=true" (blur)="universiteFocused=false">
+              <option [ngValue]="null">— Sélectionner —</option>
+              <option *ngFor="let u of universites()" [ngValue]="u.id">{{ u.libelle }}</option>
+            </select>
           </div>
         </div>
         <div class="cp-field">
           <label class="cp-label">Spécialité</label>
           <div class="cp-input-wrap" [class.focused]="specialiteFocused">
             <svg class="cp-ico" viewBox="0 0 16 16" fill="none">
-              <path d="M9 3H5a2 2 0 00-2 2v6a2 2 0 002 2h6a2 2 0 002-2V7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+              <path d="M9 3H5a2 2 0 00-2 2v6a2 2 0 002 2h6a2 2 0 002-2V7"
+                    stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
               <path d="M14 2l-5 5M9 2h5v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
             </svg>
-            <input type="text" formControlName="specialite" placeholder="Ex: Informatique..." class="cp-input"
-                   (focus)="specialiteFocused=true" (blur)="specialiteFocused=false">
+            <!-- ✅ select avec specialiteId depuis nomenclature -->
+            <select formControlName="specialiteId" class="cp-input" style="cursor:pointer"
+                    (focus)="specialiteFocused=true" (blur)="specialiteFocused=false">
+              <option [ngValue]="null">— Sélectionner —</option>
+              <option *ngFor="let s of specialites()" [ngValue]="s.id">{{ s.libelle }}</option>
+            </select>
           </div>
         </div>
       </div>
 
-      <!-- Niveau d'étude -->
+      <!-- ✅ Niveau d'étude — select depuis nomenclature -->
       <div class="cp-field cp-field-full">
         <label class="cp-label">Niveau d'étude</label>
         <div class="cp-input-wrap" [class.focused]="niveauEtudeFocused">
           <svg class="cp-ico" viewBox="0 0 16 16" fill="none">
-            <path d="M8 1l7 3.5-7 3.5-7-3.5L8 1zM1.5 8.5L8 12l6.5-3.5" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+            <path d="M8 1l7 3.5-7 3.5-7-3.5L8 1zM1.5 8.5L8 12l6.5-3.5"
+                  stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
           </svg>
-          <select formControlName="niveauEtude" class="cp-input" style="cursor:pointer"
+          <select formControlName="niveauEtudeId" class="cp-input" style="cursor:pointer"
                   (focus)="niveauEtudeFocused=true" (blur)="niveauEtudeFocused=false">
-            <option value="">— Sélectionner —</option>
-            <option value="Licence 1">Licence 1</option>
-            <option value="Licence 2">Licence 2</option>
-            <option value="Licence 3">Licence 3</option>
-            <option value="Master 1">Master 1</option>
-            <option value="Master 2">Master 2</option>
-            <option value="Ingénierie">Ingénierie</option>
-            <option value="Doctorat">Doctorat</option>
+            <option [ngValue]="null">— Sélectionner —</option>
+            <option *ngFor="let n of niveaux()" [ngValue]="n.id">{{ n.libelle }}</option>
           </select>
         </div>
       </div>
@@ -214,7 +219,8 @@
           <label class="cp-label">Type de stage</label>
           <div class="cp-input-wrap">
             <svg class="cp-ico" viewBox="0 0 16 16" fill="none">
-              <path d="M7 7h.01M7 3h4c.45 0 .9.17 1.24.51l4 4a2 2 0 010 2.83l-4 4a1.75 1.75 0 01-2.48 0l-4-4A1.75 1.75 0 015 9V7a4 4 0 012-3.46" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+              <path d="M7 7h.01M7 3h4c.45 0 .9.17 1.24.51l4 4a2 2 0 010 2.83l-4 4a1.75 1.75 0 01-2.48 0l-4-4A1.75 1.75 0 015 9V7a4 4 0 012-3.46"
+                    stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
             </svg>
             <select formControlName="typeStageId" class="cp-input" style="cursor:pointer">
               <option [ngValue]="null">— Sélectionner —</option>

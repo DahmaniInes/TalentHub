@@ -1,13 +1,15 @@
 package com.talenthub.application_service.Service;
 
+import com.talenthub.application_service.Entity.StagiaireSuperviseur;
+import com.talenthub.application_service.Entity.Stage;
 import com.talenthub.application_service.Entity.Utilisateur;
 import com.talenthub.application_service.Exception.ResourceNotFoundException;
-import com.talenthub.application_service.Repository.UtilisateurRepository;
-import com.talenthub.application_service.Repository.ProfilPermissionRepository;
+import com.talenthub.application_service.Repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -16,27 +18,24 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class StagiaireService {
 
-    private final UtilisateurRepository      utilisateurRepo;
-    private final ProfilPermissionRepository profilPermRepo;
+    private final UtilisateurRepository          utilisateurRepo;
+    private final ProfilPermissionRepository     profilPermRepo;
+    private final StagiaireSuperviseurRepository ssRepo;
+    private final StageRepository                stageRepo;
 
-    // ── Lister tous les stagiaires ──────────────────────────────────────
-    // Détection via profilNom contenant "stagiaire" (insensible à la casse)
+    // ── Tous les stagiaires ──────────────────────────────────────
     @Transactional(readOnly = true)
     public List<Utilisateur> getAllStagiaires() {
-        return utilisateurRepo.findAll().stream()
-                .filter(u -> u.getProfil() != null
-                        && u.getProfil().getNom() != null
-                        && u.getProfil().getNom().toLowerCase().contains("stagiaire"))
-                .toList();
+        return utilisateurRepo.findAllStagiaires();
     }
 
-    // ── Lister les stagiaires d'un superviseur ──────────────────────────
+    // ── Mes stagiaires (via StagiaireSuperviseur) ─────────────────
     @Transactional(readOnly = true)
     public List<Utilisateur> getMesStagiaires(Long superviseurId) {
         return utilisateurRepo.findStagiairesBySuperviseurId(superviseurId);
     }
 
-    // ── Lister les superviseurs éligibles (permission INT_SUPER_CAN_SUPERVISE) ──
+    // ── Superviseurs éligibles ────────────────────────────────────
     @Transactional(readOnly = true)
     public List<Utilisateur> getSuperviseurs() {
         return utilisateurRepo.findAll().stream()
@@ -46,44 +45,70 @@ public class StagiaireService {
                 .toList();
     }
 
-    // ── Mettre à jour les infos stagiaire ───────────────────────────────
+    // ── Mettre à jour les infos académiques d'un stagiaire ────────
     @Transactional
     public Utilisateur updateStagiaire(Long id, Map<String, Object> body) {
         Utilisateur u = utilisateurRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Stagiaire non trouvé: " + id));
 
-        if (body.containsKey("universite"))   u.setUniversite(str(body, "universite"));
-        if (body.containsKey("specialite"))   u.setSpecialite(str(body, "specialite"));
-        if (body.containsKey("niveauEtude"))  u.setNiveauEtude(str(body, "niveauEtude"));
-        if (body.containsKey("typeStageId") && body.get("typeStageId") != null)
-            u.setTypeStageId(Long.valueOf(body.get("typeStageId").toString()));
-        if (body.containsKey("dateDebutStage") && body.get("dateDebutStage") != null)
-            u.setDateDebutStage(java.time.LocalDate.parse(body.get("dateDebutStage").toString()));
-        if (body.containsKey("dateFinStage") && body.get("dateFinStage") != null)
-            u.setDateFinStage(java.time.LocalDate.parse(body.get("dateFinStage").toString()));
-        if (body.containsKey("dateSoutenance") && body.get("dateSoutenance") != null)
-            u.setDateSoutenance(java.time.LocalDate.parse(body.get("dateSoutenance").toString()));
+        // Champs académiques (IDs vers nomenclature)
+        if (body.containsKey("universiteId") && body.get("universiteId") != null)
+            u.setUniversiteId(Long.valueOf(body.get("universiteId").toString()));
+        if (body.containsKey("specialiteId") && body.get("specialiteId") != null)
+            u.setSpecialiteId(Long.valueOf(body.get("specialiteId").toString()));
+        if (body.containsKey("niveauEtudeId") && body.get("niveauEtudeId") != null)
+            u.setNiveauEtudeId(Long.valueOf(body.get("niveauEtudeId").toString()));
+
+        // Champs personnels
+        if (body.containsKey("nom"))       u.setNom(str(body, "nom"));
+        if (body.containsKey("prenom"))    u.setPrenom(str(body, "prenom"));
+        if (body.containsKey("telephone")) u.setTelephone(str(body, "telephone"));
 
         return utilisateurRepo.save(u);
     }
 
-    // ── Assigner des superviseurs ────────────────────────────────────────
+    // ── Assigner superviseurs (via StagiaireSuperviseur) ──────────
     @Transactional
     public Utilisateur assignerSuperviseurs(Long stagiaireId, List<Long> superviseurIds) {
         Utilisateur stagiaire = utilisateurRepo.findById(stagiaireId)
-                .orElseThrow(() -> new ResourceNotFoundException("Stagiaire non trouvé: " + stagiaireId));
-        List<Utilisateur> superviseurs = utilisateurRepo.findAllById(superviseurIds);
-        stagiaire.setSuperviseurs(superviseurs);
-        return utilisateurRepo.save(stagiaire);
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Stagiaire non trouvé: " + stagiaireId));
+
+        // Trouver le stage actif
+        Stage stageActif = stageRepo.findByUtilisateurId(stagiaireId)
+                .stream().filter(s -> s.getStatutStageId() == null || s.getStatutStageId() == 1)
+                .findFirst().orElse(null);
+
+        for (Long supId : superviseurIds) {
+            if (ssRepo.existsByStagiaireIdAndSuperviseurIdAndActifTrue(stagiaireId, supId))
+                continue; // déjà assigné
+            Utilisateur superviseur = utilisateurRepo.findById(supId)
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Superviseur non trouvé: " + supId));
+            StagiaireSuperviseur lien = StagiaireSuperviseur.builder()
+                    .stagiaire(stagiaire)
+                    .superviseur(superviseur)
+                    .stage(stageActif)
+                    .dateDebut(LocalDate.now())
+                    .actif(true)
+                    .build();
+            ssRepo.save(lien);
+        }
+        return utilisateurRepo.findById(stagiaireId).orElseThrow();
     }
 
-    // ── Retirer un superviseur ───────────────────────────────────────────
+    // ── Retirer un superviseur ────────────────────────────────────
     @Transactional
     public Utilisateur retirerSuperviseur(Long stagiaireId, Long superviseurId) {
-        Utilisateur stagiaire = utilisateurRepo.findById(stagiaireId)
-                .orElseThrow(() -> new ResourceNotFoundException("Stagiaire non trouvé: " + stagiaireId));
-        stagiaire.getSuperviseurs().removeIf(s -> s.getId().equals(superviseurId));
-        return utilisateurRepo.save(stagiaire);
+        ssRepo.findByStagiaireIdAndSuperviseurId(stagiaireId, superviseurId)
+                .ifPresent(lien -> {
+                    lien.setActif(false);
+                    lien.setDateFin(LocalDate.now());
+                    ssRepo.save(lien);
+                });
+        return utilisateurRepo.findById(stagiaireId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Stagiaire non trouvé: " + stagiaireId));
     }
 
     private String str(Map<String, Object> body, String key) {

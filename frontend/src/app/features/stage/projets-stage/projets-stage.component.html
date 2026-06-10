@@ -58,13 +58,17 @@
             <div class="dt-fp-body">
               <div class="dt-fp-field">
                 <label class="dt-fp-label">Statut</label>
-                <select class="dt-fp-select" [value]="filterStatut()"
-                        (change)="filterStatut.set($any($event.target).value)">
-                  <option value="">Tous</option>
-                  <option value="EN_COURS">En cours</option>
-                  <option value="TERMINE">Terminé</option>
-                  <option value="SUSPENDU">Suspendu</option>
-                </select>
+
+
+                <select class="dt-fp-select"
+                [value]="filterStatut()"
+                (change)="filterStatut.set(+$any($event.target).value||'')">
+          <option value="">Tous</option>
+          <option *ngFor="let s of statutsProjet()" [value]="s.id">{{ s.libelle }}</option>
+        </select>
+
+
+
               </div>
             </div>
             <div class="dt-fp-footer">
@@ -195,7 +199,7 @@
             <!-- Projet : titre + description -->
             <td class="dt-td">
               <div class="dt-cell-user">
-                <span class="dt-cell-name">{{ p.titre }}</span>
+                <span class="dt-cell-name">{{ p.nom }}</span>
                 <span *ngIf="p.description" class="dt-cell-sub"
                       style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px">
                   {{ p.description }}
@@ -252,18 +256,19 @@
             <!-- Activités -->
             <td class="dt-td">
               <span class="dt-cell-text" style="font-size:.78rem">
-                {{ p.nombreActivites || 0 }} /
-                <span style="color:#10b981">{{ p.activitesTerminees || 0 }}</span>
+                {{ p.nombreActivites || 0 }}
               </span>
             </td>
 
             <!-- Statut -->
             <td class="dt-td">
               <span class="dt-badge"
-                    [class.dt-badge-pending]="p.statut==='EN_COURS'"
-                    [class.dt-badge-delivered]="p.statut==='TERMINE'"
-                    [class.dt-badge-canceled]="p.statut==='SUSPENDU'">
-                <span class="dt-badge-dot"></span>{{ statutLabel(p.statut) }}
+                    [style.background]="getStatutColor(p.statutProjetId)+'18'"
+                    [style.color]="getStatutColor(p.statutProjetId)"
+                    [style.border-color]="getStatutColor(p.statutProjetId)+'55'">
+                <span class="dt-badge-dot"
+                      [style.background]="getStatutColor(p.statutProjetId)"></span>
+                {{ getStatutLabel(p.statutProjetId) }}
               </span>
             </td>
 
@@ -311,10 +316,14 @@
       </button>
     </div>
     <div class="dm-slide-body">
+      
       <div class="dm-field">
-        <label class="dm-label">Titre <span style="color:#ef4444">*</span></label>
-        <input [(ngModel)]="form().titre" class="dm-input" placeholder="Titre du projet">
+        <label class="dm-label">Nom <span style="color:#ef4444">*</span></label>
+        <input [(ngModel)]="form().nom" class="dm-input" placeholder="Nom du projet">
       </div>
+
+
+
       <div class="dm-field">
         <label class="dm-label">Description</label>
         <textarea [(ngModel)]="form().description" class="dm-input" rows="3" placeholder="Description..."></textarea>

@@ -9,19 +9,19 @@ import { ApprobationFeuilleTempsComponent } from './feuille-temps/approbation-fe
 import { ProfilPermissionsComponent } from './admin/profil-permissions/profil-permissions.component';
 
 import { ClientsComponent } from './admin/clients/clients.component';
-import { ProjetsComponent  } from './admin/projets/projets.component';
-import { UsersComponent }  from './users/users.component';
-import { GroupsComponent } from './groups/groups.component';
+import { ProjetsComponent  } from './projet/projets/projets.component';
+import { UsersComponent }  from './admin/users/users.component';
+import { GroupsComponent } from './admin/groups/groups.component';
  
-import { ActivitesGlobalComponent } from './activites-global-component/activites-global-component.component';
+import { ActivitesGlobalComponent } from './activite/activites-global-component/activites-global-component.component';
 
 import {AdminDemandesComponent} from './demandes/admin-demandes/admin-demandes.component'
 import {MesDemandesComponent} from './demandes/mes-demandes/mes-demandes.component'
 import {TypesDemandesComponent} from './demandes/types-demandes/types-demandes.component'
 import { ProfilComponent } from './profil/profil.component';
 import { DebugTokenComponent } from './debug-token/debug-token.component';
-import { ProjetDetailComponent } from './admin/projet-detail/projet-detail.component';
-import { ActiviteDetailComponent } from './admin/activite-detail/activite-detail.component';
+import { ProjetDetailComponent } from './projet/projet-detail/projet-detail.component';
+import { ActiviteDetailComponent } from './activite/activite-detail/activite-detail.component';
 
 import { MesReclamationsComponent }    from './reclamation/mes-reclamations/mes-reclamations.component';
 import { GererReclamationsComponent }   from './reclamation/gerer-reclamations/gerer-reclamations.component';
@@ -39,6 +39,10 @@ import { MonProfilStagiaireComponent }  from './stage/mon-profil-stagiaire/mon-p
 import { NomenclatureAcademiqueComponent }  from './stage/nomenclature-academique/nomenclature-academique.component';
 
 
+import { StatutActiviteComponent } from './activite/statut-activite/statut-activite.component';
+import { StatutProjetComponent } from './projet/statut-projet/statut-projet.component';
+import { TypeProjetComponent } from './projet/type-projet/type-projet.component';
+import { StatutStageComponent } from './stage/statut-stage/statut-stage.component';
 
 
 
@@ -126,6 +130,24 @@ const routes: Routes = [
 {
   path: 'admin/nomenclature-academique',
   component: NomenclatureAcademiqueComponent   // RECLAMATION_SERVICE_READ
+},
+
+
+{
+  path: 'statuts-activite',
+  component: StatutActiviteComponent
+},
+{
+  path: 'statuts-projet',
+  component: StatutProjetComponent
+},
+{
+  path: 'types-projet',
+  component: TypeProjetComponent
+},
+{
+  path: 'statuts-stage',
+  component: StatutStageComponent
 }
 
 ];
