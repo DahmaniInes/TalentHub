@@ -204,6 +204,9 @@ export class PermissionContextService {
     }
     canSeeProjectMenu(): boolean { return this.canSeeAnyProject() || this.canCreateProject(); }
 
+
+
+    
     // ════════════════════════════════════════════════════════════════
     // ACTIVITÉS — Admin
     // ════════════════════════════════════════════════════════════════
@@ -232,6 +235,8 @@ export class PermissionContextService {
         return this.canEditAllActivities() || this.canEditLeadActivities() || this.canEditOwnActivities();
     }
     canSeeActivityMenu(): boolean { return this.canSeeAnyActivity() || this.canCreateActivity(); }
+
+
 
     // ════════════════════════════════════════════════════════════════
     // ÉQUIPES (TEAMS)

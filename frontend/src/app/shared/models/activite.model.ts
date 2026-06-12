@@ -35,12 +35,18 @@ export interface Activite {
   heuresEstimees?: number;
   heuresPassees?: number;
   projets?: ProjetInfoActivite[];
+  // Un seul utilisateur assigné (principal)
   utilisateurId?: number;
   utilisateurNomComplet?: string;
+  utilisateurPhotoUrl?: string;
+  utilisateurPoste?: string;
+  // Groupes assignés
   groupes?: GroupeInfoActivite[];
   creePar?: string;
   dateCreation?: string;
   dateMiseAJour?: string;
+  nombreCommentaires?: number;
+  nombreDocuments?: number;
 }
 
 export interface ActiviteRequest {

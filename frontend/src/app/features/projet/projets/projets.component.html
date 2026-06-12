@@ -32,6 +32,10 @@
         </div>
       </div>
 
+
+
+
+      
       <div class="dt-header-actions">
         <div class="dt-search-wrap" (click)="$event.stopPropagation()">
           <div class="dt-search-bar" style="min-width:240px">
@@ -302,7 +306,7 @@
       <div class="dt-count-info">
         <strong>{{ (currentPage()-1)*pageSize()+1 }}–{{ minVal(currentPage()*pageSize(), filteredProjets().length) }}</strong>
         of <strong>{{ filteredProjets().length }}</strong>
-        <select style="margin-left:10px;border:1px solid var(--dt-border);border-radius:6px;padding:3px 8px;font-size:.71rem;background:var(--dt-bg);color:var(--dt-text-sub);font-family:inherit;outline:none;cursor:pointer"
+        <select style="margin-left:10px;border:1px solid var(--dt-border);border-radius:6px;padding:3px 8px;font-size:.71rem;background:var(--dt-bg);color:var(--dt-text-sub);font-family:Arimo;outline:none;cursor:pointer"
                 [value]="pageSize()" (change)="onPageSizeChange(+$any($event.target).value)">
           <option value="10">10</option><option value="25">25</option><option value="50">50</option>
         </select>

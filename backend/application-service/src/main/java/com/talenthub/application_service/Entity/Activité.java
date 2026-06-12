@@ -137,4 +137,10 @@ public class Activité {
         this.groupes          = new ArrayList<>();
         this.projets          = new ArrayList<>();
     }
+
+
+    // ✅ AJOUTER dans Activité.java — Documents liés à cette activité
+    @OneToMany(mappedBy = "activite", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Document> documents = new ArrayList<>();
 }

@@ -1,769 +1,1093 @@
-/* projet-detail.component.css — COMPLET */
+/* ================================================================
+   projet-detail.component.css — v7 COMPLET
+   
+   CHAQUE CLASSE EST COMMENTÉE avec :
+   - son rôle dans l'interface
+   - la partie concernée (KPI, dashboard, drawer, etc.)
+================================================================ */
 
-/* ══ PAGE ══ */
-.pd-page {
-    min-height: 100vh;
-    background: var(--bg-primary);
-    padding: 24px 28px 48px;
-  }
-  
-  .pd-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .pd-loading-page {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 60vh;
-    gap: 14px;
-    color: var(--text-muted);
-  }
-  
-  /* ══ BREADCRUMB ══ */
-  .pd-breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: .78rem;
-    color: var(--text-muted);
-    flex-wrap: wrap;
-  }
-  
-  .pd-back-btn {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-muted);
-    font-size: .78rem;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-family: inherit;
-    transition: background .12s, color .12s;
-  }
-  .pd-back-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
-  .pd-back-btn svg { width: 12px; height: 12px; }
-  
-  .pd-sep { color: var(--border-color); }
-  .pd-current { color: var(--text-primary); font-weight: 600; }
-  
-  .pd-breadcrumb-sep { color: var(--border-color); }
-  .pd-breadcrumb-link {
-    color: var(--accent);
-    text-decoration: none;
-    font-weight: 500;
-    transition: opacity .12s;
-  }
-  .pd-breadcrumb-link:hover { opacity: .75; }
-  .pd-breadcrumb-current { color: var(--text-primary); font-weight: 600; }
-  
-  /* ══ HERO CARD ══ */
-  .pd-hero-card {
-    border-radius: 14px;
-    overflow: hidden;
-    padding: 0;
-  }
-  
-  .pd-hero-inner {
-    display: flex;
-    align-items: flex-start;
-    gap: 18px;
-    padding: 20px 24px 16px;
-  }
-  
-  .pd-hero-icon {
-    width: 52px;
-    height: 52px;
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-  
-  .pd-hero-meta { flex: 1; min-width: 0; }
-  
-  .pd-hero-badges {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin-bottom: 8px;
-  }
-  
-  .pd-hero-title {
-    font-size: 1.25rem;
-    font-weight: 800;
-    color: var(--text-primary);
-    margin: 0 0 4px;
-    line-height: 1.3;
-  }
-  
-  .pd-hero-desc {
-    font-size: .82rem;
-    color: var(--text-muted);
-    margin: 0;
-    line-height: 1.5;
-  }
-  
-  .pd-statut-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 3px 10px;
-    border-radius: 999px;
-    font-size: .72rem;
-    font-weight: 700;
-    border: 1px solid transparent;
-  }
-  
-  .pd-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  
-  .pd-num-badge {
-    font-size: .66rem;
-    font-weight: 700;
-    background: var(--bg-hover);
-    color: var(--text-muted);
-    padding: 2px 8px;
-    border-radius: 999px;
-    border: 1px solid var(--border-color);
-    font-family: 'Courier New', monospace;
-  }
-  
-  .pd-client-badge {
-    font-size: .68rem;
-    font-weight: 600;
-    background: var(--accent-soft);
-    color: var(--accent);
-    padding: 2px 9px;
-    border-radius: 999px;
-    border: 1px solid rgba(192,38,211,.2);
-    display: inline-flex;
-    align-items: center;
-  }
-  
-  .pd-globale-badge {
-    font-size: .62rem;
-    font-weight: 700;
-    background: rgba(139,92,246,.12);
-    color: #8b5cf6;
-    padding: 2px 8px;
-    border-radius: 999px;
-    border: 1px solid rgba(139,92,246,.25);
-    letter-spacing: .3px;
-  }
-  
-  /* KPIs */
-  .pd-hero-kpis {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-    padding: 0 24px 16px;
-  }
-  
-  .pd-kpi {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    padding: 10px 16px;
-    background: var(--bg-hover);
-    border-radius: 10px;
-    border: 1px solid var(--border-color);
-    min-width: 70px;
-  }
-  
-  .pd-kpi-val {
-    font-size: 1.3rem;
-    font-weight: 800;
-    color: var(--text-primary);
-    line-height: 1;
-  }
-  
-  .pd-kpi-lab {
-    font-size: .63rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: .3px;
-    font-weight: 600;
-  }
-  
-  .pd-kpi-green .pd-kpi-val { color: #10b981; }
-  .pd-kpi-blue  .pd-kpi-val { color: #3b82f6; }
-  .pd-kpi-red   .pd-kpi-val { color: #ef4444; }
-  
-  /* Avancement */
-  .pd-avancement-row {
-    padding: 12px 24px 16px;
-    border-top: 1px solid var(--border-color);
-  }
-  
-  .pd-avancement-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-  }
-  
-  .pd-avancement-label { font-size: .76rem; color: var(--text-muted); font-weight: 500; }
-  .pd-avancement-pct   { font-size: .82rem; font-weight: 800; }
-  
-  .pd-avancement-bar {
-    height: 6px;
-    background: var(--bg-hover);
-    border-radius: 999px;
-    overflow: hidden;
-  }
-  
-  .pd-avancement-fill {
-    height: 100%;
-    border-radius: 999px;
-    transition: width .4s ease;
-  }
-  
-  /* ══ HERO (activite-detail style) ══ */
-  .pd-hero {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 20px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 14px;
-    padding: 22px 24px;
-    flex-wrap: wrap;
-  }
-  
-  .pd-hero-left {
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    flex: 1;
-    min-width: 0;
-  }
-  
-  .pd-hero-info { flex: 1; min-width: 0; }
-  
-  .pd-hero-stats {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    align-items: flex-start;
-  }
-  
-  .pd-stat-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-    padding: 10px 14px;
-    background: var(--bg-hover);
-    border-radius: 10px;
-    border: 1px solid var(--border-color);
-    min-width: 60px;
-  }
-  
-  .pd-stat-value {
-    font-size: 1.1rem;
-    font-weight: 800;
-    color: var(--text-primary);
-    line-height: 1;
-  }
-  
-  .pd-stat-label {
-    font-size: .62rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: .3px;
-    font-weight: 600;
-  }
-  
-  .pd-stat-blue .pd-stat-value { color: #3b82f6; }
-  
-  /* Progress */
-  .pd-progress-wrap { margin-top: 12px; }
-  
-  .pd-progress-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 6px;
-  }
-  
-  .pd-progress-label { font-size: .74rem; color: var(--text-muted); }
-  .pd-progress-pct   { font-size: .78rem; font-weight: 700; }
-  
-  .pd-progress-bar {
-    height: 6px;
-    background: var(--bg-hover);
-    border-radius: 999px;
-    overflow: hidden;
-  }
-  
-  .pd-progress-fill {
-    height: 100%;
-    border-radius: 999px;
-    transition: width .3s;
-  }
-  
-  /* ══ GRILLE PRINCIPALE ══ */
-  .pd-main-grid {
-    display: grid;
-    grid-template-columns: 1fr 340px;
-    gap: 20px;
-    align-items: start;
-  }
-  
-  @media (max-width: 900px) {
-    .pd-main-grid { grid-template-columns: 1fr; }
-  }
-  
-  .pd-col-left  { display: flex; flex-direction: column; gap: 20px; }
-  .pd-col-right { display: flex; flex-direction: column; gap: 0; }
-  
-  /* ══ SECTION ══ */
-  .pd-section-block { display: flex; flex-direction: column; gap: 0; }
-  
-  .pd-section {
-    border-radius: 12px;
-    overflow: hidden;
-    padding: 0;
-  }
-  
-  .pd-section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 18px 12px;
-    border-bottom: 1px solid var(--border-color);
-  }
-  
-  .pd-section-title {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    font-size: .82rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin: 0;
-  }
-  
-  .pd-section-title svg { width: 14px; height: 14px; opacity: .6; }
-  
-  .pd-section-count {
-    font-size: .66rem;
-    font-weight: 700;
-    background: var(--accent-soft);
-    color: var(--accent);
-    padding: 1px 7px;
-    border-radius: 999px;
-    border: 1px solid rgba(192,38,211,.2);
-  }
-  
-  /* ══ CARD ══ */
-  .pd-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 16px 18px;
-  }
-  
-  .pd-card-title {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    font-size: .82rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin: 0 0 14px;
-  }
-  
-  .pd-card-title svg { width: 14px; height: 14px; opacity: .6; }
-  
-  .pd-tab-count {
-    font-size: .66rem;
-    font-weight: 700;
-    background: var(--bg-hover);
-    color: var(--text-muted);
-    padding: 1px 7px;
-    border-radius: 999px;
-    border: 1px solid var(--border-color);
-  }
-  
-  /* ══ GRILLE 2 COL (activités/groupes) ══ */
-  .pd-grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-  
-  @media (max-width: 700px) {
-    .pd-grid-2 { grid-template-columns: 1fr; }
-  }
-  
-  /* ══ INFO LIST ══ */
-  .pd-info-table { display: flex; flex-direction: column; gap: 0; }
-  .pd-info-list  { display: flex; flex-direction: column; gap: 0; }
-  
-  .pd-info-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border-color);
-    font-size: .79rem;
-  }
-  
-  .pd-info-row:last-child { border-bottom: none; }
-  
-  .pd-info-key {
-    font-weight: 600;
-    color: var(--text-muted);
-    min-width: 110px;
-    flex-shrink: 0;
-    font-size: .75rem;
-  }
-  
-  .pd-info-val {
-    color: var(--text-primary);
-    font-weight: 500;
-    flex: 1;
-  }
-  
-  .pd-info-muted { color: var(--text-muted); }
-  
-  .pd-info-val-mono {
-    font-family: 'Courier New', monospace;
-    font-size: .75rem;
-  }
-  
-  .pd-info-link {
-    color: var(--accent);
-    text-decoration: none;
-    font-weight: 600;
-    font-size: .78rem;
-    transition: opacity .12s;
-  }
-  .pd-info-link:hover { opacity: .75; }
-  
-  /* ══ GROUPES ══ */
-  .pd-groupes-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .pd-groupe-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 10px;
-    background: var(--bg-hover);
-    border-radius: 9px;
-    border: 1px solid var(--border-color);
-  }
-  
-  .pd-groupe-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: .72rem;
-    font-weight: 800;
-    flex-shrink: 0;
-  }
-  
-  .pd-groupe-info { flex: 1; min-width: 0; }
-  .pd-groupe-nom  { font-size: .8rem; font-weight: 600; color: var(--text-primary); display: block; }
-  .pd-groupe-sub  { font-size: .7rem; color: var(--text-muted); display: block; }
-  
-  /* Chips groupes (activite-detail) */
-  .pd-groupes-list { display: flex; flex-direction: column; gap: 8px; }
-  
-  .pd-groupe-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 10px;
-    background: var(--bg-hover);
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-  }
-  
-  .pd-groupe-icon {
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: .62rem;
-    font-weight: 800;
-    flex-shrink: 0;
-  }
-  
-  .pd-groupe-nom { font-size: .78rem; font-weight: 600; color: var(--text-primary); }
-  
-  /* ══ COMMENTAIRES ══ */
-  .pd-comments-section { position: sticky; top: 24px; }
-  .pd-comments-card    { display: flex; flex-direction: column; }
-  
-  .pd-comment-form {
-    display: flex;
-    gap: 10px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--border-color);
-    margin-bottom: 12px;
-  }
-  
-  .pd-comment-form-avatar,
-  .pd-comment-avatar-sm {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: .68rem;
-    font-weight: 800;
-    color: white;
-    flex-shrink: 0;
-  }
-  
-  .pd-comment-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: .68rem;
-    font-weight: 800;
-    color: white;
-    flex-shrink: 0;
-    overflow: hidden;
-  }
-  
-  .pd-comment-form-body {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .pd-comment-ta,
-  .pd-comment-textarea {
-    width: 100%;
-    resize: vertical;
-    min-height: 60px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 9px 12px;
-    font-size: .8rem;
-    color: var(--text-primary);
-    background: var(--bg-input);
-    font-family: inherit;
-    outline: none;
-    transition: border-color .15s;
-    box-sizing: border-box;
-  }
-  .pd-comment-ta:focus,
-  .pd-comment-textarea:focus {
-    border-color: var(--accent);
-  }
-  
-  .pd-groupe-select,
-  .pd-comment-groupe-sel {
-    width: 100%;
-    padding: 6px 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 7px;
-    background: var(--bg-input);
-    color: var(--text-primary);
-    font-size: .76rem;
-    font-family: inherit;
-    outline: none;
-    cursor: pointer;
-  }
-  
-  .pd-comment-form-footer {
-    display: flex;
-    justify-content: flex-end;
-  }
-  
-  .pd-comment-submit {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 16px;
-    background: var(--accent);
-    color: white;
-    border: none;
-    border-radius: 7px;
-    font-size: .77rem;
-    font-weight: 700;
-    cursor: pointer;
-    font-family: inherit;
-    transition: opacity .15s;
-  }
-  .pd-comment-submit:disabled { opacity: .5; cursor: not-allowed; }
-  .pd-comment-submit:not(:disabled):hover { opacity: .85; }
-  
-  .pd-comments-list { display: flex; flex-direction: column; gap: 0; }
-  
-  .pd-comment-item {
-    display: flex;
-    gap: 10px;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border-color);
-  }
-  .pd-comment-item:last-child { border-bottom: none; }
-  
-  .pd-comment-body,
-  .pd-comment-body-wrap { flex: 1; min-width: 0; }
-  
-  .pd-comment-meta {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 5px;
-    flex-wrap: wrap;
-  }
-  
-  .pd-comment-auteur {
-    font-size: .78rem;
-    font-weight: 700;
-    color: var(--text-primary);
-  }
-  
-  .pd-comment-groupe {
-    font-size: .66rem;
-    font-weight: 700;
-    background: var(--accent-soft);
-    color: var(--accent);
-    padding: 1px 7px;
-    border-radius: 999px;
-    border: 1px solid rgba(192,38,211,.2);
-  }
-  
-  .pd-comment-date {
-    font-size: .7rem;
-    color: var(--text-muted);
-  }
-  
-  .pd-comment-edite {
-    font-size: .68rem;
-    color: var(--text-muted);
-    font-style: italic;
-  }
-  
-  .pd-comment-contenu,
-  .pd-comment-text {
-    font-size: .79rem;
-    color: var(--text-primary);
-    line-height: 1.55;
-    white-space: pre-wrap;
-    word-break: break-word;
-    margin: 0;
-  }
-  
-  .pd-comment-actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 5px;
-  }
-  
-  .pd-comment-action,
-  .pd-comment-action-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: .71rem;
-    color: var(--text-muted);
-    font-family: inherit;
-    padding: 2px 4px;
-    border-radius: 4px;
-    transition: color .12s, background .12s;
-  }
-  .pd-comment-action:hover,
-  .pd-comment-action-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
-  
-  .pd-comment-danger,
-  .pd-danger { color: #ef4444 !important; }
-  
-  /* ══ BOUTONS ACTIONS ══ */
-  .pd-btn-sm {
-    padding: 5px 12px;
-    border-radius: 6px;
-    font-size: .74rem;
-    font-weight: 700;
-    border: none;
-    cursor: pointer;
-    font-family: inherit;
-    transition: opacity .15s;
-  }
-  .pd-btn-sm:disabled { opacity: .5; }
-  
-  .pd-btn-primary {
-    background: var(--accent);
-    color: white;
-  }
-  .pd-btn-primary:hover { opacity: .85; }
-  
-  .pd-btn-ghost {
-    background: var(--bg-hover);
-    color: var(--text-secondary);
-    border: 1px solid var(--border-color);
-  }
-  
-  /* ══ PRIORITÉ ══ */
-  .pd-priorite-cell {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: .79rem;
-    color: var(--text-primary);
-    font-weight: 600;
-  }
-  
-  .pd-priorite-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  
-  /* ══ VIDE ══ */
-  .pd-empty-sm {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 24px 16px;
-    text-align: center;
-    color: var(--text-muted);
-    font-size: .78rem;
-  }
-  
-  /* ══ TABLEAU ACTIVITÉS DANS PROJET ══ */
-  .pd-info-link {
-    color: var(--accent);
-    text-decoration: none;
-    font-weight: 600;
-  }
+/* ══════════════════════════════════════════════════════════
+   PAGE & LAYOUT PRINCIPAL
+══════════════════════════════════════════════════════════ */
+
+/* Wrapper global de la page — fond bg-primary, padding généreux */
+.pd5-page {
+  padding: 20px 24px 40px;
+  background: var(--bg-primary);
+  min-height: 100vh;
+  font-family: 'Arimo', 'Arimo', sans-serif;
+}
+
+/* Colonne flex : KPI → dashboards → carte principale */
+.pd5-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+/* ══════════════════════════════════════════════════════════
+   LIGNE KPI — 4 cartes statistiques (rangée du haut)
+══════════════════════════════════════════════════════════ */
+
+/* Grille 4 colonnes égales pour les 4 cartes KPI */
+.pd5-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 26px;
+}
+@media (max-width: 900px) { .pd5-kpi-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px) { .pd5-kpi-row { grid-template-columns: 1fr; } }
+
+/* Conteneur d'une carte KPI — fond dt-bg, bords arrondis */
+.pd5-kpi-card {
+  background: var(--dt-bg);
+  border: 1px solid var(--dt-border);
+  border-radius: 8px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  transition: box-shadow .15s;
+}
+
+
+
+
+.pd5-kpi-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.12); }
+
+/* NOUVEAU : Ligne qui contient la grande valeur + le badge côte à côte */
+.pd5-kpi-main-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start; /* ou flex-start + gap selon ton goût */
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* En-tête d'une carte KPI : icône + titre à gauche, 3 points à droite */
+.pd5-kpi-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Icône + libellé dans l'en-tête KPI */
+.pd5-kpi-card-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: .90rem;
+  font-weight: 500;
+  color: var(--dt-text-sub);
+  letter-spacing: 0.6px;    /* ← AJOUTÉ : espace entre les lettres */
+
+}
+
+/* Icône solid/fill de la carte KPI — plus grande et en accent */
+.pd5-kpi-icon {
+  width: 21px;
+  height: 21px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* Bouton 3 points horizontaux — bold, plus visible */
+.pd5-kpi-menu-btn {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  border: none; background: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--dt-text);   /* plus bold que text-sub */
+  font-weight: 800;
+  transition: background .12s;
+}
+.pd5-kpi-menu-btn:hover { background: var(--bg-hover); }
+
+/* Grande valeur numérique dans la carte KPI */
+.pd5-kpi-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--dt-text);
+  line-height: 1;
+  letter-spacing: -.02em;
+}
+
+/* Ligne tendance : flèche + badge sur la même ligne */
+.pd5-kpi-trend-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Indicateur tendance (flèche colorée) */
+.pd5-kpi-trend {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: .7rem;
+}
+.pd5-kpi-trend svg { width: 12px; height: 12px; flex-shrink: 0; }
+.pd5-kpi-trend.up   { color: #10b981; }
+.pd5-kpi-trend.down { color: #ef4444; }
+
+/* Le badge trend à côté de la valeur */
+.pd5-kpi-badge-trend {
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: .68rem;
+  font-weight: 700;
+  white-space: nowrap;
+  line-height: 1.4;
+  margin-bottom: 4px;         /* AJOUTE : pousse le badge un peu vers le haut pour aligner bas */
+}
+
+/* Badges KPI dans la barre d'onglets (statuts cliquables) */
+.pd5-kpi-badges {
+  display: flex; align-items: center;
+  gap: 5px; flex-wrap: wrap;
+  padding: 6px 0;
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   LIGNES DASHBOARDS (rangées 2 et 3 — grille 1:2)
+══════════════════════════════════════════════════════════ */
+
+/* Grille 2 colonnes : 1/3 gauche, 2/3 droite */
+.pd5-dash-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 14px;
+}
+@media (max-width: 800px) { .pd5-dash-row { grid-template-columns: 1fr; } }
+
+/* Conteneur commun des cartes dashboard */
+.pd5-dash-card {
+  background: var(--dt-bg);
+  border: 1px solid var(--dt-border);
+  border-radius: 8px;
+  padding: 16px 18px;
+  display: flex; flex-direction: column;
+  gap: 12px;
+}
+
+/* En-tête commun des cartes dashboard */
+.pd5-dash-card-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* Titre de la carte dashboard */
+.pd5-dash-card-title {
+  font-size: .999rem; font-weight: 450;
+  color: var(--dt-text);
+  display: flex; align-items: center;
+  letter-spacing: 1px;
+}
+
+/* Grande valeur dans le dashboard (total activités, etc.) */
+.pd5-dash-total-val {
+  font-size: 1.6rem; font-weight: 800;
+  color: var(--dt-text);
+  margin-top: 4px;
+  display: flex; align-items: center;
+}
+
+
+/* ──────────────────────────────────────────────────────────
+   BOUTON EXPORT (carte donut priorités)
+────────────────────────────────────────────────────────── */
+
+/* Bouton export avec bordure fine — dans l'en-tête du donut */
+.pd5-export-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 10px;
+  border-radius: 3px;
+  background: rgba(0,0,0,.15);
+  border-color: rgba(255,255,255,.1);
+
+  color: var(--dt-text);
+  font-size: .7rem; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+  transition: all .12s;
+}
+.pd5-export-btn:hover { border-color: var(--accent); color: var(--accent); }
+.pd5-export-btn svg {
+  width: 13px;                                  /* ← AUGMENTÉ : was 12px */
+  height: 13px;                                 /* ← AUGMENTÉ : was 12px */
+}
+
+
+
+
+
+
+/* ══════════════════════════════════════════════════════════
+   JAUGE CONCENTRIQUE — Cercles complets, classes génériques
+══════════════════════════════════════════════════════════ */
+
+/* Carte donut — structure verticale */
+.pd5-dash-donut-card { 
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Zone SVG — centrée horizontalement */
+.pd5-gauge-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 180px;
+  flex-shrink: 0;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+}
+
+/* SVG de la jauge */
+.pd5-gauge-svg { 
+  width: 100%; 
+  height: auto; 
+}
+
+/* ══════════════════════════════════════════════════════════
+   CERCLES — Classes génériques réutilisables
+   Chaque classe = couleur principale + bordure secondaire
+══════════════════════════════════════════════════════════ */
+
+/* Base commune tous les cercles */
+.pd5-ring {
+  fill: none;
+  stroke-linecap: butt;
+  stroke-dashoffset: 0;
+  stroke-width: 10;           /* ← ÉPAISSEUR MINIMISÉE : was 14 */
+}
+
+/* ═── RING VIOLET (extérieur, le plus grand) ───╮ */
+.pd5-ring-violet {
+  stroke: #c026d3;           /* couleur principale */
+  --ring-border: #4d2c93;    /* bordure secondaire en CSS var */
+}
+
+/* ═── RING BLEU (2ème) ───╮ */
+.pd5-ring-bleu {
+  stroke: #0d41f6;
+  --ring-border: #0d32b3;
+}
+
+/* ═── RING CYAN (3ème) ───╮ */
+.pd5-ring-cyan {
+  stroke: #00c2ff;
+  --ring-border: #047fb1;
+}
+
+/* ═── RING VERT (centre, le plus petit) ───╮ */
+.pd5-ring-vert {
+  stroke: #10b981;
+  --ring-border: #0d9467;    /* vert plus foncé pour la bordure */
+}
+
+/* Bordure secondaire : pseudo-cercle via stroke-dasharray trick */
+/* On utilise un seul élément <circle> par anneau avec double stroke */
+/* La bordure est simulée par un cercle plus large derrière */
+
+/* ══════════════════════════════════════════════════════════
+   CONTENEUR LÉGENDE — En dessous du donut
+══════════════════════════════════════════════════════════ */
+
+.pd5-gauge-legend-wrap {
+  display: flex;
+  flex-direction: column;      /* ← VERTICAL : SVG au-dessus, légende en dessous */
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+}
+
+/* Légende alignée à GAUCHE */
+.pd5-gauge-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  align-items: flex-start;   /* ← GAUCHE */
+}
+
+/* Une ligne de légende */
+.pd5-legend-row { 
+  display: flex; 
+  align-items: center; 
+  gap: 10px;
+  width: 100%;
+}
+
+/* Point coloré dans la légende */
+.pd5-legend-dot { 
+  width: 7px; 
+  height: 7px; 
+  border-radius: 50%; 
+  flex-shrink: 0; 
+}
+
+/* Libellé de la légende */
+.pd5-legend-label { 
+  flex: 1; 
+  color: var(--dt-text-sub); 
+}
+
+/* Pourcentage de la légende */
+.pd5-legend-pct { 
+  color: var(--dt-text); 
+  text-align: right;
+}
+/* Texte central du donut */
+.pd5-gauge-center-num {
+  font-size: 30px;
+  font-weight: 800;
+  fill: var(--dt-text);
+  font-family: 'Arimo', sans-serif;
+}
+
+.pd5-gauge-center-label {
+  font-size: 15px;
+  fill: var(--dt-text-sub);
+  font-family: 'Arimo', sans-serif;
+}
+
+
+
+
+
+
+/* ──────────────────────────────────────────────────────────
+   STACKED BAR CHART (carte droite ligne 2)
+   12 mois, barres verticales empilées, axes X et Y
+────────────────────────────────────────────────────────── */
+
+/* Légende horizontale des statuts */
+.pd5-bar-legend { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pd5-bar-legend-item { display: flex; align-items: center; gap: 4px; }
+.pd5-bar-legend-label { font-size: .64rem; color: var(--dt-text-sub); }
+
+/* Zone complète du chart : axe Y gauche + zone barres */
+.pd5-stacked-chart {
+  display: flex;
+  gap: 6px;
+  height: 130px;
+  flex: 1;
+}
+
+/* Axe Y — valeurs numériques de bas en haut */
+.pd5-chart-yaxis {
+  display: flex; flex-direction: column-reverse;
+  justify-content: space-between;
+  padding: 2px 0;
+  width: 24px;
+  flex-shrink: 0;
+}
+
+/* Étiquette axe Y */
+.pd5-yaxis-label {
+  font-size: .57rem;
+  color: var(--dt-text-sub);
+  text-align: right;
+  line-height: 1;
+}
+
+/* Zone des barres avec lignes de grille */
+.pd5-chart-area {
+  flex: 1; position: relative;
+  display: flex; flex-direction: column;
+}
+
+/* Lignes de grille horizontales en fond */
+.pd5-chart-gridlines {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column-reverse;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+/* Une ligne de grille */
+.pd5-gridline {
+  width: 100%; height: 1px;
+  background: var(--dt-border);
+  opacity: .4;
+}
+
+/* Conteneur mois (barre + label) — flex de bas en haut */
+.pd5-month-bars {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 3px;
+  flex: 1;
+}
+
+/* Barre empilée verticale d'un mois — de bas en haut */
+.pd5-stacked-bar {
+  flex: 1; width: 60%;
+  display: flex; flex-direction: column-reverse;
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 8px; max-width: 20px;
+}
+
+/* Segment coloré dans la barre (un statut = un segment) */
+.pd5-bar-seg {
+  width: 100%;
+  transition: height .4s ease;
+  min-height: 2px;
+}
+
+/* Label du mois sous la barre */
+.pd5-month-label {
+  font-size: .55rem; color: var(--dt-text-sub);
+  text-align: center; white-space: nowrap;
+}
+
+/* Wrapper complet des barres par mois */
+.pd5-month-bars {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 3px;
+  flex: 1;
+}
+
+/* Zone des 12 colonnes de barres */
+.pd5-chart-area {
+  flex: 1; display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 3px; padding-bottom: 18px;
+  position: relative;
+}
+
+
+/* ──────────────────────────────────────────────────────────
+   SÉLECTEUR DATE + CALENDRIER DROPDOWN
+   Partagé entre bar chart et line chart
+────────────────────────────────────────────────────────── */
+
+/* Wrapper relatif pour positionner le dropdown */
+.pd5-date-picker-wrap { position: relative; }
+
+/* Bouton sélecteur de mois/année */
+.pd5-date-picker-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--dt-border);
+  border-radius: 3px;
+  background: var(--dt-bg-header);
+  color: var(--dt-text-sub);
+  font-size: .7rem; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+  transition: all .12s; white-space: nowrap;
+}
+.pd5-date-picker-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Variante sombre (line chart) */
+.pd5-date-picker-dark {
+  background: rgba(0,0,0,.15);
+  border-color: rgba(255,255,255,.1);
+  color: var(--dt-text);
+}
+
+/* Dropdown calendrier */
+.pd5-calendar-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 220px;
+  background: var(--dt-bg);
+  border: 1px solid var(--dt-border);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.2);
+  z-index: 800;
+  opacity: 0; transform: translateY(-4px) scale(.97);
+  pointer-events: none;
+  transition: opacity .14s, transform .14s;
+  padding: 10px;
+}
+.pd5-calendar-dropdown.open {
+  opacity: 1; transform: translateY(0) scale(1);
+  pointer-events: all;
+}
+/* Variante alignée à droite */
+.pd5-calendar-right { left: auto; right: 0; }
+
+/* En-tête du calendrier (mois + nav) */
+.pd5-cal-header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+/* Bouton navigation mois (‹ ›) */
+.pd5-cal-nav {
+  width: 24px; height: 24px;
+  border-radius: 5px; border: none;
+  background: var(--bg-hover);
+  color: var(--dt-text); font-size: .9rem;
+  cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  transition: background .1s;
+}
+.pd5-cal-nav:hover { background: var(--accent-soft); color: var(--accent); }
+
+/* Label mois actuel dans le calendrier */
+.pd5-cal-month-label {
+  font-size: .74rem; font-weight: 700; color: var(--dt-text);
+}
+
+/* Grille calendrier : 7 colonnes */
+.pd5-cal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+/* Entête jour de semaine */
+.pd5-cal-dow {
+  font-size: .58rem; font-weight: 700;
+  color: var(--dt-text-sub); text-align: center;
+  padding: 3px 0;
+}
+
+/* Cellule jour du calendrier */
+.pd5-cal-day {
+  font-size: .68rem; color: var(--dt-text-sub);
+  text-align: center; padding: 4px 2px;
+  border-radius: 4px; cursor: pointer;
+  transition: background .1s;
+}
+.pd5-cal-day:hover { background: var(--accent-soft); color: var(--accent); }
+.pd5-cal-day.today { background: var(--accent); color: white; font-weight: 700; }
+.pd5-cal-day.empty { pointer-events: none; }
+
+
+/* ──────────────────────────────────────────────────────────
+   TEAM LEADS (carte gauche ligne 3 — style "Products")
+────────────────────────────────────────────────────────── */
+
+/* Hauteur minimale de la carte leads */
+.pd5-dash-leads-card { min-height: 200px; }
+
+/* En-têtes colonnes du tableau leads */
+.pd5-leads-thead {
+  display: flex; align-items: center;
+  padding: 4px 0 8px;
+  border-bottom: 1px solid var(--dt-border);
+}
+.pd5-leads-col-user  { flex: 1; font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--dt-text-sub); }
+.pd5-leads-col-group { width: 110px; font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--dt-text-sub); }
+
+/* Message vide */
+.pd5-leads-empty { font-size: .73rem; color: var(--dt-text-sub); text-align: center; padding: 20px; opacity: .5; }
+
+/* Une ligne team lead */
+.pd5-lead-row { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--dt-border); gap: 8px; }
+.pd5-lead-row:last-child { border-bottom: none; }
+
+/* Colonne utilisateur (avatar + nom + email) */
+.pd5-lead-user { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+
+/* Avatar circulaire du lead */
+.pd5-lead-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .6rem; font-weight: 800; color: white; flex-shrink: 0; }
+
+/* Bloc nom + email */
+.pd5-lead-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.pd5-lead-nom   { font-size: .76rem; font-weight: 700; color: var(--dt-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pd5-lead-email { font-size: .63rem; color: var(--dt-text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Colonne groupe (chip coloré + nom) */
+.pd5-lead-group { display: flex; align-items: center; gap: 6px; width: 110px; flex-shrink: 0; }
+.pd5-lead-group-chip { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .54rem; font-weight: 800; color: white; flex-shrink: 0; }
+.pd5-lead-group-nom  { font-size: .68rem; color: var(--dt-text-sub); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+
+/* ──────────────────────────────────────────────────────────
+   LINE CHART ÉPURÉ (carte droite ligne 3)
+   Axes X/Y dynamiques, courbe cyan, aucun marqueur
+────────────────────────────────────────────────────────── */
+
+.pd5-dash-line-card { justify-content: space-between; }
+
+/* Conteneur du graphique : axe Y + zone courbe */
+.pd5-line-chart-container {
+  display: flex; gap: 6px;
+  flex: 1; min-height: 100px;
+}
+
+/* Axe Y à gauche */
+.pd5-line-yaxis {
+  display: flex; flex-direction: column-reverse;
+  justify-content: space-between;
+  padding: 2px 0;
+  width: 22px; flex-shrink: 0;
+}
+
+/* Étiquette axe Y et X */
+.pd5-yaxis-label, .pd5-xaxis-label {
+  font-size: .57rem;
+  color: var(--dt-text-sub);
+}
+.pd5-yaxis-label { text-align: right; line-height: 1; }
+.pd5-xaxis-label { text-align: center; }
+
+/* Zone de la courbe */
+.pd5-line-area {
+  flex: 1; display: flex; flex-direction: column;
+  gap: 4px;
+}
+
+/* SVG de la courbe — aucune grille */
+.pd5-line-svg {
+  flex: 1; width: 100%;
+  overflow: visible;
+}
+
+/* Axe X sous la courbe */
+.pd5-line-xaxis2 {
+  display: flex; justify-content: space-between;
+  padding: 0 2px;
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   CARTE PRINCIPALE — ACTIVITÉS
+══════════════════════════════════════════════════════════ */
+
+/* Wrapper de la carte principale */
+.pd5-main-card { min-width: 0; }
+
+/* Ligne surlignée dans la table */
+.dt-tr-selected { background: var(--accent-soft) !important; border-left: 2px solid var(--accent); }
+
+/* Zone wrapper de la table (scroll horizontal si besoin) */
+.pd5-table-wrap { overflow-x: auto; }
+
+
+/* ──────────────────────────────────────────────────────────
+   BOUTON TOGGLE DRAWER (header de la carte principale)
+────────────────────────────────────────────────────────── */
+
+/* Bouton carré avec icône liste+engrenage */
+.pd5-drawer-toggle {
+  width: 38px; height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--dt-border);
+  background: var(--dt-bg);
+  color: var(--dt-text-sub);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .12s; flex-shrink: 0;
+}
+.pd5-drawer-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.pd5-drawer-toggle.active { background: var(--accent); border-color: var(--accent); color: white; }
+.pd5-drawer-toggle svg { width: 16px; height: 16px; }
+
+
+/* ──────────────────────────────────────────────────────────
+   ONGLETS (Table / Kanban / Timeline)
+────────────────────────────────────────────────────────── */
+
+/* Rangée des onglets de vue */
+.pd5-tabs-row { display: flex; align-items: center; padding: 0 20px; gap: 2px; flex-wrap: wrap; }
+
+/* Un onglet (Table / Kanban / Timeline) */
+.pd5-tab {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 11px 14px;
+  background: none; border: none;
+  border-bottom: 2px solid transparent;
+  font-size: .76rem; font-weight: 600;
+  color: var(--dt-text-sub); cursor: pointer; font-family: inherit;
+  transition: color .12s, border-color .12s; white-space: nowrap;
+}
+.pd5-tab svg { width: 14px; height: 14px; flex-shrink: 0; }
+.pd5-tab:hover { color: var(--dt-text); }
+.pd5-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* Séparateur flexible entre onglets et badges */
+.pd5-tabs-sep { flex: 1; min-width: 8px; }
+
+/* Ligne séparatrice sous les onglets */
+.pd5-tabs-line { height: 1px; background: var(--dt-border); }
+
+
+/* ──────────────────────────────────────────────────────────
+   ÉTAT VIDE (commun à toutes les vues)
+────────────────────────────────────────────────────────── */
+.pd5-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 44px 24px; text-align: center; color: var(--dt-text-sub); font-size: .8rem; }
+.pd5-empty p { margin: 0; }
+
+/* Avatar petit membre dans la table */
+.pd5-member-avatar { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .58rem; font-weight: 800; color: white; flex-shrink: 0; }
+
+/* Chip groupe dans la table (cercle coloré) */
+.pd5-grp-chip { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .54rem; font-weight: 800; color: white; flex-shrink: 0; border: 1.5px solid var(--dt-bg); }
+
+
+/* ══════════════════════════════════════════════════════════
+   VUE KANBAN
+══════════════════════════════════════════════════════════ */
+
+/* Scroll horizontal des colonnes kanban */
+.pd5-kanban { display: flex; gap: 12px; padding: 14px 20px 18px; overflow-x: auto; align-items: flex-start; min-height: 180px; scrollbar-width: thin; }
+
+/* Une colonne kanban */
+.pd5-kanban-col { flex-shrink: 0; width: 250px; background: var(--dt-bg-header); border: 1px solid var(--dt-border); border-radius: 10px; overflow: hidden; transition: border-color .15s, box-shadow .15s; }
+.pd5-kanban-col.drag-over { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+
+/* En-tête colonne kanban */
+.pd5-col-head { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; border-bottom: 1px solid var(--dt-border); background: var(--dt-bg); }
+.pd5-col-title { display: flex; align-items: center; gap: 7px; }
+.pd5-col-dot   { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.pd5-col-label { font-size: .7rem; font-weight: 700; color: var(--dt-text); text-transform: uppercase; letter-spacing: .3px; }
+.pd5-col-count { font-size: .6rem; font-weight: 700; background: var(--bg-hover); color: var(--dt-text-sub); padding: 1px 6px; border-radius: 999px; border: 1px solid var(--dt-border); }
+
+/* Zone drop des cartes */
+.pd5-col-cards { padding: 7px; display: flex; flex-direction: column; gap: 7px; min-height: 48px; }
+.pd5-col-empty { padding: 14px; text-align: center; font-size: .7rem; color: var(--dt-text-sub); border: 1px dashed var(--dt-border); border-radius: 7px; opacity: .45; }
+
+/* Carte activité kanban */
+.pd5-kcard { background: var(--dt-bg); border: 1px solid var(--dt-border); border-radius: 9px; overflow: hidden; cursor: pointer; transition: box-shadow .15s, transform .1s, border-color .12s; user-select: none; }
+.pd5-kcard:hover { box-shadow: 0 3px 14px rgba(0,0,0,.1); transform: translateY(-1px); }
+.pd5-kcard.dragging { opacity: .35; transform: scale(.97); cursor: grabbing; }
+
+/* Barre couleur haut de la carte kanban */
+.pd5-kcard-bar { height: 3px; width: 100%; }
+.pd5-kcard-body { padding: 8px 10px; display: flex; flex-direction: column; gap: 5px; }
+
+/* Ligne 1 de la carte : badge priorité + numéro */
+.pd5-kcard-row1 { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+
+/* Badge priorité rectangle coloré */
+.pd5-prio-badge { font-size: .59rem; font-weight: 700; padding: 2px 7px; border-radius: 4px; border: 1px solid; white-space: nowrap; }
+
+/* Badge numéro activité en monospace */
+.pd5-num-badge { font-family: monospace; font-size: .59rem; font-weight: 700; color: var(--dt-text-sub); background: var(--bg-hover); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--dt-border); margin-left: auto; }
+
+/* Titre de la carte kanban */
+.pd5-kcard-nom { font-size: .79rem; font-weight: 600; color: var(--dt-text); line-height: 1.35; }
+
+/* Description tronquée à 2 lignes */
+.pd5-kcard-desc { font-size: .71rem; color: var(--dt-text-sub); margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.45; }
+
+/* Séparateur horizontal dans la carte */
+.pd5-kcard-divider { height: 1px; background: var(--dt-border); opacity: .5; }
+
+/* Date d'échéance dans la carte */
+.pd5-kcard-date { display: flex; align-items: center; gap: 4px; font-size: .64rem; color: var(--dt-text-sub); }
+.pd5-kcard-date svg { width: 10px; height: 10px; opacity: .7; }
+
+/* Footer de la carte : assigné + compteurs + actions */
+.pd5-kcard-footer { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+
+/* Membre assigné dans le footer de la carte */
+.pd5-kcard-assignee { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; overflow: hidden; }
+.pd5-kcard-avatar   { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .5rem; font-weight: 800; color: white; flex-shrink: 0; }
+.pd5-kcard-assignee-info { display: flex; flex-direction: column; min-width: 0; }
+.pd5-kcard-assignee-nom   { font-size: .63rem; font-weight: 600; color: var(--dt-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pd5-kcard-assignee-poste { font-size: .57rem; color: var(--dt-text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Groupe dans le footer de la carte */
+.pd5-kcard-grp-info { display: flex; align-items: center; gap: 3px; flex: 1; min-width: 0; flex-wrap: wrap; }
+.pd5-kcard-grp-tag  { display: flex; align-items: center; gap: 3px; }
+.pd5-kcard-grp-chip { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .5rem; font-weight: 800; color: white; flex-shrink: 0; border: 1.5px solid var(--dt-bg); }
+.pd5-kcard-grp-nom  { font-size: .62rem; color: var(--dt-text-sub); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; }
+
+/* Compteurs commentaires + documents */
+.pd5-kcard-counters { display: flex; align-items: center; gap: 6px; }
+.pd5-kcard-counter  { display: flex; align-items: center; gap: 3px; font-size: .62rem; color: var(--dt-text-sub); }
+.pd5-kcard-counter svg { width: 10px; height: 10px; }
+
+/* Bouton supprimer dans la carte kanban (toujours visible) */
+.pd5-kcard-actions { display: flex; align-items: center; gap: 1px; }
+.pd5-kcard-btn-del { width: 22px; height: 22px; border-radius: 4px; border: none; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--dt-text-sub); transition: all .1s; }
+.pd5-kcard-btn-del:hover { background: rgba(239,68,68,.1); color: #ef4444; }
+
+
+/* ══════════════════════════════════════════════════════════
+   VUE TIMELINE
+══════════════════════════════════════════════════════════ */
+
+/* Liste des activités en vue gantt simplifié */
+.pd5-timeline { padding: 14px 20px; display: flex; flex-direction: column; gap: 8px; }
+.pd5-tl-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: var(--dt-bg-header); border: 1px solid var(--dt-border); border-radius: 8px; }
+.pd5-tl-info { display: flex; align-items: center; gap: 7px; width: 180px; flex-shrink: 0; }
+.pd5-tl-bar-color { width: 3px; height: 28px; border-radius: 2px; flex-shrink: 0; }
+.pd5-tl-nom   { font-size: .76rem; font-weight: 600; color: var(--dt-text); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pd5-tl-dates { font-size: .63rem; color: var(--dt-text-sub); font-family: monospace; display: block; }
+.pd5-tl-gantt { flex: 1; height: 7px; background: var(--bg-hover); border-radius: 999px; overflow: hidden; }
+.pd5-tl-gantt-fill { height: 100%; border-radius: 999px; opacity: .75; transition: width .4s; }
+
+
+/* ══════════════════════════════════════════════════════════
+   DRAWERS (partagés — infos projet + détail activité)
+   Style identique : fond blanc/sombre, slide depuis la droite
+══════════════════════════════════════════════════════════ */
+
+/* Fond semi-transparent derrière le drawer */
+.pd5-drawer-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.22);
+  z-index: 700;
+  display: flex; justify-content: flex-end;
+}
+
+/* Panel du drawer */
+.pd5-drawer {
+  width: 400px; max-width: 100vw;
+  height: 100%;
+  background: var(--dt-bg);
+  border-left: 1px solid var(--dt-border);
+  display: flex; flex-direction: column;
+  box-shadow: -8px 0 40px rgba(0,0,0,.14);
+  animation: slideInDrawer .2s cubic-bezier(.4,0,.2,1);
+}
+
+/* Drawer activité légèrement plus large */
+.pd5-act-drawer { width: 460px; }
+
+/* Animation d'entrée du drawer */
+@keyframes slideInDrawer { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+/* En-tête drawer */
+.pd5-drawer-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 14px; border-bottom: 1px solid var(--dt-border); flex-shrink: 0; }
+.pd5-drawer-title  { font-size: .9rem; font-weight: 700; color: var(--dt-text); margin: 0; }
+
+/* Bouton fermer (×) du drawer */
+.pd5-drawer-close  { width: 28px; height: 28px; border-radius: 6px; border: none; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--dt-text-sub); transition: background .12s; }
+.pd5-drawer-close:hover { background: var(--bg-hover); }
+.pd5-drawer-close svg { width: 13px; height: 13px; }
+
+/* Corps scrollable du drawer */
+.pd5-drawer-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+/* Section dans le drawer (pièces jointes, commentaires...) */
+.pd5-drawer-section { padding: 14px 20px; border-bottom: 1px solid var(--dt-border); }
+.pd5-drawer-section:last-child { border-bottom: none; }
+.pd5-drawer-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.pd5-drawer-section-title { font-size: .67rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--dt-text); display: flex; align-items: center; gap: 6px; }
+
+/* Badge compteur dans le titre d'une section */
+.pd5-section-badge { font-size: .57rem; font-weight: 700; background: var(--accent-soft); color: var(--accent); padding: 1px 6px; border-radius: 999px; border: 1px solid rgba(192,38,211,.2); }
+
+/* Bouton "Modifier" dans l'en-tête du drawer activité */
+.pd5-act-edit-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 11px;
+  border: 1px solid var(--dt-border);
+  border-radius: 7px;
+  background: var(--dt-bg-header);
+  color: var(--dt-text-sub);
+  font-size: .71rem; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+  transition: all .12s;
+}
+.pd5-act-edit-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.pd5-act-edit-btn svg { width: 12px; height: 12px; }
+
+
+/* ──────────────────────────────────────────────────────────
+   LIGNES D'INFO dans le drawer projet (champs éditables)
+────────────────────────────────────────────────────────── */
+
+/* Section informations dans le drawer */
+.pd5-info-section { padding: 6px 20px 14px; border-bottom: 1px solid var(--dt-border); }
+
+/* Une ligne info : label | valeur | bouton crayon */
+.pd5-info-row { display: flex; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--dt-border); }
+.pd5-info-row:last-of-type { border-bottom: none; }
+.pd5-info-row-col { flex-direction: column; align-items: flex-start; }
+
+/* Label avec icône SVG à gauche */
+.pd5-info-label { display: flex; align-items: center; gap: 6px; font-size: .69rem; font-weight: 500; color: var(--dt-text-sub); min-width: 88px; flex-shrink: 0; width: 88px; }
+.pd5-info-label svg { width: 12px; height: 12px; opacity: .7; }
+
+/* Valeur de la ligne info */
+.pd5-info-val { flex: 1; font-size: .76rem; color: var(--dt-text); font-weight: 500; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0; }
+.pd5-info-secondary { font-size: .68rem; color: var(--dt-text-sub); }
+.pd5-teams-val { flex-direction: column; align-items: flex-start; gap: 4px; }
+.pd5-team-row  { display: flex; align-items: center; gap: 6px; }
+.pd5-team-dot  { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .54rem; font-weight: 800; color: white; flex-shrink: 0; }
+.pd5-team-name { font-weight: 600; color: var(--dt-text); font-size: .74rem; }
+.pd5-team-count { font-size: .67rem; color: var(--dt-text-sub); }
+
+/* Bouton crayon d'édition inline (visible au hover) */
+.pd5-row-edit-btn { width: 24px; height: 24px; border-radius: 5px; border: none; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--dt-text-sub); opacity: 0; transition: all .12s; flex-shrink: 0; }
+.pd5-info-row:hover .pd5-row-edit-btn, .pd5-info-row-col:hover .pd5-row-edit-btn { opacity: 1; }
+.pd5-row-edit-btn:hover { background: var(--accent-soft); color: var(--accent); }
+.pd5-row-edit-btn svg { width: 11px; height: 11px; }
+
+/* Input inline d'édition */
+.pd5-inline-input { height: 30px; border: 1px solid var(--accent); border-radius: 6px; padding: 0 8px; font-size: .76rem; background: var(--bg-input); color: var(--dt-text); font-family: inherit; outline: none; flex: 1; min-width: 0; width: 100%; box-shadow: 0 0 0 2px var(--accent-soft); }
+.pd5-inline-select { cursor: pointer; }
+.pd5-inline-textarea { height: auto !important; padding: 8px !important; resize: vertical; min-height: 70px; }
+
+/* Boîte description (lecture) */
+.pd5-desc-box { font-size: .77rem; color: var(--dt-text); line-height: 1.6; background: var(--bg-input); border: 1px solid var(--dt-border); border-radius: 7px; padding: 9px 11px; min-height: 50px; width: 100%; box-sizing: border-box; }
+
+
+/* ──────────────────────────────────────────────────────────
+   DRAWER ACTIVITÉ — méta statut/date/assigné
+────────────────────────────────────────────────────────── */
+
+/* Ligne badges (priorité, numéro) dans l'en-tête */
+.pd5-ap-badges { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; flex-wrap: wrap; }
+
+/* Ligne meta : statut + date échéance */
+.pd5-ap-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pd5-ap-date { display: flex; align-items: center; gap: 4px; font-size: .67rem; color: var(--dt-text-sub); }
+
+/* Bloc assigné enrichi (avatar + nom + poste) */
+.pd5-ap-assignee { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--dt-bg-header); border: 1px solid var(--dt-border); margin-top: 8px; }
+.pd5-ap-avatar   { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .62rem; font-weight: 800; color: white; flex-shrink: 0; overflow: hidden; }
+.pd5-ap-assignee-nom  { font-size: .78rem; font-weight: 600; color: var(--dt-text); display: block; }
+.pd5-ap-assignee-poste { font-size: .67rem; color: var(--dt-text-sub); display: block; }
+
+/* Groupes assignés si pas de membre */
+.pd5-ap-groupes { display: flex; flex-direction: column; gap: 4px; }
+.pd5-ap-grp-row { display: flex; align-items: center; gap: 7px; }
+.pd5-ap-grp-dot { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .56rem; font-weight: 800; color: white; flex-shrink: 0; }
+.pd5-ap-grp-nom { font-size: .76rem; font-weight: 600; color: var(--dt-text); }
+
+/* Description de l'activité */
+.pd5-ap-desc { font-size: .76rem; color: var(--dt-text-sub); line-height: 1.55; margin: 0; }
+
+/* Onglets Commentaires / Documents dans le drawer activité */
+.pd5-ap-tabs { display: flex; border-bottom: 1px solid var(--dt-border); }
+.pd5-ptab { display: inline-flex; align-items: center; gap: 5px; padding: 9px 14px; background: none; border: none; border-bottom: 2px solid transparent; font-size: .72rem; font-weight: 600; color: var(--dt-text-sub); cursor: pointer; font-family: inherit; transition: color .12s, border-color .12s; }
+.pd5-ptab svg { width: 12px; height: 12px; }
+.pd5-ptab:hover { color: var(--dt-text); }
+.pd5-ptab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.pd5-ptab-count { font-size: .57rem; font-weight: 700; background: var(--accent-soft); color: var(--accent); padding: 1px 5px; border-radius: 999px; }
+
+/* Corps scrollable du drawer activité (commentaires ou documents) */
+.pd5-ap-body { flex: 1; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 0; }
+
+
+/* ══════════════════════════════════════════════════════════
+   DOCUMENTS (partagé drawer projet + drawer activité)
+══════════════════════════════════════════════════════════ */
+
+/* Bouton upload principal (dans le drawer activité) */
+.pd5-upload-btn { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 1px dashed var(--dt-border); border-radius: 7px; background: var(--dt-bg-header); color: var(--dt-text-sub); font-size: .74rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .12s; margin-bottom: 10px; }
+.pd5-upload-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.pd5-upload-btn.uploading { opacity: .6; cursor: not-allowed; }
+.pd5-upload-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+/* Bouton upload compact (dans le drawer projet) */
+.pd5-upload-sm { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border: 1px solid var(--dt-border); border-radius: 5px; background: none; color: var(--accent); font-size: .68rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: background .12s; }
+.pd5-upload-sm:hover { background: var(--accent-soft); }
+.pd5-upload-sm svg { width: 11px; height: 11px; }
+
+/* Liste verticale des documents */
+.pd5-docs-list  { display: flex; flex-direction: column; gap: 0; }
+.pd5-docs-empty { font-size: .73rem; color: var(--dt-text-sub); text-align: center; padding: 12px; }
+
+/* Une ligne document : icône | nom+taille | actions */
+.pd5-doc-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--dt-border); }
+.pd5-doc-row:last-child { border-bottom: none; }
+.pd5-doc-icon    { width: 36px; height: 36px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: .52rem; font-weight: 800; color: white; flex-shrink: 0; }
+.pd5-doc-info    { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.pd5-doc-nom     { font-size: .74rem; font-weight: 600; color: var(--dt-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.pd5-doc-meta    { font-size: .62rem; color: var(--dt-text-sub); }
+.pd5-doc-actions { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
+
+/* Bouton icône action document (télécharger / supprimer) */
+.pd5-doc-icon-btn { width: 26px; height: 26px; border-radius: 5px; border: none; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--dt-text-sub); transition: all .12s; text-decoration: none; }
+.pd5-doc-icon-btn svg { width: 12px; height: 12px; }
+.pd5-doc-icon-btn:hover { background: var(--bg-hover); color: var(--accent); }
+.pd5-doc-icon-danger:hover { background: rgba(239,68,68,.1) !important; color: #ef4444 !important; }
+
+
+/* ══════════════════════════════════════════════════════════
+   COMMENTAIRES (partagé drawer projet + drawer activité)
+══════════════════════════════════════════════════════════ */
+
+/* Formulaire de saisie d'un commentaire */
+.pd5-cmt-form { display: flex; gap: 8px; margin-bottom: 12px; }
+
+/* Avatar de l'utilisateur courant dans le formulaire */
+.pd5-cmt-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .57rem; font-weight: 800; color: white; flex-shrink: 0; overflow: hidden; }
+.pd5-cmt-input-wrap { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+
+/* Textarea de saisie du commentaire */
+.pd5-cmt-ta { width: 100%; border: 1px solid var(--dt-border); border-radius: 7px; padding: 7px 9px; font-size: .76rem; background: var(--bg-input); color: var(--dt-text); font-family: inherit; resize: vertical; min-height: 48px; outline: none; transition: border-color .12s; }
+.pd5-cmt-ta:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+
+/* Bouton Envoyer du commentaire */
+.pd5-cmt-send { align-self: flex-end; height: 28px; padding: 0 12px; border-radius: 5px; background: var(--accent); color: white; font-size: .71rem; font-weight: 700; border: none; cursor: pointer; font-family: inherit; transition: opacity .12s; display: flex; align-items: center; gap: 4px; }
+.pd5-cmt-send:hover:not(:disabled) { opacity: .88; }
+.pd5-cmt-send:disabled { opacity: .5; cursor: not-allowed; }
+.pd5-cmt-empty { font-size: .72rem; color: var(--dt-text-sub); text-align: center; padding: 14px; }
+
+/* Un commentaire dans la liste */
+.pd5-cmt-item { display: flex; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--dt-border); }
+.pd5-cmt-item:last-child { border-bottom: none; }
+.pd5-cmt-body   { flex: 1; min-width: 0; }
+.pd5-cmt-meta   { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; flex-wrap: wrap; }
+.pd5-cmt-auteur { font-size: .73rem; font-weight: 700; color: var(--dt-text); }
+.pd5-cmt-date   { font-size: .63rem; color: var(--dt-text-sub); }
+.pd5-cmt-text   { font-size: .75rem; color: var(--dt-text); line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+
+/* Actions sur le commentaire (éditer / supprimer) — icônes SVG visibles au hover */
+.pd5-cmt-actions { display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+.pd5-cmt-icon-btn { width: 22px; height: 22px; border-radius: 4px; border: none; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--dt-text-sub); opacity: 0; transition: all .12s; }
+.pd5-cmt-item:hover .pd5-cmt-icon-btn { opacity: 1; }
+.pd5-cmt-icon-btn svg { width: 11px; height: 11px; }
+.pd5-cmt-icon-btn:hover { background: var(--bg-hover); color: var(--dt-text); }
+.pd5-cmt-icon-danger:hover { background: rgba(239,68,68,.1) !important; color: #ef4444 !important; }
+
+
+/* ══════════════════════════════════════════════════════════
+   SLIDE-OVER — Formulaire activité
+   Inclut la nouvelle section assignation groupe OU membres
+══════════════════════════════════════════════════════════ */
+
+/* Section assignation avec titre et grille 2 colonnes */
+.dm-assign-section {
+  background: var(--bg-input);
+  border: 1px solid var(--dt-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex; flex-direction: column;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+/* Titre "Assignation" de la section */
+.dm-assign-title {
+  font-size: .68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .5px;
+  color: var(--dt-text-sub);
+}
+
+/* Grille 2 colonnes : champ groupe | champ membres */
+.dm-assign-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 400px) { .dm-assign-grid { grid-template-columns: 1fr; } }
+
+/* Champ désactivé (l'autre champ a une valeur) */
+.dm-field-disabled { opacity: .45; pointer-events: none; }
+
+/* Input désactivé (visuel) */
+.dm-input-disabled { cursor: not-allowed; background: var(--bg-hover) !important; }
+
+/* Hint "Désactivé : ..." sous le champ */
+.dm-field-hint {
+  font-size: .62rem; color: var(--dt-text-sub);
+  font-style: italic; margin-top: 3px;
+}
+
+/* Aperçu du membre sélectionné */
+.dm-selected-member { display: flex; align-items: center; gap: 8px; margin-top: 7px; padding: 8px 10px; background: var(--bg-hover); border-radius: 7px; border: 1px solid var(--dt-border); }
+.dm-sm-avatar  { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .58rem; font-weight: 800; color: white; flex-shrink: 0; overflow: hidden; }
+.dm-sm-nom     { font-size: .76rem; font-weight: 600; color: var(--dt-text); display: block; }
+.dm-sm-poste   { font-size: .66rem; color: var(--dt-text-sub); display: block; }
