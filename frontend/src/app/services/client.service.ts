@@ -6,7 +6,7 @@ import { Client, ClientRequest } from '../shared/models/client.model';
 @Injectable({ providedIn: 'root' })
 export class ClientService {
   private http = inject(HttpClient);
-  private base = 'http://localhost:8085/api/clients';
+  private base = 'http://localhost:8085/api/application/clients';
  
   getAll(actif?: boolean): Observable<Client[]> {
     let params = new HttpParams();

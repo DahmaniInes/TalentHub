@@ -8,7 +8,7 @@ import { Profil } from '../shared/models/profil.model';
 })
 export class ProfilService {
 
-  private apiUrl = 'http://localhost:8085/api/profils';   // via API Gateway
+  private apiUrl = 'http://localhost:8085/api/application/profils';   // via API Gateway
 
   constructor(private http: HttpClient) {}
 

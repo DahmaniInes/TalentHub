@@ -7,7 +7,7 @@ import { Stage } from '../shared/models/stage.model';
 export class StageAngularService {
 
   private http = inject(HttpClient);
-  private api  = 'http://localhost:8085/api/stages';
+  private api  = 'http://localhost:8085/api/application/stages';
 
   getByUser(userId: number): Observable<Stage[]> {
     return this.http.get<Stage[]>(`${this.api}/utilisateur/${userId}`);

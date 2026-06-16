@@ -4,6 +4,7 @@ package com.talenthub.application_service.Service;
 import com.talenthub.application_service.DTO.FeuilleTempsDTO;
 import com.talenthub.application_service.DTO.FeuilleTempsRequest;
 import com.talenthub.application_service.DTO.LigneFeuilleTempsRequest;
+import com.talenthub.application_service.Entity.Activité;
 import com.talenthub.application_service.Entity.FeuilleTemps;
 import com.talenthub.application_service.Entity.LigneFeuilleTemps;
 import com.talenthub.application_service.Entity.Utilisateur;
@@ -278,8 +279,34 @@ public class FeuilleTempsService {
                     .build();
 
             ligneRepository.save(ligne);
+            if (r.getActiviteId() != null) {
+                assignerUtilisateurActivite(ft.getUtilisateur().getId(), r.getActiviteId());
+            }
         });
     }
+
+
+    // ✅ NOUVELLE méthode : ajouter l'user dans activite_utilisateurs si pas déjà là
+    private void assignerUtilisateurActivite(Long utilisateurId, Long activiteId) {
+        try {
+            Activité activite = activiteRepository.findById(activiteId).orElse(null);
+            if (activite == null) return;
+
+            // Vérifier si déjà assigné
+            boolean dejaAssigne = activite.getUtilisateurs().stream()
+                    .anyMatch(u -> u.getId().equals(utilisateurId));
+
+            if (!dejaAssigne) {
+                utilisateurRepository.findById(utilisateurId).ifPresent(user -> {
+                    activite.getUtilisateurs().add(user);
+                    activiteRepository.save(activite);
+                });
+            }
+        } catch (Exception e) {
+            // Non bloquant
+        }
+    }
+
 
     // ✅ Helper : collecte les projetIds et activiteIds d'une feuille puis recalcule
     private void recalculerAvancementDeFeuille(FeuilleTemps ft) {

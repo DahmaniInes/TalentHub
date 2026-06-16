@@ -11,7 +11,7 @@ export class UserService {
   private http           = inject(HttpClient);
   private keycloakService = inject(KeycloakService);
 
-  private apiUrl = 'http://localhost:8085/api/utilisateurs';
+  private apiUrl = 'http://localhost:8085/api/application/utilisateurs';
 
   createUser(request: UserCreationRequest): Observable<Utilisateur> {
     return this.http.post<Utilisateur>(this.apiUrl, request);

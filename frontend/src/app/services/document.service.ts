@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Document, TypeDocument, StatutDocument } from '../shared/models/document.model';
 
-const BASE       = 'http://localhost:8085/api/documents';
+const BASE       = 'http://localhost:8085/api/application/documents';
 const NOMEN_BASE = 'http://localhost:8085/api/nomenclature';
 
 @Injectable({ providedIn: 'root' })

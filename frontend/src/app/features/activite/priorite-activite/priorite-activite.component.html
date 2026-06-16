@@ -1,0 +1,369 @@
+<!-- ================================================================
+     priorite-activite.component.html
+     Style dt-* (identique à statut-activite)
+     CRUD : liste + pagination + bulk + slide-over
+================================================================ -->
+<div class="pa-page" (click)="filterOpen.set(false)">
+    <div class="dt-wrap">
+  
+      <!-- ── HEADER ── -->
+      <div class="dt-header">
+        <div>
+          <h1 class="dt-title">
+            <svg class="dt-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L8 9H2l5.5 4-2 7L12 16l6.5 4-2-7L22 9h-6z" stroke-linejoin="round"/>
+            </svg>
+            Priorités d'activité
+          </h1>
+          <!-- Badges compteurs -->
+          <div class="pa-header-badges">
+            <span class="dt-badge dt-badge-accent" style="font-size:.66rem;padding:3px 9px">
+              <span class="dt-badge-dot"></span>{{ items().length }} total
+            </span>
+            <span class="dt-badge dt-badge-delivered" style="font-size:.66rem;padding:3px 9px">
+              <span class="dt-badge-dot"></span>{{ countActifs() }} actives
+            </span>
+            <span class="dt-badge dt-badge-canceled" style="font-size:.66rem;padding:3px 9px">
+              <span class="dt-badge-dot"></span>{{ countInactifs() }} inactives
+            </span>
+          </div>
+        </div>
+  
+        <div class="dt-header-actions">
+          <!-- Recherche + filtre -->
+          <div class="dt-search-wrap" (click)="$event.stopPropagation()">
+            <div class="dt-search-bar" style="min-width:240px">
+              <button class="dt-filter-icon-btn"
+                      [class.has-filters]="activeFiltersCount() > 0"
+                      (click)="toggleFilter(); $event.stopPropagation()">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M2 3h12l-4.5 5.5V13L6.5 11.5V8.5L2 3z" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <input class="dt-search-input" placeholder="Rechercher une priorité..."
+                     [value]="searchText()"
+                     (input)="searchText.set($any($event.target).value); currentPage.set(1)">
+            </div>
+  
+            <!-- Panel filtres -->
+            <div class="dt-filter-panel" [class.open]="filterOpen()" (click)="$event.stopPropagation()">
+              <div class="dt-fp-header">
+                <p class="dt-fp-title">Filtres</p>
+                <button *ngIf="activeFiltersCount() > 0" class="dt-fp-reset" (click)="resetFilters()">Réinitialiser</button>
+              </div>
+              <div class="dt-fp-body">
+                <div class="dt-fp-field">
+                  <label class="dt-fp-label">Statut</label>
+                  <select class="dt-fp-select"
+                          [value]="filterActif() === null ? '' : filterActif() ? 'true' : 'false'"
+                          (change)="filterActif.set($any($event.target).value === '' ? null : $any($event.target).value === 'true'); currentPage.set(1)">
+                    <option value="">Toutes</option>
+                    <option value="true">Actives seulement</option>
+                    <option value="false">Inactives seulement</option>
+                  </select>
+                </div>
+              </div>
+              <div class="dt-fp-footer">
+                <button class="mx-btn mx-btn-ghost" style="height:30px;font-size:.73rem"
+                        (click)="filterOpen.set(false)">Fermer</button>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Bouton créer -->
+          <button *ngIf="perms.can('ACT_PRIORITY_CREATE')" class="dt-btn-create" (click)="openCreate()">
+            <svg viewBox="0 0 14 14" fill="none" style="width:11px;height:11px">
+              <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Nouvelle priorité
+          </button>
+        </div>
+      </div>
+  
+      <!-- ── BULK BAR ── -->
+      <div *ngIf="selectedIds().size > 0" class="dt-bulk-bar">
+        <span class="dt-bulk-count">{{ selectedIds().size }} sélectionnée(s)</span>
+        <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="clearSelection()">Désélectionner</button>
+        <button *ngIf="perms.can('ACT_PRIORITY_DELETE')"
+                class="mx-btn mx-btn-danger mx-btn-sm" (click)="bulkDelete()">Supprimer</button>
+      </div>
+  
+      <!-- ── LOADING ── -->
+      <div *ngIf="loading()" class="dt-loading">
+        <div class="dt-spinner"></div> Chargement...
+      </div>
+  
+      <!-- ── TABLEAU ── -->
+      <div *ngIf="!loading()" class="dt-scroll">
+        <table class="dt-table">
+          <thead>
+            <tr>
+              <th class="dt-th dt-th-cb">
+                <input type="checkbox" class="dt-checkbox"
+                       [class.indeterminate]="somePageSelected()"
+                       [checked]="allPageSelected()"
+                       (change)="toggleSelectAll()">
+              </th>
+              <!-- Couleur -->
+              <th class="dt-th" style="min-width:56px">
+                <div class="dt-th-inner">Couleur</div>
+              </th>
+              <!-- Code -->
+              <th class="dt-th" style="min-width:120px">
+                <div class="dt-th-inner">
+                  <svg class="dt-th-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M4 2h8a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z"/>
+                    <path d="M6 6h4M6 9h4M6 12h2" stroke-linecap="round"/>
+                  </svg>
+                  Code
+                </div>
+              </th>
+              <!-- Libellé -->
+              <th class="dt-th" style="min-width:160px">
+                <div class="dt-th-inner">
+                  <svg class="dt-th-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M2 4h12M2 8h8M2 12h6" stroke-linecap="round"/>
+                  </svg>
+                  Libellé
+                </div>
+              </th>
+              <!-- Description -->
+              <th class="dt-th" style="min-width:200px">
+                <div class="dt-th-inner">Description</div>
+              </th>
+              <!-- Ordre -->
+              <th class="dt-th" style="min-width:70px">
+                <div class="dt-th-inner">Ordre</div>
+              </th>
+              <!-- Statut -->
+              <th class="dt-th" style="min-width:100px">
+                <div class="dt-th-inner">
+                  <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none">
+                    <rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.3"/>
+                    <path d="M4 7l2.5 2.5 3.5-4" stroke="currentColor" stroke-width="1.3"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Statut
+                </div>
+              </th>
+              <th class="dt-th dt-th-actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+  
+            <!-- État vide -->
+            <tr *ngIf="paged().length === 0">
+              <td colspan="8" class="dt-td">
+                <div class="dt-empty">
+                  <svg viewBox="0 0 48 48" fill="none" style="width:38px;height:38px;opacity:.3">
+                    <path d="M24 4l4 12h12l-10 7 4 12-10-7-10 7 4-12L8 16h12z"
+                          stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                  </svg>
+                  <p class="dt-empty-title">Aucune priorité d'activité</p>
+                  <p class="dt-empty-sub">Créez votre première priorité</p>
+                  <button *ngIf="perms.can('ACT_PRIORITY_CREATE')"
+                          class="dt-btn-create" style="margin-top:12px" (click)="openCreate()">Créer</button>
+                </div>
+              </td>
+            </tr>
+  
+            <!-- Lignes -->
+            <tr *ngFor="let item of paged()" class="dt-tr">
+              <!-- Checkbox -->
+              <td class="dt-td dt-td-cb" (click)="$event.stopPropagation()">
+                <input type="checkbox" class="dt-checkbox"
+                       [class.dt-checkbox-active]="isSelected(item.id)"
+                       [checked]="isSelected(item.id)"
+                       (change)="toggleSelect(item.id, $event)">
+              </td>
+              <!-- Pastille couleur -->
+              <td class="dt-td">
+                <div class="pa-color-swatch" [style.background]="item.couleur || '#94a3b8'"></div>
+              </td>
+              <!-- Code -->
+              <td class="dt-td">
+                <span class="dm-code-mono">{{ item.code }}</span>
+              </td>
+              <!-- Libellé (badge coloré) -->
+              <td class="dt-td">
+                <span class="dt-badge"
+                      [style.background]="(item.couleur || '#94a3b8') + '20'"
+                      [style.color]="item.couleur || '#94a3b8'"
+                      [style.border-color]="(item.couleur || '#94a3b8') + '55'">
+                  <span class="dt-badge-dot" [style.background]="item.couleur || '#94a3b8'"></span>
+                  {{ item.libelle }}
+                </span>
+              </td>
+              <!-- Description tronquée -->
+              <td class="dt-td">
+                <span class="dt-cell-sub pa-desc-cell">{{ item.description || '—' }}</span>
+              </td>
+              <!-- Ordre -->
+              <td class="dt-td">
+                <span class="dt-cell-sub">{{ item.ordre }}</span>
+              </td>
+              <!-- Toggle actif/inactif -->
+              <td class="dt-td">
+                <button [class]="item.actif ? 'dt-badge dt-badge-delivered pa-toggle-btn'
+                                            : 'dt-badge dt-badge-canceled pa-toggle-btn'"
+                        (click)="perms.can('ACT_PRIORITY_EDIT') && toggleActif(item, $event)"
+                        [title]="item.actif ? 'Cliquer pour désactiver' : 'Cliquer pour activer'">
+                  <span class="dt-badge-dot"></span>
+                  {{ item.actif ? 'Active' : 'Inactive' }}
+                </button>
+              </td>
+              <!-- Actions -->
+              <td class="dt-td dt-td-actions" (click)="$event.stopPropagation()">
+                <div class="dt-td-actions-wrap">
+                  <button *ngIf="perms.can('ACT_PRIORITY_EDIT')"
+                          class="dt-action-btn dt-action-edit" (click)="openEdit(item)" title="Modifier">
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:13px;height:13px">
+                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                    </svg>
+                  </button>
+                  <button *ngIf="perms.can('ACT_PRIORITY_DELETE')"
+                          class="dt-action-btn dt-action-del" (click)="delete(item)" title="Supprimer">
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:13px;height:13px">
+                      <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+  
+          </tbody>
+        </table>
+      </div>
+  
+      <!-- ── PAGINATION ── -->
+      <div *ngIf="!loading() && filtered().length > 0" class="dt-footer">
+        <div class="dt-count-info">
+          <strong>{{ (currentPage()-1)*pageSize+1 }}–{{ minVal(currentPage()*pageSize, filtered().length) }}</strong>
+          of <strong>{{ filtered().length }}</strong>
+        </div>
+        <div class="dt-pagination">
+          <button class="dt-page-arrow" [disabled]="currentPage()===1" (click)="goPage(currentPage()-1)">
+            <svg viewBox="0 0 14 14" fill="none">
+              <path d="M9 2L5 7l4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <button *ngFor="let p of pagesArr()" class="dt-page-btn"
+                  [class.dt-page-btn-active]="currentPage()===p"
+                  (click)="goPage(p)">{{ p }}</button>
+          <button class="dt-page-arrow" [disabled]="currentPage()===totalPages()" (click)="goPage(currentPage()+1)">
+            <svg viewBox="0 0 14 14" fill="none">
+              <path d="M5 2l4 5-4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+  
+    </div><!-- /dt-wrap -->
+  </div><!-- /pa-page -->
+  
+  
+  <!-- ══════════════════════════════════════════════════════════
+       SLIDE-OVER — Créer / Modifier une priorité
+  ══════════════════════════════════════════════════════════ -->
+  <div *ngIf="slideOpen()" class="dm-slide-overlay" (click)="closeSlide()">
+    <div class="dm-slide-panel" (click)="$event.stopPropagation()">
+      <div class="dm-slide-header">
+        <h3 class="dm-slide-title">
+          {{ editingId() ? 'Modifier la priorité' : 'Nouvelle priorité d\'activité' }}
+        </h3>
+        <button class="dm-slide-close" (click)="closeSlide()">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M2 2l12 12M14 2L2 14" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+  
+      <div class="dm-slide-body">
+        <form [formGroup]="form">
+  
+          <!-- Code + Libellé -->
+          <div class="dm-grid2">
+            <div class="dm-field">
+              <label class="dm-label">Code <span class="dm-required">*</span></label>
+              <input formControlName="code" class="dm-input dm-input-mono"
+                     placeholder="EX: HAUTE" style="text-transform:uppercase">
+              <span *ngIf="editingId()" class="dm-field-hint">Code non modifiable après création</span>
+              <span *ngIf="form.get('code')?.invalid && form.get('code')?.touched"
+                    class="pa-form-error">
+                Majuscules, chiffres et underscore uniquement (ex: TRES_HAUTE)
+              </span>
+            </div>
+            <div class="dm-field">
+              <label class="dm-label">Libellé <span class="dm-required">*</span></label>
+              <input formControlName="libelle" class="dm-input" placeholder="Ex: Haute">
+              <span *ngIf="form.get('libelle')?.invalid && form.get('libelle')?.touched"
+                    class="pa-form-error">Champ obligatoire</span>
+            </div>
+          </div>
+  
+          <!-- Description -->
+          <div class="dm-field">
+            <label class="dm-label">Description</label>
+            <textarea formControlName="description" class="dm-input"
+                      style="height:auto;padding:10px 12px" rows="2"
+                      placeholder="Description optionnelle du niveau de priorité..."></textarea>
+          </div>
+  
+          <!-- Ordre -->
+          <div class="dm-field">
+            <label class="dm-label">Ordre d'affichage</label>
+            <input type="number" formControlName="ordre" class="dm-input" min="0" placeholder="0">
+            <span class="dm-field-hint">Les priorités sont affichées par ordre croissant</span>
+          </div>
+  
+          <!-- Couleur — sélecteur de pastilles -->
+          <div class="dm-field">
+            <label class="dm-label">Couleur</label>
+            <div class="pa-color-grid">
+              <button *ngFor="let c of COULEURS" type="button"
+                      [style.background]="c"
+                      class="pa-color-btn"
+                      [class.pa-color-btn-active]="form.get('couleur')?.value === c"
+                      (click)="setCouleur(c)">
+              </button>
+            </div>
+            <!-- Input couleur libre + aperçu -->
+            <div class="pa-color-preview-row">
+              <input type="color"
+                     [value]="form.get('couleur')?.value"
+                     (input)="setCouleur($any($event.target).value)"
+                     class="pa-color-input">
+              <span class="dt-cell-sub">{{ form.get('couleur')?.value }}</span>
+              <!-- Badge aperçu en temps réel -->
+              <span class="dt-badge"
+                    [style.background]="(form.get('couleur')?.value || '#94a3b8') + '20'"
+                    [style.color]="form.get('couleur')?.value || '#94a3b8'"
+                    [style.border-color]="(form.get('couleur')?.value || '#94a3b8') + '55'">
+                <span class="dt-badge-dot" [style.background]="form.get('couleur')?.value || '#94a3b8'"></span>
+                {{ form.get('libelle')?.value || 'Aperçu' }}
+              </span>
+            </div>
+          </div>
+  
+          <!-- Toggle actif -->
+          <div class="dm-toggle-row">
+            <label class="dm-toggle-label">Active</label>
+            <div class="dm-toggle" [class.dm-toggle-on]="form.get('actif')?.value"
+                 (click)="setActif(!form.get('actif')?.value)">
+              <div class="dm-toggle-thumb"></div>
+            </div>
+          </div>
+  
+        </form>
+      </div>
+  
+      <div class="dm-slide-footer">
+        <button class="dm-btn-cancel" (click)="closeSlide()">Annuler</button>
+        <button class="dm-btn-save" (click)="save()" [disabled]="loading()">
+          <div *ngIf="loading()" class="dt-spinner"
+               style="width:14px;height:14px;border-width:1.5px;border-color:rgba(255,255,255,.3);border-top-color:white"></div>
+          {{ editingId() ? 'Enregistrer' : 'Créer' }}
+        </button>
+      </div>
+    </div>
+  </div>

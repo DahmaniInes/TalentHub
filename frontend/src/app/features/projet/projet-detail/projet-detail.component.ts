@@ -22,8 +22,9 @@ import { StatutActivite }                from '../../../shared/models/statut-act
 import { Groupe }                        from '../../../shared/models/groupe.model';
 import { Document as DocModel, TypeDocument } from '../../../shared/models/document.model';
 import { HttpErrorResponse }             from '@angular/common/http';
-
-type VueActivites = 'kanban' | 'liste' | 'timeline';
+import { PrioriteActiviteService } from '../../../services/priorite-activite.service';
+import { PrioriteActivite }        from '../../../shared/models/priorite-activite.model';
+type VueActivites = 'overview' | 'kanban' | 'liste' | 'timeline';
 
 // Interface interne pour les team leads
 interface TeamLeadInfo {
@@ -41,11 +42,11 @@ interface CalDay { day: number; today: boolean; }
 // Interface pour les données mensuelles du bar chart
 interface MonthData {
   label: string;
-  segments: { statutId: number; label: string; count: number; pct: number }[];
+  segments: { statutId: number; label: string; count: number; pct: number; statutIndex: number }[];
 }
 
 // Interface pour la légende de la jauge
-interface GaugeLegendItem { label: string; couleur: string; pct: number; }
+interface GaugeLegendItem { label: string; couleur: string; ringCouleur: string; pct: number; }
 
 @Component({
   selector: 'app-projet-detail',
@@ -69,20 +70,16 @@ export class ProjetDetailComponent implements OnInit, OnDestroy {
   readonly ui         = inject(UiService);
   readonly perms      = inject(PermissionContextService);
   private notifSvc    = inject(NotificationService);
+  private prioriteSvc = inject(PrioriteActiviteService);
   private fb          = inject(FormBuilder);
-  private subs        = new Subscription();
+private subs        = new Subscription();
 
   // ── CONSTANTES ──
   readonly LINE_W = 300;
   readonly LINE_H = 90;
   readonly CAL_DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
-  readonly PRIORITES = [
-    { value: 1, label: 'Basse',   couleur: '#10b981' },
-    { value: 2, label: 'Normale', couleur: '#3b82f6' },
-    { value: 3, label: 'Haute',   couleur: '#f97316' },
-    { value: 4, label: 'Urgente', couleur: '#ef4444' }
-  ];
+
 
   readonly COULEURS = [
     '#6366f1','#8b5cf6','#ec4899','#ef4444','#f97316',
@@ -90,20 +87,40 @@ export class ProjetDetailComponent implements OnInit, OnDestroy {
   ];
 
   // Couleurs et bordures pour le stacked bar chart (violet, bleu royal, cyan, vert...)
-  private readonly CHART_COLORS  = ['#c026d3','#0d41f6','#00c2ff','#10b981','#f59e0b','#ef4444'];
-  private readonly CHART_BORDERS = ['#4d2c93','#0d32b3','#047fb1','#0d9467','#d97706','#dc2626'];
+// Les couleurs dans CHART_COLORS correspondent à l'ordre des statuts
+// index 0 = primary = premier statut (base de la barre), etc.
+// Les couleurs dans CHART_COLORS correspondent à l'ordre des statuts
+// index 0 = primary = premier statut (base de la barre), etc.
+private readonly CHART_COLORS  = ['var(--accent)','#0d41f6','#00c2ff','#10b981','#f59e0b','#ef4444'];
+private readonly CHART_BORDERS = ['#4d2c93',       '#0d32b3','#047fb1','#0d9467','#d97706','#dc2626'];
 
+// Méthodes par index de statut (pas par ID)
+getStatutChartColor(_s: any, idx: number): string  { return this.CHART_COLORS[idx % this.CHART_COLORS.length]; }
+getStatutChartColorById(_id: number, idx: number): string { return this.CHART_COLORS[idx % this.CHART_COLORS.length]; }
+getStatutChartBorderById(_id: number, idx: number): string { return this.CHART_BORDERS[idx % this.CHART_BORDERS.length]; }
   // ── DONNÉES ──
   projet          = signal<Projet | null>(null);
   activites       = signal<Activite[]>([]);
   commentaires    = signal<Commentaire[]>([]);
   statutsActivite = signal<StatutActivite[]>([]);  // depuis nomenclature, jamais statique
+  priorites = signal<PrioriteActivite[]>([]);
+  vueOverview = signal<'overview' | 'kanban' | 'liste' | 'timeline'>('kanban');
+  ovTasksExpanded = signal(false);
+  editingGroupes = signal(false);
+groupesSelectTemp = signal<number[]>([]);
   statutsProjet   = signal<StatutProjet[]>([]);
   typesProjet     = signal<TypeProjet[]>([]);
   tousGroupes     = signal<Groupe[]>([]);
   documents       = signal<DocModel[]>([]);
   typesDocument   = signal<TypeDocument[]>([]);
 
+
+
+
+
+
+
+  
   // ── ÉTATS UI ──
   loading            = signal(true);
   loadingComments    = signal(false);
@@ -163,8 +180,6 @@ export class ProjetDetailComponent implements OnInit, OnDestroy {
   // ── CALENDRIERS DROPDOWN ──
   chartCalendarOpen = signal(false);
   lineCalendarOpen  = signal(false);
-  chartMonth        = signal(new Date());
-  lineMonth         = signal(new Date());
 
   // ── UTILISATEUR COURANT ──
   currentUserKcId = '';
@@ -176,7 +191,7 @@ export class ProjetDetailComponent implements OnInit, OnDestroy {
     description:     [''],
     couleur:         ['#6366f1'],
     statutActiviteId:[null],
-    priorite:        [2],
+    prioriteId:      [null],        // ← était priorite: [2]
     heuresEstimees:  [null],
     dateEcheance:    [null],
     estGlobale:      [false],
@@ -202,12 +217,12 @@ export class ProjetDetailComponent implements OnInit, OnDestroy {
     if (this.filtreAssigneId())
       list = list.filter(a => a.utilisateurId === +this.filtreAssigneId());
     if (this.filtrePriorite())
-      list = list.filter(a => a.priorite === +this.filtrePriorite());
+      list = list.filter(a => a.prioriteId === +this.filtrePriorite());
     if (this.filtreEcheance())
       list = list.filter(a => a.dateEcheance && a.dateEcheance <= this.filtreEcheance());
     const s = this.sortBy();
     return [...list].sort((a, b) => {
-      if (s === 'priorite') return (b.priorite || 0) - (a.priorite || 0);
+      if (s === 'priorite') return (b.prioriteId || 0) - (a.prioriteId || 0);
       if (s === 'echeance') return (a.dateEcheance || '').localeCompare(b.dateEcheance || '');
       return a.nom.localeCompare(b.nom);
     });
@@ -295,12 +310,44 @@ export class ProjetDetailComponent implements OnInit, OnDestroy {
     return leads;
   });
 
-  /** Jours du calendrier bar chart */
-  chartCalDays = computed(() => this._buildCalDays(this.chartMonth()));
+  // ── CALENDRIER MOIS/ANNÉE (nouveau) ──
+chartYear    = signal<number>(new Date().getFullYear());
+chartMonthIdx = signal<number>(new Date().getMonth()); // 0-11
+lineYear     = signal<number>(new Date().getFullYear());
+lineMonthIdx = signal<number>(new Date().getMonth());
 
-  /** Jours du calendrier line chart */
-  lineCalDays = computed(() => this._buildCalDays(this.lineMonth()));
+chartShowYearPicker = signal(false);
+lineShowYearPicker  = signal(false);
 
+readonly MOIS_LABELS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+readonly MOIS_COMPLETS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+// Labels boutons
+chartMonthLabel(): string {
+  return this.MOIS_COMPLETS[this.chartMonthIdx()] + ' ' + this.chartYear();
+}
+lineMonthLabel(): string {
+  return this.MOIS_COMPLETS[this.lineMonthIdx()] + ' ' + this.lineYear();
+}
+
+// Navigation année
+prevChartYear(): void { this.chartYear.update(y => y - 1); }
+nextChartYear(): void { this.chartYear.update(y => y + 1); }
+prevLineYear():  void { this.lineYear.update(y => y - 1); }
+nextLineYear():  void { this.lineYear.update(y => y + 1); }
+
+// Sélection mois
+selectChartMonth(idx: number): void {
+  this.chartMonthIdx.set(idx);
+  this.chartCalendarOpen.set(false);
+}
+selectLineMonth(idx: number): void {
+  this.lineMonthIdx.set(idx);
+  this.lineCalendarOpen.set(false);
+}
+
+toggleChartYearPicker(): void { this.chartShowYearPicker.set(!this.chartShowYearPicker()); }
+toggleLineYearPicker():  void { this.lineShowYearPicker.set(!this.lineShowYearPicker()); }
   // ════════════════════════════════════════════════════════════
   // LIFECYCLE
   // ════════════════════════════════════════════════════════════
@@ -323,6 +370,16 @@ export class ProjetDetailComponent implements OnInit, OnDestroy {
       next: s => {
         this.statutsActivite.set(s);
         if (s.length) this.actForm.patchValue({ statutActiviteId: s[0].id });
+      }
+    });
+  
+    // ← AJOUTER : charger les priorités depuis la nomenclature
+    this.prioriteSvc.getActives().subscribe({
+      next: p => {
+        this.priorites.set(p);
+        // Pré-sélectionner la priorité "NORMALE" par défaut si elle existe
+        const normale = p.find(pr => pr.code === 'NORMALE');
+        if (normale) this.actForm.patchValue({ prioriteId: normale.id });
       }
     });
 
@@ -359,12 +416,18 @@ export class ProjetDetailComponent implements OnInit, OnDestroy {
   // CHARGEMENT DONNÉES
   // ════════════════════════════════════════════════════════════
 
-  loadActivites(projetId: number): void {
-    if (!this.perms.canSeeAnyActivity()) return;
-    this.activiteSvc.getByProjet(projetId).subscribe({
-      next: a => this.activites.set(a), error: () => {}
-    });
-  }
+// TS — remplacer loadActivites
+// TS — loadActivites simplifié (plus besoin des appels getById)
+loadActivites(projetId: number): void {
+  if (!this.perms.canSeeAnyActivity()) return;
+  this.activiteSvc.getByProjet(projetId).subscribe({
+    next: acts => this.activites.set(acts),
+    error: () => {}
+  });
+}
+
+
+
 
   loadCommentaires(projetId: number): void {
     this.loadingComments.set(true);
@@ -458,8 +521,44 @@ export class ProjetDetailComponent implements OnInit, OnDestroy {
     const val   = this.editingFieldValue();
     const p     = this.projet();
     if (!field || !p) { this.editingField.set(null); return; }
-    this.projetSvc.update(p.id, { [field]: val } as any).subscribe({
-      next: updated => { this.projet.set(updated); this.editingField.set(null); this.ui.success('Modifié ✅'); },
+  
+    // Validation date : fin > début
+    if (field === 'dateFin' && p.dateDebut && val && val < p.dateDebut) {
+      this.ui.error('La date de fin doit être après la date de début.');
+      return;
+    }
+    if (field === 'dateDebut' && p.dateFin && val && val > p.dateFin) {
+      this.ui.error('La date de début doit être avant la date de fin.');
+      return;
+    }
+  
+    // Construire le body complet pour ne pas écraser les autres champs
+    const body: ProjetRequest = {
+      nom:                         p.nom,
+      description:                 p.description,
+      couleur:                     p.couleur,
+      statutProjetId:              p.statutProjetId,
+      typeProjetId:                p.typeProjetId,
+      dateDebut:                   p.dateDebut,
+      dateFin:                     p.dateFin,
+      budgetPrevu:                 p.budgetPrevu,
+      heuresEstimees:              p.heuresEstimees,
+      typeBudget:                  p.typeBudget,
+      seuilAlerteHoraire:          p.seuilAlerteHoraire,
+      visible:                     p.visible,
+      facturable:                  p.facturable,
+      autoriserActivitesGlobales:  p.autoriserActivitesGlobales,
+      avancement:                  p.avancement,
+      groupeIds:                   p.groupes?.map(g => g.id),
+      [field]: val   // ← écrase uniquement le champ modifié
+    };
+  
+    this.projetSvc.update(p.id, body).subscribe({
+      next: updated => {
+        this.projet.set(updated);
+        this.editingField.set(null);
+        this.ui.success('Modifié ✅');
+      },
       error: () => { this.ui.error('Erreur.'); this.editingField.set(null); }
     });
   }
@@ -470,6 +569,7 @@ export class ProjetDetailComponent implements OnInit, OnDestroy {
   // DRAWER ACTIVITÉ
   // ════════════════════════════════════════════════════════════
 
+
   openActDrawer(a: Activite, e: Event): void {
     e.stopPropagation();
     this.selectedActivite.set(a);
@@ -478,6 +578,58 @@ export class ProjetDetailComponent implements OnInit, OnDestroy {
     this.loadActiviteCommentaires(a.id);
     this.loadActiviteDocuments(a.id);
   }
+
+
+
+
+  
+  // ── ÉDITION INLINE ACTIVITÉ (dans le drawer) ──
+editingActField      = signal<string | null>(null);
+editingActFieldValue = signal<any>(null);
+
+/*startEditActField(field: string, currentValue: any): void {
+  this.editingActField.set(field);
+  this.editingActFieldValue.set(currentValue);
+}*/
+
+
+saveActField(): void {
+  const field = this.editingActField();
+  const val   = this.editingActFieldValue();
+  const a     = this.selectedActivite();
+  if (!field || !a) { this.editingActField.set(null); return; }
+
+  // Body complet pour ne pas écraser les autres champs
+  const body: ActiviteRequest = {
+    nom:              a.nom,
+    description:      a.description,
+    couleur:          a.couleur,
+    statutActiviteId: a.statutActiviteId,
+    prioriteId:       a.prioriteId,
+    heuresEstimees:   a.heuresEstimees,
+    heuresPassees:    a.heuresPassees,
+    dateEcheance:     a.dateEcheance,
+    estGlobale:       a.estGlobale,
+    visible:          a.visible,
+    facturable:       a.facturable,
+    utilisateurId:    a.utilisateurId,
+    groupeIds:        a.groupes?.map(g => g.id),
+    [field]: val   // ← écrase uniquement le champ modifié
+  };
+
+  this.activiteSvc.update(a.id, body).subscribe({
+    next: saved => {
+      this.activites.update(l => l.map(x => x.id === saved.id ? saved : x));
+      this.selectedActivite.set(saved);
+      this.editingActField.set(null);
+      this.ui.success('Modifié ✅');
+    },
+    error: () => { this.ui.error('Erreur.'); this.editingActField.set(null); }
+  });
+}
+
+cancelActField(): void { this.editingActField.set(null); }
+
 
   closeActDrawer(): void {
     this.actDrawerOpen.set(false);
@@ -504,13 +656,16 @@ export class ProjetDetailComponent implements OnInit, OnDestroy {
     this.editingActId.set(null);
     const p = this.projet();
     const singleGid = p?.groupes?.length === 1 ? p.groupes[0].id : null;
+    
     this.actForm.reset({
       nom: '', description: '', couleur: '#6366f1',
       statutActiviteId: this.statutsActivite()[0]?.id || null,
-      priorite: 2, heuresEstimees: null, dateEcheance: null,
+      prioriteId: this.priorites().find(p => p.code === 'NORMALE')?.id || null,
+      heuresEstimees: null, dateEcheance: null,
       estGlobale: false, visible: true, facturable: true,
       assigneGroupeId: singleGid, utilisateurId: null
     });
+
     this.slideActOpen.set(true);
   }
 
@@ -518,14 +673,21 @@ export class ProjetDetailComponent implements OnInit, OnDestroy {
     e.stopPropagation();
     if (!this.perms.canEditAnyActivity()) { this.ui.warning('Permission requise.'); return; }
     this.editingActId.set(a.id);
-    this.actForm.patchValue({
-      nom: a.nom, description: a.description || '', couleur: a.couleur || '#6366f1',
-      statutActiviteId: a.statutActiviteId, priorite: a.priorite || 2,
-      heuresEstimees: a.heuresEstimees || null, dateEcheance: a.dateEcheance || null,
-      estGlobale: a.estGlobale || false, visible: a.visible, facturable: a.facturable,
-      utilisateurId: a.utilisateurId || null,
-      assigneGroupeId: (a.groupes && a.groupes.length > 0) ? a.groupes[0].id : null
-    });
+    
+  // APRÈS :
+  this.actForm.patchValue({
+    nom: a.nom, description: a.description || '', couleur: a.couleur || '#6366f1',
+    statutActiviteId: a.statutActiviteId,
+    prioriteId: a.prioriteId || null,          // ← était priorite: a.priorite || 2
+    heuresEstimees: a.heuresEstimees || null, dateEcheance: a.dateEcheance || null,
+    estGlobale: a.estGlobale || false, visible: a.visible, facturable: a.facturable,
+    utilisateurId: a.utilisateurId || null,
+    assigneGroupeId: (a.groupes && a.groupes.length > 0) ? a.groupes[0].id : null
+  });
+
+
+
+
     this.slideActOpen.set(true);
   }
 
@@ -536,7 +698,8 @@ export class ProjetDetailComponent implements OnInit, OnDestroy {
     const raw = this.actForm.getRawValue();
     const body: ActiviteRequest = {
       nom: raw.nom, description: raw.description, couleur: raw.couleur,
-      statutActiviteId: raw.statutActiviteId, priorite: raw.priorite,
+      statutActiviteId: raw.statutActiviteId,
+      prioriteId: raw.prioriteId || undefined,   // ← était priorite: raw.priorite
       heuresEstimees: raw.heuresEstimees, dateEcheance: raw.dateEcheance,
       estGlobale: raw.estGlobale, visible: raw.visible, facturable: raw.facturable,
       utilisateurId: raw.utilisateurId || undefined,
@@ -802,21 +965,14 @@ export class ProjetDetailComponent implements OnInit, OnDestroy {
   // CALENDRIER
   // ════════════════════════════════════════════════════════════
 
-  prevChartMonth(): void { const d = new Date(this.chartMonth()); d.setMonth(d.getMonth() - 1); this.chartMonth.set(d); }
-  nextChartMonth(): void { const d = new Date(this.chartMonth()); d.setMonth(d.getMonth() + 1); this.chartMonth.set(d); }
-  prevLineMonth():  void { const d = new Date(this.lineMonth());  d.setMonth(d.getMonth() - 1); this.lineMonth.set(d); }
-  nextLineMonth():  void { const d = new Date(this.lineMonth());  d.setMonth(d.getMonth() + 1); this.lineMonth.set(d); }
-
-  closeChartCalendar(): void { this.chartCalendarOpen.set(false); }
-  closeLineCalendar():  void { this.lineCalendarOpen.set(false); }
-
-  chartMonthLabel(): string { return this._fmtMonthLabel(this.chartMonth()); }
-  lineMonthLabel():  string { return this._fmtMonthLabel(this.lineMonth()); }
-
+  
   private _fmtMonthLabel(d: Date): string {
     const m = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
     return m[d.getMonth()] + ' ' + d.getFullYear();
   }
+
+  closeChartCalendar(): void { this.chartCalendarOpen.set(false); }
+  closeLineCalendar():  void { this.lineCalendarOpen.set(false); }
 
   private _buildCalDays(date: Date): CalDay[] {
     const y = date.getFullYear(), m = date.getMonth();
@@ -837,70 +993,159 @@ export class ProjetDetailComponent implements OnInit, OnDestroy {
   // ════════════════════════════════════════════════════════════
 
   getYAxisLabels(): number[] {
-    const max = Math.max(this.activites().length, 5);
-    const step = Math.ceil(max / 4 / 5) * 5 || 5;
+    const total = this.activites().length;
+    
+    // Si moins de 5 activités : plafonner à 5 et afficher 0,1,2,3,4,5
+    if (total <= 5) {
+      return [5, 4, 3, 2, 1, 0];
+    }
+    
+    // Sinon : plafonner au nombre total d'activités, 5 paliers
+    const step = Math.ceil(total / 10);
+    
     const labels: number[] = [];
-    for (let v = 0; v <= step * 4; v += step) labels.push(v);
-    return labels.reverse();
+    for (let i = 5; i >= 0; i--) {
+      labels.push(i * step);
+    }
+    return labels;
   }
+  
 
-  getMonthlyData(): MonthData[] {
-    const mois = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
-    const y = this.chartMonth().getFullYear();
-    const statuts = this.statutsActivite();
-    const acts = this.activites();
-    const yLabels = this.getYAxisLabels();
-    const yMax = yLabels[yLabels.length - 1] || 1;  // min value (reversed) = max
 
-    return mois.map((lbl, mi) => {
-      const segments = statuts.map(s => {
-        const count = acts.filter(a => {
-          if (!a.dateCreation) return false;
-          const dt = new Date(a.dateCreation);
-          return dt.getFullYear() === y && dt.getMonth() === mi && a.statutActiviteId === s.id;
-        }).length;
-        return { statutId: s.id, label: s.libelle, count, pct: yMax > 0 ? (count / yMax) * 100 : 0 };
-      }).filter(seg => seg.count > 0);
-      return { label: lbl, segments };
-    });
-  }
+  
+  // Même méthode pour le line chart
+  getLineYLabels(): number[] { return this.getYAxisLabels(); }
 
-  getStatutChartColor(_s: any, idx: number): string  { return this.CHART_COLORS[idx % this.CHART_COLORS.length]; }
-  getStatutChartColorById(_id: number, idx: number): string { return this.CHART_COLORS[idx % this.CHART_COLORS.length]; }
-  getStatutChartBorderById(_id: number, idx: number): string { return this.CHART_BORDERS[idx % this.CHART_BORDERS.length]; }
 
+
+
+
+getMonthlyData(): MonthData[] {
+  const y = this.chartYear();
+  // on filtre par année choisie, mais on affiche les 12 mois
+  const statuts = this.statutsActivite();
+  const acts = this.activites();
+  const yLabels = this.getYAxisLabels();
+  const yMax = yLabels[0] || 1;
+
+  return this.MOIS_LABELS.map((lbl, mi) => {
+
+
+
+   // Dans getMonthlyData(), modifier la construction des segments :
+const segments = statuts.map((s, si) => {
+  const count = acts.filter(a => {
+    if (!a.dateCreation) return false;
+    const dt = new Date(a.dateCreation);
+    return dt.getFullYear() === y && dt.getMonth() === mi && a.statutActiviteId === s.id;
+  }).length;
+  return {
+    statutId: s.id,
+    label: s.libelle,
+    count,
+    statutIndex: si,  // ← INDEX ORIGINAL conservé pour la couleur
+    pct: yMax > 0 ? (count / yMax) * 100 : 0
+  };
+}).filter(seg => seg.count > 0);
+    return { label: lbl, segments };
+  });
+}
+
+
+
+
+
+
+  
   // ════════════════════════════════════════════════════════════
   // DASHBOARDS — LINE CHART
   // ════════════════════════════════════════════════════════════
 
-  getLineYLabels(): number[] { return this.getYAxisLabels(); }
 
-  getLineXLabels2(): string[] {
-    const d = this.lineMonth();
-    const m = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'][d.getMonth()];
-    return [`${m}1`, `${m}8`, `${m}16`, `${m}24`, `${m}31`];
+  
+
+
+
+
+// Remplacer getLinePoints2() :
+getLinePoints2(): { x: number; y: number }[] {
+  const y = this.lineYear();
+  const m = this.lineMonthIdx();
+
+  // Générer les points sur 1.5 mois : mois courant + moitié du mois suivant
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const nextM = m === 11 ? 0 : m + 1;
+  const nextY = m === 11 ? y + 1 : y;
+  const daysInNextMonth = new Date(nextY, nextM + 1, 0).getDate();
+
+  // Points : semaines du mois courant (par 8) + début du mois suivant
+  const points: { label: string; year: number; month: number; day: number }[] = [];
+  for (let d = 1; d <= daysInMonth; d += 8) {
+    points.push({ label: `${this.MOIS_LABELS[m]}${d}`, year: y, month: m, day: d });
+  }
+  // Ajouter le dernier jour du mois courant s'il n'est pas déjà là
+  if (points[points.length - 1]?.day !== daysInMonth) {
+    points.push({ label: `${this.MOIS_LABELS[m]}${daysInMonth}`, year: y, month: m, day: daysInMonth });
+  }
+  // Ajouter les points du mois suivant (par 8 jusqu'à la moitié)
+  const halfNext = Math.floor(daysInNextMonth / 2);
+  for (let d = 1; d <= halfNext; d += 8) {
+    points.push({ label: `${this.MOIS_LABELS[nextM]}${d}`, year: nextY, month: nextM, day: d });
   }
 
-  getLinePoints2(): { x: number; y: number }[] {
-    const d = this.lineMonth();
-    const y = d.getFullYear(), m = d.getMonth();
-    const weeks = [1, 8, 16, 24, 31];
-    const yLabels = this.getYAxisLabels();
-    const yMax = yLabels[yLabels.length - 1] || 1;
-    const counts = weeks.map((w, i) => {
-      const end = i < weeks.length - 1 ? weeks[i + 1] - 1 : 31;
-      return this.activites().filter(a => {
-        if (!a.dateCreation) return false;
-        const dt = new Date(a.dateCreation);
-        return dt.getFullYear() === y && dt.getMonth() === m && dt.getDate() >= w && dt.getDate() <= end;
-      }).length;
-    });
-    return weeks.map((_, i) => ({
-      x: 10 + (i / (weeks.length - 1)) * (this.LINE_W - 20),
-      y: this.LINE_H - 10 - (yMax > 0 ? (counts[i] / yMax) * (this.LINE_H - 20) : 0)
-    }));
-  }
+  const yLabels = this.getYAxisLabels();
+  const yMax = yLabels[0] || 1;
 
+  // Compter les activités TERMINÉES (statutActiviteId === 4) par période
+  const counts = points.map((pt, i) => {
+    const start = i === 0 ? 1 : points[i - 1].day + 1;
+    // pour simplifier : compter les activités terminées dont dateCreation est dans cette période
+    return this.activites().filter(a => {
+      if (a.statutActiviteId !== 4) return false;
+      if (!a.dateCreation) return false;
+      const dt = new Date(a.dateCreation);
+      return dt.getFullYear() === pt.year &&
+             dt.getMonth() === pt.month &&
+             dt.getDate() >= start &&
+             dt.getDate() <= pt.day;
+    }).length;
+  });
+
+  return points.map((_, i) => ({
+    x: 10 + (i / Math.max(points.length - 1, 1)) * (this.LINE_W - 20),
+    y: this.LINE_H - 10 - (yMax > 0 ? (counts[i] / yMax) * (this.LINE_H - 20) : 0)
+  }));
+}
+
+// Remplacer getLineXLabels2() :
+getLineXLabels2(): string[] {
+  const m = this.lineMonthIdx();
+  const y = this.lineYear();
+  const nextM = m === 11 ? 0 : m + 1;
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+
+  const labels: string[] = [];
+  for (let d = 1; d <= daysInMonth; d += 8) {
+    labels.push(`${this.MOIS_LABELS[m]}${d}`);
+  }
+  if (labels[labels.length - 1] !== `${this.MOIS_LABELS[m]}${daysInMonth}`) {
+    labels.push(`${this.MOIS_LABELS[m]}${daysInMonth}`);
+  }
+  const halfNext = Math.floor(new Date(m === 11 ? y + 1 : y, nextM + 1, 0).getDate() / 2);
+  for (let d = 1; d <= halfNext; d += 8) {
+    labels.push(`${this.MOIS_LABELS[nextM]}${d}`);
+  }
+  return labels;
+}
+
+
+
+
+
+
+
+
+  
   getLinePath2(): string {
     const pts = this.getLinePoints2();
     if (!pts.length) return '';
@@ -918,19 +1163,36 @@ export class ProjetDetailComponent implements OnInit, OnDestroy {
   // DASHBOARDS — JAUGE SEMI-CIRCULAIRE
   // ════════════════════════════════════════════════════════════
 
+   readonly GAUGE_COLORS = [
+    { colorClass: 'pd5-color-primary',     hex: 'var(--accent)' },
+    { colorClass: 'pd5-color-secondary',   hex: '#0d41f6'       },
+    { colorClass: 'pd5-color-tertiary',    hex: '#00c2ff'       },
+    { colorClass: 'pd5-color-quaternary',  hex: '#10b981'       },
+    { colorClass: 'pd5-color-quinary',     hex: '#f59e0b'       },
+    { colorClass: 'pd5-color-senary',      hex: '#ef4444'       },
+  ];
+
+
+
   getGaugeLegend(): GaugeLegendItem[] {
+    const items = this.getPrioritesByCount();
     const total = this.activites().length;
-    const colors = ['#c026d3', '#0d41f6', '#00c2ff', '#10b981'];
-    return this.PRIORITES.map((p, i) => ({
-      label: p.label,
-      couleur: colors[i] || p.couleur,
-      pct: total > 0 ? Math.round((this.activites().filter(a => a.priorite === p.value).length / total) * 100) : 0
-    })).sort((a, b) => b.pct - a.pct);
+    
+    return items.map((item, i) => ({
+      label: item.priorite.libelle,
+      couleur: item.priorite.couleur,
+      ringCouleur: this.GAUGE_COLORS[i % this.GAUGE_COLORS.length].hex,
+      pct: total > 0 ? Math.round((item.count / total) * 100) : 0
+    }));
   }
+  
+  
+
+
 
   getGaugeDash(rankIndex: number, r: number): string {
-    const sorted = [...this.PRIORITES]
-      .map(p => ({ v: p.value, count: this.activites().filter(a => a.priorite === p.value).length }))
+    const sorted = [...this.priorites()]
+      .map(p => ({ id: p.id, count: this.activites().filter(a => a.prioriteId === p.id).length }))
       .sort((a, b) => b.count - a.count);
     const item = sorted[rankIndex];
     if (!item) return '0 999';
@@ -940,12 +1202,17 @@ export class ProjetDetailComponent implements OnInit, OnDestroy {
     return `${fill.toFixed(2)} 999`;
   }
 
+
+
   // ════════════════════════════════════════════════════════════
   // HELPERS KPI
   // ════════════════════════════════════════════════════════════
 
   countHautePriorite(): number {
-    return this.activites().filter(a => a.priorite >= 3).length;
+    const highIds = this.priorites()
+      .filter(p => ['HAUTE', 'URGENTE'].includes(p.code))
+      .map(p => p.id);
+    return this.activites().filter(a => highIds.includes(a.prioriteId || 0)).length;
   }
   getCountByStatut(statutId: number): number {
     return this.activites().filter(a => a.statutActiviteId === statutId).length;
@@ -958,10 +1225,14 @@ export class ProjetDetailComponent implements OnInit, OnDestroy {
     const t = this.activites().length;
     return t ? Math.round((count / t) * 100) : 0;
   }
-  getPctPriorite(v: number): number {
+
+
+   getPctPriorite(id: number): number {
     const t = this.activites().length;
-    return t ? Math.round((this.activites().filter(a => a.priorite === v).length / t) * 100) : 0;
+    return t ? Math.round((this.activites().filter(a => a.prioriteId === id).length / t) * 100) : 0;
   }
+
+
   minVal(a: number, b: number): number { return Math.min(a, b); }
 
   // ════════════════════════════════════════════════════════════
@@ -974,8 +1245,10 @@ export class ProjetDetailComponent implements OnInit, OnDestroy {
   getStatutProjetColor(id?: number): string { return this.statutsProjet().find(s => s.id === id)?.couleur || '#94a3b8'; }
   getStatutProjetLabel(id?: number): string  { return this.statutsProjet().find(s => s.id === id)?.libelle || '—'; }
   getTypeProjetLabel(id?: number): string    { return this.typesProjet().find(t => t.id === id)?.libelle || '—'; }
-  getPriorite(v: number) { return this.PRIORITES.find(p => p.value === v); }
-
+  getPriorite(id?: number): PrioriteActivite | undefined {
+    if (!id) return undefined;
+    return this.priorites().find(p => p.id === id);
+  }
   getProgressPct(p?: number, e?: number): number {
     if (!e) return 0;
     return Math.min(100, Math.round(((p || 0) / e) * 100));
@@ -1021,36 +1294,203 @@ export class ProjetDetailComponent implements OnInit, OnDestroy {
   // DASHBOARDS — JAUGE CONCENTRIQUE (cercles complets)
   // ════════════════════════════════════════════════════════════
 
-  /** Calcule stroke-dasharray pour un cercle complet
-   *  index : 0=extérieur(violet), 1=bleu, 2=cyan, 3=vert(centre)
-   *  radius : rayon du cercle
-   */
-  getGaugeDashFull(index: number, radius: number): string {
-    const total = 2 * Math.PI * radius;     // circonférence complète
-    const pct = this.getGaugePct(index);     // pourcentage à afficher (0-100)
-    const visible = total * (pct / 100);     // longueur visible du trait
-    return `${visible.toFixed(2)} ${total}`; // "visible total" → le reste est masqué
+
+getGaugeDashFull(index: number, radius: number): string {
+  const total = 2 * Math.PI * radius;
+  const pct = this.getGaugePct(index);
+  const visible = total * (pct / 100);
+  return `${visible.toFixed(2)} ${total}`;
+}
+
+// Retourne les priorités qui ont au moins 1 activité, triées par count décroissant
+private getPrioritesByCount(): { priorite: PrioriteActivite; count: number; terminées: number }[] {
+  const STATUT_TERMINE_ID = 4; // ID du statut "Terminé" en BD
+  return [...this.priorites()]
+    .map(p => ({
+      priorite: p,
+      count: this.activites().filter(a => a.prioriteId === p.id).length,
+      terminées: this.activites().filter(a => a.prioriteId === p.id && a.statutActiviteId === STATUT_TERMINE_ID).length
+    }))
+    .filter(item => item.count > 0)
+    .sort((a, b) => b.count - a.count);
+}
+
+// Taux de complétion : terminées / total pour cette priorité (dénominateur indépendant)
+getGaugePct(index: number): number {
+  const items = this.getPrioritesByCount();
+  const item = items[index];
+  if (!item || item.count === 0) return 0;
+  return Math.round((item.terminées / item.count) * 100);
+}
+
+
+
+getGaugeRings(): { r: number; colorClass: string; count: number; label: string; terminées: number }[] {
+  const items = this.getPrioritesByCount();
+  if (items.length === 0) return [];
+  const outerR = 84;
+  const STEP = 12;
+  const minInnerR = outerR - (items.length - 1) * STEP;
+  const effectiveOuterR = minInnerR < 15 ? outerR + (15 - minInnerR) : outerR;
+  return items.map((item, i) => ({
+    r: effectiveOuterR - i * STEP,
+    colorClass: this.GAUGE_COLORS[i % this.GAUGE_COLORS.length].colorClass,
+    count: item.count,
+    terminées: item.terminées,
+    label: item.priorite.libelle
+  }));
+}
+
+/** Nombre de membres distincts dans tous les groupes du projet */
+getNombreMembresDistincts(): number {
+  const seen = new Set<number>();
+  for (const g of this.groupesProjet()) {
+    const full = this.tousGroupes().find(gr => gr.id === g.id);
+    for (const m of (full?.membres as any[]) || []) {
+      seen.add(m.id);
+    }
   }
+  return seen.size;
+}
+
 
   /** Calcule le pourcentage pour chaque anneau (par priorité)
    *  Retourne 0-100 selon la proportion d'activités
    */
-  private getGaugePct(index: number): number {
-    const total = this.activites().length;
-    if (total === 0) return 0;
-    
-    // Trie les priorités par nombre d'activités décroissant
-    const sorted = [...this.PRIORITES]
-      .map(p => ({ 
-        value: p.value, 
-        count: this.activites().filter(a => a.priorite === p.value).length 
-      }))
-      .sort((a, b) => b.count - a.count);
-    
-    const item = sorted[index];
-    if (!item) return 0;
-    
-    return Math.round((item.count / total) * 100);
+ // APRÈS : index correspond directement à l'ordre des priorites() (pas de sort)
+ 
+
+
+
+
+
+// AVANT (distance irrégulière, ordre non garanti) :
+// APRÈS — distance fixe de 13px, couleurs toujours en ordre primary→secondary→...
+
+
+
+/** Activités modifiées cette semaine */
+getActivitesRecentWeek(): Activite[] {
+  const now  = new Date();
+  const week = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  return this.activites()
+    .filter(a => a.dateMiseAJour && new Date(a.dateMiseAJour) >= week)
+    .slice(0, 8);
+}
+
+/** Nombre de jours depuis dateDebut */
+getNombreJours(): number {
+  const p = this.projet();
+  if (!p?.dateDebut) return 0;
+  const debut = new Date(p.dateDebut);
+  const fin   = p.dateFin ? new Date(p.dateFin) : new Date();
+  return Math.max(0, Math.ceil((fin.getTime() - debut.getTime()) / (1000 * 60 * 60 * 24)));
+}
+
+
+getYearRange(): number[] {
+  const current = new Date().getFullYear();
+  const result: number[] = [];
+  for (let y = current - 3; y <= current + 2; y++) result.push(y);
+  return result;
+}
+
+getActivitesFiltreesOverview(): Activite[] {
+  const all = this.getActivitesRecentWeek();
+  return this.ovTasksExpanded() ? all : all.slice(0, 6);
+}
+toggleOvTasks(): void { this.ovTasksExpanded.update(v => !v); }
+
+
+
+
+startEditGroupes(p: any): void {
+  this.groupesSelectTemp.set(p.groupes?.map((g: any) => g.id) || []);
+  this.editingGroupes.set(true);
+}
+removeGroupeTemp(id: number): void {
+  this.groupesSelectTemp.update(ids => ids.filter(i => i !== id));
+}
+addGroupeTemp(id: number): void {
+  if (!this.groupesSelectTemp().includes(id))
+    this.groupesSelectTemp.update(ids => [...ids, id]);
+}
+saveGroupes(): void {
+  const p = this.projet();
+  if (!p) return;
+  const body: any = {
+    nom: p.nom, statutProjetId: p.statutProjetId,
+    dateDebut: p.dateDebut, dateFin: p.dateFin,
+    groupeIds: this.groupesSelectTemp()
+  };
+  this.projetSvc.update(p.id, body).subscribe({
+    next: updated => {
+      this.projet.set(updated);
+      this.editingGroupes.set(false);
+      this.ui.success('Équipes mises à jour ✅');
+    },
+    error: () => this.ui.error('Erreur.')
+  });
+}
+cancelEditGroupes(): void { this.editingGroupes.set(false); }
+
+// Groupes non encore assignés au projet
+groupesDisponibles(): any[] {
+  const assignes = this.groupesSelectTemp();
+  return this.tousGroupes().filter(g => !assignes.includes(g.id));
+}
+getRestUsersTooltip(users: any[]): string {
+  return users.map(u => u.nomComplet).join(', ');
+}
+
+// Signal temporaire pour l'édition multi
+assigneMultiTemp = signal<number[]>([]);
+
+startEditActField(field: string, currentValue: any): void {
+  this.editingActField.set(field);
+  this.editingActFieldValue.set(currentValue);
+  // Si on édite l'assignation, initialiser le multi-select
+  if (field === 'utilisateurId') {
+    const a = this.selectedActivite();
+    const ids = a?.utilisateurs?.map(u => u.id) || 
+                (a?.utilisateurId ? [a.utilisateurId] : []);
+    this.assigneMultiTemp.set(ids);
   }
+}
+
+isAssigneMulti(id: number): boolean {
+  return this.assigneMultiTemp().includes(id);
+}
+
+toggleAssigneMulti(id: number): void {
+  this.assigneMultiTemp.update(ids =>
+    ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id]
+  );
+}
+
+saveActFieldMulti(): void {
+  const a = this.selectedActivite();
+  if (!a) return;
+  const ids = this.assigneMultiTemp();
+  const body: ActiviteRequest = {
+    nom: a.nom, description: a.description, couleur: a.couleur,
+    statutActiviteId: a.statutActiviteId, prioriteId: a.prioriteId,
+    heuresEstimees: a.heuresEstimees, heuresPassees: a.heuresPassees,
+    dateEcheance: a.dateEcheance, estGlobale: a.estGlobale,
+    visible: a.visible, facturable: a.facturable,
+    utilisateurId: ids.length > 0 ? ids[0] : undefined,
+    utilisateurIds: ids,
+    groupeIds: a.groupes?.map(g => g.id)
+  };
+  this.activiteSvc.update(a.id, body).subscribe({
+    next: saved => {
+      this.activites.update(l => l.map(x => x.id === saved.id ? saved : x));
+      this.selectedActivite.set(saved);
+      this.editingActField.set(null);
+      this.ui.success('Modifié ✅');
+    },
+    error: () => { this.ui.error('Erreur.'); this.editingActField.set(null); }
+  });
+}
 
 }

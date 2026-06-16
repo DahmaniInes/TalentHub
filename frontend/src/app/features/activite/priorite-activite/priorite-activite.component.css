@@ -1,0 +1,97 @@
+/* ================================================================
+   priorite-activite.component.css
+   Styles spécifiques au composant (complète les classes dt-* globales)
+================================================================ */
+
+/* Wrapper page — fond bg-primary */
+.pa-page {
+    padding: 24px 28px;
+    background: var(--bg-primary);
+    min-height: 100vh;
+  }
+  
+  /* Badges compteurs dans le header */
+  .pa-header-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+  
+  /* Pastille couleur dans la colonne "Couleur" */
+  .pa-color-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    flex-shrink: 0;
+  }
+  
+  /* Bouton toggle actif/inactif (style badge cliquable) */
+  .pa-toggle-btn {
+    border: none;
+    cursor: pointer;
+    padding: 3px 8px;
+    font-weight: 600;
+  }
+  
+  /* Description tronquée sur 2 lignes */
+  .pa-desc-cell {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    max-width: 260px;
+  }
+  
+  /* Grille de pastilles couleur dans le slide-over */
+  .pa-color-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  
+  /* Bouton pastille couleur */
+  .pa-color-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    outline: none;
+    transition: all .15s;
+    border: 3px solid transparent;
+  }
+  
+  /* Pastille sélectionnée */
+  .pa-color-btn-active {
+    border-color: var(--text-primary);
+    transform: scale(1.1);
+  }
+  
+  /* Ligne aperçu couleur + input hex */
+  .pa-color-preview-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  
+  /* Input type=color personnalisé */
+  .pa-color-input {
+    width: 40px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background: none;
+    padding: 0;
+  }
+  
+  /* Message d'erreur de validation */
+  .pa-form-error {
+    font-size: .7rem;
+    color: #ef4444;
+    margin-top: 3px;
+    display: block;
+  }

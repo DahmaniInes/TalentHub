@@ -44,6 +44,8 @@ import { StatutProjetComponent } from './projet/statut-projet/statut-projet.comp
 import { TypeProjetComponent } from './projet/type-projet/type-projet.component';
 import { StatutStageComponent } from './stage/statut-stage/statut-stage.component';
 
+import { PrioriteActiviteComponent } from './activite/priorite-activite/priorite-activite.component';
+
 
 
 
@@ -148,6 +150,11 @@ const routes: Routes = [
 {
   path: 'statuts-stage',
   component: StatutStageComponent
+},
+
+{
+  path: 'activite-priorite',
+  component: PrioriteActiviteComponent   
 }
 
 ];

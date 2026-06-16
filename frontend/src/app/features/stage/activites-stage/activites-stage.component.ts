@@ -1,3 +1,4 @@
+// activites-stage.component.ts — COMPLET — priorite → prioriteId
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -11,6 +12,9 @@ import { PermissionContextService } from '../../../services/permission-context.s
 import { UiService }                from '../../../services/ui.service';
 import { ProjetService }            from '../../../services/projet.service';
 import { StatutActiviteService }    from '../../../services/statutactivite.service';
+// ← AJOUT
+import { PrioriteActiviteService }  from '../../../services/priorite-activite.service';
+import { PrioriteActivite }         from '../../../shared/models/priorite-activite.model';
 
 import { Activite, ActiviteRequest } from '../../../shared/models/activite.model';
 import { Projet }                    from '../../../shared/models/projet.model';
@@ -25,31 +29,32 @@ import { StatutActivite }            from '../../../shared/models/statut-activit
 })
 export class ActivitesStageComponent implements OnInit {
 
-  private svc       = inject(ProjetStageService);
-  private projetSvc = inject(ProjetService);
-  private stagSvc   = inject(StagiaireService);
-  private userSvc   = inject(UserService);
-  private keycloak  = inject(KeycloakService);
-  private nomencSvc = inject(StatutActiviteService);
-  readonly perms    = inject(PermissionContextService);
-  readonly ui       = inject(UiService);
-  private router    = inject(Router);
+  private svc         = inject(ProjetStageService);
+  private projetSvc   = inject(ProjetService);
+  private stagSvc     = inject(StagiaireService);
+  private userSvc     = inject(UserService);
+  private keycloak    = inject(KeycloakService);
+  private nomencSvc   = inject(StatutActiviteService);
+  // ← AJOUT
+  private prioriteSvc = inject(PrioriteActiviteService);
+  readonly perms      = inject(PermissionContextService);
+  readonly ui         = inject(UiService);
+  private router      = inject(Router);
 
   activites       = signal<Activite[]>([]);
   projets         = signal<Projet[]>([]);
   stagiaires      = signal<Utilisateur[]>([]);
   statutsActivite = signal<StatutActivite[]>([]);
+  // ← AJOUT : signal dynamique (remplace PRIORITES statique)
+  priorites       = signal<PrioriteActivite[]>([]);
   loading         = signal(false);
   saving          = signal(false);
 
   currentUserId     = signal<number | null>(null);
   currentUserProfil = signal<string>('');
 
-  // ✅ filterStatut garde le code String (A_FAIRE, EN_COURS, TERMINE)
-  // utilisé dans le template via les badges cliquables du header
   filterStatut   = signal('');
   filterProjetId = signal<number | ''>('');
-  // filterStatutId utilisé dans le panel filtre
   filterStatutId = signal<number | ''>('');
   filterOpen     = signal(false);
   search         = signal('');
@@ -62,7 +67,8 @@ export class ActivitesStageComponent implements OnInit {
 
   form = signal<ActiviteRequest & { assigneId?: number }>({
     nom: '', description: '', couleur: '#10b981',
-    statutActiviteId: undefined, priorite: 2,
+    statutActiviteId: undefined,
+    prioriteId: undefined,    // ← MODIFIÉ : était priorite: 2
     estGlobale: false, visible: true, facturable: true
   });
 
@@ -74,17 +80,14 @@ export class ActivitesStageComponent implements OnInit {
         a.nom.toLowerCase().includes(q) ||
         (a.projets?.[0]?.nom || '').toLowerCase().includes(q));
 
-    // Filtre par code String (depuis les badges du header)
     if (this.filterStatut()) {
       list = list.filter(a => {
         const code = this.statutsActivite().find(s => s.id === a.statutActiviteId)?.code;
         return code === this.filterStatut();
       });
     }
-    // Filtre par ID (depuis le panel filtre)
     if (this.filterStatutId())
       list = list.filter(a => a.statutActiviteId === +this.filterStatutId());
-
     if (this.filterProjetId())
       list = list.filter(a => a.projets?.some(p => p.id === +this.filterProjetId()));
 
@@ -105,7 +108,6 @@ export class ActivitesStageComponent implements OnInit {
       !!this.filterStatut() || !!this.filterStatutId() ||
       !!this.filterProjetId() || !!this.search());
 
-  // ✅ Stats via codes depuis statutsActivite
   statsAFaire = computed(() => this.activites().filter(a => {
     const s = this.statutsActivite().find(st => st.id === a.statutActiviteId);
     return s?.code === 'A_FAIRE';
@@ -135,6 +137,16 @@ export class ActivitesStageComponent implements OnInit {
         this.statutsActivite.set(d);
         const defaut = d[0]?.id;
         this.form.update(f => ({ ...f, statutActiviteId: defaut }));
+      }
+    });
+
+    // ← AJOUT : charger les priorités depuis la nomenclature
+    this.prioriteSvc.getActives().subscribe({
+      next: p => {
+        this.priorites.set(p);
+        // Pré-sélectionner NORMALE par défaut
+        const norm = p.find(pr => pr.code === 'NORMALE');
+        if (norm) this.form.update(f => ({ ...f, prioriteId: norm.id }));
       }
     });
 
@@ -172,9 +184,11 @@ export class ActivitesStageComponent implements OnInit {
   openCreate(): void {
     this.editingId.set(null);
     const defaut = this.statutsActivite()[0]?.id;
+    const norm   = this.priorites().find(p => p.code === 'NORMALE');
     this.form.set({
       nom: '', description: '', couleur: '#10b981',
-      statutActiviteId: defaut, priorite: 2,
+      statutActiviteId: defaut,
+      prioriteId: norm?.id || undefined,   // ← MODIFIÉ
       estGlobale: false, visible: true, facturable: true,
       assigneId: undefined
     });
@@ -189,7 +203,7 @@ export class ActivitesStageComponent implements OnInit {
       description:      a.description || '',
       couleur:          a.couleur || '#10b981',
       statutActiviteId: a.statutActiviteId,
-      priorite:         a.priorite || 2,
+      prioriteId:       a.prioriteId || undefined,  // ← MODIFIÉ : était priorite: a.priorite || 2
       estGlobale:       a.estGlobale || false,
       visible:          a.visible,
       facturable:       a.facturable,
@@ -211,7 +225,7 @@ export class ActivitesStageComponent implements OnInit {
       description:      f.description,
       couleur:          f.couleur,
       statutActiviteId: f.statutActiviteId,
-      priorite:         f.priorite,
+      prioriteId:       f.prioriteId,       // ← MODIFIÉ : était priorite: f.priorite
       estGlobale:       f.estGlobale,
       visible:          f.visible ?? true,
       facturable:       f.facturable ?? true,
@@ -260,7 +274,6 @@ export class ActivitesStageComponent implements OnInit {
     });
   }
 
-  // ✅ Navigue vers le projet via projets[0].id
   goToProjet(a: Activite, e: Event): void {
     e.stopPropagation();
     const projetId = a.projets?.[0]?.id;

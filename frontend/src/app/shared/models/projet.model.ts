@@ -4,6 +4,8 @@ export interface GroupeInfo {
   couleur: string;
   nombreMembres: number;
   nombreProjetsActifs: number;
+  teamLeadId?: number;
+  membres?: any[];   // enrichi par groupesProjet() computed via tousGroupes
 }
 
 export interface StagiaireMembreDTO {

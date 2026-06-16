@@ -1,4 +1,4 @@
-// activites-global.component.ts — COMPLET avec permissions
+// activites-global.component.ts — COMPLET — priorite → prioriteId
 import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -13,6 +13,9 @@ import { ErrorService }             from '../../../services/error.service';
 import { GroupeService }            from '../../../services/groupe.service';
 import { PermissionContextService } from '../../../services/permission-context.service';
 import { NotificationService }      from '../../../services/notification.service';
+// ← AJOUT
+import { PrioriteActiviteService }  from '../../../services/priorite-activite.service';
+import { PrioriteActivite }         from '../../../shared/models/priorite-activite.model';
 
 import { Activite, ActiviteRequest } from '../../../shared/models/activite.model';
 import { StatutActivite }            from '../../../shared/models/statut-activite.model';
@@ -31,28 +34,30 @@ type FiltreVue = 'toutes' | 'globales' | 'projets';
 })
 export class ActivitesGlobalComponent implements OnInit, OnDestroy {
 
-  private activiteSvc = inject(ActiviteService);
-  private nomencSvc   = inject(StatutActiviteService);
-  private userSvc     = inject(UserService);
-  private groupeSvc   = inject(GroupeService);
-  private errorSvc    = inject(ErrorService);
-  private router      = inject(Router);
-  readonly ui         = inject(UiService);
-  readonly Math       = Math;
-
-  // ✅ NOUVEAU
-  readonly perms   = inject(PermissionContextService);
-  private notifSvc = inject(NotificationService);
-  private subs     = new Subscription();
+  private activiteSvc   = inject(ActiviteService);
+  private nomencSvc     = inject(StatutActiviteService);
+  private userSvc       = inject(UserService);
+  private groupeSvc     = inject(GroupeService);
+  private errorSvc      = inject(ErrorService);
+  private router        = inject(Router);
+  // ← AJOUT
+  private prioriteSvc   = inject(PrioriteActiviteService);
+  readonly ui           = inject(UiService);
+  readonly Math         = Math;
+  readonly perms        = inject(PermissionContextService);
+  private notifSvc      = inject(NotificationService);
+  private subs          = new Subscription();
 
   // ── Données ──
   activites       = signal<Activite[]>([]);
   statutsActivite = signal<StatutActivite[]>([]);
   utilisateurs    = signal<Utilisateur[]>([]);
   tousGroupes     = signal<Groupe[]>([]);
+  // ← AJOUT : signal dynamique (remplace PRIORITES statique)
+  priorites       = signal<PrioriteActivite[]>([]);
 
   // ── UI ──
-  loading         = signal(true);
+  loading         = signal(false);
   showModal       = signal(false);
   editingActivite = signal<Activite | null>(null);
   filterPanelOpen = signal(false);
@@ -61,6 +66,7 @@ export class ActivitesGlobalComponent implements OnInit, OnDestroy {
   search         = signal('');
   filterVue      = signal<FiltreVue>('toutes');
   filterStatut   = signal<number | ''>('');
+  // ← MODIFIÉ : filtre par prioriteId (number = id en base)
   filterPriorite = signal<number | ''>('');
 
   // ── Pagination ──
@@ -75,7 +81,8 @@ export class ActivitesGlobalComponent implements OnInit, OnDestroy {
   form = signal<ActiviteRequest>({
     nom: '', description: '', couleur: '#10b981',
     statutActiviteId: 1, typeBudget: 'ILLIMITE',
-    visible: true, facturable: true, priorite: 2,
+    visible: true, facturable: true,
+    prioriteId: undefined,   // ← était priorite: 2
     estGlobale: false
   });
   formGroupeIds = signal<number[]>([]);
@@ -85,12 +92,9 @@ export class ActivitesGlobalComponent implements OnInit, OnDestroy {
     '#6366f1','#8b5cf6','#c026d3','#ec4899','#ef4444',
     '#f97316','#eab308','#22c55e','#10b981','#06b6d4','#3b82f6','#64748b'
   ];
-  readonly PRIORITES = [
-    { value: 1, label: 'Basse',   couleur: '#10b981' },
-    { value: 2, label: 'Normale', couleur: '#3b82f6' },
-    { value: 3, label: 'Haute',   couleur: '#f97316' },
-    { value: 4, label: 'Urgente', couleur: '#ef4444' }
-  ];
+
+  // ← SUPPRIMÉ : readonly PRIORITES = [...] — remplacé par priorites signal
+
   private readonly STATUT_CODE_MAP: Record<string, string> = {
     'A_FAIRE':  'dt-status-a-faire',
     'EN_COURS': 'dt-status-en-cours',
@@ -107,7 +111,8 @@ export class ActivitesGlobalComponent implements OnInit, OnDestroy {
     if (this.filterVue() === 'globales') list = list.filter(a => a.estGlobale);
     if (this.filterVue() === 'projets')  list = list.filter(a => a.projets && a.projets.length > 0);
     if (this.filterStatut())   list = list.filter(a => a.statutActiviteId === +this.filterStatut());
-    if (this.filterPriorite()) list = list.filter(a => a.priorite === +this.filterPriorite());
+    // ← MODIFIÉ : filtre sur prioriteId
+    if (this.filterPriorite()) list = list.filter(a => a.prioriteId === +this.filterPriorite());
     if (q) list = list.filter(a =>
       a.nom.toLowerCase().includes(q) ||
       (a.utilisateurNomComplet || '').toLowerCase().includes(q) ||
@@ -151,7 +156,7 @@ export class ActivitesGlobalComponent implements OnInit, OnDestroy {
     }
     this.loadAll();
 
-    // ✅ Notifications temps réel
+    // Temps réel
     this.subs.add(this.notifSvc.newNotification$.subscribe(n => {
       const t = String(n.type);
       if (t === 'ACTIVITE_COMMENTAIRE' || t === 'ACTIVITE_STATUT_CHANGE' || t === 'ACTIVITE_ASSIGNEE') {
@@ -171,6 +176,8 @@ export class ActivitesGlobalComponent implements OnInit, OnDestroy {
     this.nomencSvc.getStatutsActivite().subscribe({ next: d => this.statutsActivite.set(d) });
     this.userSvc.getAllUsers().subscribe({ next: d => this.utilisateurs.set(d) });
     this.groupeSvc.getAll().subscribe({ next: g => this.tousGroupes.set(g), error: () => this.tousGroupes.set([]) });
+    // ← AJOUT : charger les priorités depuis la nomenclature
+    this.prioriteSvc.getActives().subscribe({ next: p => this.priorites.set(p) });
   }
 
   // ── Navigation ──
@@ -187,11 +194,14 @@ export class ActivitesGlobalComponent implements OnInit, OnDestroy {
   openAdd(): void {
     if (!this.perms.canCreateActivity()) { this.ui.warning('Permission ACTIVITY_CREATE requise.'); return; }
     this.editingActivite.set(null);
-    const s = this.statutsActivite()[0];
+    const s    = this.statutsActivite()[0];
+    const norm = this.priorites().find(p => p.code === 'NORMALE');
     this.form.set({
       nom: '', description: '', couleur: '#10b981',
       statutActiviteId: s?.id || 1, typeBudget: 'ILLIMITE',
-      visible: true, facturable: true, priorite: 2, estGlobale: false
+      visible: true, facturable: true,
+      prioriteId: norm?.id || undefined,   // ← MODIFIÉ
+      estGlobale: false
     });
     this.formGroupeIds.set([]);
     this.showModal.set(true);
@@ -209,7 +219,7 @@ export class ActivitesGlobalComponent implements OnInit, OnDestroy {
       typeBudget: a.typeBudget || 'ILLIMITE',
       visible: a.visible, facturable: a.facturable,
       estGlobale: a.estGlobale || false,
-      priorite: a.priorite,
+      prioriteId: a.prioriteId || undefined,  // ← MODIFIÉ : était priorite: a.priorite
       dateEcheance: a.dateEcheance,
       heuresEstimees: a.heuresEstimees,
       utilisateurId: a.utilisateurId
@@ -306,8 +316,18 @@ export class ActivitesGlobalComponent implements OnInit, OnDestroy {
   minVal(a: number, b: number): number { return Math.min(a, b); }
 
   // ── Helpers affichage ──
-  getPrioriteCouleur(p: number): string { return this.PRIORITES.find(pr => pr.value === p)?.couleur || '#3b82f6'; }
-  getPrioriteLabel(p: number): string   { return this.PRIORITES.find(pr => pr.value === p)?.label || 'Normale'; }
+
+  // ← MODIFIÉ : cherche dans le signal dynamique au lieu de PRIORITES statique
+  getPrioriteCouleur(prioriteId?: number): string {
+    if (!prioriteId) return '#3b82f6';
+    return this.priorites().find(p => p.id === prioriteId)?.couleur || '#3b82f6';
+  }
+
+  // ← MODIFIÉ : cherche par id (pas value)
+  getPrioriteLabel(prioriteId?: number): string {
+    if (!prioriteId) return 'Normale';
+    return this.priorites().find(p => p.id === prioriteId)?.libelle || 'Normale';
+  }
 
   getStatutLibelle(id?: number): string {
     if (!id) return '—';
@@ -358,7 +378,6 @@ export class ActivitesGlobalComponent implements OnInit, OnDestroy {
     const MOIS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
     return `${String(date.getDate()).padStart(2,'0')} ${MOIS[date.getMonth()]}, ${date.getFullYear()}`;
   }
-
 
   fmtHeures(h: number): string {
     if (!h || h <= 0) return '0h';

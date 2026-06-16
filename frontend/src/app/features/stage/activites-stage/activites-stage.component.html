@@ -369,15 +369,15 @@
           <label class="dm-label">Échéance</label>
           <input type="date" [(ngModel)]="form().dateEcheance" class="dm-input">
         </div>
+
+
         <div class="dm-field">
-          <label class="dm-label">Priorité</label>
-          <select [(ngModel)]="form().priorite" class="dm-input">
-            <option [ngValue]="1">Basse</option>
-            <option [ngValue]="2">Normale</option>
-            <option [ngValue]="3">Haute</option>
-            <option [ngValue]="4">Urgente</option>
-          </select>
-        </div>
+  <label class="dm-label">Priorité</label>
+  <select [(ngModel)]="form().prioriteId" class="dm-input">
+    <option [ngValue]="undefined">— Choisir —</option>
+    <option *ngFor="let pr of priorites()" [ngValue]="pr.id">{{ pr.libelle }}</option>
+  </select>
+</div>
       </div>
 
       <!-- ✅ Assigné — stagiaires[] -->

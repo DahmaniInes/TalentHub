@@ -1,4 +1,4 @@
-// Controller/ActiviteController.java — COMPLET avec PermissionContext (pas jwt.getClaim)
+// Controller/ActiviteController.java — REMPLACE COMPLET
 package com.talenthub.application_service.Controller;
 
 import com.talenthub.application_service.DTO.ActiviteDTO;
@@ -22,13 +22,16 @@ public class ActiviteController {
     private final ActiviteService   activiteService;
     private final PermissionContext permCtx;
 
-    // ── GET liste — ACTIVITY_VIEW_ALL | ACTIVITY_VIEW_LEAD | ACTIVITY_VIEW_OWN | PROJECT_VIEW_* ──
+    // ── GET liste ─────────────────────────────────────────────────
     @GetMapping
     public ResponseEntity<?> getAll(
             @RequestParam(required = false) Long statutId,
             @RequestParam(required = false) Long utilisateurId,
-            @RequestParam(required = false) Integer priorite,
+            // AVANT : @RequestParam(required = false) Integer priorite
+            // APRÈS : prioriteId (Long, correspond à priorite_activite.id)
+            @RequestParam(required = false) Long prioriteId,
             @RequestParam(required = false) Boolean globalesUniquement) {
+
         if (!permCtx.has("ACTIVITY_VIEW_ALL") && !permCtx.has("ACTIVITY_VIEW_LEAD")
                 && !permCtx.has("ACTIVITY_VIEW_OWN")
                 && !permCtx.has("PROJECT_VIEW_OWN") && !permCtx.has("PROJECT_VIEW_LEAD")
@@ -37,7 +40,8 @@ public class ActiviteController {
                     .body(Map.of("message", "Permission ACTIVITY_VIEW_ALL requise."));
         }
         return ResponseEntity.ok(activiteService.getAllFiltered(
-                statutId, utilisateurId, priorite, Boolean.TRUE.equals(globalesUniquement)));
+                statutId, utilisateurId, prioriteId,
+                Boolean.TRUE.equals(globalesUniquement)));
     }
 
     // ── GET par projet ────────────────────────────────────────────
@@ -81,19 +85,21 @@ public class ActiviteController {
         return ResponseEntity.ok(activiteService.toDTO(activiteService.getById(id)));
     }
 
-    // ── POST créer — ACTIVITY_CREATE ──────────────────────────────
+    // ── POST créer ────────────────────────────────────────────────
     @RequiresPermission("ACTIVITY_CREATE")
     @PostMapping
     public ResponseEntity<ActiviteDTO> create(@RequestBody Map<String, Object> body) {
         Activité activite    = buildFromBody(body);
         Long utilisateurId   = extractLong(body, "utilisateurId");
         List<Long> groupeIds = extractLongList(body, "groupeIds");
+        List<Long> utilisateurIds = extractLongList(body, "utilisateurIds"); // ← AJOUTER
+
         return new ResponseEntity<>(
-                activiteService.toDTO(activiteService.create(activite, utilisateurId, groupeIds)),
+                activiteService.toDTO(activiteService.create(activite, utilisateurId, groupeIds,utilisateurIds)),
                 HttpStatus.CREATED);
     }
 
-    // ── PUT modifier — ACTIVITY_EDIT_ALL | ACTIVITY_EDIT_LEAD | ACTIVITY_EDIT_OWN ──
+    // ── PUT modifier ──────────────────────────────────────────────
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable Long id,
                                     @RequestBody Map<String, Object> body) {
@@ -102,14 +108,16 @@ public class ActiviteController {
             return ResponseEntity.status(403)
                     .body(Map.of("message", "Permission ACTIVITY_EDIT_ALL requise."));
         }
+
         Activité details     = buildFromBody(body);
         Long utilisateurId   = extractLong(body, "utilisateurId");
         List<Long> groupeIds = extractLongList(body, "groupeIds");
+        List<Long> utilisateurIds = extractLongList(body, "utilisateurIds"); // ← NOUVEAU
         return ResponseEntity.ok(
-                activiteService.toDTO(activiteService.update(id, details, utilisateurId, groupeIds)));
+                activiteService.toDTO(activiteService.update(id, details, utilisateurId, groupeIds, utilisateurIds)));
     }
 
-    // ── PATCH statut — ACTIVITY_EDIT_ALL | ACTIVITY_EDIT_LEAD | ACTIVITY_EDIT_OWN ──
+    // ── PATCH statut ──────────────────────────────────────────────
     @PatchMapping("/{id}/statut")
     public ResponseEntity<?> changerStatut(@PathVariable Long id,
                                            @RequestBody Map<String, Object> body) {
@@ -123,7 +131,7 @@ public class ActiviteController {
                 activiteService.toDTO(activiteService.changerStatut(id, statutId)));
     }
 
-    // ── DELETE — ACTIVITY_DELETE_ALL ──────────────────────────────
+    // ── DELETE ────────────────────────────────────────────────────
     @RequiresPermission("ACTIVITY_DELETE_ALL")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
@@ -131,7 +139,7 @@ public class ActiviteController {
         return ResponseEntity.noContent().build();
     }
 
-    // ── DELETE bulk — ACTIVITY_DELETE_ALL ────────────────────────
+    // ── DELETE bulk ───────────────────────────────────────────────
     @RequiresPermission("ACTIVITY_DELETE_ALL")
     @DeleteMapping("/bulk")
     public ResponseEntity<Void> deleteBulk(@RequestBody List<Long> ids) {
@@ -140,6 +148,7 @@ public class ActiviteController {
     }
 
     // ── Helpers ───────────────────────────────────────────────────
+
     private Long extractLong(Map<String, Object> body, String key) {
         return body.containsKey(key) && body.get(key) != null
                 ? Long.valueOf(body.get(key).toString()) : null;
@@ -162,7 +171,6 @@ public class ActiviteController {
         if (body.get("typeBudget")       != null) a.setTypeBudget(body.get("typeBudget").toString());
         if (body.get("budget")           != null) a.setBudget(Double.valueOf(body.get("budget").toString()));
         if (body.get("quotaHoraire")     != null) a.setQuotaHoraire(Double.valueOf(body.get("quotaHoraire").toString()));
-        if (body.get("priorite")         != null) a.setPriorite(Integer.parseInt(body.get("priorite").toString()));
         if (body.get("heuresEstimees")   != null) a.setHeuresEstimees(Double.valueOf(body.get("heuresEstimees").toString()));
         if (body.get("heuresPassees")    != null) a.setHeuresPassees(Double.valueOf(body.get("heuresPassees").toString()));
         if (body.get("visible")          != null) a.setVisible((Boolean) body.get("visible"));
@@ -171,6 +179,12 @@ public class ActiviteController {
         if (body.get("creePar")          != null) a.setCreePar(body.get("creePar").toString());
         if (body.get("statutActiviteId") != null)
             a.setStatutActiviteId(Long.valueOf(body.get("statutActiviteId").toString()));
+
+        // AVANT : if (body.get("priorite") != null) a.setPriorite(Integer.parseInt(...))
+        // APRÈS : prioriteId (Long)
+        if (body.get("prioriteId") != null)
+            a.setPrioriteId(Long.valueOf(body.get("prioriteId").toString()));
+
         if (body.get("dateEcheance") != null)
             a.setDateEcheance(LocalDate.parse(body.get("dateEcheance").toString()));
         return a;

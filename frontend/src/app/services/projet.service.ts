@@ -10,7 +10,7 @@ import {
 export class ProjetService {
 
   private http = inject(HttpClient);
-  private base = 'http://localhost:8085/api/projets';
+  private base = 'http://localhost:8085/api/application/projets';
   private nomenclatureBase = 'http://localhost:8085/api/nomenclature';
 
   getAll(params?: {

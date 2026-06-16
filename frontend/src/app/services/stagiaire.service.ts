@@ -7,7 +7,7 @@ import { Utilisateur } from '../shared/models/utilisateur.model';
 export class StagiaireService {
 
   private http = inject(HttpClient);
-  private api  = 'http://localhost:8085/api/stagiaires';
+  private api  = 'http://localhost:8085/api/application/stagiaires';
   private nomenclatureApi = 'http://localhost:8085/api/nomenclature/types-stage';
 
   getAll(): Observable<Utilisateur[]> {

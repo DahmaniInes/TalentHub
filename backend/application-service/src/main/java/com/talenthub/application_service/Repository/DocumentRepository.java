@@ -35,4 +35,8 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     @Transactional
     @Query("DELETE FROM Document d WHERE d.activite.id = :activiteId")
     int deleteByActiviteId(Long activiteId);
+
+
+    long countByActiviteId(Long activiteId);
+
 }

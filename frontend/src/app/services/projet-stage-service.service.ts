@@ -8,9 +8,9 @@ import { Activite, ActiviteRequest } from '../shared/models/activite.model';
 export class ProjetStageService {
 
   private http = inject(HttpClient);
-  private apiProjets   = 'http://localhost:8085/api/projets';
-  private apiActivites = 'http://localhost:8085/api/activites';
-  private apiMembres   = 'http://localhost:8085/api/membres-equipe';
+  private apiProjets   = 'http://localhost:8085/api/application/projets';
+  private apiActivites = 'http://localhost:8085/api/application/activites';
+  private apiMembres   = 'http://localhost:8085/api/application/membres-equipe';
 
   // ── Projets de stage (typeProjetId = 3) ──────────────────────
 

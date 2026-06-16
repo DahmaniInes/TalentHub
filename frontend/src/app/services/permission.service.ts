@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import { Permission } from '../shared/models/permission.model';
 import { Profil } from '../shared/models/profil.model';
 
-const BASE = 'http://localhost:8085/api';
+const BASE = 'http://localhost:8085/api/application';
 
 // ✅ Interface simplifiée — plus de canRead/canWrite/etc.
 export interface ProfilPermission {

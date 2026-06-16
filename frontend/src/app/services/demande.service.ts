@@ -4,7 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Demande, DemandeRequest } from '../shared/models/demande.model';
 
-const BASE = 'http://localhost:8085/api/demandes';
+const BASE = 'http://localhost:8085/api/application/demandes';
 
 @Injectable({ providedIn: 'root' })
 export class DemandeService {

@@ -377,7 +377,7 @@ routerLink="/Demande" routerLinkActive="active" class="nav-item" (click)="closeS
      *ngIf="perms.canSeeProjectMenu() || perms.canSeeActivityMenu() || perms.canSeeClientsMenu() || perms.canSeeTeamsMenu()">
 
   <button class="nav-item nav-group-btn"
-  [class.active]="isAnyRouteActive('/projets', '/clients', '/groups', '/activites', '/statuts-activite', '/statuts-projet', '/types-projet')"
+  [class.active]="isAnyRouteActive('/projets', '/clients', '/groups', '/activites', '/statuts-activite', '/statuts-projet', '/types-projet','/activite-priorite' )"
             (click)="toggleGestionMenu()">
     <span class="nav-icon">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -496,6 +496,9 @@ routerLink="/Demande" routerLinkActive="active" class="nav-item" (click)="closeS
       <span class="nav-tooltip">Équipes</span>
     </a>
 
+
+
+
     <!-- ✅ STATUTS ACTIVITÉ — visible si ACT_STATUS_VIEW -->
 <a *ngIf="perms.canSeeStatutActiviteMenu()"
 routerLink="/statuts-activite" routerLinkActive="active"
@@ -509,6 +512,44 @@ class="nav-item nav-subitem-full" (click)="closeSidebar()">
 <span class="nav-label">Statuts d'activité</span>
 <span class="nav-tooltip">Statuts d'activité</span>
 </a>
+
+
+
+
+
+
+
+<a *ngIf="perms.canSeePrioriteActiviteMenu()"
+routerLink="/activite-priorite" routerLinkActive="active"
+class="nav-item nav-subitem-full" (click)="closeSidebar()">
+<span class="nav-icon">
+ <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="18" height="18">
+   <circle cx="12" cy="12" r="10"/>
+   <path d="M8 12l2.5 2.5 5-5" stroke-linecap="round" stroke-linejoin="round"/>
+ </svg>
+</span>
+<span class="nav-label">Priorites d'activité</span>
+<span class="nav-tooltip">Priorites d'activité</span>
+</a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 <!-- ✅ STATUTS PROJET — visible si PROJECT_STATUS_VIEW -->
 <a *ngIf="perms.canSeeStatutProjetMenu()"

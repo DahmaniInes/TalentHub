@@ -56,4 +56,11 @@ public interface ProjetRepository extends JpaRepository<Projet, Long> {
     // Ajouter dans ProjetRepository
     @Query("SELECT p FROM Projet p WHERE p.typeProjetId = :typeId")
     List<Projet> findByTypeProjetId(@Param("typeId") Long typeId);
+
+
+
+    @Query("SELECT p.id FROM Projet p JOIN p.activites a WHERE a.id = :activiteId")
+    List<Long> findProjetIdsByActiviteId(@Param("activiteId") Long activiteId);
+
+
 }

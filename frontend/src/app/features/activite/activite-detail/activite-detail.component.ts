@@ -1,4 +1,4 @@
-// src/app/features/activites/activite-detail/activite-detail.component.ts — COMPLET avec permissions
+// activite-detail.component.ts — COMPLET — priorite → prioriteId
 import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -11,9 +11,12 @@ import { KeycloakService }          from '../../../services/keycloak.service';
 import { UiService }                from '../../../services/ui.service';
 import { PermissionContextService } from '../../../services/permission-context.service';
 import { NotificationService }      from '../../../services/notification.service';
+// ← AJOUT
+import { PrioriteActiviteService }  from '../../../services/priorite-activite.service';
+import { PrioriteActivite }         from '../../../shared/models/priorite-activite.model';
 
-import { Activite }      from '../../../shared/models/activite.model';
-import { Commentaire }   from '../../../shared/models/commentaire.model';
+import { Activite }       from '../../../shared/models/activite.model';
+import { Commentaire }    from '../../../shared/models/commentaire.model';
 import { StatutActivite } from '../../../shared/models/statut-activite.model';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -26,22 +29,24 @@ import { HttpErrorResponse } from '@angular/common/http';
 })
 export class ActiviteDetailComponent implements OnInit, OnDestroy {
 
-  private route       = inject(ActivatedRoute);
-  private router      = inject(Router);
-  private activiteSvc = inject(ActiviteService);
-  private commentSvc  = inject(CommentaireService);
-  private nomencSvc   = inject(StatutActiviteService);
-  private keycloak    = inject(KeycloakService);
-  private ui          = inject(UiService);
-
-  // ✅ NOUVEAU
-  readonly perms   = inject(PermissionContextService);
-  private notifSvc = inject(NotificationService);
-  private subs     = new Subscription();
+  private route         = inject(ActivatedRoute);
+  private router        = inject(Router);
+  private activiteSvc   = inject(ActiviteService);
+  private commentSvc    = inject(CommentaireService);
+  private nomencSvc     = inject(StatutActiviteService);
+  private keycloak      = inject(KeycloakService);
+  private ui            = inject(UiService);
+  // ← AJOUT
+  private prioriteSvc   = inject(PrioriteActiviteService);
+  readonly perms        = inject(PermissionContextService);
+  private notifSvc      = inject(NotificationService);
+  private subs          = new Subscription();
 
   activite        = signal<Activite | null>(null);
   commentaires    = signal<Commentaire[]>([]);
   statuts         = signal<StatutActivite[]>([]);
+  // ← AJOUT : signal dynamique (remplace PRIORITES statique)
+  priorites       = signal<PrioriteActivite[]>([]);
   loading         = signal(true);
   loadingComments = signal(false);
 
@@ -54,12 +59,7 @@ export class ActiviteDetailComponent implements OnInit, OnDestroy {
   currentUserKcId = '';
   currentUserNom  = '';
 
-  readonly PRIORITES = [
-    { value: 1, label: 'Basse',   couleur: '#10b981' },
-    { value: 2, label: 'Normale', couleur: '#3b82f6' },
-    { value: 3, label: 'Haute',   couleur: '#f97316' },
-    { value: 4, label: 'Urgente', couleur: '#ef4444' }
-  ];
+  // ← SUPPRIMÉ : readonly PRIORITES = [...] — remplacé par priorites signal
 
   ngOnInit(): void {
     this.currentUserKcId = this.keycloak.getKeycloakUserId() || '';
@@ -79,7 +79,10 @@ export class ActiviteDetailComponent implements OnInit, OnDestroy {
 
     this.nomencSvc.getStatutsActivite().subscribe({ next: s => this.statuts.set(s) });
 
-    // ✅ Notifications temps réel : recharger les commentaires
+    // ← AJOUT : charger les priorités depuis la nomenclature
+    this.prioriteSvc.getActives().subscribe({ next: p => this.priorites.set(p) });
+
+    // Temps réel
     this.subs.add(this.notifSvc.newNotification$.subscribe(n => {
       const t   = String(n.type);
       const aId = this.activite()?.id;
@@ -100,7 +103,6 @@ export class ActiviteDetailComponent implements OnInit, OnDestroy {
   }
 
   submitComment(): void {
-    // ✅ PERMISSION : vérifier avant d'envoyer
     if (!this.perms.canCommentAnyProject() && !this.perms.canEditAnyActivity()) {
       this.ui.warning('Vous n\'avez pas la permission de commenter.');
       return;
@@ -174,7 +176,11 @@ export class ActiviteDetailComponent implements OnInit, OnDestroy {
     return map[code] || 'dt-badge dt-badge-default';
   }
 
-  getPriorite(v: number) { return this.PRIORITES.find(p => p.value === v); }
+  // ← MODIFIÉ : cherche dans le signal dynamique par id
+  getPriorite(id?: number): PrioriteActivite | undefined {
+    if (!id) return undefined;
+    return this.priorites().find(p => p.id === id);
+  }
 
   getProgressPct(p?: number, e?: number): number {
     if (!e) return 0;
@@ -206,8 +212,6 @@ export class ActiviteDetailComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void { this.router.navigate(['/activites']); }
-
-
 
   fmtHeures(h: number): string {
     if (!h || h <= 0) return '0h';

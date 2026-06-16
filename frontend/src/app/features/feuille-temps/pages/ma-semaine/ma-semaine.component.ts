@@ -329,12 +329,20 @@ export class MaSemaineComponent implements OnInit {
     if (!projetId) return [];
     const duProjet = this.activitesParProjet()[projetId] ?? [];
     const projet   = this.projets().find(p => p.id === projetId);
+    
+    const STATUT_TERMINE_ID = 4;
+    
+    let activites: Activite[];
     if (projet?.autoriserActivitesGlobales) {
-      const idsProjet = new Set(duProjet.map(a => a.id));
-      return [...duProjet, ...this.activitesGlobales().filter(a => !idsProjet.has(a.id))];
+        const idsProjet = new Set(duProjet.map(a => a.id));
+        activites = [...duProjet, ...this.activitesGlobales().filter(a => !idsProjet.has(a.id))];
+    } else {
+        activites = duProjet;
     }
-    return duProjet; // ← globales exclues si non autorisées
-  }
+    
+    // ✅ Filtrer les activités terminées
+    return activites.filter(a => a.statutActiviteId !== STATUT_TERMINE_ID);
+}
 
   onProjetChange(rowId: string, val: string): void {
     const projetId = val ? +val : undefined;

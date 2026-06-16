@@ -55,15 +55,15 @@ public class Activité {
     @Builder.Default
     private boolean facturable = true;
 
-    // ✅ NOUVEAU — activité globale (pas liée à un projet spécifique)
     @Column(name = "est_globale", nullable = false)
     @Builder.Default
     private boolean estGlobale = false;
 
-    // ── Priorité ──
-    @Column(nullable = false)
-    @Builder.Default
-    private int priorite = 2;
+    // ── PRIORITÉ — ID vers la table priorite_activite du nomenclature-service ──
+    // AVANT : private int priorite = 2;
+    // APRÈS : FK vers priorite_activite (stocké comme simple Long, pas de @ManyToOne cross-service)
+    @Column(name = "priorite_id")
+    private Long prioriteId;
 
     // ── Dates ──
     @Column(name = "date_echeance")
@@ -90,14 +90,10 @@ public class Activité {
     @Column(name = "date_mise_a_jour")
     private LocalDateTime dateMiseAJour;
 
-    // ✅ SUPPRIMÉ : @ManyToOne projet — le lien se fait maintenant côté Projet
-    // La relation est bidirectionnelle via projet_activites (Many-to-Many)
-    // On garde une référence read-only pour savoir à quels projets appartient cette activité
     @ManyToMany(mappedBy = "activites", fetch = FetchType.LAZY)
     @Builder.Default
     private List<Projet> projets = new ArrayList<>();
 
-    // ✅ Groupes assignés à cette activité
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "activite_groupes",
@@ -107,12 +103,28 @@ public class Activité {
     @Builder.Default
     private List<Groupe> groupes = new ArrayList<>();
 
+    // Garde l'ancien pour compatibilité (utilisateur principal)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "utilisateur_id")
     private Utilisateur utilisateur;
 
+    // NOUVEAU : multi-assignation
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "activite_utilisateurs",
+            joinColumns = @JoinColumn(name = "activite_id"),
+            inverseJoinColumns = @JoinColumn(name = "utilisateur_id")
+    )
+    @Builder.Default
+    private List<Utilisateur> utilisateurs = new ArrayList<>();
+
+
     @Column(name = "cree_par_keycloak_id", length = 100)
     private String creePar;
+
+    @OneToMany(mappedBy = "activite", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Document> documents = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
@@ -131,16 +143,11 @@ public class Activité {
         this.typeBudget       = "ILLIMITE";
         this.visible          = true;
         this.facturable       = true;
-        this.priorite         = 2;
         this.heuresPassees    = 0.0;
         this.estGlobale       = false;
         this.groupes          = new ArrayList<>();
         this.projets          = new ArrayList<>();
+        this.utilisateurs     = new ArrayList<>();
+        // prioriteId est null par défaut — sera rempli depuis le formulaire
     }
-
-
-    // ✅ AJOUTER dans Activité.java — Documents liés à cette activité
-    @OneToMany(mappedBy = "activite", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @Builder.Default
-    private List<Document> documents = new ArrayList<>();
 }

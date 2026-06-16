@@ -26,4 +26,7 @@ public interface CommentaireRepository extends JpaRepository<Commentaire, Long> 
     @Modifying
     @Query("DELETE FROM Commentaire c WHERE c.activite.id = :activiteId")
     int deleteByActiviteId(@Param("activiteId") Long activiteId);
+
+
+    long countByActiviteId(Long activiteId);
 }

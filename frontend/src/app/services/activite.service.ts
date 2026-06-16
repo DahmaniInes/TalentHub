@@ -7,7 +7,7 @@ import { Activite, ActiviteRequest } from '../shared/models/activite.model';
 export class ActiviteService {
 
   private http = inject(HttpClient);
-  private base = 'http://localhost:8085/api/activites';
+  private base = 'http://localhost:8085/api/application/activites';
 
   getAll(params?: {
     statutId?: number;

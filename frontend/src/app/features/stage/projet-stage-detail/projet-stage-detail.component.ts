@@ -11,6 +11,9 @@ import { UserService }              from '../../../services/user.service';
 import { UiService }                from '../../../services/ui.service';
 import { ProjetService }            from '../../../services/projet.service';
 import { StatutActiviteService }    from '../../../services/statutactivite.service';
+// ← AJOUT
+import { PrioriteActiviteService }  from '../../../services/priorite-activite.service';
+import { PrioriteActivite }         from '../../../shared/models/priorite-activite.model';
 
 import { Projet, StatutProjet }            from '../../../shared/models/projet.model';
 import { Activite, ActiviteRequest }       from '../../../shared/models/activite.model';
@@ -25,22 +28,26 @@ import { StatutActivite }                  from '../../../shared/models/statut-a
 })
 export class ProjetStageDetailComponent implements OnInit {
 
-  private route     = inject(ActivatedRoute);
-  private router    = inject(Router);
-  private svc       = inject(ProjetStageService);
-  private projetSvc = inject(ProjetService);
-  private stagSvc   = inject(StagiaireService);
-  private userSvc   = inject(UserService);
-  private keycloak  = inject(KeycloakService);
-  private nomencSvc = inject(StatutActiviteService);
-  readonly perms    = inject(PermissionContextService);
-  readonly ui       = inject(UiService);
+  private route       = inject(ActivatedRoute);
+  private router      = inject(Router);
+  private svc         = inject(ProjetStageService);
+  private projetSvc   = inject(ProjetService);
+  private stagSvc     = inject(StagiaireService);
+  private userSvc     = inject(UserService);
+  private keycloak    = inject(KeycloakService);
+  private nomencSvc   = inject(StatutActiviteService);
+  // ← AJOUT
+  private prioriteSvc = inject(PrioriteActiviteService);
+  readonly perms      = inject(PermissionContextService);
+  readonly ui         = inject(UiService);
 
   projet          = signal<Projet | null>(null);
   activites       = signal<Activite[]>([]);
   stagiaires      = signal<Utilisateur[]>([]);
   statutsActivite = signal<StatutActivite[]>([]);
   statutsProjet   = signal<StatutProjet[]>([]);
+  // ← AJOUT : signal dynamique (remplace priorite: 2 statique)
+  priorites       = signal<PrioriteActivite[]>([]);
   loading         = signal(false);
   saving          = signal(false);
 
@@ -48,15 +55,15 @@ export class ProjetStageDetailComponent implements OnInit {
   slideOpen    = signal(false);
   editingActId = signal<number | null>(null);
 
+  // ← MODIFIÉ : prioriteId: undefined au lieu de priorite: 2
   formAct = signal<ActiviteRequest & { commentaire?: string }>({
     nom: '', description: '', couleur: '#10b981',
-    statutActiviteId: undefined, priorite: 2,
+    statutActiviteId: undefined, prioriteId: undefined,
     estGlobale: false, visible: true, facturable: true
   });
 
   tab = signal<'activites' | 'infos'>('activites');
 
-  // ✅ filtreStatutId (number) au lieu de filtreStatut (String)
   filtreStatutId = signal<number | ''>('');
 
   activitesFiltrees = computed(() => {
@@ -75,6 +82,15 @@ export class ProjetStageDetailComponent implements OnInit {
         this.statutsActivite.set(d);
         const defaut = d[0]?.id;
         this.formAct.update(f => ({ ...f, statutActiviteId: defaut }));
+      }
+    });
+
+    // ← AJOUT : charger les priorités depuis la nomenclature
+    this.prioriteSvc.getActives().subscribe({
+      next: p => {
+        this.priorites.set(p);
+        const norm = p.find(pr => pr.code === 'NORMALE');
+        if (norm) this.formAct.update(f => ({ ...f, prioriteId: norm.id }));
       }
     });
 
@@ -105,9 +121,11 @@ export class ProjetStageDetailComponent implements OnInit {
   openCreateAct(): void {
     this.editingActId.set(null);
     const defaut = this.statutsActivite()[0]?.id;
+    const norm   = this.priorites().find(p => p.code === 'NORMALE');
+    // ← MODIFIÉ : prioriteId: norm?.id au lieu de priorite: 2
     this.formAct.set({
       nom: '', description: '', couleur: '#10b981',
-      statutActiviteId: defaut, priorite: 2,
+      statutActiviteId: defaut, prioriteId: norm?.id || undefined,
       estGlobale: false, visible: true, facturable: true
     });
     this.slideOpen.set(true);
@@ -115,12 +133,13 @@ export class ProjetStageDetailComponent implements OnInit {
 
   openEditAct(a: Activite): void {
     this.editingActId.set(a.id);
+    // ← MODIFIÉ : prioriteId: a.prioriteId au lieu de priorite: a.priorite || 2
     this.formAct.set({
       nom:              a.nom,
       description:      a.description || '',
       couleur:          a.couleur || '#10b981',
       statutActiviteId: a.statutActiviteId,
-      priorite:         a.priorite || 2,
+      prioriteId:       a.prioriteId || undefined,
       estGlobale:       a.estGlobale || false,
       visible:          a.visible,
       facturable:       a.facturable,
@@ -135,12 +154,13 @@ export class ProjetStageDetailComponent implements OnInit {
     if (!f.nom?.trim()) { this.ui.warning('Nom obligatoire'); return; }
     this.saving.set(true);
 
+    // ← MODIFIÉ : prioriteId: f.prioriteId au lieu de priorite: f.priorite
     const req: ActiviteRequest = {
       nom:              f.nom,
       description:      f.description,
       couleur:          f.couleur,
       statutActiviteId: f.statutActiviteId,
-      priorite:         f.priorite,
+      prioriteId:       f.prioriteId,
       estGlobale:       f.estGlobale,
       visible:          f.visible ?? true,
       facturable:       f.facturable ?? true,
@@ -195,7 +215,6 @@ export class ProjetStageDetailComponent implements OnInit {
     });
   }
 
-  // ✅ Avancement calculé depuis heuresPassees/heuresEstimees
   getAvancement(a: Activite): number {
     if (a.heuresEstimees && a.heuresEstimees > 0 && a.heuresPassees !== undefined) {
       return Math.min(100, Math.round((a.heuresPassees / a.heuresEstimees) * 100));
@@ -221,7 +240,6 @@ export class ProjetStageDetailComponent implements OnInit {
     });
   }
 
-  // ✅ Helpers statut activité
   getStatutCode(id?: number): string {
     return this.statutsActivite().find(s => s.id === id)?.code || '';
   }
@@ -230,7 +248,6 @@ export class ProjetStageDetailComponent implements OnInit {
     return this.statutsActivite().find(s => s.id === id)?.libelle || '—';
   }
 
-  // ✅ Helpers statut projet via nomenclature (remplace p.statut String)
   getStatutProjetColor(statutProjetId?: number): string {
     return this.statutsProjet().find(s => s.id === statutProjetId)?.couleur || '#94a3b8';
   }
@@ -239,7 +256,18 @@ export class ProjetStageDetailComponent implements OnInit {
     return this.statutsProjet().find(s => s.id === statutProjetId)?.libelle || '—';
   }
 
-  canEdit():       boolean { return this.perms.canViewAllInterns() || this.perms.canSupervise(); }
+  // ← AJOUT : helper priorité pour le template HTML
+  getPrioriteLibelle(id?: number): string {
+    if (!id) return '—';
+    return this.priorites().find(p => p.id === id)?.libelle || '—';
+  }
+
+  getPrioriteCouleur(id?: number): string {
+    if (!id) return '#94a3b8';
+    return this.priorites().find(p => p.id === id)?.couleur || '#94a3b8';
+  }
+
+  canEdit():        boolean { return this.perms.canViewAllInterns() || this.perms.canSupervise(); }
   canAddActivite(): boolean { return this.perms.canSupervise() || this.perms.can('INT_INTERN_SUBMIT'); }
 
   avancementColor(v: number): string {

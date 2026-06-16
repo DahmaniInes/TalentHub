@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface ActiviteRepository extends JpaRepository<Activité, Long> {
 
-    // ✅ Activités d'un projet via la table de jointure projet_activites
+    // Activités d'un projet via la table de jointure
     @Query("""
         SELECT a FROM Activité a
         LEFT JOIN FETCH a.groupes
@@ -25,25 +25,25 @@ public interface ActiviteRepository extends JpaRepository<Activité, Long> {
     @Query("SELECT a FROM Activité a WHERE a.utilisateur.id = :userId")
     List<Activité> findByUtilisateurId(@Param("userId") Long userId);
 
-    // ✅ Requête filtrée — plus de référence à a.projet.id
+    // AVANT : @Param("priorite") Integer priorite  + a.priorite = :priorite
+    // APRÈS : @Param("prioriteId") Long prioriteId + a.prioriteId = :prioriteId
     @Query("""
         SELECT DISTINCT a FROM Activité a
         LEFT JOIN FETCH a.groupes
         LEFT JOIN FETCH a.utilisateur
-        WHERE (:statutId      IS NULL OR a.statutActiviteId = :statutId)
-          AND (:utilisateurId IS NULL OR a.utilisateur.id  = :utilisateurId)
-          AND (:priorite      IS NULL OR a.priorite        = :priorite)
+        WHERE (:statutId   IS NULL OR a.statutActiviteId = :statutId)
+          AND (:utilisateurId IS NULL OR a.utilisateur.id = :utilisateurId)
+          AND (:prioriteId IS NULL OR a.prioriteId = :prioriteId)
           AND (:globales = false OR a.estGlobale = true)
         ORDER BY a.dateCreation DESC
         """)
     List<Activité> findAllFiltered(
             @Param("statutId")      Long    statutId,
             @Param("utilisateurId") Long    utilisateurId,
-            @Param("priorite")      Integer priorite,
+            @Param("prioriteId")    Long    prioriteId,
             @Param("globales")      boolean globalesUniquement
     );
 
-    // ✅ Activités globales uniquement
     @Query("""
         SELECT a FROM Activité a
         LEFT JOIN FETCH a.groupes
@@ -53,7 +53,6 @@ public interface ActiviteRepository extends JpaRepository<Activité, Long> {
         """)
     List<Activité> findGlobales();
 
-    // Compter les activités d'un projet
     @Query("SELECT COUNT(a) FROM Activité a JOIN a.projets p WHERE p.id = :projetId")
     long countByProjetId(@Param("projetId") Long projetId);
 }

@@ -5,8 +5,8 @@ import { BehaviorSubject, Subject } from 'rxjs';
 import { AppNotification } from '../shared/models/notification.model';
 import { KeycloakService } from './keycloak.service';
 
-const SSE_BASE = 'http://localhost:8085/api/notifications/sse';
-const API_BASE = 'http://localhost:8085/api/notifications';
+const SSE_BASE = 'http://localhost:8085/api/application/notifications/sse';
+const API_BASE = 'http://localhost:8085/api/application/notifications';
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {

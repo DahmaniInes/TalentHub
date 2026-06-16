@@ -61,6 +61,8 @@
               </button>
             </div>
             <div class="dt-fp-body">
+
+
               <div class="dt-fp-field">
                 <label class="dt-fp-label">Affichage</label>
                 <div style="display:flex;gap:4px">
@@ -82,14 +84,18 @@
                   <option *ngFor="let s of statutsActivite()" [value]="s.id">{{ s.libelle }}</option>
                 </select>
               </div>
+
+
               <div class="dt-fp-field">
                 <label class="dt-fp-label">Priorité</label>
                 <select class="dt-fp-select" [value]="filterPriorite()"
                         (change)="filterPriorite.set($any($event.target).value===''?'':+$any($event.target).value); resetPage()">
                   <option value="">Toutes les priorités</option>
-                  <option *ngFor="let p of PRIORITES" [value]="p.value">{{ p.label }}</option>
+                  <option *ngFor="let p of priorites()" [value]="p.id">{{ p.libelle }}</option>
                 </select>
               </div>
+
+
             </div>
             <div class="dt-fp-footer">
               <button class="mx-btn mx-btn-ghost" style="height:30px;font-size:.73rem"
@@ -239,8 +245,8 @@
             <td class="dt-td">
               <div style="display:flex;align-items:center;gap:5px">
                 <div style="width:7px;height:7px;border-radius:50%;flex-shrink:0"
-                     [style.background]="getPrioriteCouleur(a.priorite)"></div>
-                <span class="dt-cell-text">{{ getPrioriteLabel(a.priorite) }}</span>
+                     [style.background]="getPrioriteCouleur(a.prioriteId)"></div>
+                <span class="dt-cell-text">{{ getPrioriteLabel(a.prioriteId) }}</span>
               </div>
             </td>
 
@@ -368,12 +374,16 @@
             <option *ngFor="let s of statutsActivite()" [ngValue]="s.id">{{ s.libelle }}</option>
           </select>
         </div>
+
         <div class="mx-field">
           <label class="mx-field-label">Priorité</label>
-          <select [(ngModel)]="form().priorite" [ngModelOptions]="{standalone:true}" class="mx-field-select">
-            <option *ngFor="let p of PRIORITES" [ngValue]="p.value">{{ p.label }}</option>
+          <select [(ngModel)]="form().prioriteId" [ngModelOptions]="{standalone:true}" class="mx-field-select">
+            <option [ngValue]="undefined">— Choisir —</option>
+            <option *ngFor="let p of priorites()" [ngValue]="p.id">{{ p.libelle }}</option>
           </select>
         </div>
+
+
       </div>
 
       <div class="mx-field">

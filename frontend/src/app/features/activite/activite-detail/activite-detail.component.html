@@ -71,10 +71,15 @@
 
       <!-- Stats -->
       <div class="pd-hero-stats">
-        <div class="pd-stat-card" *ngIf="getPriorite(a.priorite) as pr">
-          <span class="pd-stat-value" [style.color]="pr.couleur">{{ pr.label }}</span>
-          <span class="pd-stat-label">Priorité</span>
-        </div>
+
+       <!-- APRÈS : -->
+<div class="pd-stat-card" *ngIf="getPriorite(a.prioriteId) as pr">
+  <span class="pd-stat-value" [style.color]="pr.couleur">{{ pr.libelle }}</span>
+  <span class="pd-stat-label">Priorité</span>
+</div>
+
+
+
         <div class="pd-stat-card">
           <span class="pd-stat-value">{{ a.projets?.length || 0 }}</span>
           <span class="pd-stat-label">Projets</span>
@@ -129,12 +134,17 @@
               <span *ngIf="a.estGlobale" class="pd-globale-badge" style="font-size:.72rem">GLOBALE</span>
               <span *ngIf="!a.estGlobale" class="dt-badge dt-badge-default" style="font-size:.7rem">Liée à un projet</span>
             </div>
+
+
             <div class="pd-info-row">
               <span class="pd-info-key">Priorité</span>
-              <div *ngIf="getPriorite(a.priorite) as pr" class="pd-priorite-cell">
-                <span class="pd-priorite-dot" [style.background]="pr.couleur"></span>{{ pr.label }}
+              <div *ngIf="getPriorite(a.prioriteId) as pr" class="pd-priorite-cell">
+                <span class="pd-priorite-dot" [style.background]="pr.couleur"></span>{{ pr.libelle }}
               </div>
             </div>
+
+
+
             <div class="pd-info-row" *ngIf="a.dateEcheance">
               <span class="pd-info-key">Échéance</span>
               <span class="pd-info-val">{{ fmtDate(a.dateEcheance) }}</span>

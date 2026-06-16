@@ -16,7 +16,7 @@ export interface GroupeRequest {
 @Injectable({ providedIn: 'root' })
 export class GroupeService {
   private http = inject(HttpClient);
-  private base = 'http://localhost:8085/api/groupes';
+  private base = 'http://localhost:8085/api/application/groupes';
 
   getAll(): Observable<Groupe[]> {
     return this.http.get<Groupe[]>(this.base);

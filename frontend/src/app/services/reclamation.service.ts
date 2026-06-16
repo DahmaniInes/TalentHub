@@ -4,7 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Reclamation, ReclamationRequest, ServiceReclamation, StatutReclamation } from '../shared/models/reclamation.model';
 
-const BASE      = 'http://localhost:8085/api/reclamations';
+const BASE      = 'http://localhost:8085/api/application/reclamations';
 const NOMEN_URL = 'http://localhost:8085/api/nomenclature'; // via gateway
 
 @Injectable({ providedIn: 'root' })

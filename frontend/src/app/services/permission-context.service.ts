@@ -35,7 +35,7 @@ export class PermissionContextService {
         if (!token || !this.profilId) return;
         return new Promise(resolve => {
             this.http.get<string[]>(
-                `http://localhost:8085/api/profil-permissions/profil/${this.profilId}/codes`,
+                `http://localhost:8085/api/application/profil-permissions/profil/${this.profilId}/codes`,
                 { headers: new HttpHeaders({ Authorization: `Bearer ${token}` }) }
             ).subscribe({
                 next: codes => { this.perms.set(new Set(codes)); this.loaded.set(true); resolve(); },
@@ -508,4 +508,16 @@ canSeeStatutStageMenu(): boolean {
   return this.canViewStatutStage() || this.canCreateStatutStage();
 }
 
+
+// ════════════════════════════════════════════════════════════
+// PRIORITÉ ACTIVITÉ
+// ════════════════════════════════════════════════════════════
+canCreatePrioriteActivite():  boolean { return this.can('ACT_PRIORITY_CREATE'); }
+canViewPrioriteActivite():    boolean { return this.can('ACT_PRIORITY_VIEW'); }
+canEditPrioriteActivite():    boolean { return this.can('ACT_PRIORITY_EDIT'); }
+canDeletePrioriteActivite():  boolean { return this.can('ACT_PRIORITY_DELETE'); }
+
+canSeePrioriteActiviteMenu(): boolean {
+  return this.canViewPrioriteActivite() || this.canCreatePrioriteActivite();
+}
 }
