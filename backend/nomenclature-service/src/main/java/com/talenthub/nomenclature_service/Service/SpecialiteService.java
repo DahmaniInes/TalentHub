@@ -31,18 +31,20 @@ public class SpecialiteService {
                 .build());
     }
 
-    public Specialite createOrGet(String libelle) {
-        if (repository.existsByLibelleIgnoreCase(libelle)) {
+    // ✅ Création rapide depuis le formulaire user — le texte saisi devient
+    //    directement le CODE (déjà en majuscule côté frontend).
+    public Specialite createOrGet(String saisie) {
+        String code = saisie.trim().toUpperCase();
+
+        if (repository.existsByCode(code)) {
             return repository.findAll().stream()
-                    .filter(s -> s.getLibelle().equalsIgnoreCase(libelle))
+                    .filter(s -> s.getCode().equalsIgnoreCase(code))
                     .findFirst().orElseThrow();
         }
-        String code = libelle.toUpperCase()
-                .replaceAll("[^A-Z0-9]", "_")
-                .substring(0, Math.min(libelle.length(), 30));
+
         return repository.save(Specialite.builder()
-                .code(code + "_" + System.currentTimeMillis() % 1000)
-                .libelle(libelle)
+                .code(code)
+                .libelle(saisie.trim())
                 .actif(true)
                 .build());
     }
@@ -51,7 +53,7 @@ public class SpecialiteService {
         Specialite s = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Spécialité non trouvée : " + id));
 
-        // ✅ Code maintenant modifiable — vérifier l'unicité si changé
+        // ✅ Code modifiable — vérifier l'unicité si changé
         if (req.getCode() != null && !req.getCode().isBlank()
                 && !req.getCode().equalsIgnoreCase(s.getCode())) {
             String nouveauCode = req.getCode().toUpperCase();

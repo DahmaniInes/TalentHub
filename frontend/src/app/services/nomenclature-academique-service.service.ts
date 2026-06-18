@@ -47,4 +47,8 @@ export class NomenclatureAcademiqueService {
     return this.http.patch<NiveauEtude>(`${this.base}/niveaux-etude/${id}/${actif ? 'activate' : 'deactivate'}`, {});
   }
   deleteNiveau(id: number): Observable<void>          { return this.http.delete<void>(`${this.base}/niveaux-etude/${id}`); }
+  // ✅ Créer ou retrouver par code (depuis le formulaire de création utilisateur)
+  createOrGetNiveau(libelle: string): Observable<NiveauEtude> {
+    return this.http.post<NiveauEtude>(`${this.base}/niveaux-etude/create-or-get`, { libelle });
+  }
 }

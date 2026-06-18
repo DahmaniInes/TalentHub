@@ -1058,4 +1058,34 @@ font-family: 'Segoe UI', system-ui, sans-serif;
     .uc-recap-grid { grid-template-columns: 1fr; }
     .uc-recap-card-full { grid-column: auto; }
   }
+
+  /* ══════════════════════════════════════════════════════════
+   FIX DARK MODE — Texte des <option> illisible dans les <select>
+   
+   PROBLÈME : les <option> d'un <select> ouvert sont rendues par
+   le navigateur/OS, pas par votre CSS de composant. Elles n'héritent
+   pas automatiquement de la couleur de texte du parent .uc-input,
+   donc en dark mode le texte restait sombre sur un fond clair
+   (ou très clair sur fond clair) → illisible.
+
+   SOLUTION : forcer explicitement background + color sur les
+   <option> elles-mêmes, en utilisant les mêmes variables CSS
+   connectées au thème global (--uc-card / --uc-text).
+
+   À COLLER dans user-creation.component.css, juste après la
+   règle ".uc-input::placeholder { ... }"
+══════════════════════════════════════════════════════════ */
+
+.uc-input option {
+  background: var(--uc-card);
+  color: var(--uc-text);
+}
+
+/* Optionnel mais recommandé : améliore aussi le contraste au survol
+   dans les navigateurs qui le supportent (Chrome/Edge) */
+.uc-input option:hover,
+.uc-input option:checked {
+  background: var(--uc-accent-light);
+  color: var(--uc-text);
+}
   

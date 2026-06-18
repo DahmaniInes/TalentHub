@@ -64,6 +64,7 @@ export class UserCreationComponent implements OnInit {
   // ✅ Mode "ajout manuel" par champ — true = afficher un input texte libre
   modeAjoutUniversite = signal(false);
   modeAjoutSpecialite = signal(false);
+  modeAjoutNiveau     = signal(false);
 
   superviseurSelectionnes = signal<number[]>([]);
 
@@ -103,6 +104,7 @@ export class UserCreationComponent implements OnInit {
       specialiteId:    [null],
       specialiteTexte: [''],
       niveauEtudeId:   [null],
+      niveauEtudeTexte: [''],
 
       // Stage
       typeStageId:    [null],
@@ -124,6 +126,24 @@ export class UserCreationComponent implements OnInit {
       const filtered = val.replace(/[^0-9\s]/g, '');
       if (filtered !== val) {
         this.userForm.get('telephone')!.setValue(filtered, { emitEvent: false });
+      }
+    });
+
+    // ✅ Auto-uppercase en temps réel pour les nouvelles université/spécialité saisies manuellement
+    //    (deviendront le "code" en base, donc toujours en majuscule)
+    this.userForm.get('universiteTexte')!.valueChanges.subscribe(val => {
+      if (val && /[a-z]/.test(val)) {
+        this.userForm.get('universiteTexte')!.setValue(val.toUpperCase(), { emitEvent: false });
+      }
+    });
+    this.userForm.get('specialiteTexte')!.valueChanges.subscribe(val => {
+      if (val && /[a-z]/.test(val)) {
+        this.userForm.get('specialiteTexte')!.setValue(val.toUpperCase(), { emitEvent: false });
+      }
+    });
+    this.userForm.get('niveauEtudeTexte')!.valueChanges.subscribe(val => {
+      if (val && /[a-z]/.test(val)) {
+        this.userForm.get('niveauEtudeTexte')!.setValue(val.toUpperCase(), { emitEvent: false });
       }
     });
   }
@@ -199,6 +219,23 @@ export class UserCreationComponent implements OnInit {
     this.userForm.get('specialiteTexte')!.setValue('');
   }
 
+  // ✅ Gestion du select Niveau d'étude — bascule en mode ajout manuel si "+ Ajouter..."
+  onNiveauChange(value: string): void {
+    if (value === '__AJOUTER__') {
+      this.modeAjoutNiveau.set(true);
+      this.userForm.get('niveauEtudeId')!.setValue(null);
+    } else {
+      this.modeAjoutNiveau.set(false);
+      this.userForm.get('niveauEtudeId')!.setValue(value ? +value : null);
+      this.userForm.get('niveauEtudeTexte')!.setValue('');
+    }
+  }
+
+  annulerAjoutNiveau(): void {
+    this.modeAjoutNiveau.set(false);
+    this.userForm.get('niveauEtudeTexte')!.setValue('');
+  }
+
   ajouterSuperviseur(idStr: string): void {
     const id = +idStr;
     if (!id || this.superviseurSelectionnes().includes(id)) return;
@@ -248,17 +285,18 @@ export class UserCreationComponent implements OnInit {
     return this.profils().find(p => p.id == id)?.nom ?? '—';
   }
 
-  getTypeStageCode(id: any): string {
-    return this.typesStage().find(t => t.id == id)?.code ?? '—';
+  getTypeStageLibelle(id: any): string {
+    return this.typesStage().find(t => t.id == id)?.libelle ?? '—';
   }
 
-  // ✅ Libellés académiques pour le récapitulatif
-  getUniversiteCode(): string {
+  // ✅ Codes académiques pour le récapitulatif (on affiche le code, pas le libellé)
+  getUniversiteLibelle(): string {
     if (this.modeAjoutUniversite() || this.userForm.get('universiteTexte')?.value) {
       return this.userForm.get('universiteTexte')?.value || '—';
     }
     const id = this.userForm.get('universiteId')?.value;
-    return this.universites().find((u: any) => u.id == id)?.libelle ?? '—';
+    const u = this.universites().find((u: any) => u.id == id);
+    return u ? (u.code || u.libelle) : '—';
   }
 
   getSpecialiteLibelle(): string {
@@ -266,12 +304,17 @@ export class UserCreationComponent implements OnInit {
       return this.userForm.get('specialiteTexte')?.value || '—';
     }
     const id = this.userForm.get('specialiteId')?.value;
-    return this.specialites().find((s: any) => s.id == id)?.libelle ?? '—';
+    const s = this.specialites().find((s: any) => s.id == id);
+    return s ? (s.code || s.libelle) : '—';
   }
 
   getNiveauLibelle(): string {
+    if (this.modeAjoutNiveau() || this.userForm.get('niveauEtudeTexte')?.value) {
+      return this.userForm.get('niveauEtudeTexte')?.value || '—';
+    }
     const id = this.userForm.get('niveauEtudeId')?.value;
-    return this.niveaux().find((n: any) => n.id == id)?.libelle ?? '—';
+    const n = this.niveaux().find((n: any) => n.id == id);
+    return n ? (n.code || n.libelle) : '—';
   }
 
   formatDate(fieldName: string): string {
@@ -283,10 +326,11 @@ export class UserCreationComponent implements OnInit {
 
   goBack(): void { this.router.navigate(['/users']); }
 
-  // ✅ Crée l'université/spécialité saisie manuellement si besoin, avant de soumettre l'utilisateur
-  private resoudreAcademique(): Promise<{ universiteId: number | null; specialiteId: number | null }> {
-    const universiteTexte = (this.userForm.get('universiteTexte')?.value || '').trim();
-    const specialiteTexte = (this.userForm.get('specialiteTexte')?.value || '').trim();
+  // ✅ Crée l'université/spécialité/niveau saisis manuellement si besoin, avant de soumettre l'utilisateur
+  private resoudreAcademique(): Promise<{ universiteId: number | null; specialiteId: number | null; niveauEtudeId: number | null }> {
+    const universiteTexte  = (this.userForm.get('universiteTexte')?.value || '').trim();
+    const specialiteTexte  = (this.userForm.get('specialiteTexte')?.value || '').trim();
+    const niveauEtudeTexte = (this.userForm.get('niveauEtudeTexte')?.value || '').trim();
 
     const universitePromise: Promise<number | null> =
       this.modeAjoutUniversite() && universiteTexte
@@ -312,8 +356,20 @@ export class UserCreationComponent implements OnInit {
             : Promise.resolve(null)
         : Promise.resolve(this.userForm.get('specialiteId')?.value ?? null);
 
-    return Promise.all([universitePromise, specialitePromise]).then(
-      ([universiteId, specialiteId]) => ({ universiteId, specialiteId })
+    const niveauPromise: Promise<number | null> =
+      this.modeAjoutNiveau() && niveauEtudeTexte
+        ? this.nomenclatureAcad.createOrGetNiveau
+            ? new Promise(resolve => {
+                this.nomenclatureAcad.createOrGetNiveau(niveauEtudeTexte).subscribe({
+                  next: (n: any) => resolve(n?.id ?? null),
+                  error: () => resolve(null)
+                });
+              })
+            : Promise.resolve(null)
+        : Promise.resolve(this.userForm.get('niveauEtudeId')?.value ?? null);
+
+    return Promise.all([universitePromise, specialitePromise, niveauPromise]).then(
+      ([universiteId, specialiteId, niveauEtudeId]) => ({ universiteId, specialiteId, niveauEtudeId })
     );
   }
 
@@ -324,8 +380,8 @@ export class UserCreationComponent implements OnInit {
 
     const v = this.userForm.value;
 
-    // ✅ Résout les IDs académiques (crée université/spécialité si saisie manuelle)
-    const { universiteId, specialiteId } = await this.resoudreAcademique();
+    // ✅ Résout les IDs académiques (crée université/spécialité/niveau si saisie manuelle)
+    const { universiteId, specialiteId, niveauEtudeId } = await this.resoudreAcademique();
 
     const request: UserCreationRequest = {
       nom:            v.nom,
@@ -342,7 +398,7 @@ export class UserCreationComponent implements OnInit {
       // ✅ IDs académiques résolus
       universiteId:  universiteId,
       specialiteId:  specialiteId,
-      niveauEtudeId: v.niveauEtudeId || null,
+      niveauEtudeId: niveauEtudeId,
 
       // Stage
       typeStageId:    this.estStagiaire() ? (v.typeStageId  || null) : null,
@@ -359,6 +415,7 @@ export class UserCreationComponent implements OnInit {
         this.superviseurSelectionnes.set([]);
         this.modeAjoutUniversite.set(false);
         this.modeAjoutSpecialite.set(false);
+        this.modeAjoutNiveau.set(false);
         this.currentStep = 1;
         this.router.navigate(['/users']);
       },

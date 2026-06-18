@@ -16,7 +16,7 @@ public class NiveauEtudeController {
 
     private final NiveauEtudeService service;
 
-    @GetMapping          public ResponseEntity<List<NiveauEtude>> getAll()    { return ResponseEntity.ok(service.getAll()); }
+    @GetMapping         public ResponseEntity<List<NiveauEtude>> getAll()    { return ResponseEntity.ok(service.getAll()); }
     @GetMapping("/actifs") public ResponseEntity<List<NiveauEtude>> getActifs() { return ResponseEntity.ok(service.getAllActifs()); }
     @GetMapping("/{id}") public ResponseEntity<NiveauEtude> getById(@PathVariable Long id) {
         return service.getById(id).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
@@ -25,6 +25,12 @@ public class NiveauEtudeController {
     @PostMapping
     public ResponseEntity<NiveauEtude> create(@RequestBody NomenclatureAcademiqueRequest req) {
         return new ResponseEntity<>(service.create(req), HttpStatus.CREATED);
+    }
+
+    // ✅ Endpoint spécial : créer ou retrouver par code (utilisé depuis les formulaires)
+    @PostMapping("/create-or-get")
+    public ResponseEntity<NiveauEtude> createOrGet(@RequestBody java.util.Map<String, String> body) {
+        return ResponseEntity.ok(service.createOrGet(body.get("libelle")));
     }
 
     @PutMapping("/{id}")

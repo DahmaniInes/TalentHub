@@ -31,19 +31,21 @@ public class UniversiteService {
                 .build());
     }
 
-    // Création rapide depuis le formulaire user (si l'université n'existe pas)
-    public Universite createOrGet(String libelle) {
-        if (repository.existsByLibelleIgnoreCase(libelle)) {
+    // ✅ Création rapide depuis le formulaire user — le texte saisi devient
+    //    directement le CODE (déjà en majuscule côté frontend), et le libellé
+    //    est aussi rempli avec la même valeur pour rester cohérent.
+    public Universite createOrGet(String saisie) {
+        String code = saisie.trim().toUpperCase();
+
+        if (repository.existsByCode(code)) {
             return repository.findAll().stream()
-                    .filter(u -> u.getLibelle().equalsIgnoreCase(libelle))
+                    .filter(u -> u.getCode().equalsIgnoreCase(code))
                     .findFirst().orElseThrow();
         }
-        String code = libelle.toUpperCase()
-                .replaceAll("[^A-Z0-9]", "_")
-                .substring(0, Math.min(libelle.length(), 30));
+
         return repository.save(Universite.builder()
-                .code(code + "_" + System.currentTimeMillis() % 1000)
-                .libelle(libelle)
+                .code(code)
+                .libelle(saisie.trim())
                 .actif(true)
                 .build());
     }
@@ -52,7 +54,7 @@ public class UniversiteService {
         Universite u = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Université non trouvée : " + id));
 
-        // ✅ Code maintenant modifiable — vérifier l'unicité si changé
+        // ✅ Code modifiable — vérifier l'unicité si changé
         if (req.getCode() != null && !req.getCode().isBlank()
                 && !req.getCode().equalsIgnoreCase(u.getCode())) {
             String nouveauCode = req.getCode().toUpperCase();
