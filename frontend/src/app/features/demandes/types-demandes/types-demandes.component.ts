@@ -40,10 +40,18 @@ export class TypesDemandesComponent implements OnInit {
 
     constructor() {
         this.form = this.fb.group({
+            // ✅ Plus de pattern strict — conversion auto en majuscule
             code:        ['', Validators.required],
             libelle:     ['', Validators.required],
             description: [''],
             actif:       [true]
+        });
+
+        // ✅ Auto-uppercase en temps réel, sans bloquer la saisie ni afficher d'erreur
+        this.form.get('code')!.valueChanges.subscribe(val => {
+            if (val && /[a-z]/.test(val)) {
+                this.form.get('code')!.setValue(val.toUpperCase(), { emitEvent: false });
+            }
         });
     }
 
@@ -127,7 +135,7 @@ export class TypesDemandesComponent implements OnInit {
     openCreate(): void {
         if (!this.permCtx.canCreateType()) { this.ui.error("Permission requise : DEMANDE_TYPE_CREATE"); return; }
         this.editingId.set(null);
-        this.form.reset({ actif: true });
+        this.form.reset({ code: '', libelle: '', description: '', actif: true });
         this.form.get('code')!.enable();
         this.slideOpen.set(true);
     }
@@ -136,7 +144,8 @@ export class TypesDemandesComponent implements OnInit {
         if (!this.permCtx.canUpdateType()) { this.ui.error("Permission requise : DEMANDE_TYPE_UPDATE"); return; }
         this.editingId.set(t.id);
         this.form.patchValue(t);
-        this.form.get('code')!.disable();
+        // ✅ Le code est désormais modifiable en édition
+        this.form.get('code')!.enable();
         this.slideOpen.set(true);
     }
 
@@ -147,6 +156,8 @@ export class TypesDemandesComponent implements OnInit {
         this.loading.set(true);
         const id  = this.editingId();
         const val = { ...this.form.getRawValue() };
+        // ✅ Sécurité supplémentaire — toujours majuscule avant l'envoi
+        val.code  = (val.code || '').toUpperCase();
         const obs = id ? this.nomenclature.updateType(id, val) : this.nomenclature.createType(val);
         obs.subscribe({
             next: () => { this.slideOpen.set(false); this.ui.success(id ? 'Type modifié.' : 'Type créé.'); this.loadAll(); this.loading.set(false); },

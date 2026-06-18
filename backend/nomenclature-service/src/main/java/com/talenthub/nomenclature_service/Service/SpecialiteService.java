@@ -50,6 +50,17 @@ public class SpecialiteService {
     public Specialite update(Long id, NomenclatureAcademiqueRequest req) {
         Specialite s = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Spécialité non trouvée : " + id));
+
+        // ✅ Code maintenant modifiable — vérifier l'unicité si changé
+        if (req.getCode() != null && !req.getCode().isBlank()
+                && !req.getCode().equalsIgnoreCase(s.getCode())) {
+            String nouveauCode = req.getCode().toUpperCase();
+            if (repository.existsByCode(nouveauCode)) {
+                throw new RuntimeException("Code déjà utilisé : " + req.getCode());
+            }
+            s.setCode(nouveauCode);
+        }
+
         s.setLibelle(req.getLibelle());
         s.setDescription(req.getDescription());
         s.setActif(req.isActif());

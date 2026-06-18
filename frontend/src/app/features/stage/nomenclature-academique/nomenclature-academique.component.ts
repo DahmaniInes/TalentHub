@@ -155,20 +155,28 @@ export class NomenclatureAcademiqueComponent implements OnInit {
     this.slideOpen.set(true);
   }
 
+  // ✅ Auto-uppercase à la frappe, sans bloquer ni afficher d'erreur
+  onCodeChange(value: string): void {
+    const upper = (value || '').toUpperCase();
+    this.form.update(f => ({ ...f, code: upper }));
+  }
+
   save(): void {
     if (!this.form().libelle?.trim()) { this.ui.warning('Le libellé est obligatoire.'); return; }
-    if (!this.editingId() && !this.form().code?.trim()) { this.ui.warning('Le code est obligatoire.'); return; }
+    if (!this.form().code?.trim()) { this.ui.warning('Le code est obligatoire.'); return; }
     this.saving.set(true);
     const t = this.tab(); const id = this.editingId();
+    // ✅ Sécurité supplémentaire — toujours majuscule avant l'envoi
+    const body = { ...this.form(), code: (this.form().code || '').toUpperCase() };
     let obs;
     if (id) {
-      obs = t === 'universites' ? this.svc.updateUniversite(id, this.form())
-          : t === 'specialites' ? this.svc.updateSpecialite(id, this.form())
-          : this.svc.updateNiveau(id, this.form());
+      obs = t === 'universites' ? this.svc.updateUniversite(id, body)
+          : t === 'specialites' ? this.svc.updateSpecialite(id, body)
+          : this.svc.updateNiveau(id, body);
     } else {
-      obs = t === 'universites' ? this.svc.createUniversite(this.form())
-          : t === 'specialites' ? this.svc.createSpecialite(this.form())
-          : this.svc.createNiveau(this.form());
+      obs = t === 'universites' ? this.svc.createUniversite(body)
+          : t === 'specialites' ? this.svc.createSpecialite(body)
+          : this.svc.createNiveau(body);
     }
     obs.subscribe({
       next: saved => {

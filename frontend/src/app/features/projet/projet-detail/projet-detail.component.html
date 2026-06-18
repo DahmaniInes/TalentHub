@@ -1243,8 +1243,8 @@
                     </svg>
                   </a>
                   <button class="pd5-doc-icon-btn pd5-doc-icon-danger" (click)="deleteDocument(doc)">
-                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
-                      <path d="M2 3h10M5 3V1h4v2M4 3l.5 8h5L10 3" stroke-linecap="round" />
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                     </svg>
                   </button>
                 </div>
@@ -1312,14 +1312,16 @@
                   </div>
                   <div *ngIf="isOwn(c) && editingCommentId() !== c.id" class="pd5-cmt-actions">
                     <button class="pd5-cmt-icon-btn" (click)="startEdit(c)">
-                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z" stroke-linecap="round" />
+                      <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
                       </svg>
                     </button>
                     <button class="pd5-cmt-icon-btn pd5-cmt-icon-danger" (click)="deleteComment(c)">
-                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M3 4h10M6 4V2h4v2M5 4l.5 9h5L11 4" stroke-linecap="round" />
+
+                      <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                       </svg>
+
                     </button>
                   </div>
                 </div>
@@ -2036,10 +2038,13 @@
                   <path d="M7 1v8M4 6l3 3 3-3" stroke-linecap="round" stroke-linejoin="round" />
                   <path d="M1 11v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke-linecap="round" />
                 </svg></a>
-              <button class="pd5-doc-icon-btn pd5-doc-icon-danger" (click)="deleteDocument(doc)"><svg
-                  viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
-                  <path d="M2 3h10M5 3V1h4v2M4 3l.5 8h5L10 3" stroke-linecap="round" />
-                </svg></button>
+              <button class="pd5-doc-icon-btn pd5-doc-icon-danger" (click)="deleteDocument(doc)">
+                
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                </svg>
+              
+              </button>
             </div>
           </div>
         </div>

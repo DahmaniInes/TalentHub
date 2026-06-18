@@ -102,7 +102,15 @@
   --dt-text-head:    #ffffff;
   --dt-shadow:       0 4px 24px rgba(0,0,0,0.4);
 }
+:root:not(.dark) .nav-item {
+  color: #8999af;  /* slate-600 : lisible sur fond blanc */
+}
 
+/* AVANT (blanc sur blanc = invisible) */
+:root:not(.dark) .nav-item:hover {
+  color: #8999af;        /* ← REMPLACER #ffffff par slate-900 */
+  background: rgba(0,0,0,.04);  /* ← REMPLACER rgba(255,255,255,0.07) */
+}
 /* ── Base body ── */
 body {
   background-color: var(--bg-primary) !important;
@@ -344,7 +352,7 @@ html, body { height: 100%; }
 .mx-so-close { width:28px; height:28px; border-radius:7px; border:none; background:transparent; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .12s; flex-shrink:0; }
 .mx-so-close:hover { background:var(--bg-hover); color:var(--text-primary); }
 .mx-so-close svg { width:12px; height:12px; }
-.mx-so-tabs { display:flex; border-bottom:1px solid var(--border-color); background:var(--bg-hover); flex-shrink:0; }
+.mx-so-tabs { display:flex; border-bottom:1px solid var(--border-color);  flex-shrink:0; }
 .mx-so-tab { padding:9px 16px; border:none; background:transparent; font-size:0.73rem; font-weight:600; color:var(--text-muted); cursor:pointer; border-bottom:2px solid transparent; font-family:Arimo; transition:color .12s; white-space:nowrap; }
 .mx-so-tab.active { color:var(--accent); border-bottom-color:var(--accent); background:var(--bg-card); }
 .mx-so-body { padding:16px 18px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:14px; }

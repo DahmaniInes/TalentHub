@@ -205,14 +205,8 @@
       </table>
     </div>
 
-    <!-- ACCÈS REFUSÉ pour l'onglet -->
-   <!-- <div *ngIf="!loading() && !canViewCurrent()"
-         style="padding:40px;text-align:center;color:var(--text-muted)">
-      <p style="font-size:.85rem">Vous n'avez pas la permission de consulter cet onglet.</p>
-    </div>
--->
-    <!-- PAGINATION -->
-    <div *ngIf="!loading() && canViewCurrent() && currentList().length > pageSize" class="dt-footer">
+    <!-- PAGINATION — TOUJOURS VISIBLE -->
+    <div *ngIf="!loading() && canViewCurrent()" class="dt-footer">
       <div class="dt-count-info">
         <strong>{{ (currentPage()-1)*pageSize+1 }}–{{ minVal(currentPage()*pageSize, currentList().length) }}</strong>
         of <strong>{{ currentList().length }}</strong>
@@ -233,6 +227,8 @@
   </div>
 </div>
 
+
+
 <!-- SLIDE-OVER -->
 <div *ngIf="slideOpen()" class="dm-slide-overlay" (click)="slideOpen.set(false)">
   <div class="dm-slide-panel" (click)="$event.stopPropagation()">
@@ -245,17 +241,19 @@
       </button>
     </div>
     <div class="dm-slide-body">
-      <div class="dm-field" *ngIf="!editingId()">
+      <!-- ✅ Code désormais toujours modifiable, en création ET en édition -->
+      <div class="dm-field">
         <label class="dm-label">Code <span style="color:#ef4444">*</span></label>
-        <input [(ngModel)]="form().code" class="dm-input dm-input-mono"
+        <input [ngModel]="form().code"
+               (ngModelChange)="onCodeChange($event)"
+               class="dm-input dm-input-mono"
                placeholder="Ex: ESPRIT, INFO, LIC1..." style="text-transform:uppercase">
-        <p style="font-size:.68rem;color:var(--text-muted);margin-top:4px">Code unique, majuscules recommandées.</p>
-      </div>
-      <div class="dm-field" *ngIf="editingId()">
-        <label class="dm-label">Code</label>
-        <div style="padding:8px 12px;background:var(--bg-hover);border:1px solid var(--border-color);border-radius:8px;font-size:.8rem;font-family:monospace;color:var(--text-muted)">
-          {{ form().code }}
-        </div>
+        <p *ngIf="!editingId()" style="font-size:.68rem;color:var(--text-muted);margin-top:4px">
+          Code unique, converti automatiquement en majuscules.
+        </p>
+        <p *ngIf="editingId()" style="font-size:.68rem;color:var(--text-muted);margin-top:4px">
+          ⚠️ Modifier le code peut casser des références existantes.
+        </p>
       </div>
       <div class="dm-field">
         <label class="dm-label">Libellé <span style="color:#ef4444">*</span></label>

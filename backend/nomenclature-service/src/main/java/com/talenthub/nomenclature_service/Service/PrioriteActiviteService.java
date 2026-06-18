@@ -72,6 +72,13 @@ public class PrioriteActiviteService {
     public PrioriteActiviteDto update(Long id, PrioriteActiviteRequest req) {
         PrioriteActivite entity = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Priorité d'activité introuvable : " + id));
+
+        if (req.getCode() != null && !req.getCode().equalsIgnoreCase(entity.getCode())) {
+            if (repository.existsByCode(req.getCode().toUpperCase())) {
+                throw new RuntimeException("Ce code de priorité existe déjà : " + req.getCode());
+            }
+            entity.setCode(req.getCode().toUpperCase());
+        }
         // Code non modifiable — on ignore la valeur envoyée
         entity.setLibelle(req.getLibelle());
         entity.setDescription(req.getDescription());

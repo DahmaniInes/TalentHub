@@ -1,5 +1,4 @@
 // src/app/features/reclamation/pages/statut-reclamation/statut-reclamation.component.ts
-// Pattern identique à types-demandes — adapté pour StatutReclamation + permissions RECLAMATION_STATUT_*
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -36,15 +35,20 @@ export class StatutReclamationComponent implements OnInit {
 
   form: FormGroup;
 
-  // Codes réservés — non modifiables par l'utilisateur (logique métier figée)
-  readonly CODES_FIXES = ['EN_ATTENTE', 'EN_COURS', 'RESOLUE', 'REJETEE', 'FERMEE'];
-
   constructor() {
     this.form = this.fb.group({
+      // ✅ Plus de pattern strict — conversion auto en majuscule
       code:        ['', Validators.required],
       libelle:     ['', Validators.required],
       description: [''],
       actif:       [true]
+    });
+
+    // ✅ Auto-uppercase en temps réel
+    this.form.get('code')!.valueChanges.subscribe(val => {
+      if (val && /[a-z]/.test(val)) {
+        this.form.get('code')!.setValue(val.toUpperCase(), { emitEvent: false });
+      }
     });
   }
 
@@ -125,7 +129,7 @@ export class StatutReclamationComponent implements OnInit {
   openCreate(): void {
     if (!this.perms.canCreateStatutRec()) { this.ui.error('Permission RECLAMATION_STATUT_CREATE requise.'); return; }
     this.editingId.set(null);
-    this.form.reset({ actif: true });
+    this.form.reset({ code: '', libelle: '', description: '', actif: true });
     this.form.get('code')!.enable();
     this.slideOpen.set(true);
   }
@@ -134,7 +138,8 @@ export class StatutReclamationComponent implements OnInit {
     if (!this.perms.canUpdateStatutRec()) { this.ui.error('Permission RECLAMATION_STATUT_UPDATE requise.'); return; }
     this.editingId.set(s.id);
     this.form.patchValue(s);
-    this.form.get('code')!.disable(); // code non modifiable
+    // ✅ Le code est désormais modifiable en édition
+    this.form.get('code')!.enable();
     this.slideOpen.set(true);
   }
 
@@ -145,6 +150,7 @@ export class StatutReclamationComponent implements OnInit {
     this.loading.set(true);
     const id  = this.editingId();
     const val = { ...this.form.getRawValue() };
+    val.code  = (val.code || '').toUpperCase();
     const obs = id ? this.recSvc.updateStatut(id, val) : this.recSvc.createStatut(val);
     obs.subscribe({
       next: () => { this.slideOpen.set(false); this.ui.success(id ? 'Statut modifié.' : 'Statut créé.'); this.loadAll(); this.loading.set(false); },

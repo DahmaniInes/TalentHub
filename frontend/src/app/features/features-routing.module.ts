@@ -45,7 +45,11 @@ import { TypeProjetComponent } from './projet/type-projet/type-projet.component'
 import { StatutStageComponent } from './stage/statut-stage/statut-stage.component';
 
 import { PrioriteActiviteComponent } from './activite/priorite-activite/priorite-activite.component';
+import { ReferentielActivitesComponent } from './activite/referentiel-activites/referentiel-activites.component';
 
+import { ReferentielProjetsComponent } from './projet/referentiel-projets/referentiel-projets.component';
+import { ReferentielStageComponent } from './stage/referentiel-stage/referentiel-stage.component';
+import { ReferentielReclamationComponent } from './reclamation/referentiel-reclamation/referentiel-reclamation.component';
 
 
 
@@ -155,6 +159,44 @@ const routes: Routes = [
 {
   path: 'activite-priorite',
   component: PrioriteActiviteComponent   
+},
+
+
+// Ajouter ces routes
+{
+  path: 'referentiel-activites',
+  component : ReferentielActivitesComponent,
+},
+{
+  path: 'referentiel-activites/:tab',
+  component: ReferentielActivitesComponent
+},
+{
+  path: 'referentiel-projets',
+  redirectTo: 'referentiel-projets/statuts',
+  pathMatch: 'full'
+},
+{
+  path: 'referentiel-projets/:tab',
+  component: ReferentielProjetsComponent
+},
+{
+  path: 'referentiel-stage',
+  redirectTo: 'referentiel-stage/types',
+  pathMatch: 'full'
+},
+{
+  path: 'referentiel-stage/:tab',
+  component: ReferentielStageComponent
+},
+{
+  path: 'referentiel-reclamation',
+  redirectTo: 'referentiel-reclamation/services',
+  pathMatch: 'full'
+},
+{
+  path: 'referentiel-reclamation/:tab',
+  component: ReferentielReclamationComponent
 }
 
 ];

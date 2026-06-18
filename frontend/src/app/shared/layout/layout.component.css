@@ -16,13 +16,13 @@
    SIDEBAR — BASE
 ══════════════════════════════════════ */
 .sidebar {
-  width: 280px;
+  width: 290px;
   min-width: 280px;
   background-color: var(--bg-sidebar);
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  padding: 0 14px 22px 14px;
+  padding: 0 14px 22px 15px;
   overflow: hidden;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
               min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
@@ -170,15 +170,15 @@
   border-radius: 8px;
   color: #a8b8d8;
   text-decoration: none;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
-  font-family: 'Inter', 'Segoe UI', sans-serif;
+  font-family: 'Arimo', 'Arimo', sans-serif;
   transition: background-color 0.2s, color 0.2s;
   cursor: pointer;
   position: relative;
   white-space: nowrap;
   overflow: hidden;
-  letter-spacing: 0.7px;
+  letter-spacing: 0.5px;
 }
 
 .nav-item:hover {
@@ -416,7 +416,7 @@
   border: 1px solid var(--border-color);
   border-radius: 5px;
   padding: 2px 6px;
-  font-family: inherit;
+  font-family: Arimo;
   letter-spacing: 0.2px;
 }
 
@@ -675,7 +675,7 @@
     background: none;
     border: none;
     font-size: 13px;
-    font-family: inherit;
+    font-family: Arimo;
     color: var(--text-primary);
     text-align: left;
     cursor: pointer;
@@ -903,9 +903,9 @@
   padding: 9px 11px;
   border-radius: 8px;
   color: #a8b8d8;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
-  font-family: 'Inter', 'Segoe UI', sans-serif;
+  font-family: 'Arimo', 'Arimo', sans-serif;
   cursor: pointer;
   position: relative;
   white-space: nowrap;

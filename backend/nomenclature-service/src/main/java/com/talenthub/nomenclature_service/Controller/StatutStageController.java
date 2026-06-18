@@ -35,16 +35,38 @@ public class StatutStageController {
     @RequiresPermission("INT_STATUS_CREATE")
     @PostMapping
     public ResponseEntity<StatutStage> create(@RequestBody StatutStage entity) {
+        if (entity.getCode() != null) {
+            entity.setCode(entity.getCode().toUpperCase());
+        }
         return new ResponseEntity<>(repo.save(entity), HttpStatus.CREATED);
     }
 
+    /**
+     * ✅ CORRIGÉ — Au lieu de désérialiser le JSON directement en entité JPA
+     * et faire repo.save(entity) (qui peut silencieusement ignorer des champs
+     * si Hibernate considère l'entité "non dirty", ou écraser des champs non
+     * envoyés par le frontend avec null), on charge l'entité existante depuis
+     * la base et on applique les setters explicitement, exactement comme
+     * StatutReclamationService.update(). Cela garantit que chaque champ —
+     * y compris code — est bien pris en compte par le dirty-checking
+     * Hibernate et persisté dans l'UPDATE SQL généré.
+     */
     @RequiresPermission("INT_STATUS_EDIT")
     @PutMapping("/{id}")
     public ResponseEntity<StatutStage> update(@PathVariable Long id,
-                                              @RequestBody StatutStage entity) {
-        if (!repo.existsById(id)) return ResponseEntity.notFound().build();
-        entity.setId(id);
-        return ResponseEntity.ok(repo.save(entity));
+                                              @RequestBody StatutStage details) {
+        return repo.findById(id).map(s -> {
+            // ✅ Code désormais explicitement réassigné et toujours uppercase
+            if (details.getCode() != null && !details.getCode().isBlank()) {
+                s.setCode(details.getCode().toUpperCase());
+            }
+            s.setLibelle(details.getLibelle());
+            s.setCouleur(details.getCouleur());
+            s.setDescription(details.getDescription());
+            s.setOrdreAffichage(details.getOrdreAffichage());
+            s.setActif(details.isActif());
+            return ResponseEntity.ok(repo.save(s));
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     @RequiresPermission("INT_STATUS_EDIT")

@@ -37,10 +37,18 @@ export class ServiceReclamationComponent implements OnInit {
 
   constructor() {
     this.form = this.fb.group({
+      // ✅ Plus de pattern strict — la conversion en majuscule se fait automatiquement
       code:        ['', Validators.required],
       libelle:     ['', Validators.required],
       description: [''],
       actif:       [true]
+    });
+
+    // ✅ Auto-uppercase en temps réel, sans bloquer la saisie ni afficher d'erreur
+    this.form.get('code')!.valueChanges.subscribe(val => {
+      if (val && /[a-z]/.test(val)) {
+        this.form.get('code')!.setValue(val.toUpperCase(), { emitEvent: false });
+      }
     });
   }
 
@@ -121,7 +129,7 @@ export class ServiceReclamationComponent implements OnInit {
   openCreate(): void {
     if (!this.perms.canCreateServiceRec()) { this.ui.error('Permission RECLAMATION_SERVICE_CREATE requise.'); return; }
     this.editingId.set(null);
-    this.form.reset({ actif: true });
+    this.form.reset({ code: '', libelle: '', description: '', actif: true });
     this.form.get('code')!.enable();
     this.slideOpen.set(true);
   }
@@ -130,7 +138,8 @@ export class ServiceReclamationComponent implements OnInit {
     if (!this.perms.canUpdateServiceRec()) { this.ui.error('Permission RECLAMATION_SERVICE_UPDATE requise.'); return; }
     this.editingId.set(s.id);
     this.form.patchValue(s);
-    this.form.get('code')!.disable();
+    // ✅ Le code est désormais modifiable en édition
+    this.form.get('code')!.enable();
     this.slideOpen.set(true);
   }
 
@@ -140,7 +149,10 @@ export class ServiceReclamationComponent implements OnInit {
     if (this.form.invalid) { this.ui.error('Champs obligatoires manquants.'); return; }
     this.loading.set(true);
     const id  = this.editingId();
+    // ✅ getRawValue() inclut bien le code même si le control était désactivé ailleurs,
+    //    et on force l'uppercase une dernière fois par sécurité avant l'envoi
     const val = { ...this.form.getRawValue() };
+    val.code  = (val.code || '').toUpperCase();
     const obs = id ? this.recSvc.updateService(id, val) : this.recSvc.createService(val);
     obs.subscribe({
       next: () => { this.slideOpen.set(false); this.ui.success(id ? 'Service modifié.' : 'Service créé.'); this.loadAll(); this.loading.set(false); },

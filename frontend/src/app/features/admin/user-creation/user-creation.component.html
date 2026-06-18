@@ -122,14 +122,20 @@
         <!-- Téléphone -->
         <div class="uc-field-group uc-field-full">
           <label class="uc-label">Téléphone <span class="uc-optional">optionnel</span></label>
-          <div class="uc-input-wrap" [class.focused]="focusState['telephone']">
+          <div class="uc-input-wrap" [class.focused]="focusState['telephone']"
+               [class.error]="userForm.get('telephone')?.invalid && userForm.get('telephone')?.touched">
             <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
               <path d="M4 3h3l1.5 4-2 1.5a10.07 10.07 0 005 5L13 11l4 1.5V16a1 1 0 01-1 1C7.163 17 3 12.837 3 4a1 1 0 011-1z"
                     stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
             </svg>
+            <!-- ✅ inputmode="numeric" affiche le clavier numérique sur mobile -->
             <input formControlName="telephone" placeholder="71 234 567" class="uc-input"
+                   type="tel" inputmode="numeric"
                    (focus)="focusState['telephone']=true" (blur)="focusState['telephone']=false">
           </div>
+          <p class="uc-field-error" *ngIf="userForm.get('telephone')?.invalid && userForm.get('telephone')?.touched">
+            Le téléphone ne doit contenir que des chiffres
+          </p>
         </div>
       </div>
     </div>
@@ -221,48 +227,101 @@
           </p>
         </div>
 
-        <!-- Université -->
+        <!-- Université — SELECT + ajout manuel -->
         <div class="uc-field-group">
           <label class="uc-label">Université <span class="uc-optional">optionnel</span></label>
-          <div class="uc-input-wrap" [class.focused]="focusState['universite']">
+
+          <!-- Mode select -->
+          <div class="uc-input-wrap" *ngIf="!modeAjoutUniversite()" [class.focused]="focusState['universite']">
             <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
               <path d="M10 2l8 4v5c0 4-3.5 7-8 8-4.5-1-8-4-8-8V6l8-4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
             </svg>
-            <input formControlName="universite" placeholder="Ex: ESPRIT, ENSI, ENIT..." class="uc-input"
-                   (focus)="focusState['universite']=true" (blur)="focusState['universite']=false">
+            <select class="uc-input" style="cursor:pointer"
+                    [ngModel]="userForm.get('universiteId')?.value"
+                    [ngModelOptions]="{standalone:true}"
+                    (ngModelChange)="onUniversiteChange($event)"
+                    (focus)="focusState['universite']=true" (blur)="focusState['universite']=false">
+              <option [ngValue]="null">— Sélectionner —</option>
+              <option *ngFor="let u of universites()" [ngValue]="u.id">{{ u.code }}</option>
+              <option value="__AJOUTER__">+ Ajouter une nouvelle université...</option>
+            </select>
           </div>
+
+          <!-- Mode ajout manuel -->
+          <div *ngIf="modeAjoutUniversite()" style="display:flex;gap:8px;align-items:center">
+            <div class="uc-input-wrap" style="flex:1" [class.focused]="focusState['universiteTexte']">
+              <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
+                <path d="M10 2l8 4v5c0 4-3.5 7-8 8-4.5-1-8-4-8-8V6l8-4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+              </svg>
+              <input formControlName="universiteTexte" placeholder="Nom de la nouvelle université" class="uc-input"
+                     (focus)="focusState['universiteTexte']=true" (blur)="focusState['universiteTexte']=false">
+            </div>
+            <button type="button" class="uc-icon-btn" title="Annuler et revenir à la liste"
+                    (click)="annulerAjoutUniversite()">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M2 2l12 12M14 2L2 14" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+          <p *ngIf="modeAjoutUniversite()" style="font-size:.68rem;color:var(--uc-text-muted);margin-top:4px">
+            Cette université sera créée et ajoutée à la liste.
+          </p>
         </div>
 
-        <!-- Spécialité -->
+        <!-- Spécialité — SELECT + ajout manuel -->
         <div class="uc-field-group">
           <label class="uc-label">Spécialité <span class="uc-optional">optionnel</span></label>
-          <div class="uc-input-wrap" [class.focused]="focusState['specialite']">
+
+          <!-- Mode select -->
+          <div class="uc-input-wrap" *ngIf="!modeAjoutSpecialite()" [class.focused]="focusState['specialite']">
             <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
               <path d="M9 3H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
               <path d="M17 3l-6 6M11 3h6v6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
             </svg>
-            <input formControlName="specialite" placeholder="Ex: Informatique, Génie Civil..." class="uc-input"
-                   (focus)="focusState['specialite']=true" (blur)="focusState['specialite']=false">
+            <select class="uc-input" style="cursor:pointer"
+                    [ngModel]="userForm.get('specialiteId')?.value"
+                    [ngModelOptions]="{standalone:true}"
+                    (ngModelChange)="onSpecialiteChange($event)"
+                    (focus)="focusState['specialite']=true" (blur)="focusState['specialite']=false">
+              <option [ngValue]="null">— Sélectionner —</option>
+              <option *ngFor="let s of specialites()" [ngValue]="s.id">{{ s.code }}</option>
+              <option value="__AJOUTER__">+ Ajouter une nouvelle spécialité...</option>
+            </select>
           </div>
+
+          <!-- Mode ajout manuel -->
+          <div *ngIf="modeAjoutSpecialite()" style="display:flex;gap:8px;align-items:center">
+            <div class="uc-input-wrap" style="flex:1" [class.focused]="focusState['specialiteTexte']">
+              <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
+                <path d="M9 3H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                <path d="M17 3l-6 6M11 3h6v6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              </svg>
+              <input formControlName="specialiteTexte" placeholder="Nom de la nouvelle spécialité" class="uc-input"
+                     (focus)="focusState['specialiteTexte']=true" (blur)="focusState['specialiteTexte']=false">
+            </div>
+            <button type="button" class="uc-icon-btn" title="Annuler et revenir à la liste"
+                    (click)="annulerAjoutSpecialite()">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M2 2l12 12M14 2L2 14" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+          <p *ngIf="modeAjoutSpecialite()" style="font-size:.68rem;color:var(--uc-text-muted);margin-top:4px">
+            Cette spécialité sera créée et ajoutée à la liste.
+          </p>
         </div>
 
-        <!-- Niveau d'étude -->
+        <!-- Niveau d'étude — SELECT depuis la BD -->
         <div class="uc-field-group uc-field-full">
           <label class="uc-label">Niveau d'étude <span class="uc-optional">optionnel</span></label>
           <div class="uc-input-wrap" [class.focused]="focusState['niveauEtude']">
             <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
               <path d="M10 2l8 4-8 4-8-4 8-4zM2 10l8 4 8-4" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
             </svg>
-            <select formControlName="niveauEtude" class="uc-input" style="cursor:pointer"
+            <select formControlName="niveauEtudeId" class="uc-input" style="cursor:pointer"
                     (focus)="focusState['niveauEtude']=true" (blur)="focusState['niveauEtude']=false">
-              <option value="">— Sélectionner —</option>
-              <option value="Licence 1">Licence 1</option>
-              <option value="Licence 2">Licence 2</option>
-              <option value="Licence 3">Licence 3</option>
-              <option value="Master 1">Master 1</option>
-              <option value="Master 2">Master 2</option>
-              <option value="Ingénierie">Ingénierie</option>
-              <option value="Doctorat">Doctorat</option>
+              <option [ngValue]="null">— Sélectionner —</option>
+              <option *ngFor="let n of niveaux()" [ngValue]="n.id">{{ n.code }}</option>
             </select>
           </div>
         </div>
@@ -289,7 +348,7 @@
               <select formControlName="typeStageId" class="uc-input" style="cursor:pointer"
                       (focus)="focusState['typeStageId']=true" (blur)="focusState['typeStageId']=false">
                 <option [ngValue]="null">— Sélectionner —</option>
-                <option *ngFor="let t of typesStage()" [ngValue]="t.id">{{ t.libelle }}</option>
+                <option *ngFor="let t of typesStage()" [ngValue]="t.id">{{ t.code }}</option>
               </select>
             </div>
           </div>
@@ -521,24 +580,26 @@
 
         <!-- Académique (si renseigné) -->
         <div class="uc-recap-card"
-             *ngIf="userForm.get('universite')?.value || userForm.get('specialite')?.value || userForm.get('niveauEtude')?.value">
+             *ngIf="userForm.get('universiteId')?.value || userForm.get('universiteTexte')?.value
+                 || userForm.get('specialiteId')?.value || userForm.get('specialiteTexte')?.value
+                 || userForm.get('niveauEtudeId')?.value">
           <div class="uc-recap-card-header">
             <svg viewBox="0 0 18 18" fill="none">
               <path d="M9 1.5l7 3.5v4c0 3.5-3 5.5-7 6.5-4-1-7-3-7-6.5V5L9 1.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
             </svg>
             Études
           </div>
-          <div class="uc-recap-row" *ngIf="userForm.get('universite')?.value">
+          <div class="uc-recap-row" *ngIf="userForm.get('universiteId')?.value || userForm.get('universiteTexte')?.value">
             <span class="uc-recap-key">Université</span>
-            <span class="uc-recap-val">{{ userForm.get('universite')?.value }}</span>
+            <span class="uc-recap-val">{{ getUniversiteLibelle() }}</span>
           </div>
-          <div class="uc-recap-row" *ngIf="userForm.get('specialite')?.value">
+          <div class="uc-recap-row" *ngIf="userForm.get('specialiteId')?.value || userForm.get('specialiteTexte')?.value">
             <span class="uc-recap-key">Spécialité</span>
-            <span class="uc-recap-val">{{ userForm.get('specialite')?.value }}</span>
+            <span class="uc-recap-val">{{ getSpecialiteLibelle() }}</span>
           </div>
-          <div class="uc-recap-row" *ngIf="userForm.get('niveauEtude')?.value">
+          <div class="uc-recap-row" *ngIf="userForm.get('niveauEtudeId')?.value">
             <span class="uc-recap-key">Niveau</span>
-            <span class="uc-recap-val">{{ userForm.get('niveauEtude')?.value }}</span>
+            <span class="uc-recap-val">{{ getNiveauLibelle() }}</span>
           </div>
         </div>
 

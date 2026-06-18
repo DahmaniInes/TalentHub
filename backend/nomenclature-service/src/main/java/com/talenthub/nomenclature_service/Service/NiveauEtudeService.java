@@ -35,6 +35,17 @@ public class NiveauEtudeService {
     public NiveauEtude update(Long id, NomenclatureAcademiqueRequest req) {
         NiveauEtude n = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Niveau non trouvé : " + id));
+
+        // ✅ Code maintenant modifiable — vérifier l'unicité si changé
+        if (req.getCode() != null && !req.getCode().isBlank()
+                && !req.getCode().equalsIgnoreCase(n.getCode())) {
+            String nouveauCode = req.getCode().toUpperCase();
+            if (repository.existsByCode(nouveauCode)) {
+                throw new RuntimeException("Code déjà utilisé : " + req.getCode());
+            }
+            n.setCode(nouveauCode);
+        }
+
         n.setLibelle(req.getLibelle());
         n.setDescription(req.getDescription());
         n.setOrdreAffichage(req.getOrdreAffichage());

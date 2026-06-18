@@ -51,6 +51,17 @@ public class UniversiteService {
     public Universite update(Long id, NomenclatureAcademiqueRequest req) {
         Universite u = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Université non trouvée : " + id));
+
+        // ✅ Code maintenant modifiable — vérifier l'unicité si changé
+        if (req.getCode() != null && !req.getCode().isBlank()
+                && !req.getCode().equalsIgnoreCase(u.getCode())) {
+            String nouveauCode = req.getCode().toUpperCase();
+            if (repository.existsByCode(nouveauCode)) {
+                throw new RuntimeException("Code déjà utilisé : " + req.getCode());
+            }
+            u.setCode(nouveauCode);
+        }
+
         u.setLibelle(req.getLibelle());
         u.setDescription(req.getDescription());
         u.setActif(req.isActif());

@@ -40,6 +40,14 @@ public class StatutReclamationService {
     public StatutReclamation update(Long id, StatutReclamationRequest req) {
         StatutReclamation s = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("StatutReclamation non trouvé : " + id));
+
+        // ✅ Code maintenant modifiable — vérifier l'unicité si changé
+        if (req.getCode() != null && !req.getCode().equalsIgnoreCase(s.getCode())) {
+            if (repository.existsByCode(req.getCode().toUpperCase())) {
+                throw new RuntimeException("Code déjà utilisé : " + req.getCode());
+            }
+            s.setCode(req.getCode().toUpperCase());
+        }
         s.setLibelle(req.getLibelle());
         s.setDescription(req.getDescription());
         s.setActif(req.isActif());

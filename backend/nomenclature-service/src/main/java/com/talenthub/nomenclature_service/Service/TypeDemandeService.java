@@ -37,6 +37,19 @@ public class TypeDemandeService {
     public TypeDemande update(Long id, TypeDemandeRequest req) {
         TypeDemande t = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("TypeDemande non trouvé : " + id));
+
+        // ✅ CORRIGÉ — on compare req.getCode() avec t.getCode() (l'ancien code en base),
+        //    pas avec lui-même. Et on appelle t.setCode(...) sur l'entité,
+        //    pas req.setCode(...) sur le DTO (qui n'avait aucun effet en base).
+        if (req.getCode() != null && !req.getCode().isBlank()
+                && !req.getCode().equalsIgnoreCase(t.getCode())) {
+            String nouveauCode = req.getCode().toUpperCase();
+            if (repository.existsByCode(nouveauCode)) {
+                throw new RuntimeException("Code déjà utilisé : " + req.getCode());
+            }
+            t.setCode(nouveauCode);
+        }
+
         t.setLibelle(req.getLibelle());
         t.setDescription(req.getDescription());
         t.setActif(req.isActif());
@@ -49,7 +62,6 @@ public class TypeDemandeService {
         repository.deleteById(id);
     }
 
-    // Ajouter cette méthode dans TypeDemandeService.java
     public TypeDemande setActif(Long id, boolean actif) {
         TypeDemande t = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("TypeDemande non trouvé : " + id));

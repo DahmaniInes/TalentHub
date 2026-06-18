@@ -40,6 +40,13 @@ public class ServiceReclamationService {
     public ServiceReclamation update(Long id, ServiceReclamationRequest req) {
         ServiceReclamation s = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("ServiceReclamation non trouvé : " + id));
+
+        if (req.getCode() != null && !req.getCode().equalsIgnoreCase(s.getCode())) {
+            if (repository.existsByCode(req.getCode().toUpperCase())) {
+                throw new RuntimeException("Code déjà utilisé : " + req.getCode());
+            }
+            s.setCode(req.getCode().toUpperCase());
+        }
         s.setLibelle(req.getLibelle());
         s.setDescription(req.getDescription());
         s.setActif(req.isActif());
