@@ -16,6 +16,9 @@ import java.util.List;
 @Transactional
 public class MembreEquipeService {
 
+    // ✅ EN_COURS = id 2 dans la nomenclature statut_stage (confirmé en base)
+    private static final Long STATUT_STAGE_EN_COURS_ID = 2L;
+
     private final MembreEquipeRepository membreRepo;
     private final ProjetRepository       projetRepo;
     private final UtilisateurRepository  utilisateurRepo;
@@ -38,10 +41,34 @@ public class MembreEquipeService {
     }
 
     // ── Ajouter un stagiaire avec son stage ──────────────────────
-    // ✅ NOUVEAU — relie le stagiaire à un stage précis sur le projet
+    // ✅ CORRIGÉ — si stageId n'est pas fourni par l'appelant, on résout
+    // (ou on crée si besoin) automatiquement le stage actif de l'utilisateur,
+    // au lieu de laisser stage=null (ce qui faisait disparaître le stagiaire
+    // de ProjetDTO.stagiaires, dont le filtre exige un Stage lié).
     public MembreEquipe addStagiaire(Long projetId, Long utilisateurId,
                                      Long stageId, Double quota) {
-        return addMembreAvecStage(projetId, utilisateurId, stageId, "STAGIAIRE", quota);
+        Long resolvedStageId = stageId != null
+                ? stageId
+                : resoudreOuCreerStageActif(utilisateurId).getId();
+        return addMembreAvecStage(projetId, utilisateurId, resolvedStageId, "STAGIAIRE", quota);
+    }
+
+    /**
+     * Retourne le stage actif (statutStageId = EN_COURS) de l'utilisateur s'il existe.
+     * Sinon, en crée un nouveau avec ce statut et le persiste.
+     */
+    private Stage resoudreOuCreerStageActif(Long utilisateurId) {
+        return stageRepo.findStageActifByUtilisateur(utilisateurId)
+                .orElseGet(() -> {
+                    Utilisateur u = utilisateurRepo.findById(utilisateurId)
+                            .orElseThrow(() -> new ResourceNotFoundException(
+                                    "Utilisateur non trouvé: " + utilisateurId));
+                    Stage nouveauStage = Stage.builder()
+                            .utilisateur(u)
+                            .statutStageId(STATUT_STAGE_EN_COURS_ID)
+                            .build();
+                    return stageRepo.save(nouveauStage);
+                });
     }
 
     private MembreEquipe addMembreAvecStage(Long projetId, Long utilisateurId,
@@ -53,8 +80,18 @@ public class MembreEquipeService {
 
         // Vérifier si déjà membre
         if (membreRepo.existsByProjetIdAndUtilisateurId(projetId, utilisateurId)) {
-            return membreRepo.findByProjetIdAndUtilisateurId(projetId, utilisateurId)
+            MembreEquipe existant = membreRepo.findByProjetIdAndUtilisateurId(projetId, utilisateurId)
                     .orElseThrow();
+            // ✅ Si le membre existait déjà SANS stage lié (cas des anciens bugs),
+            // on le relie maintenant au stage résolu pour qu'il apparaisse bien
+            // dans ProjetDTO.stagiaires.
+            if (stageId != null && existant.getStage() == null) {
+                Stage stage = stageRepo.findById(stageId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Stage non trouvé: " + stageId));
+                existant.setStage(stage);
+                return membreRepo.save(existant);
+            }
+            return existant;
         }
 
         MembreEquipe.MembreEquipeBuilder builder = MembreEquipe.builder()

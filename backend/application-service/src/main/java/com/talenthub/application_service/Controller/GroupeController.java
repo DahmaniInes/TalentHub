@@ -25,10 +25,15 @@ public class GroupeController {
     // ── GET liste — retourne List<GroupeDTO> pour éviter les cycles JSON ──
     @GetMapping
     public ResponseEntity<?> getAll() {
+        // ✅ Élargi pour accepter les permissions de l'espace stagiaire :
+        // la page détail d'un projet de stage appelle GET /groupes pour résoudre
+        // les groupes/équipes liés au projet, même pour un superviseur ou un stagiaire.
         if (!permCtx.has("TEAM_VIEW") && !permCtx.has("TEAM_MEMBER_VIEW")
                 && !permCtx.has("PROJECT_VIEW_ALL") && !permCtx.has("PROJECT_VIEW_LEAD")
                 && !permCtx.has("PROJECT_VIEW_OWN") && !permCtx.has("ACTIVITY_VIEW_ALL")
-                && !permCtx.has("USER_VIEW")) {
+                && !permCtx.has("USER_VIEW")
+                && !permCtx.has("INT_ADMIN_PROJ_VIEW_ALL") && !permCtx.has("INT_SUPER_TRACK")
+                && !permCtx.has("INT_INTERN_VIEW_PROJ")) {
             return ResponseEntity.status(403)
                     .body(Map.of("message", "Permission TEAM_VIEW requise."));
         }
@@ -42,7 +47,9 @@ public class GroupeController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable Long id) {
         if (!permCtx.has("TEAM_VIEW") && !permCtx.has("TEAM_MEMBER_VIEW")
-                && !permCtx.has("USER_VIEW")) {
+                && !permCtx.has("USER_VIEW")
+                && !permCtx.has("INT_ADMIN_PROJ_VIEW_ALL") && !permCtx.has("INT_SUPER_TRACK")
+                && !permCtx.has("INT_INTERN_VIEW_PROJ")) {
             return ResponseEntity.status(403)
                     .body(Map.of("message", "Permission TEAM_VIEW requise."));
         }

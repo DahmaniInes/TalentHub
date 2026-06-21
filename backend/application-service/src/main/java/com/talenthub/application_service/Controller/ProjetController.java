@@ -60,8 +60,13 @@ public class ProjetController {
     // ── GET détail ────────────────────────────────────────────────
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable Long id) {
+        // ✅ Élargi pour accepter aussi les permissions de l'espace stagiaire
+        // (un superviseur ou un stagiaire peut ouvrir le détail d'un projet de stage
+        // sans avoir les permissions PROJECT_* génériques)
         if (!permCtx.has("PROJECT_VIEW_ALL") && !permCtx.has("PROJECT_VIEW_LEAD")
-                && !permCtx.has("PROJECT_VIEW_OWN") && !permCtx.has("PROJECT_DETAILS_VIEW")) {
+                && !permCtx.has("PROJECT_VIEW_OWN") && !permCtx.has("PROJECT_DETAILS_VIEW")
+                && !permCtx.has("INT_ADMIN_PROJ_VIEW_ALL") && !permCtx.has("INT_SUPER_TRACK")
+                && !permCtx.has("INT_INTERN_VIEW_PROJ")) {
             return ResponseEntity.status(403)
                     .body(Map.of("message", "Permission PROJECT_VIEW_ALL requise."));
         }
@@ -109,7 +114,8 @@ public class ProjetController {
     public ResponseEntity<?> update(@PathVariable Long id,
                                     @RequestBody Map<String, Object> body) {
         if (!permCtx.has("PROJECT_EDIT_ALL") && !permCtx.has("PROJECT_EDIT_LEAD")
-                && !permCtx.has("PROJECT_EDIT_OWN")) {
+                && !permCtx.has("PROJECT_EDIT_OWN")
+                && !permCtx.has("INT_ADMIN_PROJ_EDIT") && !permCtx.has("INT_SUPER_PROJ_MANAGE")) {
             return ResponseEntity.status(403)
                     .body(Map.of("message", "Permission PROJECT_EDIT_ALL requise."));
         }
@@ -153,7 +159,10 @@ public class ProjetController {
     @PatchMapping("/{id}/activites")
     public ResponseEntity<?> assignerActivites(@PathVariable Long id,
                                                @RequestBody List<Long> activiteIds) {
-        if (!permCtx.has("PROJECT_EDIT_ALL") && !permCtx.has("PROJECT_EDIT_LEAD")) {
+        if (!permCtx.has("PROJECT_EDIT_ALL") && !permCtx.has("PROJECT_EDIT_LEAD")
+                && !permCtx.has("INT_ADMIN_PROJ_EDIT") && !permCtx.has("INT_SUPER_PROJ_MANAGE")
+                && !permCtx.has("INT_ADMIN_ACT_CREATE") && !permCtx.has("INT_SUPER_ACT_CREATE")
+                && !permCtx.has("INT_INTERN_ACT_CREATE")) {
             return ResponseEntity.status(403)
                     .body(Map.of("message", "Permission PROJECT_EDIT_ALL requise."));
         }

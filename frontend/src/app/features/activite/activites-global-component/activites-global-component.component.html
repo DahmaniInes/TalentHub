@@ -10,7 +10,7 @@
         <path d="M16 16l16 16M32 16L16 32" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
       <p style="font-weight:700;font-size:1rem;margin-bottom:6px">Accès refusé</p>
-      <p style="font-size:.83rem">Vous n'avez pas les permissions pour consulter les activités.</p>
+      <p style="font-size:.83rem">Vous n'avez pas les permissions pour consulter les activités globales.</p>
     </div>
 
     <ng-container *ngIf="perms.canSeeAnyActivity()">
@@ -23,14 +23,11 @@
             <path d="M348.1,245.7c-67.8,0-122.9,55.1-122.9,122.9s55.1,122.9,122.9,122.9S471,436.4,471,368.6S415.9,245.7,348.1,245.7z M403.5,362.6l-41,41c-4,4-9.2,6-14.5,6c-5.2,0-10.5-2-14.5-6L313,383.1c-8-8-8-21,0-29s21-8,29,0l6,6l26.5-26.5c8-8,21-8,29,0C411.5,341.7,411.5,354.6,403.5,362.6z"/>
             <path d="M385.3,41h-57.7v-9.8c0-17.2-14-31.2-31.2-31.2H154c-17.2,0-31.2,14-31.2,31.2v9.7H65.2c-24.7,0-44.7,20.1-44.7,44.7v361.1c0,24.7,20.1,44.7,44.7,44.7h174.9c-34.2-29.9-55.8-73.8-55.8-122.8h-81.9c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5h81.9c1.8,0,3.4,0.6,5.1,1c3.8-14.9,9.5-29,17-42h-83.6c-11.3,0-20.5-9.2-20.5-20.5s9.2-20.5,20.5-20.5h102.4c4.1,0,7.7,1.5,10.9,3.6c29.3-27.5,68.6-44.6,112-44.6c29.9,0,57.8,8.2,81.9,22.2V85.7C430,61,409.9,41,385.3,41z"/>
           </svg>
-          Activités
+          Activités globales
         </h1>
         <div class="dt-header-stats">
           <span class="dt-badge dt-badge-accent" style="font-size:.66rem;padding:3px 9px">
             <span class="dt-badge-dot"></span>{{ statsToutes() }} total
-          </span>
-          <span class="dt-badge dt-badge-default" style="font-size:.66rem;padding:3px 9px">
-            <span class="dt-badge-dot"></span>{{ statsGlobales() }} globales
           </span>
           <span class="dt-badge dt-badge-pending" style="font-size:.66rem;padding:3px 9px">
             <span class="dt-badge-dot"></span>{{ statsProjets() }} liées à des projets
@@ -62,20 +59,6 @@
             </div>
             <div class="dt-fp-body">
 
-
-              <div class="dt-fp-field">
-                <label class="dt-fp-label">Affichage</label>
-                <div style="display:flex;gap:4px">
-                  <button *ngFor="let v of [['toutes','Toutes'],['globales','Globales'],['projets','Projets']]"
-                          style="flex:1;padding:6px 4px;border-radius:6px;border:1px solid;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .12s;text-align:center"
-                          [style.background]="filterVue()===v[0]?'var(--accent)':'var(--bg-input)'"
-                          [style.color]="filterVue()===v[0]?'white':'var(--dt-text-sub)'"
-                          [style.border-color]="filterVue()===v[0]?'var(--accent)':'var(--dt-border)'"
-                          (click)="filterVue.set($any(v[0])); resetPage()">
-                    {{ v[1] }}
-                  </button>
-                </div>
-              </div>
               <div class="dt-fp-field">
                 <label class="dt-fp-label">Statut</label>
                 <select class="dt-fp-select" [value]="filterStatut()"
@@ -85,7 +68,6 @@
                 </select>
               </div>
 
-
               <div class="dt-fp-field">
                 <label class="dt-fp-label">Priorité</label>
                 <select class="dt-fp-select" [value]="filterPriorite()"
@@ -94,7 +76,6 @@
                   <option *ngFor="let p of priorites()" [value]="p.id">{{ p.libelle }}</option>
                 </select>
               </div>
-
 
             </div>
             <div class="dt-fp-footer">
@@ -109,7 +90,7 @@
           <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
             <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
           </svg>
-          Nouvelle activité
+          Nouvelle activité globale
         </button>
       </div>
     </div>
@@ -179,30 +160,21 @@
                 Échéance
               </div>
             </th>
-            <th class="dt-th" style="min-width:100px">
-              <div class="dt-th-inner">
-                <svg class="dt-th-icon" viewBox="0 0 611.998 611.998" fill="currentColor">
-                  <path d="M470.351,429.405l-0.493-2.805c-4.258-24.197-10.091-57.334-32.191-73.832c-9.321-6.957-19.872-10.404-30.078-13.74c-4.019-1.313-7.812-2.554-11.427-3.974c-5.269-2.07-10.016-4.097-14.464-6.338c-18.684,24.932-44.58,38.059-75.383,38.062c-30.795,0-56.687-13.128-75.371-38.062c-4.449,2.243-9.196,4.269-14.467,6.34c-3.61,1.418-7.406,2.659-11.424,3.972c-10.207,3.335-20.761,6.784-30.079,13.74c-22.107,16.5-27.936,49.645-32.193,73.846l-0.493,2.795c-3.557,20.086-5.68,39.572-6.308,57.914c-0.737,21.519,12.62,26.316,24.403,30.55l1.269,0.457c14.17,5.112,30.021,9.492,48.457,13.388c37.646,7.946,68.197,11.74,96.138,11.938h0.072h0.072c27.946-0.199,58.495-3.992,96.135-11.938c18.439-3.894,34.289-8.274,48.453-13.387l1.268-0.456c11.786-4.233,25.147-9.029,24.41-30.553C476.03,468.931,473.906,449.447,470.351,429.405z"/>
-                  <path d="M221.005,243.009c5.577,48.709,26.883,108.009,86.103,108.006s80.529-59.297,86.106-108.006c6.871-60.002-21.503-105.16-86.106-105.16C242.515,137.847,214.123,183.002,221.005,243.009z"/>
-                </svg>
-                Équipes
-              </div>
-            </th>
             <th class="dt-th dt-th-actions"></th>
           </tr>
         </thead>
 
         <tbody>
           <tr *ngIf="filteredActivites().length === 0">
-            <td colspan="8" class="dt-td">
+            <td colspan="7" class="dt-td">
               <div class="dt-empty">
                 <svg class="dt-empty-icon" viewBox="0 0 48 48" fill="none" style="width:38px;height:38px">
                   <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
                   <path d="M24 16v8M24 28h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
-                <p class="dt-empty-title">Aucune activité trouvée</p>
-                <p class="dt-empty-sub">Modifiez vos filtres ou créez une activité</p>
-                <button *ngIf="perms.canCreateActivity()" class="dt-btn-create" style="margin-top:12px" (click)="openAdd()">Nouvelle activité</button>
+                <p class="dt-empty-title">Aucune activité globale trouvée</p>
+                <p class="dt-empty-sub">Modifiez vos filtres ou créez une activité globale</p>
+                <button *ngIf="perms.canCreateActivity()" class="dt-btn-create" style="margin-top:12px" (click)="openAdd()">Nouvelle activité globale</button>
               </div>
             </td>
           </tr>
@@ -226,8 +198,7 @@
                   <span class="dt-cell-name">{{ a.nom }}</span>
                   <span class="dt-cell-sub" style="font-family:'Courier New',monospace;display:flex;align-items:center;gap:5px">
                     {{ a.numeroActivite }}
-                    <span *ngIf="a.estGlobale"
-                          style="font-family:inherit;font-size:.52rem;background:rgba(139,92,246,.12);color:#8b5cf6;padding:0 5px;border-radius:4px;border:1px solid rgba(139,92,246,.25)">
+                    <span style="font-family:inherit;font-size:.52rem;background:rgba(139,92,246,.12);color:#8b5cf6;padding:0 5px;border-radius:4px;border:1px solid rgba(139,92,246,.25)">
                       GLOBALE
                     </span>
                   </span>
@@ -269,16 +240,6 @@
 
             <td class="dt-td">
               <span class="dt-cell-muted">{{ a.dateEcheance ? fmtDate(a.dateEcheance) : '—' }}</span>
-            </td>
-
-            <td class="dt-td">
-              <div *ngIf="a.groupes && a.groupes.length > 0" style="display:flex;align-items:center;gap:8px">
-                <div style="width:28px;height:28px;border-radius:8px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:.75rem;font-weight:800;flex-shrink:0">
-                  {{ a.groupes.length }}
-                </div>
-                <span class="dt-cell-sub" style="font-size:.72rem">équipe{{ a.groupes.length > 1 ? 's' : '' }}</span>
-              </div>
-              <span *ngIf="!a.groupes || a.groupes.length === 0" class="dt-cell-muted">—</span>
             </td>
 
             <!-- ✅ PERMISSIONS : edit si canEditAnyActivity, delete si canDeleteAllActivities -->
@@ -333,10 +294,10 @@
   </div>
 </div>
 
-<!-- ════ MODAL ACTIVITÉ ════ -->
+<!-- ════ MODAL ACTIVITÉ — formulaire réduit : Nom, Description, Priorité, Couleur, Visible ════ -->
 <div *ngIf="showModal()" class="mx-modal-backdrop" (click)="closeModal()">
   <div class="mx-modal"
-       style="max-width:580px;padding:0;overflow:hidden;max-height:92vh;display:flex;flex-direction:column;border-radius:16px"
+       style="max-width:480px;padding:0;overflow:hidden;max-height:92vh;display:flex;flex-direction:column;border-radius:16px"
        (click)="$event.stopPropagation()">
 
     <div style="display:flex;align-items:center;gap:14px;padding:18px 22px 14px;border-bottom:1px solid var(--border-color);flex-shrink:0">
@@ -346,7 +307,7 @@
         </svg>
       </div>
       <span style="flex:1;font-size:.92rem;font-weight:700;color:var(--text-primary)">
-        {{ editingActivite() ? 'Modifier l\'activité' : 'Nouvelle activité' }}
+        {{ editingActivite() ? 'Modifier l\'activité globale' : 'Nouvelle activité globale' }}
       </span>
       <button class="mx-so-close" (click)="closeModal()">
         <svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -364,79 +325,15 @@
       <div class="mx-field">
         <label class="mx-field-label">Description</label>
         <textarea [(ngModel)]="form().description" [ngModelOptions]="{standalone:true}"
-                  rows="2" class="mx-field-textarea" placeholder="Description optionnelle..."></textarea>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        <div class="mx-field">
-          <label class="mx-field-label">Statut</label>
-          <select [(ngModel)]="form().statutActiviteId" [ngModelOptions]="{standalone:true}" class="mx-field-select">
-            <option *ngFor="let s of statutsActivite()" [ngValue]="s.id">{{ s.libelle }}</option>
-          </select>
-        </div>
-
-        <div class="mx-field">
-          <label class="mx-field-label">Priorité</label>
-          <select [(ngModel)]="form().prioriteId" [ngModelOptions]="{standalone:true}" class="mx-field-select">
-            <option [ngValue]="undefined">— Choisir —</option>
-            <option *ngFor="let p of priorites()" [ngValue]="p.id">{{ p.libelle }}</option>
-          </select>
-        </div>
-
-
+                  rows="3" class="mx-field-textarea" placeholder="Description optionnelle..."></textarea>
       </div>
 
       <div class="mx-field">
-        <label class="mx-field-label">
-          Assigner à des groupes
-          <span style="font-size:.6rem;color:var(--text-muted);margin-left:4px">optionnel</span>
-        </label>
-        <div *ngIf="formGroupeIds().length > 0"
-             style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;padding:8px;background:var(--bg-input);border-radius:8px;border:1px solid var(--border-color)">
-          <span *ngFor="let gid of formGroupeIds()"
-                style="display:inline-flex;align-items:center;gap:5px;font-size:.74rem;font-weight:700;padding:4px 10px;border-radius:6px;background:var(--accent-soft);color:var(--accent);border:1px solid rgba(192,38,211,.25)">
-            {{ getGroupeNom(gid) }}
-            <button type="button"
-                    style="background:none;border:none;cursor:pointer;color:inherit;font-size:.9rem;line-height:1;padding:0;margin-left:2px"
-                    (click)="removeGroupeFromActiviteForm(gid)">×</button>
-          </span>
-        </div>
-        <select class="mx-field-select"
-                (change)="addGroupeToActiviteForm(+$any($event.target).value); $any($event.target).value=''">
-          <option value="">{{ groupesDispoActivite().length === 0 ? 'Aucun groupe disponible' : '+ Ajouter un groupe...' }}</option>
-          <option *ngFor="let g of groupesDispoActivite()" [value]="g.id">{{ g.nom }}</option>
+        <label class="mx-field-label">Priorité</label>
+        <select [(ngModel)]="form().prioriteId" [ngModelOptions]="{standalone:true}" class="mx-field-select">
+          <option [ngValue]="undefined">— Choisir —</option>
+          <option *ngFor="let p of priorites()" [ngValue]="p.id">{{ p.libelle }}</option>
         </select>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        <div class="mx-field">
-          <label class="mx-field-label">Échéance</label>
-          <input type="date" [(ngModel)]="form().dateEcheance" [ngModelOptions]="{standalone:true}" class="mx-field-input">
-        </div>
-        <div class="mx-field">
-          <label class="mx-field-label">Heures estimées</label>
-          <input type="number" min="0" [(ngModel)]="form().heuresEstimees" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="0">
-        </div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        <div class="mx-field">
-          <label class="mx-field-label">Budget</label>
-          <input type="number" min="0" [(ngModel)]="form().budget" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="0">
-        </div>
-        <div class="mx-field">
-          <label class="mx-field-label">Quota horaire (h)</label>
-          <input type="number" min="0" [(ngModel)]="form().quotaHoraire" [ngModelOptions]="{standalone:true}" class="mx-field-input" placeholder="0">
-        </div>
-        <div class="mx-field" style="grid-column:1/-1">
-          <label class="mx-field-label">Type de budget</label>
-          <select [(ngModel)]="form().typeBudget" [ngModelOptions]="{standalone:true}" class="mx-field-select">
-            <option value="ILLIMITE">Illimité</option>
-            <option value="MENSUEL">Mensuel</option>
-            <option value="TRIMESTRIEL">Trimestriel</option>
-            <option value="ANNUEL">Annuel</option>
-          </select>
-        </div>
       </div>
 
       <div class="mx-field">
@@ -458,17 +355,8 @@
           <div class="mx-toggle" [class.on]="form().visible"><div class="mx-toggle-knob"></div></div>
           <span style="font-size:.8rem;color:var(--text-primary)">Visible</span>
         </label>
-        <label class="mx-toggle-row" style="cursor:pointer">
-          <input type="checkbox" [(ngModel)]="form().facturable" [ngModelOptions]="{standalone:true}" style="display:none">
-          <div class="mx-toggle" [class.on]="form().facturable"><div class="mx-toggle-knob"></div></div>
-          <span style="font-size:.8rem;color:var(--text-primary)">Facturable</span>
-        </label>
-        <label class="mx-toggle-row" style="cursor:pointer">
-          <input type="checkbox" [(ngModel)]="form().estGlobale" [ngModelOptions]="{standalone:true}" style="display:none">
-          <div class="mx-toggle" [class.on]="form().estGlobale"><div class="mx-toggle-knob"></div></div>
-          <span style="font-size:.8rem;color:var(--text-primary)">Globale</span>
-        </label>
       </div>
+
     </div>
 
     <div style="display:flex;gap:10px;justify-content:flex-end;padding:14px 22px;border-top:1px solid var(--border-color);background:var(--bg-hover);flex-shrink:0">
@@ -477,6 +365,122 @@
               style="height:38px;padding:0 22px;font-size:.82rem;border-radius:8px">
         {{ editingActivite() ? 'Enregistrer' : 'Créer' }}
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ DRAWER DÉTAIL — remplace l'ancienne page /activites/:id ════ -->
+<div *ngIf="detailDrawerOpen()" class="mx-overlay" (click)="closeDetailDrawer()" style="position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:900;display:flex;justify-content:flex-end">
+  <div *ngIf="selectedActivite() as a" (click)="$event.stopPropagation()"
+       style="width:420px;max-width:100%;height:100%;background:var(--dt-bg);border-left:1px solid var(--dt-border);display:flex;flex-direction:column;box-shadow:-10px 0 40px rgba(0,0,0,.15);animation:mxSlideIn .22s cubic-bezier(.4,0,.2,1)">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:flex-start;gap:12px;padding:18px 20px 14px;border-bottom:1px solid var(--dt-border);flex-shrink:0">
+      <div style="width:3px;border-radius:3px;align-self:stretch;flex-shrink:0" [style.background]="a.couleur || '#94a3b8'"></div>
+      <div style="flex:1;min-width:0">
+        <h3 style="font-size:.92rem;font-weight:700;color:var(--dt-text);margin:0 0 4px">{{ a.nom }}</h3>
+        <span style="font-size:.68rem;color:var(--dt-text-sub);font-family:'Courier New',monospace;display:flex;align-items:center;gap:5px">
+          {{ a.numeroActivite }}
+          <span style="font-size:.55rem;background:rgba(139,92,246,.12);color:#8b5cf6;padding:0 5px;border-radius:4px;border:1px solid rgba(139,92,246,.25)">GLOBALE</span>
+        </span>
+      </div>
+      <button *ngIf="perms.canEditAnyActivity()" class="pd5-act-edit-btn" (click)="openEditFromDrawer()">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>Modifier
+      </button>
+      <button style="width:28px;height:28px;border-radius:7px;border:none;background:none;cursor:pointer;color:var(--dt-text-sub);display:flex;align-items:center;justify-content:center;flex-shrink:0" (click)="closeDetailDrawer()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l12 12M14 2L2 14" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column">
+
+      <!-- Infos clés -->
+      <div style="padding:16px 20px;border-bottom:1px solid var(--dt-border)">
+
+        <div *ngIf="a.description" style="font-size:.78rem;color:var(--dt-text);line-height:1.6;margin-bottom:14px">{{ a.description }}</div>
+
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--dt-border)">
+          <span style="font-size:.69rem;color:var(--dt-text-sub);min-width:88px;flex-shrink:0">Statut</span>
+          <span [class]="getStatutBadgeClass(a.statutActiviteId)">
+            <span class="dt-badge-dot"></span>{{ getStatutLibelle(a.statutActiviteId) }}
+          </span>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--dt-border)">
+          <span style="font-size:.69rem;color:var(--dt-text-sub);min-width:88px;flex-shrink:0">Priorité</span>
+          <div style="display:flex;align-items:center;gap:5px">
+            <div style="width:7px;height:7px;border-radius:50%;flex-shrink:0" [style.background]="getPrioriteCouleur(a.prioriteId)"></div>
+            <span style="font-size:.76rem;color:var(--dt-text);font-weight:500">{{ getPrioriteLabel(a.prioriteId) }}</span>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--dt-border)" *ngIf="a.heuresEstimees && a.heuresEstimees > 0">
+          <span style="font-size:.69rem;color:var(--dt-text-sub);min-width:88px;flex-shrink:0">Progression</span>
+          <div style="flex:1;display:flex;align-items:center;gap:8px">
+            <div style="flex:1;height:6px;background:var(--bg-hover);border-radius:99px;overflow:hidden">
+              <div style="height:100%;border-radius:99px" [style.width.%]="getProgressPct(a.heuresPassees,a.heuresEstimees)" [style.background]="getProgressCouleur(a.heuresPassees,a.heuresEstimees)"></div>
+            </div>
+            <span style="font-size:.72rem;font-weight:700" [style.color]="getProgressCouleur(a.heuresPassees,a.heuresEstimees)">{{ getProgressPct(a.heuresPassees,a.heuresEstimees) }}%</span>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 0">
+          <span style="font-size:.69rem;color:var(--dt-text-sub);min-width:88px;flex-shrink:0">Échéance</span>
+          <span style="font-size:.76rem;color:var(--dt-text)">{{ a.dateEcheance ? fmtDate(a.dateEcheance) : '—' }}</span>
+        </div>
+
+      </div>
+
+      <!-- Commentaires -->
+      <div style="padding:16px 20px;flex:1;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <span style="font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--dt-text)">
+            Commentaires <span style="font-size:.57rem;font-weight:700;background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-radius:999px;margin-left:4px" *ngIf="drawerCommentaires().length > 0">{{ drawerCommentaires().length }}</span>
+          </span>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.57rem;font-weight:800;color:white;flex-shrink:0" [style.background]="getAvatarColor(currentUserNom)">{{ getInitiales(currentUserNom) }}</div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+            <textarea [ngModel]="nouveauCommentaire()" (ngModelChange)="nouveauCommentaire.set($event)"
+                      placeholder="Écrire un commentaire..." rows="2"
+                      style="width:100%;border:1px solid var(--dt-border);border-radius:7px;padding:7px 9px;font-size:.76rem;background:var(--bg-input);color:var(--dt-text);font-family:inherit;resize:vertical;min-height:48px;outline:none"></textarea>
+            <button style="align-self:flex-end;height:28px;padding:0 12px;border-radius:5px;background:var(--accent);color:white;font-size:.71rem;font-weight:700;border:none;cursor:pointer;font-family:inherit"
+                    [disabled]="submittingComment() || !nouveauCommentaire().trim()" (click)="submitDrawerComment()">Envoyer</button>
+          </div>
+        </div>
+
+        <div *ngIf="loadingDrawerComments()" style="font-size:.72rem;color:var(--dt-text-sub);text-align:center;padding:14px">Chargement...</div>
+        <div *ngIf="!loadingDrawerComments() && drawerCommentaires().length === 0" style="font-size:.72rem;color:var(--dt-text-sub);text-align:center;padding:14px">Aucun commentaire.</div>
+
+        <div *ngFor="let c of drawerCommentaires()" style="display:flex;gap:8px;padding:10px 0;border-bottom:1px solid var(--dt-border)">
+          <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.57rem;font-weight:800;color:white;flex-shrink:0" [style.background]="getAvatarColor(c.auteurNom)">{{ getInitiales(c.auteurNom) }}</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;flex-wrap:wrap">
+              <span style="font-size:.73rem;font-weight:700;color:var(--dt-text)">{{ c.auteurNom }}</span>
+              <span style="font-size:.63rem;color:var(--dt-text-sub)">{{ fmtDateTime(c.dateCreation) }}</span>
+            </div>
+            <div *ngIf="editingCommentId() !== c.id" style="font-size:.75rem;color:var(--dt-text);line-height:1.55;white-space:pre-wrap;word-break:break-word">{{ c.contenu }}</div>
+            <div *ngIf="editingCommentId() === c.id">
+              <textarea [ngModel]="editContenu()" (ngModelChange)="editContenu.set($event)" rows="2"
+                        style="width:100%;border:1px solid var(--dt-border);border-radius:7px;padding:7px 9px;font-size:.76rem;background:var(--bg-input);color:var(--dt-text);font-family:inherit;resize:vertical;outline:none"></textarea>
+              <div style="display:flex;gap:6px;margin-top:6px">
+                <button class="mx-btn mx-btn-primary mx-btn-sm" (click)="saveEditDrawerComment(c)">Enregistrer</button>
+                <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="cancelEditDrawerComment()">Annuler</button>
+              </div>
+            </div>
+            <div *ngIf="isOwnDrawerComment(c) && editingCommentId() !== c.id" style="display:flex;gap:4px;margin-top:4px">
+              <button style="width:22px;height:22px;border-radius:4px;border:none;background:none;cursor:pointer;color:var(--dt-text-sub);display:flex;align-items:center;justify-content:center" (click)="startEditDrawerComment(c)">
+                <svg viewBox="0 0 24 24" fill="currentColor" style="width:11px;height:11px"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
+              </button>
+              <button style="width:22px;height:22px;border-radius:4px;border:none;background:none;cursor:pointer;color:#ef4444;display:flex;align-items:center;justify-content:center" (click)="deleteDrawerComment(c)">
+                <svg viewBox="0 0 24 24" fill="currentColor" style="width:11px;height:11px"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
 </div>

@@ -14,13 +14,14 @@ public interface StageRepository extends JpaRepository<Stage, Long> {
     Optional<Stage> findFirstByUtilisateurIdOrderByCreatedAtDesc(
             Long utilisateurId);
 
-    // ✅ Pas de String statut — utilise l'ID nomenclature (1 = EN_COURS)
+    // ✅ Pas de String statut — utilise l'ID nomenclature (2 = EN_COURS)
     Optional<Stage> findFirstByUtilisateurIdAndStatutStageId(
             Long utilisateurId, Long statutStageId);
 
-    // Trouver le stage actif (statutStageId = 1 = EN_COURS)
+    // ✅ CORRIGÉ — EN_COURS = id 2 dans la nomenclature (confirmé en base),
+    // pas 1 comme c'était codé en dur précédemment.
     default Optional<Stage> findStageActifByUtilisateur(Long userId) {
-        return findFirstByUtilisateurIdAndStatutStageId(userId, 1L);
+        return findFirstByUtilisateurIdAndStatutStageId(userId, 2L);
     }
 
     @Query("""

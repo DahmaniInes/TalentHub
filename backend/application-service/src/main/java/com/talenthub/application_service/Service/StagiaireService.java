@@ -76,7 +76,7 @@ public class StagiaireService {
 
         // Trouver le stage actif
         Stage stageActif = stageRepo.findByUtilisateurId(stagiaireId)
-                .stream().filter(s -> s.getStatutStageId() == null || s.getStatutStageId() == 1)
+                .stream().filter(s -> s.getStatutStageId() == null || s.getStatutStageId() == 2)
                 .findFirst().orElse(null);
 
         for (Long supId : superviseurIds) {

@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { ProjetStageService }       from '../../../services/projet-stage-service.service';
 import { StagiaireService }         from '../../../services/stagiaire.service';
 import { PermissionContextService } from '../../../services/permission-context.service';
@@ -9,8 +10,13 @@ import { KeycloakService }          from '../../../services/keycloak.service';
 import { UserService }              from '../../../services/user.service';
 import { UiService }                from '../../../services/ui.service';
 import { ProjetService }            from '../../../services/projet.service';
+import { DocumentService }          from '../../../services/document.service';
 import { Projet, ProjetRequest, StatutProjet } from '../../../shared/models/projet.model';
 import { Utilisateur }              from '../../../shared/models/utilisateur.model';
+import { HttpErrorResponse }        from '@angular/common/http';
+
+// ✅ ID fixe du type de projet "STAGE_ACADEMIQUE" dans la nomenclature (confirmé en dur)
+const TYPE_PROJET_STAGE_ID = 4;
 
 @Component({
   selector: 'app-projets-stage',
@@ -24,6 +30,7 @@ export class ProjetsStageComponent implements OnInit {
   private projetSvc = inject(ProjetService);
   private stagSvc   = inject(StagiaireService);
   private userSvc   = inject(UserService);
+  private docSvc    = inject(DocumentService);
   private keycloak  = inject(KeycloakService);
   readonly perms    = inject(PermissionContextService);
   readonly ui       = inject(UiService);
@@ -34,6 +41,7 @@ export class ProjetsStageComponent implements OnInit {
   statutsProjet = signal<StatutProjet[]>([]);
   loading       = signal(false);
   saving        = signal(false);
+  uploadingDoc  = signal(false);
 
   currentUserId = signal<number | null>(null);
 
@@ -44,14 +52,22 @@ export class ProjetsStageComponent implements OnInit {
   editingId    = signal<number | null>(null);
   selectedIds  = signal<Set<number>>(new Set());
 
+  // ✅ Documents à uploader juste après la création du projet (upload immédiat)
+  pendingFiles  = signal<File[]>([]);
+
+  // ✅ Snapshot des stagiaires déjà assignés au moment de l'ouverture du formulaire
+  //    (nécessaire pour calculer qui ajouter / qui retirer lors de save() en édition)
+  private stagiaireIdsOriginaux: number[] = [];
+
   form = signal<any>({
     nom: '', description: '', dateDebut: '', dateFin: '',
-    statutProjetId: undefined, typeProjetId: 3, avancement: 0,
+    statutProjetId: undefined, typeProjetId: TYPE_PROJET_STAGE_ID, avancement: 0,
     stagiaireIds: []
   });
 
   filtered = computed(() => {
-    let list = this.projets();
+    // ✅ On ne garde QUE les projets de type STAGE_ACADEMIQUE (filtre frontend en attendant le backend)
+    let list = this.projets().filter(p => p.typeProjetId === TYPE_PROJET_STAGE_ID);
     const q = this.search().toLowerCase();
     if (q) list = list.filter(p => p.nom.toLowerCase().includes(q));
     if (this.filterStatut())
@@ -61,11 +77,11 @@ export class ProjetsStageComponent implements OnInit {
 
 
 
-  statsEnCours = computed(() => this.projets().filter(p => {
+  statsEnCours = computed(() => this.filtered().filter(p => {
     const s = this.statutsProjet().find(st => st.id === p.statutProjetId);
     return s?.code === 'EN_COURS';
   }).length);
-  statsTermines = computed(() => this.projets().filter(p => {
+  statsTermines = computed(() => this.filtered().filter(p => {
     const s = this.statutsProjet().find(st => st.id === p.statutProjetId);
     return s?.code === 'TERMINE';
   }).length);
@@ -91,7 +107,13 @@ export class ProjetsStageComponent implements OnInit {
         next: u => {
           this.currentUserId.set(u.id);
           this.loadProjets(u.id);
-          this.stagSvc.getAll().subscribe({ next: d => this.stagiaires.set(d) });
+          // ✅ GET /stagiaires (liste admin complète) n'est accessible qu'avec
+          // INT_ADMIN_VIEW_ALL_INTERNS — un superviseur ou un stagiaire reçoit
+          // un 403 sinon. Cette liste ne sert qu'au select multi-stagiaires
+          // du formulaire de création/édition, visible uniquement pour l'admin.
+          if (this.perms.canViewAllInterns()) {
+            this.stagSvc.getAll().subscribe({ next: d => this.stagiaires.set(d) });
+          }
         }
       });
     }
@@ -151,25 +173,33 @@ export class ProjetsStageComponent implements OnInit {
     const enCoursId = this.statutsProjet().find(s => s.code === 'EN_COURS')?.id;
     this.form.set({
       nom: '', description: '', dateDebut: '', dateFin: '',
-      statutProjetId: enCoursId, typeProjetId: 3,
+      // ✅ typeProjetId forcé à STAGE_ACADEMIQUE — non modifiable par l'utilisateur
+      statutProjetId: enCoursId, typeProjetId: TYPE_PROJET_STAGE_ID,
       avancement: 0, stagiaireIds: []
     });
+    this.stagiaireIdsOriginaux = [];
+    this.pendingFiles.set([]);
     this.slideOpen.set(true);
   }
 
   openEdit(p: Projet, e?: Event): void {
     e?.stopPropagation();
     this.editingId.set(p.id);
+    const stagiaireIdsActuels = p.stagiaires?.map(s => s.id) || [];
     this.form.set({
       nom:            p.nom,
       description:    p.description || '',
       dateDebut:      p.dateDebut   || '',
       dateFin:        p.dateFin     || '',
       statutProjetId: p.statutProjetId,
-      typeProjetId:   3,
+      // ✅ Toujours STAGE_ACADEMIQUE même en édition
+      typeProjetId:   TYPE_PROJET_STAGE_ID,
       avancement:     p.avancement,
-      stagiaireIds:   p.stagiaires?.map(s => s.id) || []
+      stagiaireIds:   stagiaireIdsActuels
     });
+    // ✅ On garde une copie de l'état initial pour calculer le diff (ajouts/retraits) dans save()
+    this.stagiaireIdsOriginaux = [...stagiaireIdsActuels];
+    this.pendingFiles.set([]);
     this.slideOpen.set(true);
   }
 
@@ -192,6 +222,60 @@ export class ProjetsStageComponent implements OnInit {
     return (this.form().stagiaireIds || []).includes(id);
   }
 
+  // ── Documents (sélection avant création, upload juste après) ──
+  onFilesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+    this.pendingFiles.update(list => [...list, ...Array.from(input.files!)]);
+    input.value = '';
+  }
+
+  removePendingFile(index: number): void {
+    this.pendingFiles.update(list => list.filter((_, i) => i !== index));
+  }
+
+  private uploaderDocumentsEnAttente(projetId: number): void {
+    const files = this.pendingFiles();
+    if (!files.length) return;
+    this.uploadingDoc.set(true);
+    let remaining = files.length;
+    files.forEach(file => {
+      this.docSvc.upload({ file, projetId }).subscribe({
+        next: () => { remaining--; if (remaining === 0) this.uploadingDoc.set(false); },
+        error: () => {
+          remaining--;
+          if (remaining === 0) this.uploadingDoc.set(false);
+          this.ui.error(`Échec de l'upload du fichier "${file.name}".`);
+        }
+      });
+    });
+  }
+
+  /**
+   * Synchronise les stagiaires assignés : ajoute les nouveaux, retire ceux décochés.
+   * Appelle onDone() une fois TOUTES les opérations terminées (succès ou échec),
+   * pour permettre de recharger le projet avec sa liste de stagiaires à jour.
+   */
+  private synchroniserStagiaires(projetId: number, onDone: () => void): void {
+    const idsSelectionnes: number[] = this.form().stagiaireIds || [];
+    const idsOriginaux: number[]    = this.stagiaireIdsOriginaux || [];
+
+    const aAjouter = idsSelectionnes.filter(id => !idsOriginaux.includes(id));
+    const aRetirer = idsOriginaux.filter(id => !idsSelectionnes.includes(id));
+
+    if (aAjouter.length === 0 && aRetirer.length === 0) { onDone(); return; }
+
+    const appels = [
+      ...aAjouter.map(stagId => this.svc.assignerAStagiaire(projetId, stagId)),
+      ...aRetirer.map(stagId => this.svc.retirerStagiaire(projetId, stagId))
+    ];
+
+    forkJoin(appels).subscribe({
+      next: () => onDone(),
+      error: () => { this.ui.error('Erreur lors de la mise à jour des stagiaires.'); onDone(); }
+    });
+  }
+
   save(): void {
     if (!this.form().nom?.trim()) {
       this.ui.warning('Le nom est obligatoire.');
@@ -204,7 +288,8 @@ export class ProjetsStageComponent implements OnInit {
       dateDebut:      this.form().dateDebut || undefined,
       dateFin:        this.form().dateFin   || undefined,
       statutProjetId: this.form().statutProjetId,
-      typeProjetId:   3,
+      // ✅ Toujours envoyé en dur, jamais depuis un select utilisateur
+      typeProjetId:   TYPE_PROJET_STAGE_ID,
       avancement:     this.form().avancement,
       visible:        true,
       facturable:     true,
@@ -217,19 +302,35 @@ export class ProjetsStageComponent implements OnInit {
 
     obs.subscribe({
       next: saved => {
-        // Assigner les stagiaires si nécessaire
-        const stagiaireIds: number[] = this.form().stagiaireIds || [];
-        if (stagiaireIds.length > 0 && !this.editingId()) {
-          stagiaireIds.forEach(stagId =>
-              this.svc.assignerAStagiaire(saved.id, stagId).subscribe());
-        }
-        this.projets.update(list =>
-            this.editingId()
-                ? list.map(p => p.id === saved.id ? saved : p)
-                : [...list, saved]
-        );
+        // ✅ Synchronise les stagiaires (ajout + retrait), que ce soit création ou édition.
+        // Une fois fait, on recharge le projet pour avoir la liste de stagiaires à jour
+        // (sinon `saved` retourné par create()/update() contient encore l'ancienne liste).
+        this.synchroniserStagiaires(saved.id, () => {
+          this.svc.getById(saved.id).subscribe({
+            next: projetAJour => {
+              this.projets.update(list =>
+                  this.editingId()
+                      ? list.map(p => p.id === projetAJour.id ? projetAJour : p)
+                      : [...list, projetAJour]
+              );
+            },
+            error: () => {
+              // En cas d'échec du rechargement, on retombe au moins sur `saved`
+              this.projets.update(list =>
+                  this.editingId()
+                      ? list.map(p => p.id === saved.id ? saved : p)
+                      : [...list, saved]
+              );
+            }
+          });
+        });
+
+        // ✅ Upload immédiat des documents sélectionnés, avant de fermer le slide-over
+        this.uploaderDocumentsEnAttente(saved.id);
+
         this.slideOpen.set(false);
         this.saving.set(false);
+        this.pendingFiles.set([]);
         this.ui.success(this.editingId() ? 'Projet mis à jour ✅' : 'Projet créé ✅');
       },
       error: () => {
@@ -278,6 +379,8 @@ export class ProjetsStageComponent implements OnInit {
     });
   }
 
+  formatSize(bytes?: number): string { return this.docSvc.formatSize(bytes); }
+
   canEdit():   boolean { return this.perms.canEditProjetStage() || this.perms.canManageProjetStage(); }
   canDelete(): boolean { return this.perms.canDeleteProjetStage(); }
   canCreate(): boolean { return this.perms.canCreateProjetStage() || this.perms.canManageProjetStage(); }
@@ -295,8 +398,7 @@ export class ProjetsStageComponent implements OnInit {
     return c[(nom || '').charCodeAt(0) % c.length];
   }
 
-  // Ajouter cet helper dans ProjetsStageComponent
-getNom(p: Projet): string {
-  return p.nom;
-}
+  getNom(p: Projet): string {
+    return p.nom;
+  }
 }

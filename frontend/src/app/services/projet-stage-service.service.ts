@@ -4,6 +4,9 @@ import { Observable } from 'rxjs';
 import { Projet, ProjetRequest } from '../shared/models/projet.model';
 import { Activite, ActiviteRequest } from '../shared/models/activite.model';
 
+// ✅ ID du type de projet "STAGE_ACADEMIQUE" — source unique de vérité pour ce service
+const TYPE_PROJET_STAGE_ID = 4;
+
 @Injectable({ providedIn: 'root' })
 export class ProjetStageService {
 
@@ -12,10 +15,12 @@ export class ProjetStageService {
   private apiActivites = 'http://localhost:8085/api/application/activites';
   private apiMembres   = 'http://localhost:8085/api/application/membres-equipe';
 
-  // ── Projets de stage (typeProjetId = 3) ──────────────────────
+  // ── Projets de stage (typeProjetId = 4) ──────────────────────
 
   getAll(): Observable<Projet[]> {
-    return this.http.get<Projet[]>(`${this.apiProjets}/stage`);
+    // ✅ On ne dépend plus de l'endpoint backend /stage (qui filtrait sur l'ancien id 3).
+    // On récupère tous les projets et on filtre côté composant sur typeProjetId === 4.
+    return this.http.get<Projet[]>(this.apiProjets);
   }
 
   getById(id: number): Observable<Projet> {
@@ -33,10 +38,11 @@ export class ProjetStageService {
   }
 
   create(body: Partial<ProjetRequest> & { nom: string }): Observable<Projet> {
-    // Force typeProjetId = 3 (STAGE_ACADEMIQUE)
+    // ✅ Ne plus écraser typeProjetId en dur — on respecte ce qu'envoie le composant,
+    // avec TYPE_PROJET_STAGE_ID comme valeur de secours uniquement si rien n'est fourni.
     const payload: ProjetRequest = {
       ...body,
-      typeProjetId:   3,
+      typeProjetId:   body.typeProjetId ?? TYPE_PROJET_STAGE_ID,
       statutProjetId: body.statutProjetId ?? 2  // 2 = EN_COURS par défaut
     };
     return this.http.post<Projet>(this.apiProjets, payload);
@@ -56,6 +62,12 @@ export class ProjetStageService {
     return this.http.post<any>(`${this.apiMembres}/stagiaire`, {
       projetId, utilisateurId: stagiaireId, stageId
     });
+  }
+
+  // ✅ Retirer un stagiaire du projet (DELETE /membres-equipe/projet/{projetId}/utilisateur/{userId})
+  retirerStagiaire(projetId: number, stagiaireId: number): Observable<void> {
+    return this.http.delete<void>(
+        `${this.apiMembres}/projet/${projetId}/utilisateur/${stagiaireId}`);
   }
 
   // ── Activités ─────────────────────────────────────────────────

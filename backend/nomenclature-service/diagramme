@@ -1,0 +1,373 @@
+/*
+overleaf Ensuite, dans le corps du texte, au lieu d'écrire « SIG » à la main, utilise \ac{SIG} :
+         latexLe système intègre un \ac{SIG} permettant...
+
+         La première fois que \ac{SIG} apparaît dans le document, LaTeX affiche automatiquement : Système d'Information Géographique (SIG).
+         Les fois suivantes, il affiche juste : SIG.
+         Grâce à printonlyused, seuls les sigles que tu as effectivement appelés via \ac{...} apparaîtront dans la liste finale — les autres déclarés mais jamais utilisés sont automatiquement ignorés.
+
+
+*/
+
+
+
+
+
+
+
+
+
+/* diagramme de sequence global connexion
+
+
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "labelBoxBkgColor": "#E8F0FE",
+    "labelBoxBorderColor": "#4285F4",
+    "labelTextColor": "#1A1A1A"
+  },
+  "sequence": {
+    "mirrorActors": false
+  },
+  "themeCSS": ".loopLine { stroke-dasharray: 0; } .labelBox { rx: 6; ry: 6; } .loopText, .loopText tspan { font-weight: 700; }"
+}}%%
+sequenceDiagram
+    actor Utilisateur
+    participant Systeme as Système TalentHub
+    Utilisateur->>Systeme: Ouvrir l'application
+    activate Systeme
+    Systeme->>Systeme: Vérifier la présence d'une session active
+    alt Aucune session valide
+        Systeme-->>Utilisateur: Rediriger vers la page de connexion
+        Utilisateur->>Systeme: Saisir les identifiants
+        Systeme->>Systeme: Vérifier les identifiants
+        alt Identifiants invalides
+            Systeme-->>Utilisateur: Afficher un message d'erreur
+        else Identifiants valides
+            Systeme->>Systeme: Générer le jeton d'authentification
+            Systeme->>Systeme: Charger le profil et les permissions de l'utilisateur
+            Systeme->>Systeme: Déterminer la page d'accueil selon les permissions
+            Systeme-->>Utilisateur: Afficher la page d'accueil correspondante
+        end
+    else Session valide
+        Systeme->>Systeme: Réutiliser le jeton existant
+        Systeme->>Systeme: Charger le profil et les permissions de l'utilisateur
+        Systeme-->>Utilisateur: Afficher la page d'accueil correspondante
+    end
+    deactivate Systeme
+
+
+
+
+    */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /*
+
+
+
+
+
+
+
+
+
+
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "labelBoxBkgColor": "#E8F0FE",
+    "labelBoxBorderColor": "#4285F4",
+    "labelTextColor": "#1A1A1A",
+    "actorFontSize": "17px",
+    "actorFontWeight": "700",
+    "actorTextColor": "#1A1A1A",
+    "actorBorder": "#1A1A1A",
+    "actorLineColor": "#1A1A1A",
+    "signalColor": "#1A1A1A",
+    "signalTextColor": "#1A1A1A",
+    "messageFontSize": "30px",
+    "messageFontWeight": "700",
+    "noteFontSize": "30px",
+    "noteFontWeight": "700",
+    "noteTextColor": "#1A1A1A",
+    "noteBorderColor": "#1A1A1A",
+    "sequenceNumberColor": "#1A1A1A"
+  },
+  "sequence": {
+    "mirrorActors": false
+  },
+  "themeCSS": ".loopLine { stroke-dasharray: 0; stroke-width: 2px; stroke: #1A1A1A; } .labelBox { rx: 6; ry: 6; } .loopText, .loopText tspan { font-weight: 700; font-size: 15px; fill: #1A1A1A; } .messageText { font-size: 15px; font-weight: 700; fill: #1A1A1A; } .messageLine0, .messageLine1 { stroke-width: 2px; stroke: #1A1A1A; } .actor-line { stroke-width: 2px; stroke: #1A1A1A; } .actor { stroke-width: 2px; } .actor tspan { font-size: 17px; font-weight: 700; } .noteText, .noteText tspan { font-size: 14px; font-weight: 700; } .activation0, .activation1, .activation2 { stroke-width: 2px; }"
+}}%%
+sequenceDiagram
+    actor Utilisateur
+    participant Frontend as Interface TalentHub
+    participant KC as Keycloak
+    participant GW as API Gateway
+    participant Cache as Redis
+    participant Backend as Application Service
+    participant BD as Base de données
+    Utilisateur->>Frontend: Ouvrir l'application
+    Frontend->>Frontend: Initialiser Keycloak (login-required)
+    Frontend->>KC: Rediriger vers la page de connexion
+    Utilisateur->>KC: Saisir email et mot de passe
+    KC->>KC: Vérifier les identifiants
+    alt Identifiants invalides
+        KC-->>Utilisateur: Afficher un message d'erreur
+    else Identifiants valides
+        KC->>KC: Générer le jeton d'accès contenant l'attribut profilId
+        KC-->>Frontend: Rediriger avec le jeton d'accès
+        Frontend->>Frontend: Décoder le jeton et extraire le profilId
+        Frontend->>GW: Demander les codes de permission du profil (jeton Bearer)
+        activate GW
+        GW->>GW: Valider la signature du jeton (clé publique Keycloak)
+        GW->>GW: Extraire le profilId depuis le jeton
+        GW->>Cache: Vérifier le cache des permissions du profil
+        alt Cache présent
+            Cache-->>GW: Retourner les codes en cache
+        else Cache absent
+            GW->>Backend: Charger les permissions du profil depuis la base
+            Backend->>BD: Sélectionner les permissions liées au profil
+            BD-->>Backend: Retourner la liste des permissions
+            Backend-->>GW: Retourner les codes de permission
+            GW->>Cache: Mettre en cache les codes (TTL 60 min)
+        end
+        GW->>GW: Injecter l'en-tête X-User-Permissions
+        GW->>Backend: Transmettre la requête vers le contrôleur des permissions
+        Backend->>BD: Récupérer les codes de permission du profil
+        BD-->>Backend: Retourner les codes
+        Backend-->>GW: Renvoyer la liste des codes
+        GW-->>Frontend: Renvoyer la liste des codes de permission
+        deactivate GW
+        Frontend->>Frontend: Stocker les permissions dans le contexte applicatif
+        Frontend->>Frontend: Déterminer la page d'accueil selon le profil et les permissions
+        Frontend-->>Utilisateur: Rediriger vers l'accueil correspondant
+    end
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* les permissions détaile
+
+
+
+
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "labelBoxBkgColor": "#E8F0FE",
+    "labelBoxBorderColor": "#4285F4",
+    "labelTextColor": "#1A1A1A"
+  },
+  "sequence": {
+    "mirrorActors": false
+  },
+  "themeCSS": ".loopLine { stroke-dasharray: 0; } .labelBox { rx: 6; ry: 6; } .loopText, .loopText tspan { font-weight: 700; }"
+}}%%
+sequenceDiagram
+    actor Utilisateur
+    participant Systeme as Système TalentHub
+    Utilisateur->>Systeme: Ouvrir la matrice des profils et permissions
+    Systeme->>Systeme: Vérifier le droit de consulter la matrice
+    alt Droit insuffisant
+        Systeme-->>Utilisateur: Afficher un avertissement
+    else Droit suffisant
+        Systeme-->>Utilisateur: Afficher la matrice des permissions par profil
+        Utilisateur->>Systeme: Cocher une permission pour un profil
+        Systeme->>Systeme: Vérifier le droit d'assigner une permission
+        alt Droit insuffisant
+            Systeme-->>Utilisateur: Refuser l'action et afficher un avertissement
+        else Droit suffisant
+            Systeme->>Systeme: Enregistrer l'association profil-permission
+            Systeme->>Systeme: Invalider le cache des permissions du profil
+            Systeme-->>Utilisateur: Confirmer l'assignation et mettre à jour la matrice
+        end
+    end
+
+/****
+
+
+
+
+
+
+
+/* diagramme de sequence detaille assigner permission
+
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "labelBoxBkgColor": "#E8F0FE",
+    "labelBoxBorderColor": "#4285F4",
+    "labelTextColor": "#1A1A1A",
+    "actorFontSize": "17px",
+    "actorFontWeight": "700",
+    "actorTextColor": "#1A1A1A",
+    "actorBorder": "#1A1A1A",
+    "actorLineColor": "#1A1A1A",
+    "signalColor": "#1A1A1A",
+    "signalTextColor": "#1A1A1A",
+    "messageFontSize": "15px",
+    "messageFontWeight": "700",
+    "noteFontSize": "14px",
+    "noteFontWeight": "700",
+    "noteTextColor": "#1A1A1A",
+    "noteBorderColor": "#1A1A1A",
+    "sequenceNumberColor": "#1A1A1A"
+  },
+  "sequence": {
+    "mirrorActors": false
+  },
+  "themeCSS": ".loopLine { stroke-dasharray: 0; stroke-width: 2px; stroke: #1A1A1A; } .labelBox { rx: 6; ry: 6; } .loopText, .loopText tspan { font-weight: 700; font-size: 15px; fill: #1A1A1A; } .messageText { font-size: 15px; font-weight: 700; fill: #1A1A1A; } .messageLine0, .messageLine1 { stroke-width: 2px; stroke: #1A1A1A; } .actor-line { stroke-width: 2px; stroke: #1A1A1A; } .actor { stroke-width: 2px; } .actor tspan { font-size: 17px; font-weight: 700; } .noteText, .noteText tspan { font-size: 14px; font-weight: 700; } .activation0, .activation1, .activation2 { stroke-width: 2px; }"
+}}%%
+sequenceDiagram
+    actor Utilisateur
+    participant Frontend as Interface TalentHub
+    participant GW as API Gateway
+    participant KC as Keycloak
+    participant Backend as Application Service
+    participant BD as Base de données
+    participant Cache as Redis
+    Utilisateur->>Frontend: Cocher la case d'une permission pour un profil
+    Frontend->>Frontend: Vérifier localement le droit PROFIL_PERM_ASSIGN
+    alt Droit insuffisant (garde frontend)
+        Frontend-->>Utilisateur: Afficher un avertissement et annuler l'action
+    else Droit suffisant
+        Frontend->>GW: Envoyer la demande d'assignation (profilId, permissionId, jeton Bearer)
+        activate GW
+        GW->>KC: Valider la signature du jeton (clé publique JWKS)
+        KC-->>GW: Confirmer la validité du jeton
+        GW->>GW: Enrichir la requête avec l'en-tête X-User-Permissions
+        GW->>Backend: Transmettre la demande d'assignation
+        deactivate GW
+        activate Backend
+        Backend->>Backend: Vérifier le droit PROFIL_PERM_ASSIGN du demandeur
+        alt Droit insuffisant côté serveur
+            Backend-->>GW: Refuser l'opération (403)
+            GW-->>Frontend: Retourner l'erreur d'autorisation
+            Frontend-->>Utilisateur: Afficher l'erreur d'autorisation
+        else Droit suffisant
+            Backend->>BD: Insérer l'association profil-permission
+            BD-->>Backend: Confirmer l'insertion
+            Backend->>Backend: Planifier l'éviction du cache après validation de la transaction
+            Backend->>Cache: Supprimer le cache des permissions du profil
+            Backend-->>GW: Retourner l'association créée
+            GW-->>Frontend: Retourner la confirmation
+            Frontend->>Frontend: Mettre à jour la case cochée dans la matrice
+            Frontend->>Frontend: Recharger le contexte de permissions courant
+            Frontend-->>Utilisateur: Afficher la confirmation d'assignation
+        end
+        deactivate Backend
+    end
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+/***********************
+
+
+
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontSize": "16px",
+    "primaryTextColor": "#1A1A1A",
+    "primaryBorderColor": "#1A1A1A",
+    "lineColor": "#1A1A1A",
+    "edgeLabelBackground": "#E8F0FE"
+  }
+}}%%
+flowchart TD
+
+    Start(( )) --> U1[Ouvrir la matrice des profils et permissions]
+    U1 --> S1[Vérifier le droit de consulter la matrice]
+    S1 --> D1{Droit suffisant ?}
+
+    D1 -->|Non| S2[Afficher un avertissement]
+    S2 --> End1(( ))
+
+    D1 -->|Oui| S3[Afficher la matrice des permissions par profil]
+    S3 --> U2[Cocher une permission pour un profil]
+    U2 --> S4[Vérifier le droit d'assigner une permission]
+    S4 --> D2{Droit suffisant ?}
+
+    D2 -->|Non| S5[Refuser l'action et afficher un avertissement]
+    S5 --> End1
+
+    D2 -->|Oui| S6[Enregistrer l'association profil-permission]
+    S6 --> S7[Invalider le cache des permissions du profil]
+    S7 --> S8[Confirmer l'assignation et mettre à jour la matrice]
+    S8 --> End1
+
+
+
+
+
+
+    **************************/
+
+
+
+
+
+
+
+
+
+
+

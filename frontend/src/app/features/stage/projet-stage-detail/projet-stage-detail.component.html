@@ -1,298 +1,1155 @@
-<div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh">
+<!-- ================================================================
+     projet-stage-detail.component.html
+     Copie de projet-detail.component.html (même design, même CSS)
+     - Système de permission AJOUTÉ : accès admin/superviseur/stagiaire
+     - Carte "Team Leads" remplacée par "Stagiaires & Superviseurs"
+     - Pagination de la vue Table toujours visible
+================================================================ -->
 
-  <div *ngIf="loading()" class="dt-loading"><div class="dt-spinner"></div> Chargement...</div>
+<!-- ✅ Chargement (inclut la vérification d'accès) -->
+<div *ngIf="loading()" class="dt-loading" style="padding:80px"><div class="dt-spinner"></div> Chargement du projet...</div>
 
-  <ng-container *ngIf="!loading() && projet() as p">
+<!-- ✅ Accès refusé : ni admin, ni superviseur actif, ni stagiaire actif sur ce projet -->
+<div *ngIf="!loading() && accessDenied()"
+     style="padding:80px 24px;text-align:center;color:var(--text-muted)">
+  <svg viewBox="0 0 48 48" fill="none" style="width:48px;height:48px;opacity:.3;margin:0 auto 16px">
+    <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M16 16l16 16M32 16L16 32" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+  <p style="font-weight:700;font-size:1rem;margin-bottom:6px;color:var(--text-primary)">Accès refusé</p>
+  <p style="font-size:.83rem">Vous n'avez pas la permission de consulter ce projet.</p>
+  <button class="mx-btn mx-btn-ghost" style="margin-top:16px" (click)="goBack()">Retour à la liste</button>
+</div>
 
-    <!-- BREADCRUMB — ✅ p.nom au lieu de p.titre -->
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px">
-      <button style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:.8rem;display:flex;align-items:center;gap:4px;padding:0;font-family:inherit"
-              (click)="goBack()">
-        <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
-          <path d="M9 2L5 7l4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-        Projets
-      </button>
-      <span style="color:var(--border-color)">/</span>
-      <span style="font-size:.8rem;color:var(--text-secondary);font-weight:600">{{ p.nom }}</span>
-    </div>
+<!-- ✅ Contenu principal — uniquement si chargement terminé ET accès autorisé -->
+<div class="pd5-page" *ngIf="!loading() && !accessDenied()" (click)="closeAll()">
+  <div class="pd5-layout" *ngIf="projet() as p">
 
-    <!-- HEADER PROJET -->
-    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:14px;padding:22px;margin-bottom:20px">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
-            <!-- ✅ p.nom au lieu de p.titre -->
-            <h1 style="font-size:1.2rem;font-weight:800;color:var(--text-primary);margin:0">{{ p.nom }}</h1>
-            <!-- ✅ Statut via helper nomenclature -->
-            <span class="dt-badge"
-                  [style.background]="getStatutProjetColor(p.statutProjetId)+'18'"
-                  [style.color]="getStatutProjetColor(p.statutProjetId)"
-                  [style.border-color]="getStatutProjetColor(p.statutProjetId)+'55'"
-                  style="font-size:.62rem">
-              <span class="dt-badge-dot"
-                    [style.background]="getStatutProjetColor(p.statutProjetId)"></span>
-              {{ getStatutProjetLabel(p.statutProjetId) }}
-            </span>
+    <!-- ══════════════════════════════════════════════════════════
+         LIGNE 1 — 4 CARTES KPI
+    ══════════════════════════════════════════════════════════ -->
+    <div class="pd5-kpi-row">
+
+      <!-- CARTE 1 : Avancement global -->
+      <div class="pd5-kpi-card">
+        <div class="pd5-kpi-card-header">
+          <div class="pd5-kpi-card-title">
+            <svg class="pd5-kpi-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M4,2.5c0-1.381,1.119-2.5,2.5-2.5s2.5,1.119,2.5,2.5-1.119,2.5-2.5,2.5-2.5-1.119-2.5-2.5ZM22.454,21h-3.954c-.828,0-1.5,.672-1.5,1.5s.672,1.5,1.5,1.5h3.954c.828,0,1.5-.672,1.5-1.5s-.672-1.5-1.5-1.5Zm0-5h-3.954c-.828,0-1.5,.672-1.5,1.5s.672,1.5,1.5,1.5h3.954c.828,0,1.5-.672,1.5-1.5s-.672-1.5-1.5-1.5Zm0-5h-3.954c-.828,0-1.5,.672-1.5,1.5s.672,1.5,1.5,1.5h3.954c.828,0,1.5-.672,1.5-1.5s-.672-1.5-1.5-1.5Zm-8.954,10h-4c-.829,0-1.5,.672-1.5,1.5s.671,1.5,1.5,1.5h4c.828,0,1.5-.672,1.5-1.5s-.672-1.5-1.5-1.5Zm0-5h-.752l-1.211-3.632c-.272-.818-1.035-1.368-1.897-1.368h-1.64v-2h2.5c.829,0,1.5-.672,1.5-1.5s-.671-1.5-1.5-1.5H5.536c-1.089,0-2.122,.513-2.781,1.376L.387,9.994c-.556,.614-.508,1.562,.107,2.118,.612,.555,1.561,.509,2.119-.106l1.402-1.55-.013,1.82-1.438,4.794c-.238,.793,.212,1.629,1.005,1.867,.773,.237,1.632-.204,1.868-1.006l1.179-3.931h2.303l.667,2h-.086c-.829,0-1.5,.672-1.5,1.5s.671,1.5,1.5,1.5h4c.828,0,1.5-.672,1.5-1.5s-.672-1.5-1.5-1.5Zm0-18v6h8V3h-8z" />
+            </svg>
+            Avancement
           </div>
-          <p *ngIf="p.description" style="font-size:.82rem;color:var(--text-secondary);margin:0 0 12px">{{ p.description }}</p>
-
-          <!-- Dates -->
-          <div style="display:flex;gap:16px;flex-wrap:wrap">
-            <div *ngIf="p.dateDebut" style="font-size:.72rem;color:var(--text-muted);display:flex;align-items:center;gap:4px">
-              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" style="width:12px;height:12px">
-                <rect x="1" y="2" width="12" height="11" rx="1.5"/>
-                <path d="M1 6h12M4.5 1v2M9.5 1v2" stroke-linecap="round"/>
-              </svg>
-              Début : {{ fmtDate(p.dateDebut) }}
-            </div>
-            <div *ngIf="p.dateFin" style="font-size:.72rem;color:var(--text-muted);display:flex;align-items:center;gap:4px">
-              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" style="width:12px;height:12px">
-                <rect x="1" y="2" width="12" height="11" rx="1.5"/>
-                <path d="M1 6h12M4.5 1v2M9.5 1v2" stroke-linecap="round"/>
-              </svg>
-              Fin : {{ fmtDate(p.dateFin) }}
-            </div>
-          </div>
+          <button class="pd5-kpi-menu-btn">
+            <svg viewBox="0 0 20 20" fill="currentColor" style="width:16px;height:16px">
+              <circle cx="4" cy="10" r="2" />
+              <circle cx="10" cy="10" r="2" />
+              <circle cx="16" cy="10" r="2" />
+            </svg>
+          </button>
         </div>
 
-        <!-- Avancement circulaire -->
-        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
-          <svg viewBox="0 0 60 60" style="width:70px;height:70px">
-            <circle cx="30" cy="30" r="24" fill="none" stroke="var(--border-color)" stroke-width="5"/>
-            <circle cx="30" cy="30" r="24" fill="none"
-                    [attr.stroke]="avancementColor(p.avancement)"
-                    stroke-width="5"
-                    stroke-linecap="round"
-                    [attr.stroke-dasharray]="150.8"
-                    [attr.stroke-dashoffset]="150.8 - (150.8 * p.avancement / 100)"
-                    transform="rotate(-90 30 30)"/>
-            <text x="30" y="35" text-anchor="middle" font-size="12" font-weight="800"
-                  [attr.fill]="avancementColor(p.avancement)">{{ p.avancement }}%</text>
-          </svg>
-          <span style="font-size:.65rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px">Avancement</span>
+        <div class="pd5-kpi-main-row">
+          <div class="pd5-kpi-value">{{ p.avancement || 0 }}%</div>
+          <span class="pd5-kpi-badge-trend"
+            style="background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3)">
+            {{ p.heuresPassees ? fmtHeures(p.heuresPassees) : 'En cours' }}
+          </span>
         </div>
       </div>
 
-      <!-- ✅ Stagiaires via p.stagiaires[].nomComplet au lieu de p.stagiaireNoms -->
-      <div *ngIf="p.stagiaires && p.stagiaires.length > 0"
-           style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border-color);
-                  display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <span style="font-size:.68rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px">
-          Stagiaires :
-        </span>
-        <span *ngFor="let stag of p.stagiaires"
-              style="font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:99px;
-                     background:var(--accent-soft);color:var(--accent);border:1px solid rgba(192,38,211,.2)">
-          {{ stag.nomComplet }}
-        </span>
+      <!-- CARTES 2-4 : Statuts depuis nomenclature -->
+      <div class="pd5-kpi-card" *ngFor="let s of statsActivites().slice(0, 3); let i = index">
+        <div class="pd5-kpi-card-header">
+          <div class="pd5-kpi-card-title">
+            <svg class="pd5-kpi-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+            Activité {{ s.libelle }}
+          </div>
+          <button class="pd5-kpi-menu-btn">
+            <svg viewBox="0 0 20 20" fill="currentColor" style="width:16px;height:16px">
+              <circle cx="4" cy="10" r="2" />
+              <circle cx="10" cy="10" r="2" />
+              <circle cx="16" cy="10" r="2" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="pd5-kpi-main-row">
+          <div class="pd5-kpi-value">{{ s.count }}</div>
+          <span class="pd5-kpi-badge-trend" [style.background]="s.couleur + '18'" [style.color]="s.couleur"
+            [style.border]="'1px solid ' + s.couleur + '44'">
+            <span class="dt-badge-dot" [style.background]="s.couleur" style="margin-right:4px"></span>
+            {{ getPctStatut(s.count) }}% du total
+          </span>
+        </div>
+      </div>
+
+      <!-- CARTE extra : Haute priorité (si moins de 3 statuts) -->
+      <div class="pd5-kpi-card" *ngIf="statsActivites().length < 3">
+        <div class="pd5-kpi-card-header">
+          <div class="pd5-kpi-card-title">
+            <svg class="pd5-kpi-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" />
+            </svg>
+            Haute priorité
+          </div>
+          <button class="pd5-kpi-menu-btn">
+            <svg viewBox="0 0 20 20" fill="currentColor" style="width:16px;height:16px">
+              <circle cx="4" cy="10" r="2" />
+              <circle cx="10" cy="10" r="2" />
+              <circle cx="16" cy="10" r="2" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="pd5-kpi-main-row">
+          <div class="pd5-kpi-value">{{ countHautePriorite() }}</div>
+          <span class="pd5-kpi-badge-trend"
+            style="background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)">
+            Urgentes / Hautes
+          </span>
+        </div>
       </div>
     </div>
 
-    <!-- ONGLETS -->
-    <div class="mx-so-tabs" style="margin-bottom:16px">
-      <button class="mx-so-tab" [class.active]="tab()==='activites'" (click)="tab.set('activites')">
-        Activités ({{ activites().length }})
-      </button>
-      <button class="mx-so-tab" [class.active]="tab()==='infos'" (click)="tab.set('infos')">
-        Informations
-      </button>
-    </div>
+    <!-- ══════════════════════════════════════════════════════════
+         LIGNE 2 — Donut priorités + Stacked bar chart
+    ══════════════════════════════════════════════════════════ -->
+    <div class="pd5-dash-row">
 
-    <!-- TAB ACTIVITÉS -->
-    <ng-container *ngIf="tab()==='activites'">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap">
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <!-- ✅ Filtre par ID (filtreStatutId) au lieu de code String (filtreStatut) -->
-          <button style="padding:4px 12px;border-radius:99px;border:1.5px solid;font-size:.72rem;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit"
-                  [style.background]="!filtreStatutId() ? 'var(--accent)' : 'transparent'"
-                  [style.color]="!filtreStatutId() ? 'white' : 'var(--text-muted)'"
-                  [style.border-color]="!filtreStatutId() ? 'var(--accent)' : 'var(--border-color)'"
-                  (click)="filtreStatutId.set('')">
-            Tous
-          </button>
-          <button *ngFor="let s of statutsActivite()"
-                  style="padding:4px 12px;border-radius:99px;border:1.5px solid;font-size:.72rem;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit"
-                  [style.background]="filtreStatutId()===s.id ? 'var(--accent)' : 'transparent'"
-                  [style.color]="filtreStatutId()===s.id ? 'white' : 'var(--text-muted)'"
-                  [style.border-color]="filtreStatutId()===s.id ? 'var(--accent)' : 'var(--border-color)'"
-                  (click)="filtreStatutId.set(filtreStatutId()===s.id ? '' : s.id)">
-            {{ s.libelle }}
+      <!-- CARTE GAUCHE : Jauge concentrique priorités -->
+      <div class="pd5-dash-card pd5-dash-donut-card">
+        <div class="pd5-dash-card-header">
+          <div class="pd5-dash-card-title">Répartition par priorité</div>
+          <button class="pd5-export-btn">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M7 1v8M4 6l3 3 3-3" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M1 11v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke-linecap="round" />
+            </svg>
+            Exporter
           </button>
         </div>
-        <button *ngIf="canAddActivite()" class="dt-btn-create" (click)="openCreateAct()">
-          <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
-            <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+
+        <div class="pd5-gauge-wrap">
+          <svg class="pd5-gauge-svg" viewBox="0 0 200 200">
+            <circle *ngFor="let ring of getGaugeRings(); let i = index" class="pd5-ring" [ngClass]="ring.colorClass"
+              cx="100" cy="100" [attr.r]="ring.r" [attr.stroke-dasharray]="getGaugeDashFull(i, ring.r)"
+              transform="rotate(-90 100 100)" />
+            <text x="100" y="95" text-anchor="middle" class="pd5-gauge-center-num">{{ activites().length }}</text>
+            <text x="100" y="118" text-anchor="middle" class="pd5-gauge-center-label">activités</text>
           </svg>
-          Ajouter une activité
+        </div>
+
+        <div class="pd5-gauge-legend-wrap">
+          <div class="pd5-gauge-legend">
+            <div class="pd5-legend-row" *ngFor="let item of getGaugeLegend()">
+              <span class="pd5-legend-dot" [style.background]="item.ringCouleur"></span>
+              <span class="pd5-legend-label" style="font-size:.72rem">{{ item.label }}</span>
+              <span class="pd5-legend-pct" style="font-size:.72rem;font-weight:700">{{ item.pct }}%</span>
+            </div>
+            <div class="pd5-legend-row" *ngIf="getGaugeLegend().length === 0">
+              <span class="pd5-legend-label" style="font-size:.72rem;opacity:.5">Aucune activité avec priorité</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARTE DROITE : Stacked bar chart 12 mois -->
+      <div class="pd5-dash-card">
+        <div class="pd5-dash-card-header">
+          <div>
+            <div class="pd5-dash-card-title">Activités créées par mois</div>
+            <div class="pd5-dash-total-val">{{ activites().length }}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px" (click)="$event.stopPropagation()">
+            <div class="pd5-bar-legend">
+              <div class="pd5-bar-legend-item" *ngFor="let s of statutsActivite(); let i = index">
+                <span class="pd5-legend-dot" [style.background]="getStatutChartColorById(s.id, i)"></span>
+                <span class="pd5-bar-legend-label">{{ s.libelle }}</span>
+              </div>
+            </div>
+            <div class="pd5-date-picker-wrap">
+              <button class="pd5-date-picker-btn" (click)="toggleChartCalendar()">
+                <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+                  <rect x="1" y="2" width="12" height="11" rx="1.5" />
+                  <path d="M1 6h12M4.5 1v2M9.5 1v2" stroke-linecap="round" />
+                </svg>
+                {{ chartYear() }}
+                <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4"
+                  style="width:9px;height:9px">
+                  <path d="M2 4l3 3 3-3" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+              <div class="pd5-calendar-dropdown pd5-calendar-right" [class.open]="chartCalendarOpen()">
+                <div class="pd5-year-picker">
+                  <button class="pd5-year-btn" *ngFor="let y of getYearRange()" [class.active]="y === chartYear()"
+                    (click)="chartYear.set(y); chartCalendarOpen.set(false)">{{ y }}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pd5-stacked-chart">
+          <div class="pd5-chart-yaxis">
+            <span class="pd5-yaxis-label" *ngFor="let v of getYAxisLabels()">{{ v }}</span>
+          </div>
+          <div class="pd5-chart-area">
+            <div class="pd5-chart-gridlines">
+              <div class="pd5-gridline" *ngFor="let v of getYAxisLabels()"
+                style="border-top:1px dashed var(--dt-border)"></div>
+            </div>
+            <div class="pd5-month-bars" *ngFor="let month of getMonthlyData()">
+              <div class="pd5-stacked-bar">
+                <div class="pd5-bar-seg" *ngFor="let seg of month.segments" [style.height.%]="seg.pct"
+                  [style.background]="getStatutChartColorById(seg.statutId, seg.statutIndex)"
+                  [title]="seg.label + ': ' + seg.count"></div>
+              </div>
+              <span class="pd5-month-label">{{ month.label }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         LIGNE 3 — Stagiaires & Superviseurs + Line chart
+    ══════════════════════════════════════════════════════════ -->
+    <div class="pd5-dash-row">
+
+      <!-- CARTE GAUCHE : Stagiaires & Superviseurs (ex Team Leads) -->
+      <div class="pd5-dash-card pd5-dash-leads-card">
+        <div class="pd5-dash-card-header">
+          <div class="pd5-dash-card-title">Stagiaires &amp; Superviseurs</div>
+        </div>
+
+        <div *ngIf="stagiairesAssignes().length > 0">
+          <div class="pd5-leads-thead">
+            <span class="pd5-leads-col-user">Stagiaire</span>
+          </div>
+          <div class="pd5-lead-row" *ngFor="let stag of stagiairesAssignes()">
+            <div class="pd5-lead-user">
+              <div class="pd5-lead-avatar" [style.background]="getAvatarColor(stag.nomComplet)">
+                <img *ngIf="stag.photoUrl" [src]="stag.photoUrl"
+                  style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                <span *ngIf="!stag.photoUrl">{{ getInitiales(stag.nomComplet) }}</span>
+              </div>
+              <div class="pd5-lead-info">
+                <span class="pd5-lead-nom">{{ stag.nomComplet }}</span>
+                <span class="pd5-lead-email">{{ stag.email }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pd5-leads-empty" *ngIf="stagiairesAssignes().length === 0">
+          Aucun stagiaire assigné à ce projet.
+        </div>
+      </div>
+
+      <!-- CARTE DROITE : Line chart activités terminées -->
+      <div class="pd5-dash-card pd5-dash-line-card">
+        <div class="pd5-dash-card-header">
+          <div class="pd5-dash-card-title">Activités terminées (tendance)</div>
+          <div style="display:flex;align-items:center;gap:8px" (click)="$event.stopPropagation()">
+            <div class="pd5-date-picker-wrap">
+              <button class="pd5-date-picker-btn pd5-date-picker-dark" (click)="toggleLineCalendar()">
+                <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+                  <rect x="1" y="2" width="12" height="11" rx="1.5" />
+                  <path d="M1 6h12M4.5 1v2M9.5 1v2" stroke-linecap="round" />
+                </svg>
+                {{ lineMonthLabel() }}
+                <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4"
+                  style="width:9px;height:9px">
+                  <path d="M2 4l3 3 3-3" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+              <div class="pd5-calendar-dropdown pd5-calendar-right" [class.open]="lineCalendarOpen()">
+                <div class="pd5-cal-header">
+                  <button class="pd5-cal-nav" (click)="prevLineYear()">‹</button>
+                  <span class="pd5-cal-month-label">{{ lineYear() }}</span>
+                  <button class="pd5-cal-nav" (click)="nextLineYear()">›</button>
+                </div>
+                <div class="pd5-month-picker">
+                  <button class="pd5-month-btn" *ngFor="let m of MOIS_LABELS; let i = index"
+                    [class.active]="i === lineMonthIdx()" (click)="selectLineMonth(i)">{{ m }}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pd5-line-chart-container">
+          <div class="pd5-line-yaxis">
+            <span class="pd5-yaxis-label" *ngFor="let v of getLineYLabels()">{{ v }}</span>
+          </div>
+          <div class="pd5-line-area">
+            <svg class="pd5-line-svg" [attr.viewBox]="'0 0 ' + LINE_W + ' ' + LINE_H" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#00c2ff" stop-opacity=".35" />
+                  <stop offset="100%" stop-color="#00c2ff" stop-opacity="0" />
+                </linearGradient>
+              </defs>
+              <path [attr.d]="getLineAreaPath2()" fill="url(#lineGrad)" stroke="none" />
+              <path [attr.d]="getLinePath2()" fill="none" stroke="#00c2ff" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+            <div class="pd5-line-xaxis2">
+              <span class="pd5-xaxis-label" *ngFor="let lbl of getLineXLabels2()">{{ lbl }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         CARTE PRINCIPALE — ACTIVITÉS (onglets Overview/Table/Kanban/Timeline)
+    ══════════════════════════════════════════════════════════ -->
+    <div class="pd5-dash-card pd5-main-card" style="padding:0" *ngIf="perms.canSeeActivitesStageNew()" (click)="$event.stopPropagation()">
+
+      <!-- En-tête : titre + recherche + filtre + bouton créer + toggle drawer -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;gap:12px;flex-wrap:wrap">
+        <div class="pd5-dash-card-title">Activités du projet</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div class="dt-search-bar" style="min-width:180px">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px;flex-shrink:0;opacity:.6">
+              <circle cx="7" cy="7" r="5" />
+              <path d="M11 11l3.5 3.5" stroke-linecap="round" />
+            </svg>
+            <input class="dt-search-input" [value]="filtreSearch()" (input)="filtreSearch.set($any($event.target).value)" placeholder="Rechercher une activité...">
+          </div>
+
+          <div class="dt-search-wrap">
+            <button class="dt-filter-icon-btn" [class.has-filters]="activeFiltersCount() > 0" (click)="toggleFilterPanel(); $event.stopPropagation()">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7">
+                <path d="M2 3h12l-4.5 5.5V13L6.5 11.5V8.5L2 3z" stroke-linejoin="round" />
+              </svg>
+            </button>
+            <div class="dt-filter-panel" [class.open]="filterPanelOpen()" (click)="$event.stopPropagation()">
+              <div class="dt-fp-header">
+                <p class="dt-fp-title">Filtres</p>
+                <button *ngIf="activeFiltersCount() > 0" class="dt-fp-reset" (click)="resetFilters()">Réinitialiser</button>
+              </div>
+              <div class="dt-fp-body">
+                <div class="dt-fp-field">
+                  <label class="dt-fp-label">Statut</label>
+                  <select class="dt-fp-select" [value]="filtreStatutId()" (change)="filtreStatutId.set(+$any($event.target).value || '')">
+                    <option value="">Tous</option>
+                    <option *ngFor="let s of statutsActivite()" [value]="s.id">{{ s.libelle }}</option>
+                  </select>
+                </div>
+                <div class="dt-fp-field">
+                  <label class="dt-fp-label">Priorité</label>
+                  <select class="dt-fp-select" [value]="filtrePriorite()" (change)="filtrePriorite.set(+$any($event.target).value || '')">
+                    <option value="">Toutes</option>
+                    <option *ngFor="let p of priorites()" [value]="p.id">{{ p.libelle }}</option>
+                  </select>
+                </div>
+                <div class="dt-fp-field">
+                  <label class="dt-fp-label">Assigné à</label>
+                  <select class="dt-fp-select" [value]="filtreAssigneId()" (change)="filtreAssigneId.set(+$any($event.target).value || '')">
+                    <option value="">Tous</option>
+                    <option *ngFor="let a of assignes()" [value]="a.id">{{ a.nom }}</option>
+                  </select>
+                </div>
+                <div class="dt-fp-field">
+                  <label class="dt-fp-label">Échéance avant</label>
+                  <input type="date" class="dt-fp-select" [value]="filtreEcheance()" (change)="filtreEcheance.set($any($event.target).value)">
+                </div>
+              </div>
+              <div class="dt-fp-footer">
+                <button class="mx-btn mx-btn-ghost" style="height:30px;font-size:.73rem" (click)="closeFilterPanel()">Fermer</button>
+              </div>
+            </div>
+          </div>
+
+          <button class="dt-btn-create" *ngIf="perms.canCreateActiviteStageNew()" (click)="openCreateAct(); $event.stopPropagation()">
+            <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
+              <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+            </svg>
+            Nouvelle activité
+          </button>
+
+          <button class="pd5-drawer-toggle" [class.active]="drawerInfoOpen()" (click)="toggleDrawer(); $event.stopPropagation()" title="Infos projet">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+              <circle cx="10" cy="10" r="8" />
+              <path d="M10 6.5h.01M10 9.5v4" stroke-linecap="round" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Onglets de vue -->
+      <div class="pd5-tabs-row">
+        <button class="pd5-tab" [class.active]="vueActivites() === 'overview'" (click)="vueActivites.set('overview'); $event.stopPropagation()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="1.5" width="13" height="13" rx="2" /><path d="M1.5 6h13M6 6v8.5" /></svg>
+          Overview
+        </button>
+        <button class="pd5-tab" [class.active]="vueActivites() === 'liste'" (click)="vueActivites.set('liste'); $event.stopPropagation()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h12" stroke-linecap="round" /></svg>
+          Table
+        </button>
+        <button class="pd5-tab" [class.active]="vueActivites() === 'kanban'" (click)="vueActivites.set('kanban'); $event.stopPropagation()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="1.5" width="4" height="13" rx="1" /><rect x="6.5" y="1.5" width="4" height="9" rx="1" /><rect x="11.5" y="1.5" width="4" height="6" rx="1" /></svg>
+          Kanban
+        </button>
+        <button class="pd5-tab" [class.active]="vueActivites() === 'timeline'" (click)="vueActivites.set('timeline'); $event.stopPropagation()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5" /><path d="M8 4.5V8l2.5 1.5" stroke-linecap="round" /></svg>
+          Timeline
+        </button>
+        <div class="pd5-tabs-sep"></div>
+        <div class="pd5-kpi-badges">
+          <span class="dt-badge" *ngFor="let s of statsActivites()" [style.background]="s.couleur+'18'" [style.color]="s.couleur" [style.border-color]="s.couleur+'55'" style="cursor:pointer" (click)="toggleFiltreStatut(s.id); $event.stopPropagation()">
+            <span class="dt-badge-dot" [style.background]="s.couleur"></span>{{ s.libelle }} ({{ s.count }})
+          </span>
+        </div>
+      </div>
+      <div class="pd5-tabs-line"></div>
+
+      <!-- ────────────────────────────────────────────────────────
+           VUE OVERVIEW
+      ──────────────────────────────────────────────────────── -->
+      <div class="pd5-overview-wrap" *ngIf="vueActivites() === 'overview'">
+        <div class="pd5-overview-layout">
+
+          <!-- Carte description -->
+          <div class="pd5-ov-card">
+            <div class="pd5-ov-card-title">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" style="width:16px;height:16px"><path d="M3 4h14M3 9h14M3 14h9" stroke-linecap="round" /></svg>
+              Description
+            </div>
+            <p class="pd5-ov-desc">{{ p.description || 'Aucune description fournie pour ce projet.' }}</p>
+            <div class="pd5-ov-kpis">
+              <div class="pd5-ov-kpi">
+                <span class="pd5-ov-kpi-val">{{ activites().length }}</span>
+                <span class="pd5-ov-kpi-label">Activités</span>
+              </div>
+              <div class="pd5-ov-kpi-divider"></div>
+              <div class="pd5-ov-kpi">
+                <span class="pd5-ov-kpi-val">{{ getNombreJours() }}</span>
+                <span class="pd5-ov-kpi-label">Jours</span>
+              </div>
+              <div class="pd5-ov-kpi-divider"></div>
+              <div class="pd5-ov-kpi">
+                <span class="pd5-ov-kpi-val">{{ stagiairesAssignes().length }}</span>
+                <span class="pd5-ov-kpi-label">Stagiaires</span>
+              </div>
+              <div class="pd5-ov-kpi-divider"></div>
+              <div class="pd5-ov-kpi">
+                <span class="pd5-ov-kpi-val">{{ p.avancement || 0 }}%</span>
+                <span class="pd5-ov-kpi-label">Avancement</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Carte stagiaires -->
+          <div class="pd5-ov-card">
+            <div class="pd5-ov-card-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" style="width:16px;height:16px"><path d="M10 10a3.5 3.5 0 100-7 3.5 3.5 0 000 7zm-6 8a6 6 0 1112 0H4z" /></svg>
+              Stagiaires assignés
+            </div>
+            <div class="pd5-ov-team-block" *ngIf="stagiairesAssignes().length > 0">
+              <div class="pd5-ov-members-list" style="padding-left:0;padding-top:0">
+                <div class="pd5-ov-member-row" *ngFor="let stag of stagiairesAssignes()">
+                  <div class="pd5-ov-member-avatar" [style.background]="getAvatarColor(stag.nomComplet)">
+                    {{ getInitiales(stag.nomComplet) }}
+                  </div>
+                  <div class="pd5-ov-member-info">
+                    <span class="pd5-ov-member-nom">{{ stag.nomComplet }}</span>
+                    <span class="pd5-ov-member-poste">{{ stag.email }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="pd5-ov-desc" *ngIf="stagiairesAssignes().length === 0">Aucun stagiaire assigné.</p>
+          </div>
+
+          <!-- Carte activités récentes -->
+          <div class="pd5-ov-card">
+            <div class="pd5-ov-card-title">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" style="width:16px;height:16px"><circle cx="10" cy="10" r="7.5" /><path d="M10 6v4l2.5 1.5" stroke-linecap="round" /></svg>
+              Activité récente
+              <span class="pd5-ov-week-badge" style="margin-left:auto">7 derniers jours</span>
+            </div>
+            <div *ngIf="getActivitesRecentWeek().length === 0" class="pd5-ov-desc">Aucune activité modifiée récemment.</div>
+            <div class="pd5-ov-task-row" *ngFor="let a of getActivitesFiltreesOverview()">
+              <div class="pd5-ov-task-avatar-wrap">
+                <div class="pd5-ov-task-avatar" [style.background]="getStatutActiviteCouleur(a.statutActiviteId)">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="1.6" style="width:14px;height:14px"><path d="M3 8.5l3.5 3.5L13 5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                </div>
+              </div>
+              <div class="pd5-ov-task-info">
+                <span class="pd5-ov-task-nom">{{ a.nom }}</span>
+                <span class="pd5-ov-task-desc">{{ getStatutActiviteLibelle(a.statutActiviteId) }} · {{ fmtDate(a.dateMiseAJour) }}</span>
+              </div>
+            </div>
+            <button *ngIf="getActivitesRecentWeek().length > 6" class="pd5-month-btn" style="margin-top:6px" (click)="toggleOvTasks()">
+              {{ ovTasksExpanded() ? 'Voir moins' : 'Voir plus (' + (getActivitesRecentWeek().length - 6) + ')' }}
+            </button>
+          </div>
+
+          <!-- Carte infos clés -->
+          <div class="pd5-ov-card">
+            <div class="pd5-ov-card-title">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" style="width:16px;height:16px"><rect x="2.5" y="4" width="15" height="13" rx="2" /><path d="M2.5 8h15M6.5 2v4M13.5 2v4" stroke-linecap="round" /></svg>
+              Informations clés
+            </div>
+            <div class="pd5-ov-info-row">
+              <span class="pd5-ov-info-label">Statut</span>
+              <span class="pd5-ov-info-val">
+                <span class="dt-badge-dot" [style.background]="getStatutProjetColor(p.statutProjetId)"></span>
+                {{ getStatutProjetLabel(p.statutProjetId) }}
+              </span>
+            </div>
+            <div class="pd5-ov-info-sep"></div>
+            <div class="pd5-ov-info-row">
+              <span class="pd5-ov-info-label">Type</span>
+              <span class="pd5-ov-info-val">{{ getTypeProjetLabel(p.typeProjetId) }}</span>
+            </div>
+            <div class="pd5-ov-info-sep"></div>
+            <div class="pd5-ov-info-row">
+              <span class="pd5-ov-info-label">Début</span>
+              <span class="pd5-ov-info-val">{{ fmtDate(p.dateDebut) }}</span>
+            </div>
+            <div class="pd5-ov-info-sep"></div>
+            <div class="pd5-ov-info-row">
+              <span class="pd5-ov-info-label">Fin</span>
+              <span class="pd5-ov-info-val">{{ fmtDate(p.dateFin) }}</span>
+            </div>
+          </div>
+
+          <!-- Carte commentaires récents -->
+          <div class="pd5-ov-card">
+            <div class="pd5-ov-card-title">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" style="width:16px;height:16px"><path d="M3 4h14v9H8l-3 3v-3H3V4z" stroke-linejoin="round" /></svg>
+              Commentaires récents
+            </div>
+            <div *ngIf="commentaires().length === 0" class="pd5-ov-desc">Aucun commentaire pour l'instant.</div>
+            <div class="pd5-ov-cmt-row" *ngFor="let c of commentaires().slice(0, 4)">
+              <div class="pd5-ov-cmt-avatar" [style.background]="getAvatarColor(c.auteurNom)">{{ getInitiales(c.auteurNom) }}</div>
+              <div class="pd5-ov-cmt-body">
+                <div class="pd5-ov-cmt-meta">
+                  <span class="pd5-ov-cmt-auteur">{{ c.auteurNom }}</span>
+                  <span class="pd5-ov-cmt-date">{{ fmtDateTime(c.dateCreation) }}</span>
+                </div>
+                <p class="pd5-ov-cmt-text">{{ c.contenu }}</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────────────────────────
+           VUE TABLE
+      ──────────────────────────────────────────────────────── -->
+      <div class="pd5-table-wrap" *ngIf="vueActivites() === 'liste'">
+        <table class="dt-table">
+          <thead>
+            <tr>
+              <th class="dt-th" style="min-width:220px">Activité</th>
+              <th class="dt-th" style="min-width:130px">Statut</th>
+              <th class="dt-th" style="min-width:110px">Priorité</th>
+              <th class="dt-th" style="min-width:160px">Assigné</th>
+              <th class="dt-th" style="min-width:140px">Avancement</th>
+              <th class="dt-th" style="min-width:110px">Échéance</th>
+              <th class="dt-th dt-th-actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="pagedActivites().length === 0">
+              <td colspan="7" class="dt-td">
+                <div class="dt-empty">
+                  <p class="dt-empty-title">Aucune activité</p>
+                  <button class="dt-btn-create" *ngIf="perms.canCreateActiviteStageNew()" style="margin-top:10px" (click)="openCreateAct()">Créer une activité</button>
+                </div>
+              </td>
+            </tr>
+            <tr class="dt-tr" *ngFor="let a of pagedActivites()" (click)="openActDrawer(a, $event)">
+              <td class="dt-td">
+                <div class="dt-cell-user">
+                  <span class="dt-cell-name">{{ a.nom }}</span>
+                  <span class="dt-cell-sub" *ngIf="a.description">{{ a.description }}</span>
+                </div>
+              </td>
+              <td class="dt-td">
+                <span class="dt-badge" [style.background]="getStatutActiviteCouleur(a.statutActiviteId)+'18'" [style.color]="getStatutActiviteCouleur(a.statutActiviteId)" [style.border-color]="getStatutActiviteCouleur(a.statutActiviteId)+'55'">
+                  <span class="dt-badge-dot" [style.background]="getStatutActiviteCouleur(a.statutActiviteId)"></span>{{ getStatutActiviteLibelle(a.statutActiviteId) }}
+                </span>
+              </td>
+              <td class="dt-td">
+                <span class="pd5-prio-badge" *ngIf="getPriorite(a.prioriteId) as pr" [style.color]="pr.couleur" [style.border-color]="pr.couleur+'55'" [style.background]="pr.couleur+'14'">{{ pr.libelle }}</span>
+                <span *ngIf="!a.prioriteId" class="dt-cell-muted">—</span>
+              </td>
+              <td class="dt-td">
+                <div class="dt-cell-with-avatar" *ngIf="a.utilisateurNomComplet">
+                  <div class="pd5-member-avatar" [style.background]="getAvatarColor(a.utilisateurNomComplet)">{{ getInitiales(a.utilisateurNomComplet) }}</div>
+                  <span class="dt-cell-text">{{ a.utilisateurNomComplet }}</span>
+                </div>
+                <span *ngIf="!a.utilisateurNomComplet && (!a.groupes || a.groupes.length===0)" class="dt-cell-muted">—</span>
+                <div style="display:flex;gap:4px" *ngIf="!a.utilisateurNomComplet && a.groupes && a.groupes.length>0">
+                  <span class="pd5-grp-chip" *ngFor="let g of a.groupes.slice(0,3)" [style.background]="getAvatarColor(g.nom)" [title]="g.nom">{{ getInitiales(g.nom) }}</span>
+                </div>
+              </td>
+              <td class="dt-td">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="flex:1;height:6px;background:var(--bg-hover);border-radius:99px;overflow:hidden;min-width:60px">
+                    <div style="height:100%;border-radius:99px" [style.width.%]="getProgressPct(a.heuresPassees, a.heuresEstimees)" [style.background]="getProgressColor(getProgressPct(a.heuresPassees, a.heuresEstimees))"></div>
+                  </div>
+                  <span style="font-size:.72rem;font-weight:800;min-width:30px" [style.color]="getProgressColor(getProgressPct(a.heuresPassees, a.heuresEstimees))">{{ getProgressPct(a.heuresPassees, a.heuresEstimees) }}%</span>
+                </div>
+              </td>
+              <td class="dt-td"><span class="dt-cell-muted" style="font-size:.75rem">{{ fmtDate(a.dateEcheance) }}</span></td>
+              <td class="dt-td dt-td-actions" (click)="$event.stopPropagation()">
+                <div class="dt-td-actions-wrap" style="gap:0">
+                  <button class="dt-action-btn dt-action-edit" *ngIf="perms.canEditActiviteStageNew()" (click)="openEditAct(a, $event)" title="Modifier">
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" /></svg>
+                  </button>
+                  <button class="dt-action-btn dt-action-del" *ngIf="perms.canDeleteActiviteStageNew()" (click)="deleteAct(a, $event)" title="Supprimer">
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- ✅ Pagination toujours visible, même avec une seule page -->
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px;padding:14px">
+          <button class="mx-btn mx-btn-ghost mx-btn-sm" [disabled]="actPage()===1" (click)="actPage.set(actPage()-1)">‹</button>
+          <button class="mx-btn mx-btn-sm" *ngFor="let pg of actPagesArr()" [class.mx-btn-primary]="pg===actPage()" [class.mx-btn-ghost]="pg!==actPage()" (click)="actPage.set(pg)">{{ pg }}</button>
+          <button class="mx-btn mx-btn-ghost mx-btn-sm" [disabled]="actPage()===actTotalPages()" (click)="actPage.set(actPage()+1)">›</button>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────────────────────────
+           VUE KANBAN
+      ──────────────────────────────────────────────────────── -->
+      <div class="pd5-kanban" *ngIf="vueActivites() === 'kanban'">
+        <div class="pd5-kanban-col" *ngFor="let col of activitesParStatut()" [class.drag-over]="dragOverStatutId() === col.statut.id"
+             (dragover)="onDragOver($event)" (dragenter)="onDragEnter($event, col.statut.id)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event, col.statut.id)">
+          <div class="pd5-col-head">
+            <div class="pd5-col-title">
+              <span class="pd5-col-dot" [style.background]="col.statut.couleur"></span>
+              <span class="pd5-col-label">{{ col.statut.libelle }}</span>
+            </div>
+            <span class="pd5-col-count">{{ col.items.length }}</span>
+          </div>
+          <div class="pd5-col-cards">
+            <div class="pd5-col-empty" *ngIf="col.items.length === 0">Aucune activité</div>
+            <div class="pd5-kcard" *ngFor="let a of col.items" [attr.draggable]="perms.canEditActiviteStageNew() ? 'true' : 'false'"
+                 [class.dragging]="draggingActId() === a.id"
+                 (dragstart)="onDragStart($event, a)" (dragend)="onDragEnd()"
+                 (click)="openActDrawer(a, $event)">
+              <div class="pd5-kcard-bar" [style.background]="a.couleur || col.statut.couleur"></div>
+              <div class="pd5-kcard-body">
+                <div class="pd5-kcard-row1">
+                  <div class="pd5-kcard-badges-left">
+                    <span class="pd5-prio-badge" *ngIf="getPriorite(a.prioriteId) as pr" [style.color]="pr.couleur" [style.border-color]="pr.couleur+'55'" [style.background]="pr.couleur+'14'">{{ pr.libelle }}</span>
+                  </div>
+                  <span class="pd5-num-badge">#{{ a.id }}</span>
+                  <button class="pd5-kcard-menu-btn" *ngIf="perms.canDeleteActiviteStageNew()" (click)="deleteAct(a, $event)" title="Supprimer">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg>
+                  </button>
+                </div>
+                <p class="pd5-kcard-nom">{{ a.nom }}</p>
+                <p class="pd5-kcard-desc" *ngIf="a.description">{{ a.description }}</p>
+
+                <div class="pd5-kcard-progress-wrap" *ngIf="a.heuresEstimees">
+                  <div class="pd5-kcard-progress-header">
+                    <span class="pd5-kcard-progress-label">Avancement</span>
+                    <span class="pd5-kcard-progress-pct">{{ getProgressPct(a.heuresPassees, a.heuresEstimees) }}%</span>
+                  </div>
+                  <div class="pd5-kcard-progress-bar">
+                    <div class="pd5-kcard-progress-fill" [style.width.%]="getProgressPct(a.heuresPassees, a.heuresEstimees)" [style.background]="getProgressColor(getProgressPct(a.heuresPassees, a.heuresEstimees))"></div>
+                  </div>
+                </div>
+
+                <div class="pd5-kcard-date" *ngIf="a.dateEcheance">
+                  <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="2" width="12" height="11" rx="1.5" /><path d="M1 6h12M4.5 1v2M9.5 1v2" stroke-linecap="round" /></svg>
+                  {{ fmtDate(a.dateEcheance) }}
+                </div>
+
+                <div class="pd5-kcard-footer">
+                  <div class="pd5-kcard-assignee" *ngIf="a.utilisateurNomComplet">
+                    <div class="pd5-kcard-avatar" [style.background]="getAvatarColor(a.utilisateurNomComplet)">{{ getInitiales(a.utilisateurNomComplet) }}</div>
+                    <div class="pd5-kcard-assignee-info">
+                      <span class="pd5-kcard-assignee-nom">{{ a.utilisateurNomComplet }}</span>
+                    </div>
+                  </div>
+                  <div class="pd5-kcard-grp-info" *ngIf="!a.utilisateurNomComplet && a.groupes && a.groupes.length > 0">
+                    <div class="pd5-kcard-grp-tag" *ngFor="let g of a.groupes.slice(0,2)">
+                      <span class="pd5-kcard-grp-chip" [style.background]="getAvatarColor(g.nom)">{{ getInitiales(g.nom) }}</span>
+                      <span class="pd5-kcard-grp-nom">{{ g.nom }}</span>
+                    </div>
+                  </div>
+                  <div class="pd5-kcard-actions-right">
+                    <div class="pd5-kcard-counters">
+                      <span class="pd5-kcard-counter" *ngIf="a.nombreCommentaires">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 3h12v8H8l-3 2.5V11H2V3z" stroke-linejoin="round" /></svg>{{ a.nombreCommentaires }}
+                      </span>
+                      <span class="pd5-kcard-counter" *ngIf="a.nombreDocuments">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 2h6l3 3v9H4V2z" stroke-linejoin="round" /></svg>{{ a.nombreDocuments }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────────────────────────
+           VUE TIMELINE
+      ──────────────────────────────────────────────────────── -->
+      <div class="pd5-timeline" *ngIf="vueActivites() === 'timeline'">
+        <div *ngIf="activitesFiltrees().length === 0" class="pd5-empty">
+          <p>Aucune activité à afficher.</p>
+        </div>
+        <div class="pd5-tl-row" *ngFor="let a of activitesFiltrees()" (click)="openActDrawer(a, $event)" style="cursor:pointer">
+          <div class="pd5-tl-info">
+            <span class="pd5-tl-bar-color" [style.background]="getStatutActiviteCouleur(a.statutActiviteId)"></span>
+            <div>
+              <span class="pd5-tl-nom">{{ a.nom }}</span>
+              <span class="pd5-tl-dates">{{ fmtDate(a.dateCreation) }} → {{ fmtDate(a.dateEcheance) }}</span>
+            </div>
+          </div>
+          <div class="pd5-tl-gantt">
+            <div class="pd5-tl-gantt-fill" [style.width.%]="getProgressPct(a.heuresPassees, a.heuresEstimees)" [style.background]="getStatutActiviteCouleur(a.statutActiviteId)"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     DRAWER — Infos projet
+══════════════════════════════════════════════════════════ -->
+<div class="pd5-drawer-overlay" *ngIf="drawerInfoOpen()" (click)="toggleDrawer()">
+  <div class="pd5-drawer" (click)="$event.stopPropagation()" *ngIf="projet() as p">
+    <div class="pd5-drawer-header">
+      <h3 class="pd5-drawer-title">Informations du projet</h3>
+      <button class="pd5-drawer-close" (click)="toggleDrawer()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l12 12M14 2L2 14" stroke-linecap="round" /></svg>
+      </button>
+    </div>
+    <div class="pd5-drawer-body">
+      <div class="pd5-info-section">
+
+        <!-- Nom -->
+        <div class="pd5-info-row" *ngIf="editingField() !== 'nom'">
+          <span class="pd5-info-label">Nom</span>
+          <span class="pd5-info-val">{{ p.nom }}</span>
+          <button class="pd5-row-edit-btn" (click)="startEditField('nom', p.nom)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg>
+          </button>
+        </div>
+        <div class="pd5-info-row-col" style="display:flex" *ngIf="editingField() === 'nom'">
+          <input class="pd5-inline-input" [ngModel]="editingFieldValue()" (ngModelChange)="editingFieldValue.set($event)" (keyup.enter)="saveField()" (keyup.escape)="cancelField()">
+          <div style="display:flex;gap:4px;margin-left:6px">
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#10b981" (click)="saveField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3.5 3.5L13 5" stroke-linecap="round" /></svg></button>
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#ef4444" (click)="cancelField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l12 12M14 2L2 14" stroke-linecap="round" /></svg></button>
+          </div>
+        </div>
+
+        <!-- Statut -->
+        <div class="pd5-info-row" *ngIf="editingField() !== 'statutProjetId'">
+          <span class="pd5-info-label">Statut</span>
+          <span class="pd5-info-val"><span class="dt-badge-dot" [style.background]="getStatutProjetColor(p.statutProjetId)"></span>{{ getStatutProjetLabel(p.statutProjetId) }}</span>
+          <button class="pd5-row-edit-btn" (click)="startEditField('statutProjetId', p.statutProjetId)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg>
+          </button>
+        </div>
+        <div class="pd5-info-row" *ngIf="editingField() === 'statutProjetId'">
+          <select class="pd5-inline-input pd5-inline-select" [ngModel]="editingFieldValue()" (ngModelChange)="editingFieldValue.set(+$event)">
+            <option *ngFor="let s of statutsProjet()" [value]="s.id">{{ s.libelle }}</option>
+          </select>
+          <div style="display:flex;gap:4px;margin-left:6px">
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#10b981" (click)="saveField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3.5 3.5L13 5" stroke-linecap="round" /></svg></button>
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#ef4444" (click)="cancelField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l12 12M14 2L2 14" stroke-linecap="round" /></svg></button>
+          </div>
+        </div>
+
+        <!-- Date début -->
+        <div class="pd5-info-row" *ngIf="editingField() !== 'dateDebut'">
+          <span class="pd5-info-label">Début</span>
+          <span class="pd5-info-val">{{ fmtDate(p.dateDebut) }}</span>
+          <button class="pd5-row-edit-btn" (click)="startEditField('dateDebut', p.dateDebut)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg>
+          </button>
+        </div>
+        <div class="pd5-info-row" *ngIf="editingField() === 'dateDebut'">
+          <input type="date" class="pd5-inline-input" [ngModel]="editingFieldValue()" (ngModelChange)="editingFieldValue.set($event)">
+          <div style="display:flex;gap:4px;margin-left:6px">
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#10b981" (click)="saveField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3.5 3.5L13 5" stroke-linecap="round" /></svg></button>
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#ef4444" (click)="cancelField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l12 12M14 2L2 14" stroke-linecap="round" /></svg></button>
+          </div>
+        </div>
+
+        <!-- Date fin -->
+        <div class="pd5-info-row" *ngIf="editingField() !== 'dateFin'">
+          <span class="pd5-info-label">Fin</span>
+          <span class="pd5-info-val">{{ fmtDate(p.dateFin) }}</span>
+          <button class="pd5-row-edit-btn" (click)="startEditField('dateFin', p.dateFin)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg>
+          </button>
+        </div>
+        <div class="pd5-info-row" *ngIf="editingField() === 'dateFin'">
+          <input type="date" class="pd5-inline-input" [ngModel]="editingFieldValue()" (ngModelChange)="editingFieldValue.set($event)">
+          <div style="display:flex;gap:4px;margin-left:6px">
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#10b981" (click)="saveField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3.5 3.5L13 5" stroke-linecap="round" /></svg></button>
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#ef4444" (click)="cancelField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l12 12M14 2L2 14" stroke-linecap="round" /></svg></button>
+          </div>
+        </div>
+
+        <!-- Avancement -->
+        <div class="pd5-info-row" *ngIf="editingField() !== 'avancement'">
+          <span class="pd5-info-label">Avancement</span>
+          <span class="pd5-info-val">{{ p.avancement || 0 }}%</span>
+          <button class="pd5-row-edit-btn" (click)="startEditField('avancement', p.avancement)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg>
+          </button>
+        </div>
+        <div class="pd5-info-row" *ngIf="editingField() === 'avancement'">
+          <input type="number" min="0" max="100" class="pd5-inline-input" [ngModel]="editingFieldValue()" (ngModelChange)="editingFieldValue.set(+$event)" (keyup.enter)="saveField()" (keyup.escape)="cancelField()">
+          <div style="display:flex;gap:4px;margin-left:6px">
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#10b981" (click)="saveField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3.5 3.5L13 5" stroke-linecap="round" /></svg></button>
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#ef4444" (click)="cancelField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l12 12M14 2L2 14" stroke-linecap="round" /></svg></button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Description -->
+      <div class="pd5-drawer-section">
+        <div class="pd5-drawer-section-head">
+          <span class="pd5-drawer-section-title">Description</span>
+          <button class="pd5-act-edit-btn" *ngIf="editingField() !== 'description'" (click)="startEditField('description', p.description)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg>Modifier
+          </button>
+        </div>
+        <div class="pd5-desc-box" *ngIf="editingField() !== 'description'">{{ p.description || 'Aucune description.' }}</div>
+        <div *ngIf="editingField() === 'description'">
+          <textarea class="pd5-inline-input pd5-inline-textarea" [ngModel]="editingFieldValue()" (ngModelChange)="editingFieldValue.set($event)" rows="4"></textarea>
+          <div style="display:flex;gap:6px;margin-top:8px;justify-content:flex-end">
+            <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="cancelField()">Annuler</button>
+            <button class="mx-btn mx-btn-primary mx-btn-sm" (click)="saveField()">Enregistrer</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stagiaires assignés (lecture seule dans ce drawer) -->
+      <div class="pd5-drawer-section">
+        <div class="pd5-drawer-section-head">
+          <span class="pd5-drawer-section-title">Stagiaires <span class="pd5-section-badge">{{ stagiairesAssignes().length }}</span></span>
+        </div>
+        <div *ngIf="stagiairesAssignes().length === 0" style="font-size:.74rem;color:var(--dt-text-sub)">Aucun stagiaire assigné.</div>
+        <div class="pd5-team-row" *ngFor="let stag of stagiairesAssignes()" style="margin-bottom:8px">
+          <div class="pd5-team-dot" [style.background]="getAvatarColor(stag.nomComplet)">{{ getInitiales(stag.nomComplet) }}</div>
+          <div>
+            <span class="pd5-team-name">{{ stag.nomComplet }}</span>
+            <span class="pd5-team-count" style="display:block">{{ stag.email }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Documents du projet -->
+      <div class="pd5-drawer-section">
+        <div class="pd5-drawer-section-head">
+          <span class="pd5-drawer-section-title">Documents <span class="pd5-section-badge">{{ documents().length }}</span></span>
+        </div>
+        <label class="pd5-upload-btn" [class.uploading]="uploadingDoc()">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1v8M4 6l3 3 3-3" stroke-linecap="round" /><path d="M1 11v1a1 1 0 001 1h12a1 1 0 001-1v-1" stroke-linecap="round" /></svg>
+          {{ uploadingDoc() ? 'Envoi en cours...' : 'Ajouter un document' }}
+          <input type="file" style="display:none" [disabled]="uploadingDoc()" (change)="onFileSelected($event, p.id)">
+        </label>
+        <div class="pd5-docs-list">
+          <div class="pd5-docs-empty" *ngIf="documents().length === 0">Aucun document.</div>
+          <div class="pd5-doc-row" *ngFor="let doc of documents()">
+            <div class="pd5-doc-icon" [style.background]="getDocIconColor(doc.typeMime)">{{ getDocIconLabel(doc.typeMime) }}</div>
+            <div class="pd5-doc-info">
+              <span class="pd5-doc-nom">{{ doc.nom }}</span>
+              <span class="pd5-doc-meta">{{ formatSize(doc.tailleFichier) }} · {{ fmtDate(doc.dateUpload) }}</span>
+            </div>
+            <div class="pd5-doc-actions">
+              <a class="pd5-doc-icon-btn" [href]="doc.cheminFichier" target="_blank" title="Télécharger">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M5 7l3 3 3-3" stroke-linecap="round" /><path d="M2 13h12" stroke-linecap="round" /></svg>
+              </a>
+              <button class="pd5-doc-icon-btn pd5-doc-icon-danger" (click)="deleteDocument(doc)" title="Supprimer">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M6.5 4V2.5h3V4M4.5 4l.5 9h6l.5-9" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Commentaires du projet -->
+      <div class="pd5-drawer-section">
+        <div class="pd5-drawer-section-head">
+          <span class="pd5-drawer-section-title">Commentaires <span class="pd5-section-badge">{{ commentaires().length }}</span></span>
+        </div>
+        <div class="pd5-cmt-form">
+          <div class="pd5-cmt-avatar" [style.background]="getAvatarColor(currentUserNom)">{{ getInitiales(currentUserNom) }}</div>
+          <div class="pd5-cmt-input-wrap">
+            <textarea class="pd5-cmt-ta" [ngModel]="nouveauCommentaire()" (ngModelChange)="nouveauCommentaire.set($event)" placeholder="Écrire un commentaire..."></textarea>
+            <button class="pd5-cmt-send" [disabled]="submittingComment() || !nouveauCommentaire().trim()" (click)="submitComment()">Envoyer</button>
+          </div>
+        </div>
+        <div *ngIf="loadingComments()" class="pd5-cmt-empty">Chargement...</div>
+        <div *ngIf="!loadingComments() && commentaires().length === 0" class="pd5-cmt-empty">Aucun commentaire.</div>
+        <div class="pd5-cmt-item" *ngFor="let c of commentaires()">
+          <div class="pd5-cmt-avatar" [style.background]="getAvatarColor(c.auteurNom)">{{ getInitiales(c.auteurNom) }}</div>
+          <div class="pd5-cmt-body">
+            <div class="pd5-cmt-meta">
+              <span class="pd5-cmt-auteur">{{ c.auteurNom }}</span>
+              <span class="pd5-cmt-date">{{ fmtDateTime(c.dateCreation) }}</span>
+            </div>
+            <div *ngIf="editingCommentId() !== c.id" class="pd5-cmt-text">{{ c.contenu }}</div>
+            <div *ngIf="editingCommentId() === c.id">
+              <textarea class="pd5-cmt-ta" [ngModel]="editContenu()" (ngModelChange)="editContenu.set($event)"></textarea>
+              <div style="display:flex;gap:6px;margin-top:6px">
+                <button class="mx-btn mx-btn-primary mx-btn-sm" (click)="saveEdit(c)">Enregistrer</button>
+                <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="cancelEdit()">Annuler</button>
+              </div>
+            </div>
+            <div class="pd5-cmt-actions" *ngIf="isOwn(c) && editingCommentId() !== c.id">
+              <button class="pd5-cmt-icon-btn" (click)="startEdit(c)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg></button>
+              <button class="pd5-cmt-icon-btn pd5-cmt-icon-danger" (click)="deleteComment(c)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     DRAWER — Détail activité
+══════════════════════════════════════════════════════════ -->
+<div class="pd5-drawer-overlay" *ngIf="actDrawerOpen()" (click)="closeActDrawer()">
+  <div class="pd5-drawer pd5-act-drawer" (click)="$event.stopPropagation()" *ngIf="selectedActivite() as a">
+    <div class="pd5-drawer-header">
+      <h3 class="pd5-drawer-title">Détail de l'activité</h3>
+      <button class="pd5-drawer-close" (click)="closeActDrawer()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l12 12M14 2L2 14" stroke-linecap="round" /></svg>
+      </button>
+    </div>
+    <div class="pd5-drawer-body">
+
+      <div class="pd5-drawer-section">
+        <div class="pd5-drawer-section-head">
+          <span class="pd5-drawer-section-title" style="font-size:.9rem;text-transform:none;letter-spacing:0">{{ a.nom }}</span>
+          <button class="pd5-act-edit-btn" *ngIf="perms.canEditActiviteStageNew()" (click)="openEditActFromDrawer(a)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg>Modifier
+          </button>
+        </div>
+        <div class="pd5-ap-badges">
+          <span class="dt-badge" [style.background]="getStatutActiviteCouleur(a.statutActiviteId)+'18'" [style.color]="getStatutActiviteCouleur(a.statutActiviteId)" [style.border-color]="getStatutActiviteCouleur(a.statutActiviteId)+'55'">
+            <span class="dt-badge-dot" [style.background]="getStatutActiviteCouleur(a.statutActiviteId)"></span>{{ getStatutActiviteLibelle(a.statutActiviteId) }}
+          </span>
+          <span class="pd5-prio-badge" *ngIf="getPriorite(a.prioriteId) as pr" [style.color]="pr.couleur" [style.border-color]="pr.couleur+'55'" [style.background]="pr.couleur+'14'">{{ pr.libelle }}</span>
+        </div>
+        <div class="pd5-ap-meta">
+          <span class="pd5-ap-date" *ngIf="a.dateEcheance">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="2" width="12" height="11" rx="1.5" /><path d="M1 6h12M4.5 1v2M9.5 1v2" stroke-linecap="round" /></svg>
+            Échéance : {{ fmtDate(a.dateEcheance) }}
+          </span>
+          <span class="pd5-ap-date" *ngIf="a.heuresEstimees">{{ fmtHeures(a.heuresPassees) }} / {{ fmtHeures(a.heuresEstimees) }}</span>
+        </div>
+
+        <div class="pd5-ap-assignee" *ngIf="a.utilisateurNomComplet">
+          <div class="pd5-ap-avatar" [style.background]="getAvatarColor(a.utilisateurNomComplet)">{{ getInitiales(a.utilisateurNomComplet) }}</div>
+          <div>
+            <span class="pd5-ap-assignee-nom">{{ a.utilisateurNomComplet }}</span>
+          </div>
+        </div>
+
+        <div class="pd5-ap-groupes" *ngIf="!a.utilisateurNomComplet && a.groupes && a.groupes.length > 0" style="margin-top:8px">
+          <div class="pd5-ap-grp-row" *ngFor="let g of a.groupes">
+            <span class="pd5-ap-grp-dot" [style.background]="getAvatarColor(g.nom)">{{ getInitiales(g.nom) }}</span>
+            <span class="pd5-ap-grp-nom">{{ g.nom }}</span>
+          </div>
+        </div>
+
+        <p class="pd5-ap-desc" style="margin-top:10px" *ngIf="a.description">{{ a.description }}</p>
+      </div>
+
+      <div class="pd5-ap-tabs">
+        <button class="pd5-ptab" [class.active]="actPanelTab() === 'commentaires'" (click)="setActPanelTab('commentaires')">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 3h12v8H8l-3 2.5V11H2V3z" stroke-linejoin="round" /></svg>
+          Commentaires <span class="pd5-ptab-count" *ngIf="activiteCommentaires().length > 0">{{ activiteCommentaires().length }}</span>
+        </button>
+        <button class="pd5-ptab" [class.active]="actPanelTab() === 'documents'" (click)="setActPanelTab('documents')">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 2h6l3 3v9H4V2z" stroke-linejoin="round" /></svg>
+          Documents <span class="pd5-ptab-count" *ngIf="activiteDocuments().length > 0">{{ activiteDocuments().length }}</span>
         </button>
       </div>
 
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <div *ngIf="activitesFiltrees().length === 0" class="dt-empty" style="padding:30px">
-          <p class="dt-empty-title">Aucune activité</p>
-          <p class="dt-empty-sub">Ajoutez la première activité à ce projet</p>
-        </div>
+      <div class="pd5-ap-body">
 
-        <div *ngFor="let a of activitesFiltrees()"
-             style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px">
-          <div style="display:flex;align-items:flex-start;gap:12px">
-            <div style="flex:1;min-width:0">
-              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
-                <!-- ✅ a.nom au lieu de a.titre -->
-                <span style="font-size:.85rem;font-weight:700;color:var(--text-primary)">{{ a.nom }}</span>
-                <!-- ✅ Statut via code -->
-                <span class="dt-badge"
-                      [class.dt-badge-default]="getStatutCode(a.statutActiviteId)==='A_FAIRE'"
-                      [class.dt-badge-pending]="getStatutCode(a.statutActiviteId)==='EN_COURS'"
-                      [class.dt-badge-delivered]="getStatutCode(a.statutActiviteId)==='TERMINE'"
-                      style="font-size:.6rem">
-                  <span class="dt-badge-dot"></span>{{ getStatutLibelle(a.statutActiviteId) }}
-                </span>
-              </div>
-              <p *ngIf="a.description" style="font-size:.74rem;color:var(--text-secondary);margin:0 0 8px">{{ a.description }}</p>
-
-              <!-- Avancement slider — ✅ via getAvancement() -->
-              <div style="display:flex;align-items:center;gap:10px">
-                <input type="range" min="0" max="100" step="5"
-                       [value]="getAvancement(a)"
-                       style="flex:1;accent-color:var(--accent);cursor:pointer"
-                       (change)="updateAvancementAct(a, +$any($event.target).value)">
-                <span style="font-size:.75rem;font-weight:800;min-width:32px;text-align:right"
-                      [style.color]="avancementColor(getAvancement(a))">{{ getAvancement(a) }}%</span>
-              </div>
-
-              <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px">
-                <!-- ✅ a.utilisateurNomComplet au lieu de a.assigneNom -->
-                <span *ngIf="a.utilisateurNomComplet" style="font-size:.68rem;color:var(--text-muted)">
-                  👤 {{ a.utilisateurNomComplet }}
-                </span>
-                <!-- ✅ a.creePar au lieu de a.createurNom -->
-                <span *ngIf="a.creePar" style="font-size:.68rem;color:var(--text-muted)">
-                  ✏️ {{ a.creePar }}
-                </span>
-                <!-- ✅ a.dateEcheance au lieu de a.dateFin -->
-                <span *ngIf="a.dateEcheance" style="font-size:.68rem;color:var(--text-muted)">
-                  📅 {{ fmtDate(a.dateEcheance) }}
-                </span>
-              </div>
+        <!-- Onglet commentaires -->
+        <div *ngIf="actPanelTab() === 'commentaires'">
+          <div class="pd5-cmt-form" *ngIf="perms.canCommentActiviteStage()">
+            <div class="pd5-cmt-avatar" [style.background]="getAvatarColor(currentUserNom)">{{ getInitiales(currentUserNom) }}</div>
+            <div class="pd5-cmt-input-wrap">
+              <textarea class="pd5-cmt-ta" [ngModel]="nouveauActComment()" (ngModelChange)="nouveauActComment.set($event)" placeholder="Écrire un commentaire..."></textarea>
+              <button class="pd5-cmt-send" [disabled]="!nouveauActComment().trim()" (click)="submitActComment()">Envoyer</button>
             </div>
-
-            <!-- Actions activité -->
-            <div *ngIf="canAddActivite()" style="display:flex;gap:4px;flex-shrink:0">
-              <button class="dt-action-btn dt-action-edit" (click)="openEditAct(a)">
-                <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px">
-                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                </svg>
-              </button>
-              <button class="dt-action-btn dt-action-del" (click)="deleteAct(a)">
-                <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px">
-                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                </svg>
-              </button>
+          </div>
+          <div *ngIf="loadingActComments()" class="pd5-cmt-empty">Chargement...</div>
+          <div *ngIf="!loadingActComments() && activiteCommentaires().length === 0" class="pd5-cmt-empty">Aucun commentaire.</div>
+          <div class="pd5-cmt-item" *ngFor="let c of activiteCommentaires()">
+            <div class="pd5-cmt-avatar" [style.background]="getAvatarColor(c.auteurNom)">{{ getInitiales(c.auteurNom) }}</div>
+            <div class="pd5-cmt-body">
+              <div class="pd5-cmt-meta">
+                <span class="pd5-cmt-auteur">{{ c.auteurNom }}</span>
+                <span class="pd5-cmt-date">{{ fmtDateTime(c.dateCreation) }}</span>
+              </div>
+              <div *ngIf="editingActCommentId() !== c.id" class="pd5-cmt-text">{{ c.contenu }}</div>
+              <div *ngIf="editingActCommentId() === c.id">
+                <textarea class="pd5-cmt-ta" [ngModel]="editActContenu()" (ngModelChange)="editActContenu.set($event)"></textarea>
+                <div style="display:flex;gap:6px;margin-top:6px">
+                  <button class="mx-btn mx-btn-primary mx-btn-sm" (click)="saveEditActComment(c)">Enregistrer</button>
+                  <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="cancelEditActComment()">Annuler</button>
+                </div>
+              </div>
+              <div class="pd5-cmt-actions" *ngIf="isOwn(c) && perms.canCommentActiviteStage() && editingActCommentId() !== c.id">
+                <button class="pd5-cmt-icon-btn" (click)="startEditActComment(c)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg></button>
+                <button class="pd5-cmt-icon-btn pd5-cmt-icon-danger" (click)="deleteActComment(c)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg></button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </ng-container>
 
-    <!-- TAB INFOS -->
-    <ng-container *ngIf="tab()==='infos'">
-      <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;overflow:hidden">
-        <!-- ✅ p.nom au lieu de p.titre -->
-        <div class="mx-info-row"><span class="mx-info-key">Nom</span><span class="mx-info-val">{{ p.nom }}</span></div>
-        <div class="mx-info-row">
-          <span class="mx-info-key">Statut</span>
-          <!-- ✅ Statut via helper nomenclature -->
-          <span class="dt-badge"
-                [style.background]="getStatutProjetColor(p.statutProjetId)+'18'"
-                [style.color]="getStatutProjetColor(p.statutProjetId)"
-                style="font-size:.66rem">
-            {{ getStatutProjetLabel(p.statutProjetId) }}
-          </span>
-        </div>
-        <div class="mx-info-row">
-          <span class="mx-info-key">Avancement</span>
-          <span class="mx-info-val" [style.color]="avancementColor(p.avancement)">{{ p.avancement }}%</span>
-        </div>
-        <div class="mx-info-row"><span class="mx-info-key">Date début</span><span class="mx-info-val">{{ fmtDate(p.dateDebut) }}</span></div>
-        <div class="mx-info-row"><span class="mx-info-key">Date fin</span><span class="mx-info-val">{{ fmtDate(p.dateFin) }}</span></div>
-        <div class="mx-info-row">
-          <span class="mx-info-key">Activités</span>
-          <span class="mx-info-val">{{ p.nombreActivites || 0 }}</span>
-        </div>
-        <div class="mx-info-row">
-          <span class="mx-info-key">Stagiaires</span>
-          <div style="display:flex;gap:4px;flex-wrap:wrap">
-            <!-- ✅ p.stagiaires[].nomComplet au lieu de p.stagiaireNoms -->
-            <span *ngFor="let stag of p.stagiaires"
-                  style="font-size:.7rem;padding:2px 8px;border-radius:99px;
-                         background:var(--accent-soft);color:var(--accent)">
-              {{ stag.nomComplet }}
-            </span>
-            <span *ngIf="!p.stagiaires || p.stagiaires.length === 0"
-                  class="mx-info-val">—</span>
+        <!-- Onglet documents -->
+        <div *ngIf="actPanelTab() === 'documents'">
+          <label class="pd5-upload-btn" *ngIf="perms.canUploadDocActiviteStage()" [class.uploading]="uploadingDoc()">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1v8M4 6l3 3 3-3" stroke-linecap="round" /><path d="M1 11v1a1 1 0 001 1h12a1 1 0 001-1v-1" stroke-linecap="round" /></svg>
+            {{ uploadingDoc() ? 'Envoi en cours...' : 'Ajouter un document' }}
+            <input type="file" style="display:none" [disabled]="uploadingDoc()" (change)="onFileSelected($event, undefined, a.id)">
+          </label>
+          <div class="pd5-docs-list">
+            <div class="pd5-docs-empty" *ngIf="activiteDocuments().length === 0">Aucun document.</div>
+            <div class="pd5-doc-row" *ngFor="let doc of activiteDocuments()">
+              <div class="pd5-doc-icon" [style.background]="getDocIconColor(doc.typeMime)">{{ getDocIconLabel(doc.typeMime) }}</div>
+              <div class="pd5-doc-info">
+                <span class="pd5-doc-nom">{{ doc.nom }}</span>
+                <span class="pd5-doc-meta">{{ formatSize(doc.tailleFichier) }} · {{ fmtDate(doc.dateUpload) }}</span>
+              </div>
+              <div class="pd5-doc-actions">
+                <a class="pd5-doc-icon-btn" [href]="doc.cheminFichier" target="_blank" title="Télécharger">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M5 7l3 3 3-3" stroke-linecap="round" /><path d="M2 13h12" stroke-linecap="round" /></svg>
+                </a>
+                <button class="pd5-doc-icon-btn pd5-doc-icon-danger" *ngIf="perms.canUploadDocActiviteStage()" (click)="deleteDocument(doc, true)" title="Supprimer">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M6.5 4V2.5h3V4M4.5 4l.5 9h6l.5-9" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </ng-container>
 
-  </ng-container>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- SLIDE-OVER ACTIVITÉ -->
-<div *ngIf="slideOpen()" class="dm-slide-overlay" (click)="slideOpen.set(false)">
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE-OVER — Créer / Modifier une activité
+══════════════════════════════════════════════════════════ -->
+<div class="dm-slide-overlay" *ngIf="slideActOpen()" (click)="closeSlideAct()">
   <div class="dm-slide-panel" (click)="$event.stopPropagation()">
     <div class="dm-slide-header">
-      <!-- ✅ a.nom au lieu de a.titre dans le label -->
       <h3 class="dm-slide-title">{{ editingActId() ? 'Modifier l\'activité' : 'Nouvelle activité' }}</h3>
-      <button class="dm-slide-close" (click)="slideOpen.set(false)">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M2 2l12 12M14 2L2 14" stroke-linecap="round"/>
-        </svg>
+      <button class="dm-slide-close" (click)="closeSlideAct()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l12 12M14 2L2 14" stroke-linecap="round" /></svg>
       </button>
     </div>
-    <div class="dm-slide-body">
-      <!-- ✅ formAct().nom au lieu de formAct().titre -->
+    <div class="dm-slide-body" [formGroup]="actForm">
+
       <div class="dm-field">
         <label class="dm-label">Nom <span style="color:#ef4444">*</span></label>
-        <input [(ngModel)]="formAct().nom" class="dm-input" placeholder="Nom de l'activité">
+        <input formControlName="nom" class="dm-input" placeholder="Nom de l'activité">
       </div>
+
       <div class="dm-field">
         <label class="dm-label">Description</label>
-        <textarea [(ngModel)]="formAct().description" class="dm-input" rows="2" placeholder="Description..."></textarea>
+        <textarea formControlName="description" class="dm-input" rows="3" placeholder="Description..."></textarea>
       </div>
+
       <div class="dm-grid2">
         <div class="dm-field">
           <label class="dm-label">Statut</label>
-          <!-- ✅ Select depuis statutsActivite[] -->
-          <select [(ngModel)]="formAct().statutActiviteId" class="dm-input">
-            <option *ngFor="let s of statutsActivite()" [ngValue]="s.id">{{ s.libelle }}</option>
+          <select class="dm-input" [ngModel]="getStatutActiviteId()" (ngModelChange)="setStatutActiviteId($event)" [ngModelOptions]="{standalone: true}">
+            <option *ngFor="let s of statutsActivite()" [value]="s.id">{{ s.libelle }}</option>
           </select>
         </div>
         <div class="dm-field">
-          <label class="dm-label">Heures estimées</label>
-          <input type="number" [(ngModel)]="formAct().heuresEstimees" class="dm-input" min="0">
+          <label class="dm-label">Priorité</label>
+          <select formControlName="prioriteId" class="dm-input">
+            <option [value]="null">—</option>
+            <option *ngFor="let p of priorites()" [value]="p.id">{{ p.libelle }}</option>
+          </select>
         </div>
       </div>
+
       <div class="dm-grid2">
         <div class="dm-field">
-          <label class="dm-label">Échéance</label>
-          <!-- ✅ dateEcheance au lieu de dateFin -->
-          <input type="date" [(ngModel)]="formAct().dateEcheance" class="dm-input">
+          <label class="dm-label">Heures estimées</label>
+          <input type="number" formControlName="heuresEstimees" class="dm-input" min="0" step="0.5">
         </div>
         <div class="dm-field">
-          <label class="dm-label">Assigner à</label>
-          <select [(ngModel)]="formAct().utilisateurId" class="dm-input">
-            <option [ngValue]="null">— Non assigné —</option>
-            <option *ngFor="let s of stagiaires()" [ngValue]="s.id">{{ s.nomComplet }}</option>
-          </select>
+          <label class="dm-label">Échéance</label>
+          <input type="date" formControlName="dateEcheance" class="dm-input">
         </div>
       </div>
+
+      <div class="dm-field">
+        <label class="dm-label">Couleur</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button type="button" *ngFor="let c of COULEURS" (click)="setCouleur(c)"
+                  style="width:26px;height:26px;border-radius:50%;border:2px solid;cursor:pointer"
+                  [style.background]="c"
+                  [style.border-color]="getCouleurActForm() === c ? 'var(--dt-text)' : 'transparent'"></button>
+        </div>
+      </div>
+
+      <!-- Assignation : membre(s) spécifique(s) — réservé aux superviseurs -->
+      <div class="dm-assign-section" *ngIf="perms.can('INT_SUPER_CAN_SUPERVISE')">
+        <span class="dm-assign-title">Membre spécifique</span>
+        <div *ngIf="stagiairesDispoActForm().length === 0" class="dm-field-hint" style="margin-top:6px">
+          Aucun stagiaire assigné à ce projet pour le moment.
+        </div>
+        <div *ngIf="stagiairesDispoActForm().length > 0" style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+          <label *ngFor="let s of stagiairesDispoActForm()"
+                 style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;cursor:pointer;border:1.5px solid;transition:all .15s"
+                 [style.border-color]="isStagiaireActFormSelected(s.id) ? 'var(--accent)' : 'var(--dt-border)'"
+                 [style.background]="isStagiaireActFormSelected(s.id) ? 'var(--accent-soft)' : 'var(--bg-input)'">
+            <input type="checkbox" style="accent-color:var(--accent)"
+                   [checked]="isStagiaireActFormSelected(s.id)"
+                   (change)="toggleStagiaireActForm(s.id)">
+            <div class="dt-avatar" [style.background]="getAvatarColor(s.nomComplet || '')"
+                 style="width:22px;height:22px;border-radius:50%;font-size:.52rem;flex-shrink:0">
+              {{ getInitiales(s.nomComplet) }}
+            </div>
+            <span style="font-size:.8rem;font-weight:600">{{ s.nomComplet }}</span>
+          </label>
+        </div>
+        <p class="dm-field-hint">Choisissez un ou plusieurs stagiaires assignés à ce projet.</p>
+      </div>
+
     </div>
     <div class="dm-slide-footer">
-      <button class="dm-btn-cancel" (click)="slideOpen.set(false)">Annuler</button>
-      <button class="dm-btn-save" (click)="saveAct()" [disabled]="saving()">
+      <button class="dm-btn-cancel" (click)="closeSlideAct()">Annuler</button>
+      <button class="dm-btn-save" (click)="saveAct()" [disabled]="submittingActivite()">
+        <div *ngIf="submittingActivite()" class="dt-spinner" style="width:14px;height:14px;border-width:1.5px;border-color:rgba(255,255,255,.3);border-top-color:white"></div>
         {{ editingActId() ? 'Enregistrer' : 'Créer' }}
       </button>
     </div>

@@ -35,7 +35,8 @@ public class ActiviteController {
         if (!permCtx.has("ACTIVITY_VIEW_ALL") && !permCtx.has("ACTIVITY_VIEW_LEAD")
                 && !permCtx.has("ACTIVITY_VIEW_OWN")
                 && !permCtx.has("PROJECT_VIEW_OWN") && !permCtx.has("PROJECT_VIEW_LEAD")
-                && !permCtx.has("PROJECT_VIEW_ALL")) {
+                && !permCtx.has("PROJECT_VIEW_ALL")
+                && !permCtx.has("INT_ACT_VIEW_ALL") && !permCtx.has("INT_ACT_VIEW_OWN")) {
             return ResponseEntity.status(403)
                     .body(Map.of("message", "Permission ACTIVITY_VIEW_ALL requise."));
         }
@@ -45,12 +46,16 @@ public class ActiviteController {
     }
 
     // ── GET par projet ────────────────────────────────────────────
+    // ✅ Élargi : un stagiaire ou superviseur (INT_ACT_VIEW_ALL/VIEW_OWN) peut
+    // lister les activités d'un projet de stage sans avoir les permissions
+    // ACTIVITY_*/PROJECT_* génériques de l'espace "projets d'entreprise".
     @GetMapping("/projet/{projetId}")
     public ResponseEntity<?> getByProjet(@PathVariable Long projetId) {
         if (!permCtx.has("ACTIVITY_VIEW_ALL") && !permCtx.has("ACTIVITY_VIEW_LEAD")
                 && !permCtx.has("ACTIVITY_VIEW_OWN")
                 && !permCtx.has("PROJECT_VIEW_OWN") && !permCtx.has("PROJECT_VIEW_LEAD")
-                && !permCtx.has("PROJECT_VIEW_ALL") && !permCtx.has("PROJECT_DETAILS_VIEW")) {
+                && !permCtx.has("PROJECT_VIEW_ALL") && !permCtx.has("PROJECT_DETAILS_VIEW")
+                && !permCtx.has("INT_ACT_VIEW_ALL") && !permCtx.has("INT_ACT_VIEW_OWN")) {
             return ResponseEntity.status(403)
                     .body(Map.of("message", "Permission ACTIVITY_VIEW_ALL requise."));
         }
@@ -73,12 +78,15 @@ public class ActiviteController {
     }
 
     // ── GET par ID ────────────────────────────────────────────────
+    // ✅ Élargi pour les mêmes raisons que getByProjet (drawer détail activité
+    // dans la page projet-stage-detail).
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable Long id) {
         if (!permCtx.has("ACTIVITY_VIEW_ALL") && !permCtx.has("ACTIVITY_VIEW_LEAD")
                 && !permCtx.has("ACTIVITY_VIEW_OWN")
                 && !permCtx.has("PROJECT_VIEW_OWN") && !permCtx.has("PROJECT_VIEW_LEAD")
-                && !permCtx.has("PROJECT_VIEW_ALL") && !permCtx.has("PROJECT_DETAILS_VIEW")) {
+                && !permCtx.has("PROJECT_VIEW_ALL") && !permCtx.has("PROJECT_DETAILS_VIEW")
+                && !permCtx.has("INT_ACT_VIEW_ALL") && !permCtx.has("INT_ACT_VIEW_OWN")) {
             return ResponseEntity.status(403)
                     .body(Map.of("message", "Permission ACTIVITY_VIEW_ALL requise."));
         }
@@ -86,9 +94,16 @@ public class ActiviteController {
     }
 
     // ── POST créer ────────────────────────────────────────────────
-    @RequiresPermission("ACTIVITY_CREATE")
+    // ✅ Remplacé @RequiresPermission("ACTIVITY_CREATE") (fixe, bloquait avant
+    // même d'exécuter le code) par un check manuel acceptant aussi INT_ACT_CREATE,
+    // pour permettre la création d'activités de stage par un superviseur ou un
+    // admin de l'espace stagiaire sans la permission ACTIVITY_CREATE générique.
     @PostMapping
-    public ResponseEntity<ActiviteDTO> create(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> create(@RequestBody Map<String, Object> body) {
+        if (!permCtx.has("ACTIVITY_CREATE") && !permCtx.has("INT_ACT_CREATE")) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Permission ACTIVITY_CREATE requise."));
+        }
         Activité activite    = buildFromBody(body);
         Long utilisateurId   = extractLong(body, "utilisateurId");
         List<Long> groupeIds = extractLongList(body, "groupeIds");
@@ -104,7 +119,7 @@ public class ActiviteController {
     public ResponseEntity<?> update(@PathVariable Long id,
                                     @RequestBody Map<String, Object> body) {
         if (!permCtx.has("ACTIVITY_EDIT_ALL") && !permCtx.has("ACTIVITY_EDIT_LEAD")
-                && !permCtx.has("ACTIVITY_EDIT_OWN")) {
+                && !permCtx.has("ACTIVITY_EDIT_OWN") && !permCtx.has("INT_ACT_EDIT")) {
             return ResponseEntity.status(403)
                     .body(Map.of("message", "Permission ACTIVITY_EDIT_ALL requise."));
         }
@@ -122,7 +137,7 @@ public class ActiviteController {
     public ResponseEntity<?> changerStatut(@PathVariable Long id,
                                            @RequestBody Map<String, Object> body) {
         if (!permCtx.has("ACTIVITY_EDIT_ALL") && !permCtx.has("ACTIVITY_EDIT_LEAD")
-                && !permCtx.has("ACTIVITY_EDIT_OWN")) {
+                && !permCtx.has("ACTIVITY_EDIT_OWN") && !permCtx.has("INT_ACT_EDIT")) {
             return ResponseEntity.status(403)
                     .body(Map.of("message", "Permission ACTIVITY_EDIT_ALL requise."));
         }
@@ -132,17 +147,23 @@ public class ActiviteController {
     }
 
     // ── DELETE ────────────────────────────────────────────────────
-    @RequiresPermission("ACTIVITY_DELETE_ALL")
+    // ✅ Remplacé @RequiresPermission("ACTIVITY_DELETE_ALL") (fixe) par un check
+    // manuel acceptant aussi INT_ACT_DELETE.
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
+        if (!permCtx.has("ACTIVITY_DELETE_ALL") && !permCtx.has("INT_ACT_DELETE")) {
+            return ResponseEntity.status(403).build();
+        }
         activiteService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
     // ── DELETE bulk ───────────────────────────────────────────────
-    @RequiresPermission("ACTIVITY_DELETE_ALL")
     @DeleteMapping("/bulk")
     public ResponseEntity<Void> deleteBulk(@RequestBody List<Long> ids) {
+        if (!permCtx.has("ACTIVITY_DELETE_ALL") && !permCtx.has("INT_ACT_DELETE")) {
+            return ResponseEntity.status(403).build();
+        }
         ids.forEach(activiteService::delete);
         return ResponseEntity.noContent().build();
     }

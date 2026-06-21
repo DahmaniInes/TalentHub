@@ -28,7 +28,7 @@
         </h1>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
           <span class="dt-badge dt-badge-accent" style="font-size:.66rem;padding:3px 9px">
-            <span class="dt-badge-dot"></span>{{ projets().length }} total
+            <span class="dt-badge-dot"></span>{{ filtered().length }} total
           </span>
           <span class="dt-badge dt-badge-pending" style="font-size:.66rem;padding:3px 9px">
             <span class="dt-badge-dot"></span>{{ statsEnCours() }} en cours
@@ -316,7 +316,7 @@
       </button>
     </div>
     <div class="dm-slide-body">
-      
+
       <div class="dm-field">
         <label class="dm-label">Nom <span style="color:#ef4444">*</span></label>
         <input [(ngModel)]="form().nom" class="dm-input" placeholder="Nom du projet">
@@ -371,13 +371,38 @@
           </label>
         </div>
       </div>
+
+      <!-- ✅ Documents — visible uniquement si l'utilisateur a la permission de créer/gérer -->
+      <div class="dm-field" *ngIf="canCreate()">
+        <label class="dm-label">Documents</label>
+        <label class="pd5-upload-btn" style="margin-bottom:0">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M7 1v8M4 6l3 3 3-3" stroke-linecap="round"/>
+            <path d="M1 11v1a1 1 0 001 1h12a1 1 0 001-1v-1" stroke-linecap="round"/>
+          </svg>
+          Sélectionner des fichiers
+          <input type="file" multiple style="display:none" (change)="onFilesSelected($event)">
+        </label>
+        <div *ngIf="pendingFiles().length > 0" style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+          <div *ngFor="let f of pendingFiles(); let i = index"
+               style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg-input);border-radius:8px;border:1px solid var(--border-color)">
+            <span style="font-size:.76rem;color:var(--text-primary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ f.name }}</span>
+            <span style="font-size:.66rem;color:var(--text-muted)">{{ formatSize(f.size) }}</span>
+            <button type="button" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:1rem;line-height:1;padding:0 2px"
+                    (click)="removePendingFile(i)">×</button>
+          </div>
+        </div>
+        <p *ngIf="pendingFiles().length > 0" style="font-size:.68rem;color:var(--text-muted);margin-top:6px">
+          Les fichiers seront envoyés dès la création du projet.
+        </p>
+      </div>
     </div>
     <div class="dm-slide-footer">
       <button class="dm-btn-cancel" (click)="closeSlide()">Annuler</button>
-      <button class="dm-btn-save" (click)="save()" [disabled]="saving()">
-        <div *ngIf="saving()" class="dt-spinner"
+      <button class="dm-btn-save" (click)="save()" [disabled]="saving() || uploadingDoc()">
+        <div *ngIf="saving() || uploadingDoc()" class="dt-spinner"
              style="width:14px;height:14px;border-width:1.5px;border-color:rgba(255,255,255,.3);border-top-color:white"></div>
-        {{ editingId() ? 'Enregistrer' : 'Créer' }}
+        {{ uploadingDoc() ? 'Envoi des documents...' : (editingId() ? 'Enregistrer' : 'Créer') }}
       </button>
     </div>
   </div>

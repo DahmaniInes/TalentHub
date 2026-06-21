@@ -356,7 +356,7 @@ canManageProjetsStage(): boolean {
 canViewProjetsStage(): boolean {
     return this.can('INT_ADMIN_PROJ_VIEW')
         || this.can('INT_SUPER_TRACK')
-        || this.can('INT_INTERN_VIEW_PROJ');
+        || this.can('INT_ADMIN_PROJ_VIEW_ALL');
 }
 
 // ✅ CORRIGÉ — couvre TOUS les rôles de l'espace stagiaire
@@ -413,11 +413,13 @@ canSeeNomenclatureAcademique(): boolean {
         || this.canCreateUniv() || this.canCreateSpec() || this.canCreateLevel();
 }
 
+
+
 // ════ PROJETS STAGE — refactorés ════
-canCreateProjetStage():      boolean { return this.can('INT_ADMIN_PROJ_CREATE'); }
-canViewAllProjetsStage():    boolean { return this.can('INT_ADMIN_PROJ_VIEW_ALL'); }
-canEditProjetStage():        boolean { return this.can('INT_ADMIN_PROJ_EDIT'); }
-canDeleteProjetStage():      boolean { return this.can('INT_ADMIN_PROJ_DELETE'); }
+canCreateProjetStage():      boolean { return this.can('INT_PROJ_CREATE'); }
+canViewAllProjetsStage():    boolean { return this.can('INT_PROJ_VIEW_ALL'); }
+canEditProjetStage():        boolean { return this.can('INT_PROJ_EDIT'); }
+canDeleteProjetStage():      boolean { return this.can('INT_PROJ_DELETE'); }
 canAssignProject():          boolean { return this.can('INT_ADMIN_ASSIGN_PROJECT'); }
 canViewMyProjetsStage():     boolean { return this.can('INT_SUPER_PROJ_VIEW_MY'); }
 canManageProjetStage():      boolean { return this.can('INT_SUPER_PROJ_MANAGE'); }
@@ -427,7 +429,8 @@ canSeeProjetsStageMenu(): boolean {
         || this.canViewMyProjet() || this.canCreateProjetStage();
 }
 
-// ════ ACTIVITÉS STAGE — refactorés ════
+// ════ ACTIVITÉS STAGE — refactorés (ANCIEN JEU — conservé pour compat, non utilisé
+//      dans le composant projet-stage-detail depuis le passage au jeu INT_ACT_*) ════
 canAdminCreateActivite():   boolean { return this.can('INT_ADMIN_ACT_CREATE'); }
 canAdminViewAllActivites(): boolean { return this.can('INT_ADMIN_ACT_VIEW_ALL'); }
 canAdminEditActivite():     boolean { return this.can('INT_ADMIN_ACT_EDIT'); }
@@ -458,6 +461,39 @@ canDeleteActiviteStage(): boolean {
 canSeeActivitesStageMenu(): boolean {
     return this.canViewActivitesStage() || this.canCreateActiviteStage();
 }
+
+// ════════════════════════════════════════════════════════════════
+// ACTIVITÉS STAGE — NOUVEAU JEU PLAT (nomenclature INTERNSHIP_ACTIVITY)
+// ════════════════════════════════════════════════════════════════
+// ✅ Remplace entièrement le bloc "ACTIVITÉS STAGE — refactorés" ci-dessus
+//    pour le composant projet-stage-detail. Un seul jeu de permissions,
+//    sans préfixe de rôle : tout utilisateur (admin, superviseur ou
+//    stagiaire) a les mêmes droits dès que la permission lui est assignée.
+//
+// INT_ACT_CREATE      → créer une activité dans un projet de stage
+// INT_ACT_VIEW_ALL    → voir toutes les activités de tous les projets de stage
+// INT_ACT_VIEW_OWN    → voir les activités des projets de stage où l'utilisateur
+//                       est lui-même stagiaire ou superviseur (pas de filtre
+//                       par assignation individuelle — c'est le projet qui
+//                       détermine l'accès, pas l'activité)
+// INT_ACT_EDIT        → modifier une activité (y compris déplacer dans le kanban)
+// INT_ACT_DELETE      → supprimer une activité
+// INT_ACT_DOC_UPLOAD  → ajouter ou supprimer un document sur une activité
+// INT_ACT_COMMENT     → ajouter ou supprimer un commentaire sur une activité
+
+canCreateActiviteStageNew():     boolean { return this.can('INT_ACT_CREATE'); }
+canViewAllActivitesStageNew():   boolean { return this.can('INT_ACT_VIEW_ALL'); }
+canViewOwnActivitesStageNew():   boolean { return this.can('INT_ACT_VIEW_OWN'); }
+canEditActiviteStageNew():       boolean { return this.can('INT_ACT_EDIT'); }
+canDeleteActiviteStageNew():     boolean { return this.can('INT_ACT_DELETE'); }
+canUploadDocActiviteStage():     boolean { return this.can('INT_ACT_DOC_UPLOAD'); }
+canCommentActiviteStage():       boolean { return this.can('INT_ACT_COMMENT'); }
+
+/** Voir la section activités d'un projet de stage (table/kanban/timeline/overview) */
+canSeeActivitesStageNew(): boolean {
+    return this.canViewAllActivitesStageNew() || this.canViewOwnActivitesStageNew();
+}
+
 
 
 // ════════════════════════════════════════════════════════════════

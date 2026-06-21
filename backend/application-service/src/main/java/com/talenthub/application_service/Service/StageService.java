@@ -39,10 +39,11 @@ public class StageService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Utilisateur non trouvé: " + userId));
 
-        // ✅ Plus de .statut() dans le builder — Stage n'a plus de champ statut String
+        // ✅ CORRIGÉ — 2 = EN_COURS dans la nomenclature (confirmé en base),
+        // l'ancien 1L pointait vers le mauvais statut.
         Stage s = Stage.builder()
                 .utilisateur(u)
-                .statutStageId(1L) // 1 = EN_COURS par défaut
+                .statutStageId(2L)
                 .build();
 
         return new StageDTO(applyBody(s, body));
@@ -96,9 +97,5 @@ public class StageService {
 
         return stageRepo.save(s);
     }
-
-
-
-
 
 }
