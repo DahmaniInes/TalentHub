@@ -153,15 +153,24 @@ public class Utilisateur {
 
     public String getNomComplet() { return prenom + " " + nom; }
 
-    // Helpers pour compatibilité
+    // ✅ CORRIGÉ — Helpers pour compatibilité : ne renvoient que les liens
+    // ACTIFS (actif=true). AVANT, ces deux méthodes retournaient TOUS les
+    // liens de superviseurLinks/stagiairesEncadresLinks sans filtrer le
+    // flag actif — donc même après avoir correctement désactivé un lien en
+    // base (StagiaireService.retirerSuperviseur()/assignerSuperviseurs()),
+    // un superviseur retiré continuait d'apparaître dans la réponse API
+    // (UtilisateurResponseDTO), donnant l'impression que la suppression
+    // n'avait aucun effet alors que la base était pourtant correcte.
     public List<Utilisateur> getSuperviseurs() {
         return superviseurLinks.stream()
+                .filter(StagiaireSuperviseur::isActif)
                 .map(StagiaireSuperviseur::getSuperviseur)
                 .toList();
     }
 
     public List<Utilisateur> getStagiairesEncadres() {
         return stagiairesEncadresLinks.stream()
+                .filter(StagiaireSuperviseur::isActif)
                 .map(StagiaireSuperviseur::getStagiaire)
                 .toList();
     }

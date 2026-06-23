@@ -4,6 +4,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
 
 import { ProjetService }            from '../../../services/projet.service';
 import { ActiviteService }          from '../../../services/activite.service';
@@ -24,9 +25,12 @@ import { Activite, ActiviteRequest }     from '../../../shared/models/activite.m
 import { Commentaire }                   from '../../../shared/models/commentaire.model';
 import { StatutActivite }                from '../../../shared/models/statut-activite.model';
 import { Groupe }                        from '../../../shared/models/groupe.model';
+import { Utilisateur }                   from '../../../shared/models/utilisateur.model';
 import { Document as DocModel, TypeDocument } from '../../../shared/models/document.model';
 import { HttpErrorResponse }             from '@angular/common/http';
 import { PrioriteActiviteService } from '../../../services/priorite-activite.service';
+import { EvaluationActiviteService } from '../../../services/evaluation-activite.service';
+import { EvaluationActivite, EvaluationsActiviteResponse, EvaluationResume } from '../../../shared/models/evaluationactivite.model';
 import { PrioriteActivite }        from '../../../shared/models/priorite-activite.model';
 
 type VueActivites = 'overview' | 'kanban' | 'liste' | 'timeline';
@@ -43,12 +47,21 @@ interface MonthData {
 // Interface pour la légende de la jauge
 interface GaugeLegendItem { label: string; couleur: string; ringCouleur: string; pct: number; }
 
-// ✅ Remplace TeamLeadInfo : un stagiaire assigné au projet (pas de superviseur affiché pour l'instant)
+// ✅ Inclut désormais les superviseurs du stagiaire (ProjetDTO.StagiaireMembreDTO.superviseurs)
+interface SuperviseurInfo {
+  id: number;
+  nomComplet: string;
+  email: string;
+  photoUrl?: string;
+  poste?: string;
+}
+
 interface StagiaireInfo {
   id: number;
   nomComplet: string;
   email: string;
   photoUrl?: string;
+  superviseurs?: SuperviseurInfo[];
 }
 
 @Component({
@@ -66,6 +79,7 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
   private projetSvc   = inject(ProjetService);
   private activiteSvc = inject(ActiviteService);
   private commentSvc  = inject(CommentaireService);
+  private evaluationSvc = inject(EvaluationActiviteService);
   private nomencSvc   = inject(StatutActiviteService);
   private groupeSvc   = inject(GroupeService);
   private docSvc      = inject(DocumentService);
@@ -79,8 +93,13 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
   // ✅ Réintroduits pour la vérification d'accès à cette page de détail.
   // Le reste de la page (actions CRUD activité/commentaire) n'est pas gardé par permission.
   readonly perms       = inject(PermissionContextService);
+  readonly Math        = Math;
   private userSvc      = inject(UserService);
   private stagiaireSvc = inject(StagiaireService);
+  // ✅ Appel direct pour GET /projets/{id}/superviseurs-stagiaires —
+  // pas de modification de ProjetService (fichier non fourni), endpoint
+  // appelé ici uniquement.
+  private http = inject(HttpClient);
   private stageSvc      = inject(StageDetailService);
 
   // ✅ ID nomenclature statut_stage pour EN_COURS (confirmé en base)
@@ -118,7 +137,30 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
   statutsProjet   = signal<StatutProjet[]>([]);
   typesProjet     = signal<TypeProjet[]>([]);
   tousGroupes     = signal<Groupe[]>([]);
+
+  // ── GESTION STAGIAIRES & SUPERVISEURS (drawer Infos projet) ──
+  // ✅ Visible/éditable uniquement si perms.canEditProjetStage() (INT_PROJ_EDIT).
+  // L'ajout/retrait de superviseurs par stagiaire nécessite EN PLUS
+  // perms.canAssignSupervisor() (INT_ADMIN_ASSIGN_SUPERVISOR).
+  tousLesStagiaires   = signal<Utilisateur[]>([]);
+  tousLesSuperviseurs = signal<Utilisateur[]>([]);
+  editingStagiaires   = signal(false);
+  stagiairesSelectTemp = signal<number[]>([]);
+  savingStagiaires    = signal(false);
+  // Stagiaire dont on édite actuellement les superviseurs (popup/inline)
+  editingSuperviseursPourStagiaireId = signal<number | null>(null);
+  superviseursSelectTemp = signal<number[]>([]);
+  savingSuperviseurs  = signal(false);
   documents       = signal<DocModel[]>([]);
+
+  // ✅ Map id-stagiaire → superviseurs, alimentée UNIQUEMENT si l'utilisateur
+  // courant a INT_ADMIN_VIEW_ALL_INTERNS (seule permission qui autorise
+  // GET /stagiaires côté backend). Sans cette permission (cas superviseur ou
+  // stagiaire), la carte affiche les stagiaires sans la ligne superviseur —
+  // pas de 403, juste une donnée absente. Ne modifie ni ProjetDTO ni
+  // l'endpoint backend : un seul appel réutilisant StagiaireService.getAll(),
+  // déjà utilisé ailleurs dans l'app pour ce même usage.
+  private superviseursParStagiaireId = signal<Map<number, SuperviseurInfo[]>>(new Map());
   typesDocument   = signal<TypeDocument[]>([]);
 
   // ── ÉTATS UI ──
@@ -140,7 +182,26 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
   activiteDocuments  = signal<DocModel[]>([]);
   loadingActComments = signal(false);
   loadingActDocs     = signal(false);
-  actPanelTab        = signal<'commentaires' | 'documents'>('commentaires');
+  actPanelTab        = signal<'commentaires' | 'documents' | 'evaluation'>('commentaires');
+
+  // ── ÉVALUATION ACTIVITÉ (note 0-5 + commentaire, par superviseur) ──
+  evaluationsActivite   = signal<EvaluationActivite[]>([]);
+  moyenneEvaluation     = signal<number>(0);
+  totalEvaluations      = signal<number>(0);
+  loadingEvaluations    = signal(false);
+  submittingEvaluation  = signal(false);
+  // Formulaire d'évaluation de l'utilisateur courant pour l'activité affichée
+  monEvaluationNote        = signal<number>(0);
+  monEvaluationCommentaire = signal('');
+  hoverStar                = signal<number>(0);
+
+  // ✅ NOUVEAU — Résumé (moyenne+total) de toutes les activités du projet,
+  // pour la colonne "Évaluation" de la table/kanban. Chargé en un seul
+  // appel batch (pas un par activité).
+  evaluationResumeMap = signal<Map<number, EvaluationResume>>(new Map());
+  // Étoile en survol DANS la table/kanban (pas dans le drawer), par activité
+  hoverStarListeActiviteId = signal<number | null>(null);
+  hoverStarListeValue      = signal<number>(0);
 
   // ── FILTRE PANEL ──
   filterPanelOpen = signal(false);
@@ -258,6 +319,12 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
       .filter(s => s.count > 0)
   );
 
+  /** ✅ Pour les cartes KPI du haut — TOUS les statuts, même ceux à 0 activité */
+  statutsKpiCards = computed(() =>
+    this.statutsActivite()
+      .map(s => ({ ...s, count: this.activites().filter(a => a.statutActiviteId === s.id).length }))
+  );
+
   assignes = computed(() => {
     const seen = new Set<number>();
     return this.activites()
@@ -287,16 +354,41 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
     return this.activitesFiltrees().slice(s, s + this.actPageSize);
   });
 
-  /** ✅ Stagiaires assignés au projet (remplace teamLeads) — pas de superviseur affiché pour l'instant */
+  /** ✅ Stagiaires assignés au projet, enrichis de leurs superviseurs si
+   *  la map superviseursParStagiaireId a été chargée (admin uniquement). */
   stagiairesAssignes = computed((): StagiaireInfo[] => {
     const p = this.projet();
     if (!p?.stagiaires?.length) return [];
+    const supMap = this.superviseursParStagiaireId();
     return p.stagiaires.map(s => ({
       id: s.id,
       nomComplet: s.nomComplet || '',
       email: s.email || '',
-      photoUrl: s.photoUrl
+      photoUrl: s.photoUrl,
+      superviseurs: supMap.get(s.id) || []
     }));
+  });
+
+  /** ✅ L'évaluation déjà déposée par l'utilisateur courant pour l'activité affichée, s'il y en a une */
+  monEvaluationExistante = computed((): EvaluationActivite | null => {
+    return this.evaluationsActivite().find(e => e.evaluateurKeycloakId === this.currentUserKcId) || null;
+  });
+
+  /** ✅ Évaluations des AUTRES superviseurs (pour affichage en lecture) */
+  autresEvaluations = computed((): EvaluationActivite[] => {
+    return this.evaluationsActivite().filter(e => e.evaluateurKeycloakId !== this.currentUserKcId);
+  });
+
+  /** Stagiaires de l'entreprise pas encore sélectionnés dans le formulaire d'édition */
+  stagiairesDisponiblesPourAjout = computed(() => {
+    const selectionnes = new Set(this.stagiairesSelectTemp());
+    return this.tousLesStagiaires().filter(s => !selectionnes.has(s.id));
+  });
+
+  /** Superviseurs éligibles pas encore sélectionnés pour le stagiaire en cours d'édition */
+  superviseursDisponiblesPourAjout = computed(() => {
+    const selectionnes = new Set(this.superviseursSelectTemp());
+    return this.tousLesSuperviseurs().filter(s => !selectionnes.has(s.id));
   });
 
   // ── CALENDRIER MOIS/ANNÉE ──
@@ -366,12 +458,22 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
     this.docSvc.getTypesDocument().subscribe({ next: d => this.typesDocument.set(d) });
     this.groupeSvc.getAll().subscribe({ next: g => this.tousGroupes.set(g) });
 
+    // ✅ Listes nécessaires à la gestion stagiaires/superviseurs du drawer —
+    // chargées seulement si l'utilisateur peut éditer le projet, pour éviter
+    // un appel (et un éventuel 403) inutile pour les autres profils.
+    if (this.perms.canEditProjetStage()) {
+      this.stagiaireSvc.getAll().subscribe({ next: d => this.tousLesStagiaires.set(d) });
+      this.stagiaireSvc.getSuperviseurs().subscribe({ next: d => this.tousLesSuperviseurs.set(d) });
+    }
+
     this.projetSvc.getById(id).subscribe({
       next: p => {
         this.projet.set(p);
         this.loadActivites(id);
         this.loadCommentaires(id);
         this.loadDocuments(id);
+        this.chargerSuperviseursStagiaires(p);
+        this.loadEvaluationsResumeProjet(id);
         // ✅ Vérification d'accès une fois le projet chargé (on a besoin de p.stagiaires)
         this.verifierAcces(p);
       },
@@ -403,7 +505,17 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
    * Si aucune condition n'est remplie → accès refusé.
    */
   private verifierAcces(p: Projet): void {
-    // ✅ Admin : accès total, pas besoin de résoudre l'utilisateur courant
+    // ✅ On résout systématiquement currentUserId (utilisé pour l'ownership des
+    // documents/commentaires propres), même pour un admin — mais sans jamais
+    // bloquer son accès si cette résolution échoue.
+    if (this.currentUserKcId) {
+      this.userSvc.getUserByKeycloakId(this.currentUserKcId).subscribe({
+        next: u => this.currentUserId = u.id,
+        error: () => {}
+      });
+    }
+
+    // ✅ Admin : accès total, pas besoin d'attendre la résolution ci-dessus
     if (this.perms.canViewAllProjetsStage()) {
       this.loading.set(false);
       return;
@@ -527,6 +639,29 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * ✅ Charge les superviseurs des stagiaires assignés à ce projet via le
+   * nouvel endpoint GET /projets/{id}/superviseurs-stagiaires, gardé par
+   * les MÊMES permissions que GET /projets/{id} (PROJECT_VIEW_*,
+   * INT_ADMIN_PROJ_VIEW_ALL, INT_SUPER_TRACK, INT_INTERN_VIEW_PROJ).
+   * N'exige PAS INT_ADMIN_VIEW_ALL_INTERNS : toute personne qui peut voir
+   * cette page de détail projet peut voir ses stagiaires et superviseurs.
+   * Ne modifie ni ProjetDTO ni Projet (modèle inchangé) — l'info est
+   * récupérée à part et fusionnée côté frontend.
+   */
+  private chargerSuperviseursStagiaires(p: Projet): void {
+    if (!p?.id) return;
+    this.http.get<{ stagiaireId: number; superviseurs: SuperviseurInfo[] }[]>(
+        `http://localhost:8085/api/application/projets/${p.id}/superviseurs-stagiaires`
+    ).pipe(
+        catchError(() => of([]))
+    ).subscribe(rows => {
+      const map = new Map<number, SuperviseurInfo[]>();
+      rows.forEach(r => map.set(r.stagiaireId, r.superviseurs || []));
+      this.superviseursParStagiaireId.set(map);
+    });
+  }
+
   loadActiviteCommentaires(id: number): void {
     this.loadingActComments.set(true);
     this.commentSvc.getByActivite(id).subscribe({
@@ -551,6 +686,115 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
   // ════════════════════════════════════════════════════════════
 
   toggleDrawer(): void { this.drawerInfoOpen.update(v => !v); }
+
+  // ════════════════════════════════════════════════════════════
+  // GESTION STAGIAIRES DU PROJET (drawer Infos projet)
+  // ════════════════════════════════════════════════════════════
+  // ✅ Réservé à perms.canEditProjetStage() (INT_PROJ_EDIT) — vérifié aussi
+  // côté HTML. Ajout/retrait libre parmi TOUS les stagiaires de l'entreprise.
+  // Utilise directement les endpoints MembreEquipe (pas de service Angular
+  // dédié fourni) : POST /membres-equipe/stagiaire et
+  // DELETE /membres-equipe/projet/{projetId}/utilisateur/{userId}.
+
+  private readonly membresEquipeApi = 'http://localhost:8085/api/application/membres-equipe';
+
+  startEditStagiaires(): void {
+    if (!this.perms.canEditProjetStage()) return;
+    const p = this.projet();
+    this.stagiairesSelectTemp.set((p?.stagiaires || []).map(s => s.id));
+    this.editingStagiaires.set(true);
+  }
+
+  cancelEditStagiaires(): void { this.editingStagiaires.set(false); }
+
+  isStagiaireProjetSelected(id: number): boolean {
+    return this.stagiairesSelectTemp().includes(id);
+  }
+
+  toggleStagiaireProjetSelection(id: number): void {
+    this.stagiairesSelectTemp.update(ids =>
+        ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id]);
+  }
+
+  saveStagiairesProjet(): void {
+    const p = this.projet();
+    if (!p) return;
+    const idsSelectionnes = this.stagiairesSelectTemp();
+    const idsOriginaux    = (p.stagiaires || []).map(s => s.id);
+
+    const aAjouter = idsSelectionnes.filter(id => !idsOriginaux.includes(id));
+    const aRetirer = idsOriginaux.filter(id => !idsSelectionnes.includes(id));
+
+    if (aAjouter.length === 0 && aRetirer.length === 0) {
+      this.editingStagiaires.set(false);
+      return;
+    }
+
+    this.savingStagiaires.set(true);
+    const appels = [
+      ...aAjouter.map(stagId => this.http.post(`${this.membresEquipeApi}/stagiaire`,
+          { projetId: p.id, utilisateurId: stagId })),
+      ...aRetirer.map(stagId => this.http.delete(
+          `${this.membresEquipeApi}/projet/${p.id}/utilisateur/${stagId}`))
+    ];
+
+    forkJoin(appels).pipe(catchError(() => of(null))).subscribe(() => {
+      this.savingStagiaires.set(false);
+      this.editingStagiaires.set(false);
+      // Recharge le projet pour obtenir la liste de stagiaires à jour
+      this.projetSvc.getById(p.id).subscribe({
+        next: updated => {
+          this.projet.set(updated);
+          this.chargerSuperviseursStagiaires(updated);
+          this.ui.success('Stagiaires mis à jour ✅');
+        }
+      });
+    });
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // GESTION SUPERVISEURS PAR STAGIAIRE (drawer Infos projet)
+  // ════════════════════════════════════════════════════════════
+  // ✅ Réservé à perms.canEditProjetStage() ET perms.canAssignSupervisor()
+  // (INT_PROJ_EDIT ET INT_ADMIN_ASSIGN_SUPERVISOR) — vérifié côté HTML.
+  // assignerSuperviseurs() REMPLACE toute la liste pour ce stagiaire —
+  // on initialise donc la sélection avec les superviseurs déjà connus.
+
+  startEditSuperviseurs(stagiaire: StagiaireInfo): void {
+    if (!this.perms.canEditProjetStage() || !this.perms.canAssignSupervisor()) return;
+    this.editingSuperviseursPourStagiaireId.set(stagiaire.id);
+    this.superviseursSelectTemp.set((stagiaire.superviseurs || []).map(s => s.id));
+  }
+
+  cancelEditSuperviseurs(): void { this.editingSuperviseursPourStagiaireId.set(null); }
+
+  isSuperviseurSelected(id: number): boolean {
+    return this.superviseursSelectTemp().includes(id);
+  }
+
+  toggleSuperviseurSelection(id: number): void {
+    this.superviseursSelectTemp.update(ids =>
+        ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id]);
+  }
+
+  saveSuperviseursPourStagiaire(): void {
+    const stagiaireId = this.editingSuperviseursPourStagiaireId();
+    const p = this.projet();
+    if (!stagiaireId || !p) return;
+
+    this.savingSuperviseurs.set(true);
+    this.stagiaireSvc.assignerSuperviseurs(stagiaireId, this.superviseursSelectTemp()).subscribe({
+      next: () => {
+        this.savingSuperviseurs.set(false);
+        this.editingSuperviseursPourStagiaireId.set(null);
+        this.chargerSuperviseursStagiaires(p);
+        this.ui.success('Superviseurs mis à jour ✅');
+      },
+      error: () => { this.savingSuperviseurs.set(false); this.ui.error('Erreur lors de la mise à jour.'); }
+    });
+  }
+
+
 
   resetFilters(): void {
     this.filtreSearch.set('');
@@ -643,6 +887,7 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
     this.actDrawerOpen.set(true);
     this.loadActiviteCommentaires(a.id);
     this.loadActiviteDocuments(a.id);
+    this.loadEvaluationsActivite(a.id);
   }
 
   editingActField      = signal<string | null>(null);
@@ -698,9 +943,151 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
     setTimeout(() => this.openEditAct(a, new MouseEvent('click')), 150);
   }
 
-  setActPanelTab(tab: 'commentaires' | 'documents'): void {
+  setActPanelTab(tab: 'commentaires' | 'documents' | 'evaluation'): void {
     this.actPanelTab.set(tab);
   }
+
+  // ════════════════════════════════════════════════════════════
+  // ÉVALUATION ACTIVITÉ — note 0 à 5 + commentaire, par superviseur
+  // ════════════════════════════════════════════════════════════
+  // ✅ Lecture : accessible à quiconque a déjà accès au drawer (pas de
+  // restriction supplémentaire — le stagiaire peut voir ses notes).
+  // ✅ Écriture (noter/modifier/supprimer sa propre évaluation) : réservée
+  // strictement à perms.canEvaluerActiviteStage() = INT_SUPER_EVALUATE
+  // ET INT_SUPER_CAN_SUPERVISE ensemble.
+
+  loadEvaluationsActivite(activiteId: number): void {
+    this.loadingEvaluations.set(true);
+    this.evaluationSvc.getByActivite(activiteId).subscribe({
+      next: (res: EvaluationsActiviteResponse) => {
+        this.evaluationsActivite.set(res.evaluations || []);
+        this.moyenneEvaluation.set(res.moyenne || 0);
+        this.totalEvaluations.set(res.total || 0);
+        this.loadingEvaluations.set(false);
+
+        // Pré-remplir le formulaire avec l'évaluation existante de l'utilisateur, s'il y en a une
+        const mine = this.monEvaluationExistante();
+        this.monEvaluationNote.set(mine?.note ?? 0);
+        this.monEvaluationCommentaire.set(mine?.commentaire ?? '');
+      },
+      error: () => this.loadingEvaluations.set(false)
+    });
+  }
+
+  /**
+   * ✅ NOUVEAU — Charge le résumé d'évaluation (moyenne+total) de TOUTES
+   * les activités du projet en un seul appel, pour la colonne "Évaluation"
+   * de la table/kanban.
+   */
+  loadEvaluationsResumeProjet(projetId: number): void {
+    this.evaluationSvc.getResumeByProjet(projetId).subscribe({
+      next: (rows: EvaluationResume[]) => {
+        const map = new Map<number, EvaluationResume>();
+        rows.forEach(r => map.set(r.activiteId, r));
+        this.evaluationResumeMap.set(map);
+      },
+      error: () => {}
+    });
+  }
+
+  /** Moyenne d'évaluation d'une activité (0 si aucune note) — pour table/kanban */
+  getMoyenneEvaluationActivite(activiteId: number): number {
+    return this.evaluationResumeMap().get(activiteId)?.moyenne || 0;
+  }
+
+  /** Nombre total d'évaluations d'une activité — pour table/kanban */
+  getTotalEvaluationsActivite(activiteId: number): number {
+    return this.evaluationResumeMap().get(activiteId)?.total || 0;
+  }
+
+  setHoverStarListe(activiteId: number, n: number): void {
+    this.hoverStarListeActiviteId.set(activiteId);
+    this.hoverStarListeValue.set(n);
+  }
+  clearHoverStarListe(): void {
+    this.hoverStarListeActiviteId.set(null);
+    this.hoverStarListeValue.set(0);
+  }
+  getHoverStarListe(activiteId: number): number {
+    return this.hoverStarListeActiviteId() === activiteId ? this.hoverStarListeValue() : 0;
+  }
+
+  /**
+   * ✅ Notation directe depuis la table/kanban (sans ouvrir le drawer) —
+   * réservée à perms.canEvaluerActiviteStage(). Upsert l'évaluation de
+   * l'utilisateur courant pour cette activité, puis recharge le résumé
+   * batch du projet pour mettre à jour l'affichage partout.
+   */
+  noterActiviteDepuisListe(a: Activite, note: number, e?: Event): void {
+    if (e) e.stopPropagation();
+    if (!this.perms.canEvaluerActiviteStage()) {
+      this.ui.warning('Permissions INT_SUPER_EVALUATE et INT_SUPER_CAN_SUPERVISE requises.');
+      return;
+    }
+    this.evaluationSvc.evaluer(a.id, { note, evaluateurNom: this.currentUserNom }).subscribe({
+      next: () => {
+        const p = this.projet();
+        if (p) this.loadEvaluationsResumeProjet(p.id);
+        if (this.selectedActivite()?.id === a.id) this.loadEvaluationsActivite(a.id);
+        this.ui.success('Évaluation enregistrée ✅');
+      },
+      error: () => this.ui.error('Erreur lors de l\'enregistrement.')
+    });
+  }
+
+  setHoverStar(n: number): void { this.hoverStar.set(n); }
+  clearHoverStar(): void { this.hoverStar.set(0); }
+  setMonEvaluationNote(n: number): void { this.monEvaluationNote.set(n); }
+
+  submitEvaluation(): void {
+    const a = this.selectedActivite();
+    if (!a) return;
+    if (!this.perms.canEvaluerActiviteStage()) {
+      this.ui.warning('Permissions INT_SUPER_EVALUATE et INT_SUPER_CAN_SUPERVISE requises.');
+      return;
+    }
+    const note = this.monEvaluationNote();
+    if (note < 0 || note > 5) {
+      this.ui.warning('La note doit être comprise entre 0 et 5.');
+      return;
+    }
+    this.submittingEvaluation.set(true);
+    this.evaluationSvc.evaluer(a.id, {
+      note,
+      commentaire: this.monEvaluationCommentaire().trim() || undefined,
+      evaluateurNom: this.currentUserNom
+    }).subscribe({
+      next: () => {
+        this.submittingEvaluation.set(false);
+        this.ui.success('Évaluation enregistrée ✅');
+        this.loadEvaluationsActivite(a.id);
+      },
+      error: () => { this.submittingEvaluation.set(false); this.ui.error('Erreur lors de l\'enregistrement.'); }
+    });
+  }
+
+  deleteMonEvaluation(): void {
+    const a = this.selectedActivite();
+    if (!a) return;
+    if (!this.perms.canEvaluerActiviteStage()) return;
+    this.ui.confirm({
+      title: 'Supprimer mon évaluation',
+      message: 'Supprimer votre note et commentaire pour cette activité ?',
+      confirmLabel: 'Supprimer', type: 'danger',
+      onConfirm: () => this.evaluationSvc.supprimer(a.id).subscribe({
+        next: () => {
+          this.monEvaluationNote.set(0);
+          this.monEvaluationCommentaire.set('');
+          this.ui.success('Évaluation supprimée.');
+          this.loadEvaluationsActivite(a.id);
+        },
+        error: () => this.ui.error('Erreur lors de la suppression.')
+      })
+    });
+  }
+
+  /** Tableau [1,2,3,4,5] pour générer les étoiles dans le template */
+  readonly STARS = [1, 2, 3, 4, 5];
 
   // ════════════════════════════════════════════════════════════
   // CRUD ACTIVITÉS
@@ -720,7 +1107,15 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
       heuresEstimees: null, dateEcheance: null,
       visible: true, facturable: true
     });
-    this.stagiairesActForm.set([]);
+
+    // ✅ Si le créateur est lui-même un stagiaire assigné à ce projet (pas un
+    // superviseur), il est automatiquement assigné à l'activité qu'il crée.
+    // Les superviseurs créent souvent des activités pour d'autres — pas
+    // d'auto-assignation dans leur cas, ils choisissent explicitement.
+    const estStagiaireDuProjet = !this.perms.can('INT_SUPER_CAN_SUPERVISE')
+        && this.currentUserId != null
+        && this.stagiairesAssignes().some(s => s.id === this.currentUserId);
+    this.stagiairesActForm.set(estStagiaireDuProjet ? [this.currentUserId!] : []);
 
     this.slideActOpen.set(true);
   }
@@ -915,6 +1310,16 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
     });
   }
   isOwn(c: Commentaire): boolean { return c.auteurKeycloakId === this.currentUserKcId; }
+
+  /**
+   * ✅ NOUVEAU — Vérifie si le document a été uploadé par l'utilisateur courant.
+   * DocumentDTO n'expose que `utilisateurId` (numérique, pas de keycloakId) —
+   * on compare donc avec currentUserId, résolu systématiquement dans
+   * verifierAcces() peu importe le profil (admin compris).
+   */
+  isOwnDoc(doc: DocModel): boolean {
+    return this.currentUserId != null && doc.utilisateurId === this.currentUserId;
+  }
 
   // ════════════════════════════════════════════════════════════
   // COMMENTAIRES ACTIVITÉ
@@ -1414,6 +1819,10 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
   assigneMultiTemp = signal<number[]>([]);
 
   startEditActField(field: string, currentValue: any): void {
+    if (!this.perms.canEditActiviteStageNew()) {
+      this.ui.warning('Permission INT_ACT_EDIT requise.');
+      return;
+    }
     this.editingActField.set(field);
     this.editingActFieldValue.set(currentValue);
     if (field === 'utilisateurId') {
@@ -1435,6 +1844,10 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
   }
 
   saveActFieldMulti(): void {
+    if (!this.perms.canEditActiviteStageNew()) {
+      this.ui.warning('Permission INT_ACT_EDIT requise.');
+      return;
+    }
     const a = this.selectedActivite();
     if (!a) return;
     const ids = this.assigneMultiTemp();
@@ -1445,8 +1858,7 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
       dateEcheance: a.dateEcheance, estGlobale: a.estGlobale,
       visible: a.visible, facturable: a.facturable,
       utilisateurId: ids.length > 0 ? ids[0] : undefined,
-      utilisateurIds: ids,
-      groupeIds: a.groupes?.map(g => g.id)
+      utilisateurIds: ids
     };
     this.activiteSvc.update(a.id, body).subscribe({
       next: saved => {

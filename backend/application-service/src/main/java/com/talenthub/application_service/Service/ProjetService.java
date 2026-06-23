@@ -1,6 +1,7 @@
 package com.talenthub.application_service.Service;
 
 import com.talenthub.application_service.DTO.ProjetDTO;
+import com.talenthub.application_service.DTO.SuperviseurStagiaireDTO;
 import com.talenthub.application_service.Entity.*;
 import com.talenthub.application_service.Repository.*;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,8 @@ public class ProjetService {
     private final UtilisateurRepository  utilisateurRepository;
     private final CommentaireRepository  commentaireRepository;
     private final MembreEquipeRepository membreEquipeRepository;
+    // ✅ NOUVEAU — nécessaire pour getSuperviseursDesStagiaires()
+    private final StagiaireSuperviseurRepository stagiaireSuperviseurRepository;
 
     @Transactional(readOnly = true)
     public List<Projet> getAll() { return projetRepository.findAll(); }
@@ -248,7 +251,6 @@ public class ProjetService {
         return projetRepository.findByTypeProjetId(3L);
     }
 
-    // ✅ Import MembreEquipe ajouté dans la classe Entity.*
     @Transactional(readOnly = true)
     public List<Projet> getProjetsParStagiaire(Long utilisateurId) {
         return membreEquipeRepository.findByUtilisateurId(utilisateurId)
@@ -270,5 +272,33 @@ public class ProjetService {
                         .distinct()
                         .toList())
                 .orElse(List.of());
+    }
+
+    // ── Superviseurs des stagiaires d'un projet ───────────────────
+    // ✅ NOUVEAU — utilisé par GET /projets/{id}/superviseurs-stagiaires.
+    // Ne nécessite PAS INT_ADMIN_VIEW_ALL_INTERNS : les permissions vérifiées
+    // sont les mêmes que celles qui donnent déjà accès à GET /projets/{id}
+    // (PROJECT_VIEW_*, INT_ADMIN_PROJ_VIEW_ALL, INT_SUPER_TRACK,
+    // INT_INTERN_VIEW_PROJ) — voir ProjetController.getSuperviseursStagiaires().
+    // Pour chaque membre du projet ayant un stage lié, on récupère ses
+    // superviseurs actifs via StagiaireSuperviseurRepository.
+    @Transactional(readOnly = true)
+    public List<SuperviseurStagiaireDTO> getSuperviseursDesStagiaires(Long projetId) {
+        List<MembreEquipe> membresStagiaires = membreEquipeRepository
+                .findByProjetId(projetId).stream()
+                .filter(m -> m.getStage() != null)
+                .toList();
+
+        return membresStagiaires.stream()
+                .map(m -> {
+                    Long stagiaireId = m.getUtilisateur().getId();
+                    List<Utilisateur> superviseurs = stagiaireSuperviseurRepository
+                            .findByStagiaireIdAndActifTrue(stagiaireId).stream()
+                            .map(StagiaireSuperviseur::getSuperviseur)
+                            .distinct()
+                            .toList();
+                    return new SuperviseurStagiaireDTO(stagiaireId, superviseurs);
+                })
+                .toList();
     }
 }

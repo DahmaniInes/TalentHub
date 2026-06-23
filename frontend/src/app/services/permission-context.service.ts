@@ -343,7 +343,15 @@ canViewMyInterns():      boolean { return this.can('INT_SUPER_VIEW_MY_INTERNS');
 canSupervise():          boolean { return this.can('INT_SUPER_CAN_SUPERVISE'); }
 canTrackIntern():        boolean { return this.can('INT_SUPER_TRACK'); }
 canEvaluateIntern():     boolean { return this.can('INT_SUPER_EVALUATE'); }
+/** ✅ Ajouter un commentaire sur un projet de stage */
+canCommentProjetStage(): boolean {
+    return this.can('INT_PROJ_COMMENT');
+}
 
+/** ✅ Uploader un document sur un projet de stage */
+canUploadDocProjetStage(): boolean {
+    return this.can('INT_PROJ_DOC_UPLOAD');
+}
 // Stagiaire
 canViewMyProjet():       boolean { return this.can('INT_INTERN_VIEW_PROJ'); }
 canViewMySuperviseur():  boolean { return this.can('INT_INTERN_VIEW_SUPERVISOR'); }
@@ -462,6 +470,17 @@ canSeeActivitesStageMenu(): boolean {
     return this.canViewActivitesStage() || this.canCreateActiviteStage();
 }
 
+
+
+
+
+/**
+ * ✅ Peut noter (1 à 5 étoiles) une activité de projet de stage.
+ * Exige LES DEUX permissions ensemble — pas l'une ou l'autre.
+ */
+canEvaluerActiviteStage(): boolean {
+    return this.canEvaluateIntern() && this.canSupervise();
+}
 // ════════════════════════════════════════════════════════════════
 // ACTIVITÉS STAGE — NOUVEAU JEU PLAT (nomenclature INTERNSHIP_ACTIVITY)
 // ════════════════════════════════════════════════════════════════

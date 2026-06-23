@@ -26,40 +26,11 @@
   <div class="pd5-layout" *ngIf="projet() as p">
 
     <!-- ══════════════════════════════════════════════════════════
-         LIGNE 1 — 4 CARTES KPI
+         LIGNE 1 — CARTES KPI PAR STATUT (toutes, même à 0 activité)
     ══════════════════════════════════════════════════════════ -->
     <div class="pd5-kpi-row">
 
-      <!-- CARTE 1 : Avancement global -->
-      <div class="pd5-kpi-card">
-        <div class="pd5-kpi-card-header">
-          <div class="pd5-kpi-card-title">
-            <svg class="pd5-kpi-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path
-                d="M4,2.5c0-1.381,1.119-2.5,2.5-2.5s2.5,1.119,2.5,2.5-1.119,2.5-2.5,2.5-2.5-1.119-2.5-2.5ZM22.454,21h-3.954c-.828,0-1.5,.672-1.5,1.5s.672,1.5,1.5,1.5h3.954c.828,0,1.5-.672,1.5-1.5s-.672-1.5-1.5-1.5Zm0-5h-3.954c-.828,0-1.5,.672-1.5,1.5s.672,1.5,1.5,1.5h3.954c.828,0,1.5-.672,1.5-1.5s-.672-1.5-1.5-1.5Zm0-5h-3.954c-.828,0-1.5,.672-1.5,1.5s.672,1.5,1.5,1.5h3.954c.828,0,1.5-.672,1.5-1.5s-.672-1.5-1.5-1.5Zm-8.954,10h-4c-.829,0-1.5,.672-1.5,1.5s.671,1.5,1.5,1.5h4c.828,0,1.5-.672,1.5-1.5s-.672-1.5-1.5-1.5Zm0-5h-.752l-1.211-3.632c-.272-.818-1.035-1.368-1.897-1.368h-1.64v-2h2.5c.829,0,1.5-.672,1.5-1.5s-.671-1.5-1.5-1.5H5.536c-1.089,0-2.122,.513-2.781,1.376L.387,9.994c-.556,.614-.508,1.562,.107,2.118,.612,.555,1.561,.509,2.119-.106l1.402-1.55-.013,1.82-1.438,4.794c-.238,.793,.212,1.629,1.005,1.867,.773,.237,1.632-.204,1.868-1.006l1.179-3.931h2.303l.667,2h-.086c-.829,0-1.5,.672-1.5,1.5s.671,1.5,1.5,1.5h4c.828,0,1.5-.672,1.5-1.5s-.672-1.5-1.5-1.5Zm0-18v6h8V3h-8z" />
-            </svg>
-            Avancement
-          </div>
-          <button class="pd5-kpi-menu-btn">
-            <svg viewBox="0 0 20 20" fill="currentColor" style="width:16px;height:16px">
-              <circle cx="4" cy="10" r="2" />
-              <circle cx="10" cy="10" r="2" />
-              <circle cx="16" cy="10" r="2" />
-            </svg>
-          </button>
-        </div>
-
-        <div class="pd5-kpi-main-row">
-          <div class="pd5-kpi-value">{{ p.avancement || 0 }}%</div>
-          <span class="pd5-kpi-badge-trend"
-            style="background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3)">
-            {{ p.heuresPassees ? fmtHeures(p.heuresPassees) : 'En cours' }}
-          </span>
-        </div>
-      </div>
-
-      <!-- CARTES 2-4 : Statuts depuis nomenclature -->
-      <div class="pd5-kpi-card" *ngFor="let s of statsActivites().slice(0, 3); let i = index">
+      <div class="pd5-kpi-card" *ngFor="let s of statutsKpiCards()">
         <div class="pd5-kpi-card-header">
           <div class="pd5-kpi-card-title">
             <svg class="pd5-kpi-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -87,32 +58,6 @@
         </div>
       </div>
 
-      <!-- CARTE extra : Haute priorité (si moins de 3 statuts) -->
-      <div class="pd5-kpi-card" *ngIf="statsActivites().length < 3">
-        <div class="pd5-kpi-card-header">
-          <div class="pd5-kpi-card-title">
-            <svg class="pd5-kpi-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" />
-            </svg>
-            Haute priorité
-          </div>
-          <button class="pd5-kpi-menu-btn">
-            <svg viewBox="0 0 20 20" fill="currentColor" style="width:16px;height:16px">
-              <circle cx="4" cy="10" r="2" />
-              <circle cx="10" cy="10" r="2" />
-              <circle cx="16" cy="10" r="2" />
-            </svg>
-          </button>
-        </div>
-
-        <div class="pd5-kpi-main-row">
-          <div class="pd5-kpi-value">{{ countHautePriorite() }}</div>
-          <span class="pd5-kpi-badge-trend"
-            style="background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)">
-            Urgentes / Hautes
-          </span>
-        </div>
-      </div>
     </div>
 
     <!-- ══════════════════════════════════════════════════════════
@@ -220,7 +165,7 @@
     ══════════════════════════════════════════════════════════ -->
     <div class="pd5-dash-row">
 
-      <!-- CARTE GAUCHE : Stagiaires & Superviseurs (ex Team Leads) -->
+      <!-- CARTE GAUCHE : Stagiaires & Superviseurs -->
       <div class="pd5-dash-card pd5-dash-leads-card">
         <div class="pd5-dash-card-header">
           <div class="pd5-dash-card-title">Stagiaires &amp; Superviseurs</div>
@@ -230,7 +175,7 @@
           <div class="pd5-leads-thead">
             <span class="pd5-leads-col-user">Stagiaire</span>
           </div>
-          <div class="pd5-lead-row" *ngFor="let stag of stagiairesAssignes()">
+          <div class="pd5-lead-row" *ngFor="let stag of stagiairesAssignes()" style="flex-direction:column;align-items:stretch;gap:8px">
             <div class="pd5-lead-user">
               <div class="pd5-lead-avatar" [style.background]="getAvatarColor(stag.nomComplet)">
                 <img *ngIf="stag.photoUrl" [src]="stag.photoUrl"
@@ -241,6 +186,29 @@
                 <span class="pd5-lead-nom">{{ stag.nomComplet }}</span>
                 <span class="pd5-lead-email">{{ stag.email }}</span>
               </div>
+            </div>
+
+            <!-- ✅ Superviseur(s) de ce stagiaire -->
+            <div *ngIf="stag.superviseurs && stag.superviseurs.length > 0"
+                 style="display:flex;flex-direction:column;gap:6px;padding-left:18px;border-left:2px solid var(--dt-border);margin-left:18px">
+              <div *ngFor="let sup of stag.superviseurs" class="pd5-lead-user">
+                <div class="pd5-lead-avatar" [style.background]="getAvatarColor(sup.nomComplet)" style="width:26px;height:26px;font-size:.6rem">
+                  <img *ngIf="sup.photoUrl" [src]="sup.photoUrl"
+                    style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                  <span *ngIf="!sup.photoUrl">{{ getInitiales(sup.nomComplet) }}</span>
+                </div>
+                <div class="pd5-lead-info">
+                  <span class="pd5-lead-nom" style="font-size:.74rem">
+                    {{ sup.nomComplet }}
+                    <span style="font-size:.58rem;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:1px 6px;border-radius:99px;margin-left:4px">Superviseur</span>
+                  </span>
+                  <span class="pd5-lead-email">{{ sup.email }}</span>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="!stag.superviseurs || stag.superviseurs.length === 0"
+                 style="font-size:.7rem;color:var(--dt-text-sub);padding-left:18px;margin-left:18px">
+              Aucun superviseur assigné.
             </div>
           </div>
         </div>
@@ -315,20 +283,15 @@
       <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;gap:12px;flex-wrap:wrap">
         <div class="pd5-dash-card-title">Activités du projet</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <div class="dt-search-bar" style="min-width:180px">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px;flex-shrink:0;opacity:.6">
-              <circle cx="7" cy="7" r="5" />
-              <path d="M11 11l3.5 3.5" stroke-linecap="round" />
-            </svg>
-            <input class="dt-search-input" [value]="filtreSearch()" (input)="filtreSearch.set($any($event.target).value)" placeholder="Rechercher une activité...">
-          </div>
-
           <div class="dt-search-wrap">
-            <button class="dt-filter-icon-btn" [class.has-filters]="activeFiltersCount() > 0" (click)="toggleFilterPanel(); $event.stopPropagation()">
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7">
-                <path d="M2 3h12l-4.5 5.5V13L6.5 11.5V8.5L2 3z" stroke-linejoin="round" />
-              </svg>
-            </button>
+            <div class="dt-search-bar" style="min-width:220px">
+              <button class="dt-filter-icon-btn" [class.has-filters]="activeFiltersCount() > 0" (click)="toggleFilterPanel(); $event.stopPropagation()">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M2 3h12l-4.5 5.5V13L6.5 11.5V8.5L2 3z" stroke-linejoin="round" />
+                </svg>
+              </button>
+              <input class="dt-search-input" [value]="filtreSearch()" (input)="filtreSearch.set($any($event.target).value)" placeholder="Rechercher une activité...">
+            </div>
             <div class="dt-filter-panel" [class.open]="filterPanelOpen()" (click)="$event.stopPropagation()">
               <div class="dt-fp-header">
                 <p class="dt-fp-title">Filtres</p>
@@ -374,7 +337,7 @@
             Nouvelle activité
           </button>
 
-          <button class="pd5-drawer-toggle" [class.active]="drawerInfoOpen()" (click)="toggleDrawer(); $event.stopPropagation()" title="Infos projet">
+          <button class="pd5-drawer-toggle" *ngIf="perms.canEditProjetStage()" [class.active]="drawerInfoOpen()" (click)="toggleDrawer(); $event.stopPropagation()" title="Infos projet">
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
               <circle cx="10" cy="10" r="8" />
               <path d="M10 6.5h.01M10 9.5v4" stroke-linecap="round" />
@@ -438,11 +401,36 @@
                 <span class="pd5-ov-kpi-val">{{ stagiairesAssignes().length }}</span>
                 <span class="pd5-ov-kpi-label">Stagiaires</span>
               </div>
-              <div class="pd5-ov-kpi-divider"></div>
-              <div class="pd5-ov-kpi">
-                <span class="pd5-ov-kpi-val">{{ p.avancement || 0 }}%</span>
-                <span class="pd5-ov-kpi-label">Avancement</span>
-              </div>
+            </div>
+          </div>
+
+          <!-- Carte infos clés — affichée en parallèle de Description -->
+          <div class="pd5-ov-card">
+            <div class="pd5-ov-card-title">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" style="width:16px;height:16px"><rect x="2.5" y="4" width="15" height="13" rx="2" /><path d="M2.5 8h15M6.5 2v4M13.5 2v4" stroke-linecap="round" /></svg>
+              Informations clés
+            </div>
+            <div class="pd5-ov-info-row">
+              <span class="pd5-ov-info-label">Statut</span>
+              <span class="pd5-ov-info-val">
+                <span class="dt-badge-dot" [style.background]="getStatutProjetColor(p.statutProjetId)"></span>
+                {{ getStatutProjetLabel(p.statutProjetId) }}
+              </span>
+            </div>
+            <div class="pd5-ov-info-sep"></div>
+            <div class="pd5-ov-info-row">
+              <span class="pd5-ov-info-label">Type</span>
+              <span class="pd5-ov-info-val">{{ getTypeProjetLabel(p.typeProjetId) }}</span>
+            </div>
+            <div class="pd5-ov-info-sep"></div>
+            <div class="pd5-ov-info-row">
+              <span class="pd5-ov-info-label">Début</span>
+              <span class="pd5-ov-info-val">{{ fmtDate(p.dateDebut) }}</span>
+            </div>
+            <div class="pd5-ov-info-sep"></div>
+            <div class="pd5-ov-info-row">
+              <span class="pd5-ov-info-label">Fin</span>
+              <span class="pd5-ov-info-val">{{ fmtDate(p.dateFin) }}</span>
             </div>
           </div>
 
@@ -455,8 +443,9 @@
             <div class="pd5-ov-team-block" *ngIf="stagiairesAssignes().length > 0">
               <div class="pd5-ov-members-list" style="padding-left:0;padding-top:0">
                 <div class="pd5-ov-member-row" *ngFor="let stag of stagiairesAssignes()">
-                  <div class="pd5-ov-member-avatar" [style.background]="getAvatarColor(stag.nomComplet)">
-                    {{ getInitiales(stag.nomComplet) }}
+                  <div class="pd5-ov-member-avatar" style="overflow:hidden" [style.background]="getAvatarColor(stag.nomComplet)">
+                    <img *ngIf="stag.photoUrl" [src]="stag.photoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                    <span *ngIf="!stag.photoUrl">{{ getInitiales(stag.nomComplet) }}</span>
                   </div>
                   <div class="pd5-ov-member-info">
                     <span class="pd5-ov-member-nom">{{ stag.nomComplet }}</span>
@@ -492,56 +481,87 @@
             </button>
           </div>
 
-          <!-- Carte infos clés -->
-          <div class="pd5-ov-card">
-            <div class="pd5-ov-card-title">
-              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" style="width:16px;height:16px"><rect x="2.5" y="4" width="15" height="13" rx="2" /><path d="M2.5 8h15M6.5 2v4M13.5 2v4" stroke-linecap="round" /></svg>
-              Informations clés
+        </div>
+
+        <!-- ✅ Documents — pleine largeur, sous les cartes en colonnes -->
+        <div class="pd5-ov-card" style="margin-top:14px">
+          <div class="pd5-ov-card-title">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" style="width:16px;height:16px"><path d="M4 2h10l4 4v12H4V2z" stroke-linejoin="round" /></svg>
+            Documents
+            <span class="pd5-ov-week-badge" style="margin-left:auto">{{ documents().length }}</span>
+          </div>
+
+          <label class="pd5-upload-btn" *ngIf="perms.canUploadDocProjetStage()" [class.uploading]="uploadingDoc()" style="margin-bottom:10px">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1v8M4 6l3 3 3-3" stroke-linecap="round" /><path d="M1 11v1a1 1 0 001 1h12a1 1 0 001-1v-1" stroke-linecap="round" /></svg>
+            {{ uploadingDoc() ? 'Envoi en cours...' : 'Ajouter un document' }}
+            <input type="file" style="display:none" [disabled]="uploadingDoc()" (change)="onFileSelected($event, p.id)">
+          </label>
+
+          <div *ngIf="documents().length === 0" class="pd5-ov-desc">Aucun document pour l'instant.</div>
+          <div class="pd5-doc-row" *ngFor="let doc of documents()">
+            <div class="pd5-doc-icon" [style.background]="getDocIconColor(doc.typeMime)">{{ getDocIconLabel(doc.typeMime) }}</div>
+            <div class="pd5-doc-info">
+              <span class="pd5-doc-nom">{{ doc.nom }}</span>
+              <span class="pd5-doc-meta">{{ formatSize(doc.tailleFichier) }} · {{ fmtDate(doc.dateUpload) }}</span>
             </div>
-            <div class="pd5-ov-info-row">
-              <span class="pd5-ov-info-label">Statut</span>
-              <span class="pd5-ov-info-val">
-                <span class="dt-badge-dot" [style.background]="getStatutProjetColor(p.statutProjetId)"></span>
-                {{ getStatutProjetLabel(p.statutProjetId) }}
-              </span>
+            <div class="pd5-doc-actions">
+              <a class="pd5-doc-icon-btn" [href]="doc.cheminFichier" target="_blank" title="Télécharger">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M5 7l3 3 3-3" stroke-linecap="round" /><path d="M2 13h12" stroke-linecap="round" /></svg>
+              </a>
+              <!-- ✅ Réservé à canUploadDocProjetStage() — quiconque a ce droit peut gérer ses propres documents -->
+              <button class="pd5-doc-icon-btn pd5-doc-icon-danger" *ngIf="perms.canUploadDocProjetStage() && isOwnDoc(doc)" (click)="deleteDocument(doc)" title="Supprimer">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M6.5 4V2.5h3V4M4.5 4l.5 9h6l.5-9" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </button>
             </div>
-            <div class="pd5-ov-info-sep"></div>
-            <div class="pd5-ov-info-row">
-              <span class="pd5-ov-info-label">Type</span>
-              <span class="pd5-ov-info-val">{{ getTypeProjetLabel(p.typeProjetId) }}</span>
-            </div>
-            <div class="pd5-ov-info-sep"></div>
-            <div class="pd5-ov-info-row">
-              <span class="pd5-ov-info-label">Début</span>
-              <span class="pd5-ov-info-val">{{ fmtDate(p.dateDebut) }}</span>
-            </div>
-            <div class="pd5-ov-info-sep"></div>
-            <div class="pd5-ov-info-row">
-              <span class="pd5-ov-info-label">Fin</span>
-              <span class="pd5-ov-info-val">{{ fmtDate(p.dateFin) }}</span>
+          </div>
+        </div>
+
+        <!-- ✅ Commentaires — pleine largeur, tout en bas -->
+        <div class="pd5-ov-card" style="margin-top:14px">
+          <div class="pd5-ov-card-title">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" style="width:16px;height:16px"><path d="M3 4h14v9H8l-3 3v-3H3V4z" stroke-linejoin="round" /></svg>
+            Commentaires
+            <span class="pd5-ov-week-badge" style="margin-left:auto">{{ commentaires().length }}</span>
+          </div>
+
+          <!-- ✅ Formulaire de saisie — réservé à INT_PROJ_COMMENT -->
+          <div class="pd5-cmt-form" *ngIf="perms.canCommentProjetStage()" style="margin-bottom:12px">
+            <div class="pd5-cmt-avatar" [style.background]="getAvatarColor(currentUserNom)">{{ getInitiales(currentUserNom) }}</div>
+            <div class="pd5-cmt-input-wrap">
+              <textarea class="pd5-cmt-ta" [ngModel]="nouveauCommentaire()" (ngModelChange)="nouveauCommentaire.set($event)" placeholder="Écrire un commentaire..."></textarea>
+              <button class="pd5-cmt-send" [disabled]="submittingComment() || !nouveauCommentaire().trim()" (click)="submitComment()">Envoyer</button>
             </div>
           </div>
 
-          <!-- Carte commentaires récents -->
-          <div class="pd5-ov-card">
-            <div class="pd5-ov-card-title">
-              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" style="width:16px;height:16px"><path d="M3 4h14v9H8l-3 3v-3H3V4z" stroke-linejoin="round" /></svg>
-              Commentaires récents
+          <div *ngIf="loadingComments()" class="pd5-cmt-empty">Chargement...</div>
+          <div *ngIf="!loadingComments() && commentaires().length === 0" class="pd5-ov-desc">Aucun commentaire pour l'instant.</div>
+          <div class="pd5-ov-cmt-row" *ngFor="let c of commentaires()">
+            <div class="pd5-ov-cmt-avatar" [style.background]="getAvatarColor(c.auteurNom)">
+              <img *ngIf="c.auteurPhotoUrl" [src]="c.auteurPhotoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+              <span *ngIf="!c.auteurPhotoUrl">{{ getInitiales(c.auteurNom) }}</span>
             </div>
-            <div *ngIf="commentaires().length === 0" class="pd5-ov-desc">Aucun commentaire pour l'instant.</div>
-            <div class="pd5-ov-cmt-row" *ngFor="let c of commentaires().slice(0, 4)">
-              <div class="pd5-ov-cmt-avatar" [style.background]="getAvatarColor(c.auteurNom)">{{ getInitiales(c.auteurNom) }}</div>
-              <div class="pd5-ov-cmt-body">
-                <div class="pd5-ov-cmt-meta">
-                  <span class="pd5-ov-cmt-auteur">{{ c.auteurNom }}</span>
-                  <span class="pd5-ov-cmt-date">{{ fmtDateTime(c.dateCreation) }}</span>
+            <div class="pd5-ov-cmt-body" style="flex:1;min-width:0">
+              <div class="pd5-ov-cmt-meta">
+                <span class="pd5-ov-cmt-auteur">{{ c.auteurNom }}</span>
+                <span class="pd5-ov-cmt-date">{{ fmtDateTime(c.dateCreation) }}</span>
+              </div>
+              <div *ngIf="editingCommentId() !== c.id" class="pd5-ov-cmt-text">{{ c.contenu }}</div>
+              <div *ngIf="editingCommentId() === c.id" style="display:flex;flex-direction:column;gap:5px;margin-top:4px">
+                <textarea class="pd5-cmt-ta" [ngModel]="editContenu()" (ngModelChange)="editContenu.set($event)" rows="2"></textarea>
+                <div style="display:flex;gap:5px">
+                  <button class="mx-btn mx-btn-primary mx-btn-sm" (click)="saveEdit(c)">Enregistrer</button>
+                  <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="cancelEdit()">Annuler</button>
                 </div>
-                <p class="pd5-ov-cmt-text">{{ c.contenu }}</p>
+              </div>
+              <!-- ✅ L'auteur peut modifier/supprimer SON PROPRE commentaire à tout moment -->
+              <div class="pd5-cmt-actions" *ngIf="isOwn(c) && editingCommentId() !== c.id">
+                <button class="pd5-cmt-icon-btn" (click)="startEdit(c)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg></button>
+                <button class="pd5-cmt-icon-btn pd5-cmt-icon-danger" (click)="deleteComment(c)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg></button>
               </div>
             </div>
           </div>
-
         </div>
+
       </div>
 
       <!-- ────────────────────────────────────────────────────────
@@ -551,12 +571,24 @@
         <table class="dt-table">
           <thead>
             <tr>
-              <th class="dt-th" style="min-width:220px">Activité</th>
-              <th class="dt-th" style="min-width:130px">Statut</th>
-              <th class="dt-th" style="min-width:110px">Priorité</th>
-              <th class="dt-th" style="min-width:160px">Assigné</th>
-              <th class="dt-th" style="min-width:140px">Avancement</th>
-              <th class="dt-th" style="min-width:110px">Échéance</th>
+              <th class="dt-th" style="min-width:220px">
+                <div class="dt-th-inner"><svg class="dt-th-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 4h12M2 8h8M2 12h6" stroke-linecap="round" /></svg>Activité</div>
+              </th>
+              <th class="dt-th" style="min-width:130px">
+                <div class="dt-th-inner"><svg class="dt-th-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6" /><path d="M5.5 8l2 2 3-3" stroke-linecap="round" /></svg>Statut</div>
+              </th>
+              <th class="dt-th" style="min-width:110px">
+                <div class="dt-th-inner"><svg class="dt-th-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2L12 9H4z" /></svg>Priorité</div>
+              </th>
+              <th class="dt-th" style="min-width:160px">
+                <div class="dt-th-inner"><svg class="dt-th-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="5" r="2.5" /><path d="M2 13c0-3 2.686-5.5 6-5.5s6 2.5 6 5.5" stroke-linecap="round" /></svg>Assigné</div>
+              </th>
+              <th class="dt-th" style="min-width:150px">
+                <div class="dt-th-inner"><svg class="dt-th-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2.2 4.8 5.2.6-3.9 3.5 1 5.1L8 12.4l-4.5 2.6 1-5.1L.6 6.4l5.2-.6L8 1z" /></svg>Évaluation</div>
+              </th>
+              <th class="dt-th" style="min-width:110px">
+                <div class="dt-th-inner"><svg class="dt-th-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="2" width="14" height="13" rx="2" /><path d="M1 7h14M5 1v2M11 1v2" stroke-linecap="round" /></svg>Échéance</div>
+              </th>
               <th class="dt-th dt-th-actions"></th>
             </tr>
           </thead>
@@ -571,9 +603,12 @@
             </tr>
             <tr class="dt-tr" *ngFor="let a of pagedActivites()" (click)="openActDrawer(a, $event)">
               <td class="dt-td">
-                <div class="dt-cell-user">
-                  <span class="dt-cell-name">{{ a.nom }}</span>
-                  <span class="dt-cell-sub" *ngIf="a.description">{{ a.description }}</span>
+                <div class="dt-cell-with-avatar">
+                  <div style="width:3px;height:32px;border-radius:2px;flex-shrink:0" [style.background]="a.couleur || '#6366f1'"></div>
+                  <div class="dt-cell-user">
+                    <span class="dt-cell-name">{{ a.nom }}</span>
+                    <span class="dt-cell-sub" style="font-family:monospace">{{ a.numeroActivite }}</span>
+                  </div>
                 </div>
               </td>
               <td class="dt-td">
@@ -582,25 +617,58 @@
                 </span>
               </td>
               <td class="dt-td">
-                <span class="pd5-prio-badge" *ngIf="getPriorite(a.prioriteId) as pr" [style.color]="pr.couleur" [style.border-color]="pr.couleur+'55'" [style.background]="pr.couleur+'14'">{{ pr.libelle }}</span>
+                <div *ngIf="getPriorite(a.prioriteId) as pr" style="display:flex;align-items:center;gap:5px">
+                  <span style="width:6px;height:6px;border-radius:50%;flex-shrink:0" [style.background]="pr.couleur"></span>
+                  <span class="dt-cell-sub">{{ pr.libelle }}</span>
+                </div>
                 <span *ngIf="!a.prioriteId" class="dt-cell-muted">—</span>
               </td>
               <td class="dt-td">
-                <div class="dt-cell-with-avatar" *ngIf="a.utilisateurNomComplet">
-                  <div class="pd5-member-avatar" [style.background]="getAvatarColor(a.utilisateurNomComplet)">{{ getInitiales(a.utilisateurNomComplet) }}</div>
+                <!-- ✅ Multi-assignés — avatars superposés avec vraies photos -->
+                <div *ngIf="a.utilisateurs && a.utilisateurs.length > 0" style="display:flex;align-items:center">
+                  <ng-container *ngFor="let u of a.utilisateurs.slice(0,3); let i = index">
+                    <div class="pd5-member-avatar"
+                         [style.margin-left]="i > 0 ? '-6px' : '0'"
+                         [style.z-index]="10 - i"
+                         [style.position]="'relative'"
+                         [style.border]="'2px solid var(--bg-card)'"
+                         [style.overflow]="'hidden'"
+                         [title]="u.nomComplet"
+                         [style.background]="getAvatarColor(u.nomComplet)">
+                      <img *ngIf="u.photoUrl" [src]="u.photoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                      <span *ngIf="!u.photoUrl" style="font-size:.5rem">{{ getInitiales(u.nomComplet) }}</span>
+                    </div>
+                  </ng-container>
+                  <span *ngIf="a.utilisateurs.length > 3" class="dt-avatar-more" [title]="getRestUsersTooltip(a.utilisateurs.slice(3))">
+                    +{{ a.utilisateurs.length - 3 }}
+                  </span>
+                </div>
+                <!-- Rétro-compat : utilisateur unique -->
+                <div class="dt-cell-with-avatar" *ngIf="(!a.utilisateurs || !a.utilisateurs.length) && a.utilisateurNomComplet">
+                  <div class="pd5-member-avatar" style="overflow:hidden" [style.background]="getAvatarColor(a.utilisateurNomComplet)">
+                    <img *ngIf="a.utilisateurPhotoUrl" [src]="a.utilisateurPhotoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                    <span *ngIf="!a.utilisateurPhotoUrl">{{ getInitiales(a.utilisateurNomComplet) }}</span>
+                  </div>
                   <span class="dt-cell-text">{{ a.utilisateurNomComplet }}</span>
                 </div>
-                <span *ngIf="!a.utilisateurNomComplet && (!a.groupes || a.groupes.length===0)" class="dt-cell-muted">—</span>
-                <div style="display:flex;gap:4px" *ngIf="!a.utilisateurNomComplet && a.groupes && a.groupes.length>0">
+                <span *ngIf="(!a.utilisateurs || !a.utilisateurs.length) && !a.utilisateurNomComplet && (!a.groupes || a.groupes.length===0)" class="dt-cell-muted">—</span>
+                <div style="display:flex;gap:4px" *ngIf="(!a.utilisateurs || !a.utilisateurs.length) && !a.utilisateurNomComplet && a.groupes && a.groupes.length>0">
                   <span class="pd5-grp-chip" *ngFor="let g of a.groupes.slice(0,3)" [style.background]="getAvatarColor(g.nom)" [title]="g.nom">{{ getInitiales(g.nom) }}</span>
                 </div>
               </td>
-              <td class="dt-td">
-                <div style="display:flex;align-items:center;gap:8px">
-                  <div style="flex:1;height:6px;background:var(--bg-hover);border-radius:99px;overflow:hidden;min-width:60px">
-                    <div style="height:100%;border-radius:99px" [style.width.%]="getProgressPct(a.heuresPassees, a.heuresEstimees)" [style.background]="getProgressColor(getProgressPct(a.heuresPassees, a.heuresEstimees))"></div>
-                  </div>
-                  <span style="font-size:.72rem;font-weight:800;min-width:30px" [style.color]="getProgressColor(getProgressPct(a.heuresPassees, a.heuresEstimees))">{{ getProgressPct(a.heuresPassees, a.heuresEstimees) }}%</span>
+              <td class="dt-td" (click)="$event.stopPropagation()">
+                <div style="display:flex;align-items:center;gap:2px">
+                  <svg *ngFor="let s of STARS" viewBox="0 0 16 16" style="width:14px;height:14px"
+                       [style.cursor]="perms.canEvaluerActiviteStage() ? 'pointer' : 'default'"
+                       [attr.fill]="s <= (getHoverStarListe(a.id) || getMoyenneEvaluationActivite(a.id)) ? '#f59e0b' : 'var(--border-color)'"
+                       (mouseenter)="perms.canEvaluerActiviteStage() && setHoverStarListe(a.id, s)"
+                       (mouseleave)="clearHoverStarListe()"
+                       (click)="perms.canEvaluerActiviteStage() && noterActiviteDepuisListe(a, s, $event)">
+                    <path d="M8 1l2.2 4.8 5.2.6-3.9 3.5 1 5.1L8 12.4l-4.5 2.6 1-5.1L.6 6.4l5.2-.6L8 1z"/>
+                  </svg>
+                  <span *ngIf="getTotalEvaluationsActivite(a.id) > 0" style="font-size:.66rem;color:var(--dt-text-sub);margin-left:4px">
+                    ({{ getTotalEvaluationsActivite(a.id) }})
+                  </span>
                 </div>
               </td>
               <td class="dt-td"><span class="dt-cell-muted" style="font-size:.75rem">{{ fmtDate(a.dateEcheance) }}</span></td>
@@ -618,75 +686,147 @@
           </tbody>
         </table>
 
-        <!-- ✅ Pagination toujours visible, même avec une seule page -->
-        <div style="display:flex;align-items:center;justify-content:center;gap:6px;padding:14px">
-          <button class="mx-btn mx-btn-ghost mx-btn-sm" [disabled]="actPage()===1" (click)="actPage.set(actPage()-1)">‹</button>
-          <button class="mx-btn mx-btn-sm" *ngFor="let pg of actPagesArr()" [class.mx-btn-primary]="pg===actPage()" [class.mx-btn-ghost]="pg!==actPage()" (click)="actPage.set(pg)">{{ pg }}</button>
-          <button class="mx-btn mx-btn-ghost mx-btn-sm" [disabled]="actPage()===actTotalPages()" (click)="actPage.set(actPage()+1)">›</button>
+        <!-- ✅ Pagination style dt — toujours visible, même avec une seule page -->
+        <div class="dt-footer">
+          <div class="dt-count-info">
+            <strong>{{ (actPage()-1)*actPageSize+1 }}–{{ minVal(actPage()*actPageSize, activitesFiltrees().length) }}</strong>
+            of <strong>{{ activitesFiltrees().length }}</strong>
+          </div>
+          <div class="dt-pagination">
+            <button class="dt-page-arrow" [disabled]="actPage()===1" (click)="actPage.set(actPage()-1)">
+              <svg viewBox="0 0 14 14" fill="none"><path d="M9 2L5 7l4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+            <button *ngFor="let pg of actPagesArr()" class="dt-page-btn" [class.dt-page-btn-active]="actPage()===pg" (click)="actPage.set(pg)">{{ pg }}</button>
+            <button class="dt-page-arrow" [disabled]="actPage()===actTotalPages()" (click)="actPage.set(actPage()+1)">
+              <svg viewBox="0 0 14 14" fill="none"><path d="M5 2l4 5-4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- ────────────────────────────────────────────────────────
-           VUE KANBAN
+           VUE KANBAN — style identique au projet détail entreprise,
+           barre de progression remplacée par les étoiles d'évaluation
       ──────────────────────────────────────────────────────── -->
       <div class="pd5-kanban" *ngIf="vueActivites() === 'kanban'">
         <div class="pd5-kanban-col" *ngFor="let col of activitesParStatut()" [class.drag-over]="dragOverStatutId() === col.statut.id"
              (dragover)="onDragOver($event)" (dragenter)="onDragEnter($event, col.statut.id)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event, col.statut.id)">
           <div class="pd5-col-head">
             <div class="pd5-col-title">
-              <span class="pd5-col-dot" [style.background]="col.statut.couleur"></span>
+              <span class="pd5-col-dot" [style.background]="col.statut.couleur || '#94a3b8'"></span>
               <span class="pd5-col-label">{{ col.statut.libelle }}</span>
             </div>
             <span class="pd5-col-count">{{ col.items.length }}</span>
           </div>
           <div class="pd5-col-cards">
-            <div class="pd5-col-empty" *ngIf="col.items.length === 0">Aucune activité</div>
+            <div class="pd5-col-empty" *ngIf="col.items.length === 0">Déposer ici</div>
+
             <div class="pd5-kcard" *ngFor="let a of col.items" [attr.draggable]="perms.canEditActiviteStageNew() ? 'true' : 'false'"
                  [class.dragging]="draggingActId() === a.id"
                  (dragstart)="onDragStart($event, a)" (dragend)="onDragEnd()"
                  (click)="openActDrawer(a, $event)">
+
               <div class="pd5-kcard-bar" [style.background]="a.couleur || col.statut.couleur"></div>
               <div class="pd5-kcard-body">
+
+                <!-- ═══ LIGNE 1 : Badges à GAUCHE, 3 points à DROITE ═══ -->
                 <div class="pd5-kcard-row1">
                   <div class="pd5-kcard-badges-left">
-                    <span class="pd5-prio-badge" *ngIf="getPriorite(a.prioriteId) as pr" [style.color]="pr.couleur" [style.border-color]="pr.couleur+'55'" [style.background]="pr.couleur+'14'">{{ pr.libelle }}</span>
+                    <div *ngIf="getPriorite(a.prioriteId) as pr" class="pd5-prio-badge"
+                         [style.background]="pr.couleur + '18'" [style.color]="pr.couleur" [style.border-color]="pr.couleur + '44'">
+                      {{ pr.libelle }}
+                    </div>
+                    <span *ngIf="a.numeroActivite" class="pd5-num-badge">{{ a.numeroActivite }}</span>
                   </div>
-                  <span class="pd5-num-badge">#{{ a.id }}</span>
                   <button class="pd5-kcard-menu-btn" *ngIf="perms.canDeleteActiviteStageNew()" (click)="deleteAct(a, $event)" title="Supprimer">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg>
                   </button>
                 </div>
-                <p class="pd5-kcard-nom">{{ a.nom }}</p>
-                <p class="pd5-kcard-desc" *ngIf="a.description">{{ a.description }}</p>
 
-                <div class="pd5-kcard-progress-wrap" *ngIf="a.heuresEstimees">
+                <!-- ═══ TITRE ═══ -->
+                <div class="pd5-kcard-nom">{{ a.nom }}</div>
+
+                <!-- ═══ DESCRIPTION ═══ -->
+                <p *ngIf="a.description" class="pd5-kcard-desc">{{ a.description }}</p>
+
+                <!-- ═══ ÉVALUATION : étoiles à la place de la barre de progression ═══ -->
+                <div class="pd5-kcard-progress-wrap" (click)="$event.stopPropagation()">
                   <div class="pd5-kcard-progress-header">
-                    <span class="pd5-kcard-progress-label">Avancement</span>
-                    <span class="pd5-kcard-progress-pct">{{ getProgressPct(a.heuresPassees, a.heuresEstimees) }}%</span>
+                    <div class="pd5-kcard-progress-label">
+                      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2.2 4.8 5.2.6-3.9 3.5 1 5.1L8 12.4l-4.5 2.6 1-5.1L.6 6.4l5.2-.6L8 1z" /></svg>
+                      Évaluation
+                    </div>
+                    <span class="pd5-kcard-progress-pct" *ngIf="getTotalEvaluationsActivite(a.id) > 0">
+                      {{ getTotalEvaluationsActivite(a.id) }} avis
+                    </span>
                   </div>
-                  <div class="pd5-kcard-progress-bar">
-                    <div class="pd5-kcard-progress-fill" [style.width.%]="getProgressPct(a.heuresPassees, a.heuresEstimees)" [style.background]="getProgressColor(getProgressPct(a.heuresPassees, a.heuresEstimees))"></div>
+                  <div style="display:flex;gap:2px">
+                    <svg *ngFor="let s of STARS" viewBox="0 0 16 16" style="width:15px;height:15px"
+                         [style.cursor]="perms.canEvaluerActiviteStage() ? 'pointer' : 'default'"
+                         [attr.fill]="s <= (getHoverStarListe(a.id) || getMoyenneEvaluationActivite(a.id)) ? '#f59e0b' : 'var(--border-color)'"
+                         (mouseenter)="perms.canEvaluerActiviteStage() && setHoverStarListe(a.id, s)"
+                         (mouseleave)="clearHoverStarListe()"
+                         (click)="perms.canEvaluerActiviteStage() && noterActiviteDepuisListe(a, s, $event)">
+                      <path d="M8 1l2.2 4.8 5.2.6-3.9 3.5 1 5.1L8 12.4l-4.5 2.6 1-5.1L.6 6.4l5.2-.6L8 1z"/>
+                    </svg>
                   </div>
                 </div>
 
-                <div class="pd5-kcard-date" *ngIf="a.dateEcheance">
-                  <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="2" width="12" height="11" rx="1.5" /><path d="M1 6h12M4.5 1v2M9.5 1v2" stroke-linecap="round" /></svg>
+                <!-- ═══ DATE D'ÉCHÉANCE ═══ -->
+                <div *ngIf="a.dateEcheance" class="pd5-kcard-date">
+                  <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3">
+                    <rect x="1" y="1" width="10" height="10" rx="2" />
+                    <path d="M1 5h10M4 1v2M8 1v2" stroke-linecap="round" />
+                  </svg>
                   {{ fmtDate(a.dateEcheance) }}
                 </div>
 
+                <!-- ═══ FOOTER : ASSIGNÉ À GAUCHE, ICÔNES À DROITE ═══ -->
                 <div class="pd5-kcard-footer">
-                  <div class="pd5-kcard-assignee" *ngIf="a.utilisateurNomComplet">
-                    <div class="pd5-kcard-avatar" [style.background]="getAvatarColor(a.utilisateurNomComplet)">{{ getInitiales(a.utilisateurNomComplet) }}</div>
-                    <div class="pd5-kcard-assignee-info">
-                      <span class="pd5-kcard-assignee-nom">{{ a.utilisateurNomComplet }}</span>
-                    </div>
+
+                  <!-- Avatars multi-assignés avec vraies photos -->
+                  <div class="pd5-kcard-assignees" *ngIf="(a.utilisateurs && a.utilisateurs.length > 0) || a.utilisateurNomComplet">
+                    <ng-container *ngIf="a.utilisateurs && a.utilisateurs.length > 0">
+                      <div style="display:flex;align-items:center">
+                        <ng-container *ngFor="let u of a.utilisateurs.slice(0,3); let i = index">
+                          <div class="pd5-kcard-avatar"
+                               [style.margin-left]="i > 0 ? '-8px' : '0'"
+                               [style.z-index]="10 - i"
+                               [style.position]="'relative'"
+                               [style.border]="'2px solid var(--bg-card)'"
+                               [style.overflow]="'hidden'"
+                               [title]="u.nomComplet"
+                               [style.background]="getAvatarColor(u.nomComplet)">
+                            <img *ngIf="u.photoUrl" [src]="u.photoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                            <span *ngIf="!u.photoUrl" style="font-size:.5rem">{{ getInitiales(u.nomComplet) }}</span>
+                          </div>
+                        </ng-container>
+                        <div *ngIf="a.utilisateurs.length > 3" class="dt-avatar-more" [title]="getRestUsersTooltip(a.utilisateurs.slice(3))">
+                          +{{ a.utilisateurs.length - 3 }}
+                        </div>
+                      </div>
+                    </ng-container>
+
+                    <ng-container *ngIf="(!a.utilisateurs || a.utilisateurs.length === 0) && a.utilisateurNomComplet">
+                      <div class="pd5-kcard-avatar" [title]="a.utilisateurNomComplet" style="overflow:hidden" [style.background]="getAvatarColor(a.utilisateurNomComplet)">
+                        <img *ngIf="a.utilisateurPhotoUrl" [src]="a.utilisateurPhotoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                        <span *ngIf="!a.utilisateurPhotoUrl">{{ getInitiales(a.utilisateurNomComplet) }}</span>
+                      </div>
+                    </ng-container>
                   </div>
-                  <div class="pd5-kcard-grp-info" *ngIf="!a.utilisateurNomComplet && a.groupes && a.groupes.length > 0">
-                    <div class="pd5-kcard-grp-tag" *ngFor="let g of a.groupes.slice(0,2)">
-                      <span class="pd5-kcard-grp-chip" [style.background]="getAvatarColor(g.nom)">{{ getInitiales(g.nom) }}</span>
+
+                  <!-- Groupe si pas de membre -->
+                  <div *ngIf="(!a.utilisateurs || !a.utilisateurs.length) && !a.utilisateurNomComplet && a.groupes && a.groupes.length > 0" class="pd5-kcard-grp-info">
+                    <div *ngFor="let g of a.groupes.slice(0,2)" class="pd5-kcard-grp-tag">
+                      <span class="pd5-kcard-grp-chip" [style.background]="g.couleur || 'var(--accent)'">{{ getInitiales(g.nom) }}</span>
                       <span class="pd5-kcard-grp-nom">{{ g.nom }}</span>
                     </div>
                   </div>
+
+                  <!-- Espace vide si rien n'est assigné -->
+                  <div *ngIf="(!a.utilisateurs || !a.utilisateurs.length) && !a.utilisateurNomComplet && (!a.groupes || !a.groupes.length)" style="flex:1"></div>
+
+                  <!-- ICÔNES À DROITE -->
                   <div class="pd5-kcard-actions-right">
                     <div class="pd5-kcard-counters">
                       <span class="pd5-kcard-counter" *ngIf="a.nombreCommentaires">
@@ -697,6 +837,7 @@
                       </span>
                     </div>
                   </div>
+
                 </div>
               </div>
             </div>
@@ -732,7 +873,7 @@
 <!-- ══════════════════════════════════════════════════════════
      DRAWER — Infos projet
 ══════════════════════════════════════════════════════════ -->
-<div class="pd5-drawer-overlay" *ngIf="drawerInfoOpen()" (click)="toggleDrawer()">
+<div class="pd5-drawer-overlay" *ngIf="drawerInfoOpen() && perms.canEditProjetStage()" (click)="toggleDrawer()">
   <div class="pd5-drawer" (click)="$event.stopPropagation()" *ngIf="projet() as p">
     <div class="pd5-drawer-header">
       <h3 class="pd5-drawer-title">Informations du projet</h3>
@@ -809,18 +950,25 @@
           </div>
         </div>
 
-        <!-- Avancement -->
-        <div class="pd5-info-row" *ngIf="editingField() !== 'avancement'">
-          <span class="pd5-info-label">Avancement</span>
-          <span class="pd5-info-val">{{ p.avancement || 0 }}%</span>
-          <button class="pd5-row-edit-btn" (click)="startEditField('avancement', p.avancement)">
+        <!-- Couleur -->
+        <div class="pd5-info-row" *ngIf="editingField() !== 'couleur'">
+          <span class="pd5-info-label">Couleur</span>
+          <span class="pd5-info-val" style="display:flex;align-items:center;gap:6px">
+            <span style="width:14px;height:14px;border-radius:4px;display:inline-block;flex-shrink:0" [style.background]="p.couleur || '#6366f1'"></span>
+            <span>{{ p.couleur || '#6366f1' }}</span>
+          </span>
+          <button class="pd5-row-edit-btn" (click)="startEditField('couleur', p.couleur)">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg>
           </button>
         </div>
-        <div class="pd5-info-row" *ngIf="editingField() === 'avancement'">
-          <input type="number" min="0" max="100" class="pd5-inline-input" [ngModel]="editingFieldValue()" (ngModelChange)="editingFieldValue.set(+$event)" (keyup.enter)="saveField()" (keyup.escape)="cancelField()">
+        <div class="pd5-info-row" *ngIf="editingField() === 'couleur'">
+          <div style="display:flex;flex-wrap:wrap;gap:5px;flex:1">
+            <button *ngFor="let c of COULEURS" type="button" [style.background]="c"
+                    style="width:22px;height:22px;border-radius:5px;cursor:pointer;outline:none"
+                    [style.border]="editingFieldValue() === c ? '2.5px solid var(--dt-text)' : '2.5px solid transparent'"
+                    (click)="editingFieldValue.set(c); saveField()"></button>
+          </div>
           <div style="display:flex;gap:4px;margin-left:6px">
-            <button class="pd5-row-edit-btn" style="opacity:1;color:#10b981" (click)="saveField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3.5 3.5L13 5" stroke-linecap="round" /></svg></button>
             <button class="pd5-row-edit-btn" style="opacity:1;color:#ef4444" (click)="cancelField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l12 12M14 2L2 14" stroke-linecap="round" /></svg></button>
           </div>
         </div>
@@ -845,17 +993,83 @@
         </div>
       </div>
 
-      <!-- Stagiaires assignés (lecture seule dans ce drawer) -->
+      <!-- Stagiaires assignés — éditable (ajout/retrait libre) si INT_PROJ_EDIT -->
       <div class="pd5-drawer-section">
         <div class="pd5-drawer-section-head">
           <span class="pd5-drawer-section-title">Stagiaires <span class="pd5-section-badge">{{ stagiairesAssignes().length }}</span></span>
+          <button class="pd5-act-edit-btn" *ngIf="perms.canEditProjetStage() && !editingStagiaires()" (click)="startEditStagiaires()">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg>Modifier
+          </button>
         </div>
-        <div *ngIf="stagiairesAssignes().length === 0" style="font-size:.74rem;color:var(--dt-text-sub)">Aucun stagiaire assigné.</div>
-        <div class="pd5-team-row" *ngFor="let stag of stagiairesAssignes()" style="margin-bottom:8px">
-          <div class="pd5-team-dot" [style.background]="getAvatarColor(stag.nomComplet)">{{ getInitiales(stag.nomComplet) }}</div>
-          <div>
-            <span class="pd5-team-name">{{ stag.nomComplet }}</span>
-            <span class="pd5-team-count" style="display:block">{{ stag.email }}</span>
+
+        <!-- Mode lecture -->
+        <ng-container *ngIf="!editingStagiaires()">
+          <div *ngIf="stagiairesAssignes().length === 0" style="font-size:.74rem;color:var(--dt-text-sub)">Aucun stagiaire assigné.</div>
+          <div *ngFor="let stag of stagiairesAssignes()" style="margin-bottom:10px">
+            <div class="pd5-team-row">
+              <div class="pd5-team-dot" [style.background]="getAvatarColor(stag.nomComplet)">{{ getInitiales(stag.nomComplet) }}</div>
+              <div style="flex:1">
+                <span class="pd5-team-name">{{ stag.nomComplet }}</span>
+                <span class="pd5-team-count" style="display:block">{{ stag.email }}</span>
+              </div>
+              <button class="pd5-act-edit-btn" *ngIf="perms.canEditProjetStage() && perms.canAssignSupervisor() && editingSuperviseursPourStagiaireId() !== stag.id"
+                      style="flex-shrink:0" (click)="startEditSuperviseurs(stag)">
+                Superviseurs
+              </button>
+            </div>
+
+            <!-- Superviseurs de ce stagiaire — lecture -->
+            <div *ngIf="editingSuperviseursPourStagiaireId() !== stag.id && stag.superviseurs && stag.superviseurs.length > 0"
+                 style="display:flex;flex-direction:column;gap:6px;padding-left:18px;border-left:2px solid var(--dt-border);margin-left:18px;margin-top:6px">
+              <div *ngFor="let sup of stag.superviseurs" style="display:flex;align-items:center;gap:8px">
+                <div class="pd5-team-dot" [style.background]="getAvatarColor(sup.nomComplet)" style="width:24px;height:24px;font-size:.6rem">{{ getInitiales(sup.nomComplet) }}</div>
+                <span style="font-size:.72rem;color:var(--text-secondary)">{{ sup.nomComplet }}</span>
+              </div>
+            </div>
+
+            <!-- Édition des superviseurs de ce stagiaire précis -->
+            <div *ngIf="editingSuperviseursPourStagiaireId() === stag.id"
+                 style="padding:10px 12px;background:var(--bg-input);border-radius:8px;border:1px solid var(--border-color);margin-top:6px;margin-left:18px">
+              <p style="font-size:.68rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px">
+                Superviseurs de {{ stag.nomComplet }}
+              </p>
+              <div style="display:flex;flex-direction:column;gap:5px;max-height:160px;overflow-y:auto;margin-bottom:8px">
+                <label *ngFor="let sup of tousLesSuperviseurs()"
+                       style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:6px;cursor:pointer"
+                       [style.background]="isSuperviseurSelected(sup.id) ? 'var(--accent-soft)' : 'transparent'">
+                  <input type="checkbox" style="accent-color:var(--accent)"
+                         [checked]="isSuperviseurSelected(sup.id)" (change)="toggleSuperviseurSelection(sup.id)">
+                  <span style="font-size:.74rem;color:var(--text-primary)">{{ sup.nomComplet }}</span>
+                </label>
+              </div>
+              <div style="display:flex;gap:6px;justify-content:flex-end">
+                <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="cancelEditSuperviseurs()">Annuler</button>
+                <button class="mx-btn mx-btn-primary mx-btn-sm" [disabled]="savingSuperviseurs()" (click)="saveSuperviseursPourStagiaire()">
+                  {{ savingSuperviseurs() ? 'Enregistrement...' : 'Enregistrer' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Mode édition : ajout/retrait libre parmi tous les stagiaires -->
+        <div *ngIf="editingStagiaires()">
+          <div style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;margin-bottom:10px">
+            <label *ngFor="let s of tousLesStagiaires()"
+                   style="display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:7px;cursor:pointer;border:1.5px solid"
+                   [style.border-color]="isStagiaireProjetSelected(s.id) ? 'var(--accent)' : 'var(--dt-border)'"
+                   [style.background]="isStagiaireProjetSelected(s.id) ? 'var(--accent-soft)' : 'var(--bg-input)'">
+              <input type="checkbox" style="accent-color:var(--accent)"
+                     [checked]="isStagiaireProjetSelected(s.id)" (change)="toggleStagiaireProjetSelection(s.id)">
+              <div class="pd5-team-dot" [style.background]="getAvatarColor(s.nomComplet || '')" style="width:24px;height:24px;font-size:.6rem">{{ getInitiales(s.nomComplet || '') }}</div>
+              <span style="font-size:.78rem;font-weight:600;color:var(--text-primary)">{{ s.nomComplet }}</span>
+            </label>
+          </div>
+          <div style="display:flex;gap:6px;justify-content:flex-end">
+            <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="cancelEditStagiaires()">Annuler</button>
+            <button class="mx-btn mx-btn-primary mx-btn-sm" [disabled]="savingStagiaires()" (click)="saveStagiairesProjet()">
+              {{ savingStagiaires() ? 'Enregistrement...' : 'Enregistrer' }}
+            </button>
           </div>
         </div>
       </div>
@@ -865,7 +1079,7 @@
         <div class="pd5-drawer-section-head">
           <span class="pd5-drawer-section-title">Documents <span class="pd5-section-badge">{{ documents().length }}</span></span>
         </div>
-        <label class="pd5-upload-btn" [class.uploading]="uploadingDoc()">
+        <label class="pd5-upload-btn" *ngIf="perms.canUploadDocProjetStage()" [class.uploading]="uploadingDoc()">
           <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1v8M4 6l3 3 3-3" stroke-linecap="round" /><path d="M1 11v1a1 1 0 001 1h12a1 1 0 001-1v-1" stroke-linecap="round" /></svg>
           {{ uploadingDoc() ? 'Envoi en cours...' : 'Ajouter un document' }}
           <input type="file" style="display:none" [disabled]="uploadingDoc()" (change)="onFileSelected($event, p.id)">
@@ -882,7 +1096,7 @@
               <a class="pd5-doc-icon-btn" [href]="doc.cheminFichier" target="_blank" title="Télécharger">
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M5 7l3 3 3-3" stroke-linecap="round" /><path d="M2 13h12" stroke-linecap="round" /></svg>
               </a>
-              <button class="pd5-doc-icon-btn pd5-doc-icon-danger" (click)="deleteDocument(doc)" title="Supprimer">
+              <button class="pd5-doc-icon-btn pd5-doc-icon-danger" *ngIf="perms.canUploadDocProjetStage() && isOwnDoc(doc)" (click)="deleteDocument(doc)" title="Supprimer">
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M6.5 4V2.5h3V4M4.5 4l.5 9h6l.5-9" stroke-linecap="round" stroke-linejoin="round" /></svg>
               </button>
             </div>
@@ -895,7 +1109,7 @@
         <div class="pd5-drawer-section-head">
           <span class="pd5-drawer-section-title">Commentaires <span class="pd5-section-badge">{{ commentaires().length }}</span></span>
         </div>
-        <div class="pd5-cmt-form">
+        <div class="pd5-cmt-form" *ngIf="perms.canCommentProjetStage()">
           <div class="pd5-cmt-avatar" [style.background]="getAvatarColor(currentUserNom)">{{ getInitiales(currentUserNom) }}</div>
           <div class="pd5-cmt-input-wrap">
             <textarea class="pd5-cmt-ta" [ngModel]="nouveauCommentaire()" (ngModelChange)="nouveauCommentaire.set($event)" placeholder="Écrire un commentaire..."></textarea>
@@ -932,131 +1146,389 @@
 </div>
 
 <!-- ══════════════════════════════════════════════════════════
-     DRAWER — Détail activité
+     DRAWER — Détail activité (style identique au drawer "Infos projet")
 ══════════════════════════════════════════════════════════ -->
-<div class="pd5-drawer-overlay" *ngIf="actDrawerOpen()" (click)="closeActDrawer()">
-  <div class="pd5-drawer pd5-act-drawer" (click)="$event.stopPropagation()" *ngIf="selectedActivite() as a">
+<div class="pd5-drawer-overlay" *ngIf="actDrawerOpen() && selectedActivite() as a" (click)="closeActDrawer()">
+  <div class="pd5-drawer pd5-act-drawer" (click)="$event.stopPropagation()">
+
     <div class="pd5-drawer-header">
-      <h3 class="pd5-drawer-title">Détail de l'activité</h3>
+      <div style="flex:1;min-width:0">
+        <div class="pd5-ap-badges">
+          <div *ngIf="getPriorite(a.prioriteId) as pr" class="pd5-prio-badge" [style.background]="pr.couleur+'18'" [style.color]="pr.couleur" [style.border-color]="pr.couleur+'44'">{{ pr.libelle }}</div>
+          <span *ngIf="a.numeroActivite" class="pd5-num-badge">{{ a.numeroActivite }}</span>
+        </div>
+        <h3 class="pd5-drawer-title" style="margin-top:5px">{{ a.nom }}</h3>
+      </div>
       <button class="pd5-drawer-close" (click)="closeActDrawer()">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l12 12M14 2L2 14" stroke-linecap="round" /></svg>
       </button>
     </div>
-    <div class="pd5-drawer-body">
 
+    <div class="pd5-drawer-body">
+      <div class="pd5-info-section">
+
+        <!-- Titre -->
+        <div class="pd5-info-row" *ngIf="editingActField() !== 'nom'">
+          <span class="pd5-info-label">Titre</span>
+          <span class="pd5-info-val" style="font-weight:600">{{ a.nom }}</span>
+          <button *ngIf="perms.canEditActiviteStageNew()" class="pd5-row-edit-btn" (click)="startEditActField('nom', a.nom)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg>
+          </button>
+        </div>
+        <div class="pd5-info-row" *ngIf="editingActField() === 'nom'">
+          <input class="pd5-inline-input" [ngModel]="editingActFieldValue()" (ngModelChange)="editingActFieldValue.set($event)" (keyup.enter)="saveActField()" (keyup.escape)="cancelActField()">
+          <div style="display:flex;gap:4px;margin-left:6px">
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#10b981" (click)="saveActField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3.5 3.5L13 5" stroke-linecap="round" /></svg></button>
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#ef4444" (click)="cancelActField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l12 12M14 2L2 14" stroke-linecap="round" /></svg></button>
+          </div>
+        </div>
+
+        <!-- Statut -->
+        <div class="pd5-info-row" *ngIf="editingActField() !== 'statutActiviteId'">
+          <span class="pd5-info-label">Statut</span>
+          <span class="pd5-info-val">
+            <span class="dt-badge" [style.background]="getStatutActiviteCouleur(a.statutActiviteId)+'1a'" [style.color]="getStatutActiviteCouleur(a.statutActiviteId)" [style.border-color]="getStatutActiviteCouleur(a.statutActiviteId)+'55'">
+              <span class="dt-badge-dot" [style.background]="getStatutActiviteCouleur(a.statutActiviteId)"></span>{{ getStatutActiviteLibelle(a.statutActiviteId) }}
+            </span>
+          </span>
+          <button *ngIf="perms.canEditActiviteStageNew()" class="pd5-row-edit-btn" (click)="startEditActField('statutActiviteId', a.statutActiviteId)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg>
+          </button>
+        </div>
+        <div class="pd5-info-row" *ngIf="editingActField() === 'statutActiviteId'">
+          <select class="pd5-inline-input pd5-inline-select" [ngModel]="editingActFieldValue()" (ngModelChange)="editingActFieldValue.set(+$event)">
+            <option *ngFor="let s of statutsActivite()" [value]="s.id">{{ s.libelle }}</option>
+          </select>
+          <div style="display:flex;gap:4px;margin-left:6px">
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#10b981" (click)="saveActField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3.5 3.5L13 5" stroke-linecap="round" /></svg></button>
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#ef4444" (click)="cancelActField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l12 12M14 2L2 14" stroke-linecap="round" /></svg></button>
+          </div>
+        </div>
+
+        <!-- Priorité -->
+        <div class="pd5-info-row" *ngIf="editingActField() !== 'prioriteId'">
+          <span class="pd5-info-label">Priorité</span>
+          <span class="pd5-info-val">
+            <div *ngIf="getPriorite(a.prioriteId) as pr" style="display:flex;align-items:center;gap:6px">
+              <span style="width:7px;height:7px;border-radius:50%;flex-shrink:0" [style.background]="pr.couleur"></span>
+              <span>{{ pr.libelle }}</span>
+            </div>
+            <span *ngIf="!a.prioriteId" class="pd5-info-secondary">—</span>
+          </span>
+          <button *ngIf="perms.canEditActiviteStageNew()" class="pd5-row-edit-btn" (click)="startEditActField('prioriteId', a.prioriteId)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg>
+          </button>
+        </div>
+        <div class="pd5-info-row" *ngIf="editingActField() === 'prioriteId'">
+          <select class="pd5-inline-input pd5-inline-select" [ngModel]="editingActFieldValue()" (ngModelChange)="editingActFieldValue.set(+$event)">
+            <option *ngFor="let pr of priorites()" [value]="pr.id">{{ pr.libelle }}</option>
+          </select>
+          <div style="display:flex;gap:4px;margin-left:6px">
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#10b981" (click)="saveActField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3.5 3.5L13 5" stroke-linecap="round" /></svg></button>
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#ef4444" (click)="cancelActField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l12 12M14 2L2 14" stroke-linecap="round" /></svg></button>
+          </div>
+        </div>
+
+        <!-- Échéance -->
+        <div class="pd5-info-row" *ngIf="editingActField() !== 'dateEcheance'">
+          <span class="pd5-info-label">Échéance</span>
+          <span class="pd5-info-val">{{ fmtDate(a.dateEcheance) }}</span>
+          <button *ngIf="perms.canEditActiviteStageNew()" class="pd5-row-edit-btn" (click)="startEditActField('dateEcheance', a.dateEcheance)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg>
+          </button>
+        </div>
+        <div class="pd5-info-row" *ngIf="editingActField() === 'dateEcheance'">
+          <input type="date" class="pd5-inline-input" [ngModel]="editingActFieldValue()" (ngModelChange)="editingActFieldValue.set($event)">
+          <div style="display:flex;gap:4px;margin-left:6px">
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#10b981" (click)="saveActField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3.5 3.5L13 5" stroke-linecap="round" /></svg></button>
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#ef4444" (click)="cancelActField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l12 12M14 2L2 14" stroke-linecap="round" /></svg></button>
+          </div>
+        </div>
+
+        <!-- Heures estimées -->
+        <div class="pd5-info-row" *ngIf="editingActField() !== 'heuresEstimees'">
+          <span class="pd5-info-label">Heures est.</span>
+          <span class="pd5-info-val">
+            {{ a.heuresEstimees ? fmtHeures(a.heuresEstimees) : '—' }}
+            <span *ngIf="a.heuresEstimees" class="pd5-info-secondary">({{ fmtHeures(a.heuresPassees) }} passées)</span>
+          </span>
+          <button *ngIf="perms.canEditActiviteStageNew()" class="pd5-row-edit-btn" (click)="startEditActField('heuresEstimees', a.heuresEstimees)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg>
+          </button>
+        </div>
+        <div class="pd5-info-row" *ngIf="editingActField() === 'heuresEstimees'">
+          <input type="number" min="0" class="pd5-inline-input" [ngModel]="editingActFieldValue()" (ngModelChange)="editingActFieldValue.set(+$event)" (keyup.enter)="saveActField()" (keyup.escape)="cancelActField()">
+          <div style="display:flex;gap:4px;margin-left:6px">
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#10b981" (click)="saveActField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3.5 3.5L13 5" stroke-linecap="round" /></svg></button>
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#ef4444" (click)="cancelActField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l12 12M14 2L2 14" stroke-linecap="round" /></svg></button>
+          </div>
+        </div>
+
+        <!-- Évaluation (résumé compact, lecture — détail dans la section dédiée plus bas) -->
+        <div class="pd5-info-row">
+          <span class="pd5-info-label">Évaluation</span>
+          <span class="pd5-info-val">
+            <div style="display:flex;gap:1px">
+              <svg *ngFor="let s of STARS" viewBox="0 0 16 16" style="width:13px;height:13px" [attr.fill]="s <= Math.round(moyenneEvaluation()) ? '#f59e0b' : 'var(--border-color)'">
+                <path d="M8 1l2.2 4.8 5.2.6-3.9 3.5 1 5.1L8 12.4l-4.5 2.6 1-5.1L.6 6.4l5.2-.6L8 1z"/>
+              </svg>
+            </div>
+            <span class="pd5-info-secondary" *ngIf="totalEvaluations() > 0">({{ totalEvaluations() }})</span>
+          </span>
+        </div>
+
+        <!-- Assigné — multi-stagiaires -->
+        <div class="pd5-info-row" *ngIf="editingActField() !== 'utilisateurId'" style="align-items:flex-start">
+          <span class="pd5-info-label" style="margin-top:4px">Assigné</span>
+          <span class="pd5-info-val" style="flex-direction:column;align-items:flex-start;gap:6px">
+            <div *ngIf="a.utilisateurs && a.utilisateurs.length > 0" style="display:flex;flex-direction:column;gap:6px;width:100%">
+              <div *ngFor="let u of a.utilisateurs" style="display:flex;align-items:center;gap:8px">
+                <div class="pd5-ap-avatar" style="width:26px;height:26px;font-size:.56rem;overflow:hidden" [style.background]="getAvatarColor(u.nomComplet)">
+                  <img *ngIf="u.photoUrl" [src]="u.photoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                  <span *ngIf="!u.photoUrl">{{ getInitiales(u.nomComplet) }}</span>
+                </div>
+                <span style="font-size:.76rem;font-weight:600;color:var(--dt-text)">{{ u.nomComplet }}</span>
+              </div>
+            </div>
+            <div *ngIf="(!a.utilisateurs || !a.utilisateurs.length) && a.utilisateurNomComplet" style="display:flex;align-items:center;gap:8px">
+              <div class="pd5-ap-avatar" style="width:26px;height:26px;font-size:.56rem;overflow:hidden" [style.background]="getAvatarColor(a.utilisateurNomComplet)">
+                <img *ngIf="a.utilisateurPhotoUrl" [src]="a.utilisateurPhotoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                <span *ngIf="!a.utilisateurPhotoUrl">{{ getInitiales(a.utilisateurNomComplet) }}</span>
+              </div>
+              <span style="font-size:.76rem;font-weight:600;color:var(--dt-text)">{{ a.utilisateurNomComplet }}</span>
+            </div>
+            <span *ngIf="(!a.utilisateurs || !a.utilisateurs.length) && !a.utilisateurNomComplet" class="pd5-info-secondary">Aucun stagiaire assigné</span>
+          </span>
+          <button *ngIf="perms.canEditActiviteStageNew()" class="pd5-row-edit-btn" (click)="startEditActField('utilisateurId', a.utilisateurId)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg>
+          </button>
+        </div>
+        <div class="pd5-info-row" *ngIf="editingActField() === 'utilisateurId'" style="align-items:flex-start">
+          <div style="display:flex;flex-direction:column;gap:6px;width:100%">
+            <p style="font-size:.68rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin:0 0 4px">
+              Stagiaires assignés au projet
+            </p>
+            <div *ngIf="stagiairesAssignes().length === 0" class="pd5-info-secondary">Aucun stagiaire assigné à ce projet.</div>
+            <label *ngFor="let s of stagiairesAssignes()" style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer" (click)="toggleAssigneMulti(s.id)">
+              <div style="width:16px;height:16px;border-radius:3px;border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0"
+                   [style.background]="isAssigneMulti(s.id) ? 'var(--accent)' : 'transparent'">
+                <svg *ngIf="isAssigneMulti(s.id)" viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="2"><path d="M1.5 5l2.5 2.5 5-5" stroke-linecap="round"/></svg>
+              </div>
+              <div class="pd5-ap-avatar" style="width:24px;height:24px;font-size:.5rem;overflow:hidden;flex-shrink:0" [style.background]="getAvatarColor(s.nomComplet)">
+                <img *ngIf="s.photoUrl" [src]="s.photoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                <span *ngIf="!s.photoUrl">{{ getInitiales(s.nomComplet) }}</span>
+              </div>
+              <span style="font-size:.73rem;color:var(--dt-text)">{{ s.nomComplet }}</span>
+            </label>
+            <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:6px">
+              <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="cancelActField()">Annuler</button>
+              <button class="mx-btn mx-btn-primary mx-btn-sm" (click)="saveActFieldMulti()">Enregistrer</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Couleur -->
+        <div class="pd5-info-row" *ngIf="editingActField() !== 'couleur'">
+          <span class="pd5-info-label">Couleur</span>
+          <span class="pd5-info-val" style="display:flex;align-items:center;gap:6px">
+            <span style="width:14px;height:14px;border-radius:4px;flex-shrink:0;display:inline-block" [style.background]="a.couleur || '#6366f1'"></span>
+            <span class="pd5-info-secondary">{{ a.couleur || '#6366f1' }}</span>
+          </span>
+          <button *ngIf="perms.canEditActiviteStageNew()" class="pd5-row-edit-btn" (click)="startEditActField('couleur', a.couleur)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg>
+          </button>
+        </div>
+        <div class="pd5-info-row" *ngIf="editingActField() === 'couleur'">
+          <div style="display:flex;flex-wrap:wrap;gap:5px;flex:1">
+            <button *ngFor="let c of COULEURS" type="button" [style.background]="c"
+                    style="width:22px;height:22px;border-radius:5px;cursor:pointer;outline:none"
+                    [style.border]="editingActFieldValue() === c ? '2.5px solid var(--dt-text)' : '2.5px solid transparent'"
+                    (click)="editingActFieldValue.set(c); saveActField()"></button>
+          </div>
+          <div style="display:flex;gap:4px;margin-left:6px">
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#ef4444" (click)="cancelActField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l12 12M14 2L2 14" stroke-linecap="round" /></svg></button>
+          </div>
+        </div>
+
+        <!-- Créé par -->
+        <div class="pd5-info-row">
+          <span class="pd5-info-label">Créé par</span>
+          <span class="pd5-info-val"><span class="pd5-info-secondary">{{ a.creePar || '—' }}</span></span>
+        </div>
+
+        <!-- Créé le -->
+        <div class="pd5-info-row">
+          <span class="pd5-info-label">Créé le</span>
+          <span class="pd5-info-val"><span class="pd5-info-secondary">{{ fmtDateTime(a.dateCreation) }}</span></span>
+        </div>
+
+        <!-- Visibilité -->
+        <div class="pd5-info-row" *ngIf="editingActField() !== 'visible'">
+          <span class="pd5-info-label">Visibilité</span>
+          <span class="pd5-info-val">
+            <span class="dt-badge" [style.background]="a.visible ? 'rgba(16,185,129,.15)' : 'rgba(239,68,68,.1)'" [style.color]="a.visible ? '#10b981' : '#ef4444'">
+              {{ a.visible ? 'Visible' : 'Masquée' }}
+            </span>
+          </span>
+          <button *ngIf="perms.canEditActiviteStageNew()" class="pd5-row-edit-btn" (click)="startEditActField('visible', a.visible)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg>
+          </button>
+        </div>
+        <div class="pd5-info-row" *ngIf="editingActField() === 'visible'">
+          <select class="pd5-inline-input pd5-inline-select" [ngModel]="editingActFieldValue()" (ngModelChange)="editingActFieldValue.set($event === 'true')">
+            <option [value]="true">Visible</option>
+            <option [value]="false">Masquée</option>
+          </select>
+          <div style="display:flex;gap:4px;margin-left:6px">
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#10b981" (click)="saveActField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3.5 3.5L13 5" stroke-linecap="round" /></svg></button>
+            <button class="pd5-row-edit-btn" style="opacity:1;color:#ef4444" (click)="cancelActField()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l12 12M14 2L2 14" stroke-linecap="round" /></svg></button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Description -->
       <div class="pd5-drawer-section">
         <div class="pd5-drawer-section-head">
-          <span class="pd5-drawer-section-title" style="font-size:.9rem;text-transform:none;letter-spacing:0">{{ a.nom }}</span>
-          <button class="pd5-act-edit-btn" *ngIf="perms.canEditActiviteStageNew()" (click)="openEditActFromDrawer(a)">
+          <span class="pd5-drawer-section-title">Description</span>
+          <button *ngIf="perms.canEditActiviteStageNew() && editingActField() !== 'description'" class="pd5-act-edit-btn" (click)="startEditActField('description', a.description)">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg>Modifier
           </button>
         </div>
-        <div class="pd5-ap-badges">
-          <span class="dt-badge" [style.background]="getStatutActiviteCouleur(a.statutActiviteId)+'18'" [style.color]="getStatutActiviteCouleur(a.statutActiviteId)" [style.border-color]="getStatutActiviteCouleur(a.statutActiviteId)+'55'">
-            <span class="dt-badge-dot" [style.background]="getStatutActiviteCouleur(a.statutActiviteId)"></span>{{ getStatutActiviteLibelle(a.statutActiviteId) }}
-          </span>
-          <span class="pd5-prio-badge" *ngIf="getPriorite(a.prioriteId) as pr" [style.color]="pr.couleur" [style.border-color]="pr.couleur+'55'" [style.background]="pr.couleur+'14'">{{ pr.libelle }}</span>
-        </div>
-        <div class="pd5-ap-meta">
-          <span class="pd5-ap-date" *ngIf="a.dateEcheance">
-            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="2" width="12" height="11" rx="1.5" /><path d="M1 6h12M4.5 1v2M9.5 1v2" stroke-linecap="round" /></svg>
-            Échéance : {{ fmtDate(a.dateEcheance) }}
-          </span>
-          <span class="pd5-ap-date" *ngIf="a.heuresEstimees">{{ fmtHeures(a.heuresPassees) }} / {{ fmtHeures(a.heuresEstimees) }}</span>
-        </div>
-
-        <div class="pd5-ap-assignee" *ngIf="a.utilisateurNomComplet">
-          <div class="pd5-ap-avatar" [style.background]="getAvatarColor(a.utilisateurNomComplet)">{{ getInitiales(a.utilisateurNomComplet) }}</div>
-          <div>
-            <span class="pd5-ap-assignee-nom">{{ a.utilisateurNomComplet }}</span>
+        <div class="pd5-desc-box" *ngIf="editingActField() !== 'description'">{{ a.description || 'Aucune description.' }}</div>
+        <div *ngIf="editingActField() === 'description'">
+          <textarea class="pd5-inline-input pd5-inline-textarea" [ngModel]="editingActFieldValue()" (ngModelChange)="editingActFieldValue.set($event)" rows="4"></textarea>
+          <div style="display:flex;gap:6px;margin-top:8px;justify-content:flex-end">
+            <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="cancelActField()">Annuler</button>
+            <button class="mx-btn mx-btn-primary mx-btn-sm" (click)="saveActField()">Enregistrer</button>
           </div>
         </div>
-
-        <div class="pd5-ap-groupes" *ngIf="!a.utilisateurNomComplet && a.groupes && a.groupes.length > 0" style="margin-top:8px">
-          <div class="pd5-ap-grp-row" *ngFor="let g of a.groupes">
-            <span class="pd5-ap-grp-dot" [style.background]="getAvatarColor(g.nom)">{{ getInitiales(g.nom) }}</span>
-            <span class="pd5-ap-grp-nom">{{ g.nom }}</span>
-          </div>
-        </div>
-
-        <p class="pd5-ap-desc" style="margin-top:10px" *ngIf="a.description">{{ a.description }}</p>
       </div>
 
-      <div class="pd5-ap-tabs">
-        <button class="pd5-ptab" [class.active]="actPanelTab() === 'commentaires'" (click)="setActPanelTab('commentaires')">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 3h12v8H8l-3 2.5V11H2V3z" stroke-linejoin="round" /></svg>
-          Commentaires <span class="pd5-ptab-count" *ngIf="activiteCommentaires().length > 0">{{ activiteCommentaires().length }}</span>
-        </button>
-        <button class="pd5-ptab" [class.active]="actPanelTab() === 'documents'" (click)="setActPanelTab('documents')">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 2h6l3 3v9H4V2z" stroke-linejoin="round" /></svg>
-          Documents <span class="pd5-ptab-count" *ngIf="activiteDocuments().length > 0">{{ activiteDocuments().length }}</span>
-        </button>
-      </div>
+      <!-- Évaluation détaillée -->
+      <div class="pd5-drawer-section">
+        <div class="pd5-drawer-section-head">
+          <span class="pd5-drawer-section-title">Évaluation <span class="pd5-section-badge">{{ totalEvaluations() }}</span></span>
+        </div>
 
-      <div class="pd5-ap-body">
+        <div *ngIf="loadingEvaluations()" class="pd5-cmt-empty">Chargement...</div>
 
-        <!-- Onglet commentaires -->
-        <div *ngIf="actPanelTab() === 'commentaires'">
-          <div class="pd5-cmt-form" *ngIf="perms.canCommentActiviteStage()">
-            <div class="pd5-cmt-avatar" [style.background]="getAvatarColor(currentUserNom)">{{ getInitiales(currentUserNom) }}</div>
-            <div class="pd5-cmt-input-wrap">
-              <textarea class="pd5-cmt-ta" [ngModel]="nouveauActComment()" (ngModelChange)="nouveauActComment.set($event)" placeholder="Écrire un commentaire..."></textarea>
-              <button class="pd5-cmt-send" [disabled]="!nouveauActComment().trim()" (click)="submitActComment()">Envoyer</button>
-            </div>
+        <!-- Formulaire de notation — réservé à canEvaluerActiviteStage() -->
+        <div *ngIf="!loadingEvaluations() && perms.canEvaluerActiviteStage()"
+             style="padding:12px;background:var(--bg-input);border-radius:10px;border:1px solid var(--border-color);margin-bottom:14px">
+          <p style="font-size:.72rem;font-weight:700;color:var(--text-primary);margin:0 0 8px">
+            {{ monEvaluationExistante() ? 'Modifier ma note' : 'Noter cette activité' }}
+          </p>
+          <div style="display:flex;gap:4px;margin-bottom:8px">
+            <svg *ngFor="let s of STARS" viewBox="0 0 24 24" style="width:24px;height:24px;cursor:pointer"
+                 [attr.fill]="s <= (hoverStar() || monEvaluationNote()) ? '#f59e0b' : 'var(--border-color)'"
+                 (mouseenter)="setHoverStar(s)" (mouseleave)="clearHoverStar()" (click)="setMonEvaluationNote(s)">
+              <path d="M12 2l3.1 6.6 7.3.9-5.4 4.9 1.4 7.2L12 17.9l-6.4 3.7 1.4-7.2L1.6 9.5l7.3-.9L12 2z"/>
+            </svg>
+            <span style="font-size:.78rem;font-weight:700;color:var(--text-primary);margin-left:6px;align-self:center">{{ monEvaluationNote() }}/5</span>
           </div>
-          <div *ngIf="loadingActComments()" class="pd5-cmt-empty">Chargement...</div>
-          <div *ngIf="!loadingActComments() && activiteCommentaires().length === 0" class="pd5-cmt-empty">Aucun commentaire.</div>
-          <div class="pd5-cmt-item" *ngFor="let c of activiteCommentaires()">
-            <div class="pd5-cmt-avatar" [style.background]="getAvatarColor(c.auteurNom)">{{ getInitiales(c.auteurNom) }}</div>
-            <div class="pd5-cmt-body">
-              <div class="pd5-cmt-meta">
-                <span class="pd5-cmt-auteur">{{ c.auteurNom }}</span>
-                <span class="pd5-cmt-date">{{ fmtDateTime(c.dateCreation) }}</span>
-              </div>
-              <div *ngIf="editingActCommentId() !== c.id" class="pd5-cmt-text">{{ c.contenu }}</div>
-              <div *ngIf="editingActCommentId() === c.id">
-                <textarea class="pd5-cmt-ta" [ngModel]="editActContenu()" (ngModelChange)="editActContenu.set($event)"></textarea>
-                <div style="display:flex;gap:6px;margin-top:6px">
-                  <button class="mx-btn mx-btn-primary mx-btn-sm" (click)="saveEditActComment(c)">Enregistrer</button>
-                  <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="cancelEditActComment()">Annuler</button>
+          <textarea [ngModel]="monEvaluationCommentaire()" (ngModelChange)="monEvaluationCommentaire.set($event)"
+                    rows="2" placeholder="Commentaire d'évaluation (optionnel)..."
+                    style="width:100%;border:1px solid var(--border-color);border-radius:7px;padding:7px 9px;font-size:.76rem;background:var(--bg-card);color:var(--text-primary);font-family:inherit;resize:vertical;outline:none;margin-bottom:8px"></textarea>
+          <div style="display:flex;gap:6px;justify-content:flex-end">
+            <button *ngIf="monEvaluationExistante()" class="mx-btn mx-btn-ghost mx-btn-sm" (click)="deleteMonEvaluation()">Supprimer ma note</button>
+            <button class="mx-btn mx-btn-primary mx-btn-sm" [disabled]="submittingEvaluation()" (click)="submitEvaluation()">
+              {{ submittingEvaluation() ? '...' : (monEvaluationExistante() ? 'Mettre à jour' : 'Enregistrer') }}
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="!loadingEvaluations() && autresEvaluations().length > 0">
+          <p style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin:0 0 8px">Autres évaluations</p>
+          <div *ngFor="let ev of autresEvaluations()" style="display:flex;gap:9px;padding:9px 0;border-bottom:1px solid var(--dt-border)">
+            <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.56rem;font-weight:800;color:white;flex-shrink:0" [style.background]="getAvatarColor(ev.evaluateurNom || '')">{{ getInitiales(ev.evaluateurNom || '') }}</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:2px;flex-wrap:wrap">
+                <span style="font-size:.73rem;font-weight:700;color:var(--dt-text)">{{ ev.evaluateurNom }}</span>
+                <div style="display:flex;gap:1px">
+                  <svg *ngFor="let s of STARS" viewBox="0 0 16 16" style="width:10px;height:10px" [attr.fill]="s <= ev.note ? '#f59e0b' : 'var(--border-color)'"><path d="M8 1l2.2 4.8 5.2.6-3.9 3.5 1 5.1L8 12.4l-4.5 2.6 1-5.1L.6 6.4l5.2-.6L8 1z"/></svg>
                 </div>
               </div>
-              <div class="pd5-cmt-actions" *ngIf="isOwn(c) && perms.canCommentActiviteStage() && editingActCommentId() !== c.id">
-                <button class="pd5-cmt-icon-btn" (click)="startEditActComment(c)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg></button>
-                <button class="pd5-cmt-icon-btn pd5-cmt-icon-danger" (click)="deleteActComment(c)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg></button>
-              </div>
+              <p *ngIf="ev.commentaire" style="font-size:.72rem;color:var(--dt-text-sub);line-height:1.5;margin:0;white-space:pre-wrap">{{ ev.commentaire }}</p>
             </div>
           </div>
         </div>
 
-        <!-- Onglet documents -->
-        <div *ngIf="actPanelTab() === 'documents'">
-          <label class="pd5-upload-btn" *ngIf="perms.canUploadDocActiviteStage()" [class.uploading]="uploadingDoc()">
-            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1v8M4 6l3 3 3-3" stroke-linecap="round" /><path d="M1 11v1a1 1 0 001 1h12a1 1 0 001-1v-1" stroke-linecap="round" /></svg>
-            {{ uploadingDoc() ? 'Envoi en cours...' : 'Ajouter un document' }}
-            <input type="file" style="display:none" [disabled]="uploadingDoc()" (change)="onFileSelected($event, undefined, a.id)">
-          </label>
-          <div class="pd5-docs-list">
-            <div class="pd5-docs-empty" *ngIf="activiteDocuments().length === 0">Aucun document.</div>
-            <div class="pd5-doc-row" *ngFor="let doc of activiteDocuments()">
-              <div class="pd5-doc-icon" [style.background]="getDocIconColor(doc.typeMime)">{{ getDocIconLabel(doc.typeMime) }}</div>
-              <div class="pd5-doc-info">
-                <span class="pd5-doc-nom">{{ doc.nom }}</span>
-                <span class="pd5-doc-meta">{{ formatSize(doc.tailleFichier) }} · {{ fmtDate(doc.dateUpload) }}</span>
-              </div>
-              <div class="pd5-doc-actions">
-                <a class="pd5-doc-icon-btn" [href]="doc.cheminFichier" target="_blank" title="Télécharger">
-                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M5 7l3 3 3-3" stroke-linecap="round" /><path d="M2 13h12" stroke-linecap="round" /></svg>
-                </a>
-                <button class="pd5-doc-icon-btn pd5-doc-icon-danger" *ngIf="perms.canUploadDocActiviteStage()" (click)="deleteDocument(doc, true)" title="Supprimer">
-                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M6.5 4V2.5h3V4M4.5 4l.5 9h6l.5-9" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
+        <div *ngIf="!loadingEvaluations() && totalEvaluations() === 0" class="pd5-cmt-empty">Aucune évaluation pour le moment.</div>
       </div>
+
+      <!-- Commentaires — chaque auteur peut modifier/supprimer SES PROPRES commentaires -->
+      <div class="pd5-drawer-section">
+        <div class="pd5-drawer-section-head">
+          <span class="pd5-drawer-section-title">Commentaires <span class="pd5-section-badge">{{ activiteCommentaires().length }}</span></span>
+        </div>
+        <div class="pd5-cmt-form" *ngIf="perms.canCommentActiviteStage()">
+          <div class="pd5-cmt-avatar" [style.background]="getAvatarColor(currentUserNom)">{{ getInitiales(currentUserNom) }}</div>
+          <div class="pd5-cmt-input-wrap">
+            <textarea class="pd5-cmt-ta" [ngModel]="nouveauActComment()" (ngModelChange)="nouveauActComment.set($event)" placeholder="Écrire un commentaire..."></textarea>
+            <button class="pd5-cmt-send" [disabled]="!nouveauActComment().trim()" (click)="submitActComment()">Envoyer</button>
+          </div>
+        </div>
+        <div *ngIf="loadingActComments()" class="pd5-cmt-empty">Chargement...</div>
+        <div *ngIf="!loadingActComments() && activiteCommentaires().length === 0" class="pd5-cmt-empty">Aucun commentaire.</div>
+        <div class="pd5-cmt-item" *ngFor="let c of activiteCommentaires()">
+          <div class="pd5-cmt-avatar" [style.background]="getAvatarColor(c.auteurNom)">
+            <img *ngIf="c.auteurPhotoUrl" [src]="c.auteurPhotoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+            <span *ngIf="!c.auteurPhotoUrl">{{ getInitiales(c.auteurNom) }}</span>
+          </div>
+          <div class="pd5-cmt-body">
+            <div class="pd5-cmt-meta">
+              <span class="pd5-cmt-auteur">{{ c.auteurNom }}</span>
+              <span class="pd5-cmt-date">{{ fmtDateTime(c.dateCreation) }}</span>
+            </div>
+            <div *ngIf="editingActCommentId() !== c.id" class="pd5-cmt-text">{{ c.contenu }}</div>
+            <div *ngIf="editingActCommentId() === c.id">
+              <textarea class="pd5-cmt-ta" [ngModel]="editActContenu()" (ngModelChange)="editActContenu.set($event)"></textarea>
+              <div style="display:flex;gap:6px;margin-top:6px">
+                <button class="mx-btn mx-btn-primary mx-btn-sm" (click)="saveEditActComment(c)">Enregistrer</button>
+                <button class="mx-btn mx-btn-ghost mx-btn-sm" (click)="cancelEditActComment()">Annuler</button>
+              </div>
+            </div>
+            <!-- ✅ L'auteur peut modifier/supprimer SON PROPRE commentaire à tout moment -->
+            <div class="pd5-cmt-actions" *ngIf="isOwn(c) && editingActCommentId() !== c.id">
+              <button class="pd5-cmt-icon-btn" (click)="startEditActComment(c)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" /></svg></button>
+              <button class="pd5-cmt-icon-btn pd5-cmt-icon-danger" (click)="deleteActComment(c)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Documents — chaque uploadeur peut supprimer SES PROPRES documents -->
+      <div class="pd5-drawer-section">
+        <div class="pd5-drawer-section-head">
+          <span class="pd5-drawer-section-title">Documents <span class="pd5-section-badge">{{ activiteDocuments().length }}</span></span>
+        </div>
+        <label class="pd5-upload-btn" *ngIf="perms.canUploadDocActiviteStage()" [class.uploading]="uploadingDoc()">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1v8M4 6l3 3 3-3" stroke-linecap="round" /><path d="M1 11v1a1 1 0 001 1h12a1 1 0 001-1v-1" stroke-linecap="round" /></svg>
+          {{ uploadingDoc() ? 'Envoi en cours...' : 'Ajouter un document' }}
+          <input type="file" style="display:none" [disabled]="uploadingDoc()" (change)="onFileSelected($event, undefined, a.id)">
+        </label>
+        <div class="pd5-docs-list">
+          <div class="pd5-docs-empty" *ngIf="activiteDocuments().length === 0">Aucun document.</div>
+          <div class="pd5-doc-row" *ngFor="let doc of activiteDocuments()">
+            <div class="pd5-doc-icon" [style.background]="getDocIconColor(doc.typeMime)">{{ getDocIconLabel(doc.typeMime) }}</div>
+            <div class="pd5-doc-info">
+              <span class="pd5-doc-nom">{{ doc.nom }}</span>
+              <span class="pd5-doc-meta">{{ formatSize(doc.tailleFichier) }} · {{ fmtDate(doc.dateUpload) }}</span>
+            </div>
+            <div class="pd5-doc-actions">
+              <a class="pd5-doc-icon-btn" [href]="doc.cheminFichier" target="_blank" title="Télécharger">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M5 7l3 3 3-3" stroke-linecap="round" /><path d="M2 13h12" stroke-linecap="round" /></svg>
+              </a>
+              <!-- ✅ Réservé à canUploadDocActiviteStage() — quiconque a ce droit peut gérer ses propres documents -->
+              <button class="pd5-doc-icon-btn pd5-doc-icon-danger" *ngIf="perms.canUploadDocActiviteStage() && isOwnDoc(doc)" (click)="deleteDocument(doc, true)" title="Supprimer">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M6.5 4V2.5h3V4M4.5 4l.5 9h6l.5-9" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -1122,8 +1594,17 @@
       </div>
 
       <!-- Assignation : membre(s) spécifique(s) — réservé aux superviseurs -->
+      <!-- ✅ Indicateur pour un stagiaire qui crée sa propre activité : il sera
+           automatiquement assigné, pas de choix à faire (visible uniquement
+           à la création, pas pour un superviseur qui voit le vrai sélecteur) -->
+      <div *ngIf="!perms.can('INT_SUPER_CAN_SUPERVISE') && !editingActId() && stagiairesActForm().length > 0"
+           style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--accent-soft);border-radius:8px;font-size:.78rem;color:var(--accent);font-weight:600">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px;flex-shrink:0"><circle cx="8" cy="8" r="6.5"/><path d="M5.5 8l2 2 3-3" stroke-linecap="round"/></svg>
+        Vous serez automatiquement assigné à cette activité.
+      </div>
+
       <div class="dm-assign-section" *ngIf="perms.can('INT_SUPER_CAN_SUPERVISE')">
-        <span class="dm-assign-title">Membre spécifique</span>
+        <span class="dm-assign-title">Assigner</span>
         <div *ngIf="stagiairesDispoActForm().length === 0" class="dm-field-hint" style="margin-top:6px">
           Aucun stagiaire assigné à ce projet pour le moment.
         </div>
@@ -1136,8 +1617,9 @@
                    [checked]="isStagiaireActFormSelected(s.id)"
                    (change)="toggleStagiaireActForm(s.id)">
             <div class="dt-avatar" [style.background]="getAvatarColor(s.nomComplet || '')"
-                 style="width:22px;height:22px;border-radius:50%;font-size:.52rem;flex-shrink:0">
-              {{ getInitiales(s.nomComplet) }}
+                 style="width:22px;height:22px;border-radius:50%;font-size:.52rem;flex-shrink:0;overflow:hidden">
+              <img *ngIf="s.photoUrl" [src]="s.photoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+              <span *ngIf="!s.photoUrl">{{ getInitiales(s.nomComplet) }}</span>
             </div>
             <span style="font-size:.8rem;font-weight:600">{{ s.nomComplet }}</span>
           </label>

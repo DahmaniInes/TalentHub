@@ -27,7 +27,7 @@ public class ProjetController {
     @GetMapping
     public ResponseEntity<?> getAll(
             @RequestParam(required = false) Long clientId,
-            @RequestParam(required = false) Long statutId,  // ✅ Long — plus de String statut
+            @RequestParam(required = false) Long statutId,
             @RequestParam(required = false) Long membreId) {
 
         if (!permCtx.has("PROJECT_VIEW_ALL") && !permCtx.has("PROJECT_VIEW_LEAD")
@@ -40,7 +40,7 @@ public class ProjetController {
             if (clientId  != null)
                 list = projetService.getByClient(clientId).stream()
                         .map(ProjetDTO::new).toList();
-            else if (statutId != null)                              // ✅ statutId remplace statut
+            else if (statutId != null)
                 list = projetService.getByStatutId(statutId).stream()
                         .map(ProjetDTO::new).toList();
             else if (membreId != null)
@@ -60,9 +60,6 @@ public class ProjetController {
     // ── GET détail ────────────────────────────────────────────────
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable Long id) {
-        // ✅ Élargi pour accepter aussi les permissions de l'espace stagiaire
-        // (un superviseur ou un stagiaire peut ouvrir le détail d'un projet de stage
-        // sans avoir les permissions PROJECT_* génériques)
         if (!permCtx.has("PROJECT_VIEW_ALL") && !permCtx.has("PROJECT_VIEW_LEAD")
                 && !permCtx.has("PROJECT_VIEW_OWN") && !permCtx.has("PROJECT_DETAILS_VIEW")
                 && !permCtx.has("INT_ADMIN_PROJ_VIEW_ALL") && !permCtx.has("INT_SUPER_TRACK")
@@ -156,13 +153,20 @@ public class ProjetController {
     }
 
     // ── PATCH assigner activités ──────────────────────────────────
+    // ✅ CORRIGÉ — ajout de INT_ACT_CREATE et INT_ACT_EDIT (nouveau jeu plat
+    // de permissions de l'espace stagiaire). C'est cet endpoint qu'appelle
+    // saveAct() dans projet-stage-detail.component.ts juste après avoir créé
+    // une activité, pour la lier au projet. Sans cet ajout, un superviseur ou
+    // un admin de l'espace stagiaire ayant INT_ACT_CREATE recevait un 403 ici
+    // même si la création de l'activité elle-même (POST /activites) réussissait.
     @PatchMapping("/{id}/activites")
     public ResponseEntity<?> assignerActivites(@PathVariable Long id,
                                                @RequestBody List<Long> activiteIds) {
         if (!permCtx.has("PROJECT_EDIT_ALL") && !permCtx.has("PROJECT_EDIT_LEAD")
                 && !permCtx.has("INT_ADMIN_PROJ_EDIT") && !permCtx.has("INT_SUPER_PROJ_MANAGE")
                 && !permCtx.has("INT_ADMIN_ACT_CREATE") && !permCtx.has("INT_SUPER_ACT_CREATE")
-                && !permCtx.has("INT_INTERN_ACT_CREATE")) {
+                && !permCtx.has("INT_INTERN_ACT_CREATE")
+                && !permCtx.has("INT_ACT_CREATE") && !permCtx.has("INT_ACT_EDIT")) {
             return ResponseEntity.status(403)
                     .body(Map.of("message", "Permission PROJECT_EDIT_ALL requise."));
         }
@@ -172,6 +176,30 @@ public class ProjetController {
                     projetService.toDTO(projetService.getByIdWithDetails(saved.getId())));
         } catch (Exception e) {
             log.error("Erreur PATCH /projets/{}/activites: {}", id, e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // ── Superviseurs des stagiaires d'un projet ───────────────────
+    // ✅ NOUVEAU — mêmes permissions que getById() : toute personne qui peut
+    // voir le détail de CE projet peut voir la liste de ses stagiaires et
+    // leurs superviseurs. N'exige PAS INT_ADMIN_VIEW_ALL_INTERNS (cette
+    // permission concerne la page globale "tous les stagiaires de
+    // l'entreprise", pas ce contexte projet par projet).
+    @GetMapping("/{id}/superviseurs-stagiaires")
+    public ResponseEntity<?> getSuperviseursStagiaires(@PathVariable Long id) {
+        if (!permCtx.has("PROJECT_VIEW_ALL") && !permCtx.has("PROJECT_VIEW_LEAD")
+                && !permCtx.has("PROJECT_VIEW_OWN") && !permCtx.has("PROJECT_DETAILS_VIEW")
+                && !permCtx.has("INT_ADMIN_PROJ_VIEW_ALL") && !permCtx.has("INT_SUPER_TRACK")
+                && !permCtx.has("INT_INTERN_VIEW_PROJ")) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Permission PROJECT_VIEW_ALL requise."));
+        }
+        try {
+            return ResponseEntity.ok(projetService.getSuperviseursDesStagiaires(id));
+        } catch (Exception e) {
+            log.error("Erreur GET /projets/{}/superviseurs-stagiaires: {}", id, e.getMessage(), e);
             return ResponseEntity.internalServerError()
                     .body(Map.of("message", e.getMessage()));
         }
@@ -221,7 +249,6 @@ public class ProjetController {
         if (body.get("description") != null) p.setDescription(body.get("description").toString());
         if (body.get("couleur")     != null) p.setCouleur(body.get("couleur").toString());
 
-        // ✅ IDs nomenclature — plus de String statut
         if (body.get("statutProjetId") != null)
             p.setStatutProjetId(Long.valueOf(body.get("statutProjetId").toString()));
         if (body.get("typeProjetId") != null)

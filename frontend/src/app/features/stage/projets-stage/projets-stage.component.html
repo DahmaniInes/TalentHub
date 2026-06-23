@@ -48,27 +48,22 @@
               </svg>
             </button>
             <input class="dt-search-input" [value]="search()"
-                   (input)="search.set($any($event.target).value)" placeholder="Rechercher...">
+                   (input)="search.set($any($event.target).value); resetPage()" placeholder="Rechercher...">
           </div>
           <div class="dt-filter-panel" [class.open]="filterOpen()">
             <div class="dt-fp-header">
               <p class="dt-fp-title">Filtres</p>
-              <button *ngIf="filterStatut()" class="dt-fp-reset" (click)="filterStatut.set('')">Réinitialiser</button>
+              <button *ngIf="filterStatut()" class="dt-fp-reset" (click)="filterStatut.set(''); resetPage()">Réinitialiser</button>
             </div>
             <div class="dt-fp-body">
               <div class="dt-fp-field">
                 <label class="dt-fp-label">Statut</label>
-
-
                 <select class="dt-fp-select"
-                [value]="filterStatut()"
-                (change)="filterStatut.set(+$any($event.target).value||'')">
-          <option value="">Tous</option>
-          <option *ngFor="let s of statutsProjet()" [value]="s.id">{{ s.libelle }}</option>
-        </select>
-
-
-
+                        [value]="filterStatut()"
+                        (change)="filterStatut.set(+$any($event.target).value||''); resetPage()">
+                  <option value="">Tous</option>
+                  <option *ngFor="let s of statutsProjet()" [value]="s.id">{{ s.libelle }}</option>
+                </select>
               </div>
             </div>
             <div class="dt-fp-footer">
@@ -120,7 +115,7 @@
               </div>
             </th>
             <!-- Stagiaires -->
-            <th class="dt-th" style="min-width:160px">
+            <th class="dt-th" style="min-width:140px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 14 14" fill="currentColor">
                   <path d="M7 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm-4 6a4 4 0 118 0H3z"/>
@@ -128,14 +123,14 @@
                 Stagiaires
               </div>
             </th>
-            <!-- Avancement -->
-            <th class="dt-th" style="min-width:160px">
+            <!-- ✅ Superviseurs — remplace Avancement -->
+            <th class="dt-th" style="min-width:140px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
-                  <circle cx="7" cy="7" r="5.5"/>
-                  <path d="M7 4v3l2 1.5" stroke-linecap="round"/>
+                  <circle cx="7" cy="4.5" r="2.5"/>
+                  <path d="M2.5 12c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4" stroke-linecap="round"/>
                 </svg>
-                Avancement
+                Superviseurs
               </div>
             </th>
             <!-- Activités -->
@@ -172,7 +167,7 @@
         </thead>
 
         <tbody>
-          <tr *ngIf="filtered().length === 0">
+          <tr *ngIf="paged().length === 0">
             <td colspan="8" class="dt-td">
               <div class="dt-empty">
                 <svg viewBox="0 0 48 48" fill="none" style="width:38px;height:38px;opacity:.35">
@@ -186,7 +181,7 @@
             </td>
           </tr>
 
-          <tr *ngFor="let p of filtered()" class="dt-tr" (click)="openDetail(p)">
+          <tr *ngFor="let p of paged()" class="dt-tr" (click)="openDetail(p)">
 
             <!-- Checkbox -->
             <td class="dt-td dt-td-cb" (click)="$event.stopPropagation()">
@@ -207,50 +202,63 @@
               </div>
             </td>
 
-
-<!-- Stagiaires — style avatar + nom + email comme colonne Stagiaire -->
-<td class="dt-td">
-  <div *ngIf="p.stagiaires && p.stagiaires.length > 0"
-       style="display:flex;flex-direction:column;gap:6px">
-    <div *ngFor="let stag of p.stagiaires.slice(0,2)"
-         class="dt-cell-with-avatar">
-      <div class="dt-avatar"
-           [style.background]="getAvatarColor(stag.nomComplet || '')"
-           style="width:32px;height:32px;border-radius:8px;flex-shrink:0">
-        <img *ngIf="stag.photoUrl" [src]="stag.photoUrl"
-             style="width:100%;height:100%;object-fit:cover;border-radius:8px">
-        <span *ngIf="!stag.photoUrl" style="font-size:.58rem">
-          {{ getInitiales(stag.nomComplet) }}
-        </span>
-      </div>
-      <div class="dt-cell-user">
-        <span class="dt-cell-name">{{ stag.nomComplet }}</span>
-        <span class="dt-cell-sub">{{ stag.email }}</span>
-      </div>
-    </div>
-    <span *ngIf="p.stagiaires.length > 2"
-          class="dt-cell-muted" style="font-size:.68rem;margin-left:40px">
-      +{{ p.stagiaires.length - 2 }} autre(s)
-    </span>
-  </div>
-  <span *ngIf="!p.stagiaires || p.stagiaires.length === 0"
-        class="dt-cell-muted">—</span>
-</td>
-
-
-
-
-            <!-- Avancement -->
+            <!-- ✅ Stagiaires — si plus d'un, on affiche seulement les avatars empilés -->
             <td class="dt-td">
-              <div style="display:flex;align-items:center;gap:8px">
-                <div style="flex:1;height:6px;background:var(--bg-hover);border-radius:99px;overflow:hidden;min-width:60px">
-                  <div style="height:100%;border-radius:99px;transition:width .3s"
-                       [style.width.%]="p.avancement"
-                       [style.background]="avancementColor(p.avancement)"></div>
+              <div *ngIf="p.stagiaires && p.stagiaires.length === 1" class="dt-cell-with-avatar">
+                <div class="dt-avatar" [style.background]="getAvatarColor(p.stagiaires[0].nomComplet || '')"
+                     style="width:32px;height:32px;border-radius:50%;flex-shrink:0;overflow:hidden">
+                  <img *ngIf="p.stagiaires[0].photoUrl" [src]="p.stagiaires[0].photoUrl"
+                       style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                  <span *ngIf="!p.stagiaires[0].photoUrl" style="font-size:.58rem">{{ getInitiales(p.stagiaires[0].nomComplet) }}</span>
                 </div>
-                <span style="font-size:.72rem;font-weight:800;min-width:28px"
-                      [style.color]="avancementColor(p.avancement)">{{ p.avancement }}%</span>
+                <div class="dt-cell-user">
+                  <span class="dt-cell-name">{{ p.stagiaires[0].nomComplet }}</span>
+                  <span class="dt-cell-sub">{{ p.stagiaires[0].email }}</span>
+                </div>
               </div>
+              <!-- ✅ Plus d'une personne : seulement les avatars empilés -->
+              <div *ngIf="p.stagiaires && p.stagiaires.length > 1" style="display:flex;align-items:center" [title]="getRestStagiairesTooltip(p.stagiaires)">
+                <div *ngFor="let stag of p.stagiaires.slice(0,4); let i = index"
+                     class="dt-avatar"
+                     [style.background]="getAvatarColor(stag.nomComplet || '')"
+                     [style.margin-left]="i > 0 ? '-10px' : '0'"
+                     [style.z-index]="10 - i"
+                     style="width:32px;height:32px;border-radius:50%;flex-shrink:0;overflow:hidden;border:2px solid var(--dt-bg);position:relative">
+                  <img *ngIf="stag.photoUrl" [src]="stag.photoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                  <span *ngIf="!stag.photoUrl" style="font-size:.55rem">{{ getInitiales(stag.nomComplet) }}</span>
+                </div>
+                <span *ngIf="p.stagiaires.length > 4" class="dt-avatar-more" style="margin-left:-10px;z-index:5">+{{ p.stagiaires.length - 4 }}</span>
+              </div>
+              <span *ngIf="!p.stagiaires || p.stagiaires.length === 0" class="dt-cell-muted">—</span>
+            </td>
+
+            <!-- ✅ Superviseurs — même logique : avatars seuls si plusieurs -->
+            <td class="dt-td">
+              <div *ngIf="getSuperviseursProjet(p.id).length === 1" class="dt-cell-with-avatar">
+                <div class="dt-avatar" [style.background]="getAvatarColor(getSuperviseursProjet(p.id)[0].nomComplet || '')"
+                     style="width:32px;height:32px;border-radius:50%;flex-shrink:0;overflow:hidden">
+                  <img *ngIf="getSuperviseursProjet(p.id)[0].photoUrl" [src]="getSuperviseursProjet(p.id)[0].photoUrl"
+                       style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                  <span *ngIf="!getSuperviseursProjet(p.id)[0].photoUrl" style="font-size:.58rem">{{ getInitiales(getSuperviseursProjet(p.id)[0].nomComplet) }}</span>
+                </div>
+                <div class="dt-cell-user">
+                  <span class="dt-cell-name">{{ getSuperviseursProjet(p.id)[0].nomComplet }}</span>
+                  <span class="dt-cell-sub">{{ getSuperviseursProjet(p.id)[0].email }}</span>
+                </div>
+              </div>
+              <div *ngIf="getSuperviseursProjet(p.id).length > 1" style="display:flex;align-items:center" [title]="getRestSuperviseursTooltip(getSuperviseursProjet(p.id))">
+                <div *ngFor="let sup of getSuperviseursProjet(p.id).slice(0,4); let i = index"
+                     class="dt-avatar"
+                     [style.background]="getAvatarColor(sup.nomComplet || '')"
+                     [style.margin-left]="i > 0 ? '-10px' : '0'"
+                     [style.z-index]="10 - i"
+                     style="width:32px;height:32px;border-radius:50%;flex-shrink:0;overflow:hidden;border:2px solid var(--dt-bg);position:relative">
+                  <img *ngIf="sup.photoUrl" [src]="sup.photoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                  <span *ngIf="!sup.photoUrl" style="font-size:.55rem">{{ getInitiales(sup.nomComplet) }}</span>
+                </div>
+                <span *ngIf="getSuperviseursProjet(p.id).length > 4" class="dt-avatar-more" style="margin-left:-10px;z-index:5">+{{ getSuperviseursProjet(p.id).length - 4 }}</span>
+              </div>
+              <span *ngIf="getSuperviseursProjet(p.id).length === 0" class="dt-cell-muted">—</span>
             </td>
 
             <!-- Activités -->
@@ -300,6 +308,35 @@
       </table>
     </div>
 
+    <!-- ✅ Pagination — style identique à GroupsComponent, toujours visible même à 1 page -->
+    <div *ngIf="!loading()" class="dt-footer">
+      <div class="dt-count-info">
+        <strong>{{ filtered().length === 0 ? 0 : (currentPage()-1)*pageSize()+1 }}–{{ minVal(currentPage()*pageSize(), filtered().length) }}</strong>
+        of <strong>{{ filtered().length }}</strong>
+        <select style="margin-left:10px;border:1px solid var(--dt-border);border-radius:6px;padding:3px 8px;font-size:.71rem;background:var(--dt-bg);color:var(--dt-text-sub);font-family:inherit;outline:none;cursor:pointer"
+                [value]="pageSize()"
+                (change)="onPageSizeChange(+$any($event.target).value)">
+          <option value="10">10 / page</option>
+          <option value="25">25 / page</option>
+          <option value="50">50 / page</option>
+        </select>
+      </div>
+      <div class="dt-pagination">
+        <button class="dt-page-arrow" [disabled]="currentPage()===1" (click)="goToPage(currentPage()-1)">
+          <svg viewBox="0 0 14 14" fill="none"><path d="M9 2L5 7l4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <ng-container *ngFor="let p of pagesArray()">
+          <button *ngIf="p===1||p===totalPages()||(p>=currentPage()-1&&p<=currentPage()+1)"
+                  class="dt-page-btn" [class.dt-page-btn-active]="p===currentPage()" (click)="goToPage(p)">{{ p }}</button>
+          <span *ngIf="p===currentPage()-2&&p>1" style="color:var(--dt-text-head);padding:0 4px;font-size:.75rem;line-height:30px">…</span>
+          <span *ngIf="p===currentPage()+2&&p<totalPages()" style="color:var(--dt-text-head);padding:0 4px;font-size:.75rem;line-height:30px">…</span>
+        </ng-container>
+        <button class="dt-page-arrow" [disabled]="currentPage()===totalPages()" (click)="goToPage(currentPage()+1)">
+          <svg viewBox="0 0 14 14" fill="none"><path d="M5 2l4 5-4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+
     </ng-container>
   </div>
 </div>
@@ -321,8 +358,6 @@
         <label class="dm-label">Nom <span style="color:#ef4444">*</span></label>
         <input [(ngModel)]="form().nom" class="dm-input" placeholder="Nom du projet">
       </div>
-
-
 
       <div class="dm-field">
         <label class="dm-label">Description</label>
@@ -364,8 +399,9 @@
                    [checked]="isStagiaireSelected(s.id)"
                    (change)="toggleStagiaire(s.id)">
             <div class="dt-avatar" [style.background]="getAvatarColor(s.nomComplet || '')"
-                 style="width:22px;height:22px;border-radius:50%;font-size:.52rem;flex-shrink:0">
-              {{ getInitiales(s.nomComplet) }}
+                 style="width:22px;height:22px;border-radius:50%;font-size:.52rem;flex-shrink:0;overflow:hidden">
+              <img *ngIf="s.photoUrl" [src]="s.photoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+              <span *ngIf="!s.photoUrl">{{ getInitiales(s.nomComplet) }}</span>
             </div>
             <span style="font-size:.8rem;font-weight:600">{{ s.nomComplet }}</span>
           </label>
@@ -376,7 +412,7 @@
       <div class="dm-field" *ngIf="canCreate()">
         <label class="dm-label">Documents</label>
         <label class="pd5-upload-btn" style="margin-bottom:0">
-          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;flex-shrink:0">
             <path d="M7 1v8M4 6l3 3 3-3" stroke-linecap="round"/>
             <path d="M1 11v1a1 1 0 001 1h12a1 1 0 001-1v-1" stroke-linecap="round"/>
           </svg>

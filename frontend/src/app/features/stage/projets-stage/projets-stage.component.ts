@@ -2,7 +2,9 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
 import { ProjetStageService }       from '../../../services/projet-stage-service.service';
 import { StagiaireService }         from '../../../services/stagiaire.service';
 import { PermissionContextService } from '../../../services/permission-context.service';
@@ -17,6 +19,15 @@ import { HttpErrorResponse }        from '@angular/common/http';
 
 // ✅ ID fixe du type de projet "STAGE_ACADEMIQUE" dans la nomenclature (confirmé en dur)
 const TYPE_PROJET_STAGE_ID = 4;
+
+// ✅ Forme minimale renvoyée par GET /projets/{id}/superviseurs-stagiaires
+interface SuperviseurInfo {
+  id: number;
+  nomComplet: string;
+  email: string;
+  photoUrl?: string;
+  poste?: string;
+}
 
 @Component({
   selector: 'app-projets-stage',
@@ -35,6 +46,11 @@ export class ProjetsStageComponent implements OnInit {
   readonly perms    = inject(PermissionContextService);
   readonly ui       = inject(UiService);
   private router    = inject(Router);
+  // ✅ Appel direct pour GET /projets/{id}/superviseurs-stagiaires — même
+  // endpoint déjà utilisé dans la page détail projet, réutilisé ici en
+  // batch (un appel par projet visible, en parallèle via forkJoin) pour
+  // afficher la colonne Superviseurs dans la liste sans modifier le backend.
+  private http      = inject(HttpClient);
 
   projets       = signal<Projet[]>([]);
   stagiaires    = signal<Utilisateur[]>([]);
@@ -54,6 +70,28 @@ export class ProjetsStageComponent implements OnInit {
 
   // ✅ Documents à uploader juste après la création du projet (upload immédiat)
   pendingFiles  = signal<File[]>([]);
+
+  // ✅ Map projetId → liste de superviseurs distincts de tous les stagiaires
+  // de ce projet, pour la colonne "Superviseurs" du tableau.
+  superviseursParProjetId = signal<Map<number, SuperviseurInfo[]>>(new Map());
+
+  // ── PAGINATION (style identique à GroupsComponent : pageSize modifiable, ellipses) ──
+  currentPage = signal(1);
+  pageSize    = signal(10);
+
+  resetPage(): void { this.currentPage.set(1); }
+
+  onPageSizeChange(size: number): void {
+    this.pageSize.set(size);
+    this.currentPage.set(1);
+  }
+
+  goToPage(p: number): void {
+    if (p < 1 || p > this.totalPages()) return;
+    this.currentPage.set(p);
+  }
+
+  minVal(a: number, b: number): number { return Math.min(a, b); }
 
   // ✅ Snapshot des stagiaires déjà assignés au moment de l'ouverture du formulaire
   //    (nécessaire pour calculer qui ajouter / qui retirer lors de save() en édition)
@@ -75,7 +113,18 @@ export class ProjetsStageComponent implements OnInit {
     return list;
   });
 
+  // ── PAGINATION (computed) ──
+  totalPages = computed(() =>
+      Math.max(1, Math.ceil(this.filtered().length / this.pageSize())));
 
+  /** Toutes les pages — le template filtre lui-même via les ellipses (style GroupsComponent) */
+  pagesArray = computed(() =>
+      Array.from({ length: this.totalPages() }, (_, i) => i + 1));
+
+  paged = computed(() => {
+    const start = (this.currentPage() - 1) * this.pageSize();
+    return this.filtered().slice(start, start + this.pageSize());
+  });
 
   statsEnCours = computed(() => this.filtered().filter(p => {
     const s = this.statutsProjet().find(st => st.id === p.statutProjetId);
@@ -87,10 +136,10 @@ export class ProjetsStageComponent implements OnInit {
   }).length);
 
   allPageSelected  = computed(() =>
-      this.filtered().length > 0 &&
-      this.filtered().every(p => this.selectedIds().has(p.id)));
+      this.paged().length > 0 &&
+      this.paged().every(p => this.selectedIds().has(p.id)));
   somePageSelected = computed(() =>
-      this.filtered().some(p => this.selectedIds().has(p.id)) &&
+      this.paged().some(p => this.selectedIds().has(p.id)) &&
       !this.allPageSelected());
 
   ngOnInit(): void {
@@ -123,17 +172,17 @@ export class ProjetsStageComponent implements OnInit {
     this.loading.set(true);
     if (this.perms.canViewAllProjetsStage()) {
       this.svc.getAll().subscribe({
-        next: d => { this.projets.set(d); this.loading.set(false); },
+        next: d => { this.projets.set(d); this.loading.set(false); this.chargerSuperviseursPourTousLesProjets(d); },
         error: () => this.loading.set(false)
       });
     } else if (this.perms.canViewMyProjetsStage()) {
       this.svc.getBySuperviseur(userId).subscribe({
-        next: d => { this.projets.set(d); this.loading.set(false); },
+        next: d => { this.projets.set(d); this.loading.set(false); this.chargerSuperviseursPourTousLesProjets(d); },
         error: () => this.loading.set(false)
       });
     } else if (this.perms.canViewMyProjet()) {
       this.svc.getByStagiaire(userId).subscribe({
-        next: d => { this.projets.set(d); this.loading.set(false); },
+        next: d => { this.projets.set(d); this.loading.set(false); this.chargerSuperviseursPourTousLesProjets(d); },
         error: () => this.loading.set(false)
       });
     } else {
@@ -142,7 +191,46 @@ export class ProjetsStageComponent implements OnInit {
     }
   }
 
-  // ── Sélection ──
+  /**
+   * ✅ NOUVEAU — Charge les superviseurs de tous les stagiaires, pour tous
+   * les projets visibles, en parallèle (un appel HTTP par projet, tous
+   * lancés ensemble via forkJoin — pas de chaîne séquentielle). Réutilise
+   * l'endpoint GET /projets/{id}/superviseurs-stagiaires déjà existant et
+   * déjà utilisé dans la page détail projet ; aucune modification backend.
+   * Un échec sur un projet isolé n'empêche pas les autres de s'afficher
+   * (catchError → tableau vide pour ce projet).
+   */
+  private chargerSuperviseursPourTousLesProjets(projets: Projet[]): void {
+    const idsAvecStagiaires = projets.filter(p => (p.stagiaires?.length || 0) > 0);
+    if (idsAvecStagiaires.length === 0) return;
+
+    const appels = idsAvecStagiaires.map(p =>
+        this.http.get<{ stagiaireId: number; superviseurs: SuperviseurInfo[] }[]>(
+            `http://localhost:8085/api/application/projets/${p.id}/superviseurs-stagiaires`
+        ).pipe(catchError(() => of([])))
+    );
+
+    forkJoin(appels).subscribe(resultats => {
+      const map = new Map<number, SuperviseurInfo[]>();
+      resultats.forEach((rows, idx) => {
+        const projetId = idsAvecStagiaires[idx].id;
+        const seen = new Set<number>();
+        const distincts: SuperviseurInfo[] = [];
+        rows.forEach(r => (r.superviseurs || []).forEach(sup => {
+          if (!seen.has(sup.id)) { seen.add(sup.id); distincts.push(sup); }
+        }));
+        map.set(projetId, distincts);
+      });
+      this.superviseursParProjetId.set(map);
+    });
+  }
+
+  /** Superviseurs distincts (tous stagiaires confondus) d'un projet — pour la colonne Superviseurs */
+  getSuperviseursProjet(projetId: number): SuperviseurInfo[] {
+    return this.superviseursParProjetId().get(projetId) || [];
+  }
+
+  // ── Sélection (sur la page courante uniquement) ──
   isSelected(id: number): boolean { return this.selectedIds().has(id); }
   toggleSelect(id: number): void {
     this.selectedIds.update(s => {
@@ -155,13 +243,13 @@ export class ProjetsStageComponent implements OnInit {
     if (this.allPageSelected()) {
       this.selectedIds.update(s => {
         const n = new Set(s);
-        this.filtered().forEach(p => n.delete(p.id));
+        this.paged().forEach(p => n.delete(p.id));
         return n;
       });
     } else {
       this.selectedIds.update(s => {
         const n = new Set(s);
-        this.filtered().forEach(p => n.add(p.id));
+        this.paged().forEach(p => n.add(p.id));
         return n;
       });
     }
@@ -313,6 +401,7 @@ export class ProjetsStageComponent implements OnInit {
                       ? list.map(p => p.id === projetAJour.id ? projetAJour : p)
                       : [...list, projetAJour]
               );
+              this.chargerSuperviseursPourTousLesProjets(this.projets());
             },
             error: () => {
               // En cas d'échec du rechargement, on retombe au moins sur `saved`
@@ -400,5 +489,15 @@ export class ProjetsStageComponent implements OnInit {
 
   getNom(p: Projet): string {
     return p.nom;
+  }
+
+  /** Tooltip listant les superviseurs au-delà des 2 premiers affichés */
+  getRestSuperviseursTooltip(supers: SuperviseurInfo[]): string {
+    return supers.map(s => s.nomComplet).join(', ');
+  }
+
+  /** Tooltip listant les stagiaires au-delà des 2 premiers affichés */
+  getRestStagiairesTooltip(stags: any[]): string {
+    return stags.map(s => s.nomComplet).join(', ');
   }
 }

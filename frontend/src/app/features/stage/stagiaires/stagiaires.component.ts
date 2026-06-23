@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 
 import { StagiaireService }         from '../../../services/stagiaire.service';
 import { ProjetStageService }       from '../../../services/projet-stage-service.service';
+import { StageAngularService }      from '../../../services/stage.service';
 import { PermissionContextService } from '../../../services/permission-context.service';
 import { KeycloakService }          from '../../../services/keycloak.service';
 import { UserService }              from '../../../services/user.service';
@@ -25,6 +26,7 @@ export class StagiairesComponent implements OnInit {
 
   private svc       = inject(StagiaireService);
   private projetSvc = inject(ProjetStageService);
+  private stageSvc  = inject(StageAngularService);
   private userSvc   = inject(UserService);
   private keycloak  = inject(KeycloakService);
   private nomencSvc = inject(NomenclatureAcademiqueService);
@@ -178,17 +180,31 @@ export class StagiairesComponent implements OnInit {
       typeStageId:    s.stages?.[0]?.typeStageId,
       dateDebutStage: s.stages?.[0]?.dateDebut,
       dateFinStage:   s.stages?.[0]?.dateFin,
-      dateSoutenance: s.stages?.[0]?.dateSoutenance
+      dateSoutenance: s.stages?.[0]?.dateSoutenance,
+      // ✅ NOUVEAU — on garde l'ID du premier stage pour pouvoir le PUT/PATCH
+      // au lieu d'un POST qui en créerait un nouveau à chaque sauvegarde.
+      stageId: s.stages?.[0]?.id ?? null
     });
   }
 
   fermerDetail(): void { this.detailStagiaire.set(null); this.projetPopupOpen.set(false); }
 
+  /**
+   * ✅ CORRIGÉ — Sauvegarde désormais aussi les champs du stage (Type de
+   * stage, dates début/fin/soutenance) :
+   * - S'il existe déjà un stage pour ce stagiaire (stageId connu), on le
+   *   met à jour via PUT /stages/{id}.
+   * - Sinon, on en crée un nouveau via POST /stages/utilisateur/{userId}.
+   * AVANT : seul updateStagiaire() (infos académiques) était appelé — les
+   * champs du stage n'étaient donc jamais envoyés au backend, restant
+   * toujours null en base malgré la saisie dans le formulaire.
+   */
   sauvegarder(): void {
     const s = this.detailStagiaire();
     if (!s) return;
     this.saving.set(true);
-    const body = {
+
+    const bodyUtilisateur = {
       prenom:        this.editForm().prenom,
       nom:           this.editForm().nom,
       telephone:     this.editForm().telephone,
@@ -196,12 +212,54 @@ export class StagiairesComponent implements OnInit {
       specialiteId:  this.editForm().specialiteId  || null,
       niveauEtudeId: this.editForm().niveauEtudeId || null
     };
-    this.svc.update(s.id, body).subscribe({
-      next: updated => {
-        this.stagiaires.update(list => list.map(u => u.id === updated.id ? updated : u));
-        this.detailStagiaire.set(updated);
-        this.saving.set(false);
-        this.ui.success('Stagiaire mis à jour ✅');
+
+    const bodyStage = {
+      typeStageId:    this.editForm().typeStageId    || null,
+      dateDebut:      this.editForm().dateDebutStage || null,
+      dateFin:        this.editForm().dateFinStage   || null,
+      dateSoutenance: this.editForm().dateSoutenance || null
+    };
+
+    const stageId: number | null = this.editForm().stageId;
+
+    // ✅ Lance les deux sauvegardes (infos utilisateur + stage). On attend
+    // les deux avant de considérer l'opération terminée pour rafraîchir
+    // l'affichage avec des données cohérentes.
+    this.svc.update(s.id, bodyUtilisateur).subscribe({
+      next: updatedUser => {
+        // Utilise le service de stage dédié (StageAngularService), injecté
+        // ci-dessus comme `stageSvc` — voir l'ajout d'injection.
+        const obsStage = stageId
+            ? this.stageSvc.updateStage(stageId, bodyStage)
+            : this.stageSvc.createStage(s.id, bodyStage);
+
+        obsStage.subscribe({
+          next: savedStage => {
+            // ✅ Fusionne le stage sauvegardé dans l'objet utilisateur local
+            // pour que l'affichage (colonne Type stage / Période) soit à
+            // jour sans recharger toute la liste depuis le serveur.
+            const stagesActuels = updatedUser.stages?.length ? [...updatedUser.stages] : [];
+            if (stageId) {
+              const idx = stagesActuels.findIndex(st => st.id === stageId);
+              if (idx >= 0) stagesActuels[idx] = savedStage as any;
+              else stagesActuels.unshift(savedStage as any);
+            } else {
+              stagesActuels.unshift(savedStage as any);
+            }
+            const updatedComplet: Utilisateur = { ...updatedUser, stages: stagesActuels };
+
+            this.stagiaires.update(list => list.map(u => u.id === updatedComplet.id ? updatedComplet : u));
+            this.detailStagiaire.set(updatedComplet);
+            // ✅ Mémorise l'ID du stage nouvellement créé pour les sauvegardes suivantes
+            this.editForm.update(f => ({ ...f, stageId: (savedStage as any).id }));
+            this.saving.set(false);
+            this.ui.success('Stagiaire mis à jour ✅');
+          },
+          error: () => {
+            this.saving.set(false);
+            this.ui.error('Infos enregistrées, mais erreur lors de la sauvegarde du stage.');
+          }
+        });
       },
       error: () => { this.saving.set(false); this.ui.error('Erreur lors de la sauvegarde.'); }
     });
@@ -216,26 +274,58 @@ export class StagiairesComponent implements OnInit {
     });
   }
 
+  /**
+   * ✅ CORRIGÉ — Ajoute un superviseur en passant par assignerSuperviseurs()
+   * avec la liste COMPLÈTE recalculée à partir de s.superviseurs (la vraie
+   * collection d'objets, pas s.superviseurIds qui peut être désynchronisé).
+   * C'est exactement la même logique que le bouton "Superviseurs" du drawer
+   * projet (projet-stage-detail.component), qui fonctionne correctement.
+   */
   ajouterSuperviseur(supId: number): void {
     const s = this.detailStagiaire();
     if (!s || !supId) return;
-    const ids = [...(s.superviseurIds || []), supId];
-    this.svc.assignerSuperviseurs(s.id, ids).subscribe({
+    const idsActuels = (s.superviseurs || []).map(sup => sup.id);
+    const idsCibles = idsActuels.includes(supId) ? idsActuels : [...idsActuels, supId];
+    this.svc.assignerSuperviseurs(s.id, idsCibles).subscribe({
       next: updated => {
         this.detailStagiaire.set(updated);
         this.stagiaires.update(l => l.map(u => u.id === updated.id ? updated : u));
-      }
+        this.ui.success('Superviseur ajouté ✅');
+      },
+      error: () => this.ui.error('Erreur lors de l\'ajout du superviseur.')
     });
   }
 
+  /**
+   * ✅ CORRIGÉ — Retire un superviseur déjà assigné.
+   * AVANT : appelait this.svc.retirerSuperviseur(s.id, supId), qui mappe
+   * vers DELETE /stagiaires/{id}/superviseurs/{superviseurId} côté backend.
+   * Ce endpoint renvoyait l'entité Utilisateur relue dans le MÊME contexte
+   * de transaction Hibernate — la collection superviseurLinks pouvait donc
+   * encore refléter l'état EN CACHE (avant désactivation), même si le lien
+   * avait bien été désactivé en base. Résultat : le superviseur retiré
+   * continuait d'apparaître dans la réponse, donnant l'impression que le
+   * retrait échouait, alors que la base était correcte.
+   *
+   * CORRIGÉ : on utilise désormais assignerSuperviseurs() avec la liste
+   * COMPLÈTE des superviseurs restants (tous moins celui qu'on retire) —
+   * exactement la même route et la même logique que le bouton "Superviseurs"
+   * du drawer projet (projet-stage-detail.component), qui fonctionne déjà
+   * correctement et ne souffre pas de ce problème de cache.
+   */
   retirerSuperviseur(supId: number): void {
     const s = this.detailStagiaire();
     if (!s) return;
-    this.svc.retirerSuperviseur(s.id, supId).subscribe({
+    const idsRestants = (s.superviseurs || [])
+        .map(sup => sup.id)
+        .filter(id => id !== supId);
+    this.svc.assignerSuperviseurs(s.id, idsRestants).subscribe({
       next: updated => {
         this.detailStagiaire.set(updated);
         this.stagiaires.update(l => l.map(u => u.id === updated.id ? updated : u));
-      }
+        this.ui.success('Superviseur retiré ✅');
+      },
+      error: () => this.ui.error('Erreur lors du retrait du superviseur.')
     });
   }
 
@@ -314,6 +404,11 @@ export class StagiairesComponent implements OnInit {
   getPremierProjet(s: Utilisateur): { nom: string } | null {
     if (!s.projetsStage || s.projetsStage.length === 0) return null;
     return { nom: s.projetsStage[0].nomComplet || `Projet #${s.projetsStage[0].id}` };
+  }
+
+  /** ✅ NOUVEAU — Tooltip listant tous les superviseurs au-delà des 4 premiers affichés */
+  getRestSuperviseursTooltip(supers: SuperviseurMin[]): string {
+    return supers.map(s => s.nomComplet).join(', ');
   }
 
   resetFilters(): void { this.search.set(''); this.filterTypeStage.set(''); this.filterStatut.set(''); this.page.set(1); }

@@ -148,7 +148,7 @@
                 Période
               </div>
             </th>
-            <!-- Superviseurs — même style que colonne Stagiaire -->
+            <!-- Superviseurs -->
             <th class="dt-th" style="min-width:230px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 16 16" fill="currentColor">
@@ -251,40 +251,48 @@
             </td>
 
 
-            <!-- Superviseurs — exactement même style que colonne Stagiaire -->
+            <!-- ✅ Superviseurs — 1 seul : avatar+nom+email. Plusieurs : avatars ronds empilés seuls -->
             <td class="dt-td">
-              <div *ngIf="s.superviseurs && s.superviseurs.length > 0"
-                   style="display:flex;flex-direction:column;gap:6px">
-                <div *ngFor="let sup of s.superviseurs.slice(0,2)"
-                     class="dt-cell-with-avatar">
-                  <div class="dt-avatar"
-                       [style.background]="getAvatarColor(sup.nomComplet || '')"
-                       style="width:32px;height:32px;border-radius:8px;flex-shrink:0">
-                    <img *ngIf="sup.photoUrl" [src]="sup.photoUrl"
-                         style="width:100%;height:100%;object-fit:cover;border-radius:8px">
-                    <span *ngIf="!sup.photoUrl" style="font-size:.58rem">
-                      {{ getInitiales(sup.nomComplet) }}
-                    </span>
-                  </div>
-                  <div class="dt-cell-user">
-                    <span class="dt-cell-name">
-                      {{ sup.nomComplet }}
-                      <span *ngIf="estVous(sup.id)"
-                            style="font-size:.58rem;padding:1px 6px;border-radius:99px;background:var(--accent-soft);color:var(--accent);border:1px solid rgba(192,38,211,.2);margin-left:4px;font-weight:700">
-                        Vous
-                      </span>
-                    </span>
-                    <span class="dt-cell-sub">{{ sup.email }}</span>
-                  </div>
+              <div *ngIf="s.superviseurs && s.superviseurs.length === 1" class="dt-cell-with-avatar">
+                <div class="dt-avatar"
+                     [style.background]="getAvatarColor(s.superviseurs[0].nomComplet || '')"
+                     style="width:32px;height:32px;border-radius:50%;flex-shrink:0;overflow:hidden">
+                  <img *ngIf="s.superviseurs[0].photoUrl" [src]="s.superviseurs[0].photoUrl"
+                       style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                  <span *ngIf="!s.superviseurs[0].photoUrl" style="font-size:.58rem">
+                    {{ getInitiales(s.superviseurs[0].nomComplet) }}
+                  </span>
                 </div>
-                <span *ngIf="s.superviseurs.length > 2"
-                      class="dt-cell-muted"
-                      style="font-size:.68rem;margin-left:40px">
-                  +{{ s.superviseurs.length - 2 }} autre(s)
+                <div class="dt-cell-user">
+                  <span class="dt-cell-name">
+                    {{ s.superviseurs[0].nomComplet }}
+                    <span *ngIf="estVous(s.superviseurs[0].id)"
+                          style="font-size:.58rem;padding:1px 6px;border-radius:99px;background:var(--accent-soft);color:var(--accent);border:1px solid rgba(192,38,211,.2);margin-left:4px;font-weight:700">
+                      Vous
+                    </span>
+                  </span>
+                  <span class="dt-cell-sub">{{ s.superviseurs[0].email }}</span>
+                </div>
+              </div>
+
+              <!-- ✅ Plusieurs superviseurs : uniquement les avatars ronds empilés -->
+              <div *ngIf="s.superviseurs && s.superviseurs.length > 1"
+                   style="display:flex;align-items:center" [title]="getRestSuperviseursTooltip(s.superviseurs)">
+                <div *ngFor="let sup of s.superviseurs.slice(0,4); let i = index"
+                     class="dt-avatar"
+                     [style.background]="getAvatarColor(sup.nomComplet || '')"
+                     [style.margin-left]="i > 0 ? '-10px' : '0'"
+                     [style.z-index]="10 - i"
+                     style="width:32px;height:32px;border-radius:50%;flex-shrink:0;overflow:hidden;border:2px solid var(--dt-bg);position:relative">
+                  <img *ngIf="sup.photoUrl" [src]="sup.photoUrl" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                  <span *ngIf="!sup.photoUrl" style="font-size:.55rem">{{ getInitiales(sup.nomComplet) }}</span>
+                </div>
+                <span *ngIf="s.superviseurs.length > 4" class="dt-avatar-more" style="margin-left:-10px;z-index:5">
+                  +{{ s.superviseurs.length - 4 }}
                 </span>
               </div>
-              <span *ngIf="!s.superviseurs || s.superviseurs.length === 0"
-                    class="dt-cell-muted">—</span>
+
+              <span *ngIf="!s.superviseurs || s.superviseurs.length === 0" class="dt-cell-muted">—</span>
             </td>
 
             <!-- Projet assigné -->
@@ -347,7 +355,7 @@
   </div>
 </div>
 
-<!-- SLIDE-OVER DÉTAIL — inchangé, copier depuis la version précédente -->
+<!-- SLIDE-OVER DÉTAIL -->
 <div *ngIf="detailStagiaire()" class="mx-overlay" (click)="fermerDetail()"></div>
 <div *ngIf="detailStagiaire() as s" class="mx-slideover">
 
