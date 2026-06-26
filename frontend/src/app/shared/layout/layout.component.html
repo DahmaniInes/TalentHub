@@ -29,8 +29,8 @@
               <path d="M2.5192 7.82274C2 8.77128 2 9.91549 2 12.2039V13.725C2 17.6258 2 19.5763 3.17157 20.7881C4.34315 22 6.22876 22 10 22H14C17.7712 22 19.6569 22 20.8284 20.7881C22 19.5763 22 17.6258 22 13.725V12.2039C22 9.91549 22 8.77128 21.4808 7.82274C20.9616 6.87421 20.0131 6.28551 18.116 5.10812L16.116 3.86687C14.1106 2.62229 13.1079 2 12 2C10.8921 2 9.88939 2.62229 7.88403 3.86687L5.88403 5.10813C3.98695 6.28551 3.0384 6.87421 2.5192 7.82274ZM11.25 18C11.25 18.4142 11.5858 18.75 12 18.75C12.4142 18.75 12.75 18.4142 12.75 18V15C12.75 14.5858 12.4142 14.25 12 14.25C11.5858 14.25 11.25 14.5858 11.25 15V18Z"/>
             </svg>
           </span>
-          <span class="nav-label">Home</span>
-          <span class="nav-tooltip">Home</span>
+          <span class="nav-label">Accueil</span>
+          <span class="nav-tooltip">Accueil</span>
         </a>
 
         <!-- Dashboard -->
@@ -42,8 +42,8 @@
               <path d="M0 9H4V15H0V9Z"/>
             </svg>
           </span>
-          <span class="nav-label">Dashboard</span>
-          <span class="nav-tooltip">Dashboard</span>
+          <span class="nav-label">Tableau de bord</span>
+          <span class="nav-tooltip">Tableau de bord</span>
         </a>
 
         <!-- ══ DEMANDES — Menu conditionnel selon permissions ══ -->
@@ -563,7 +563,7 @@ class="nav-item nav-subitem-full" (click)="closeSidebar()">
 <!-- ══ ESPACE STAGIAIRE ══ -->
 <div class="nav-group" *ngIf="perms.canSeeEspaceStagiaire()">
   <button class="nav-item nav-group-btn"
-  [class.active]="isAnyRouteActive('/stagiaires', '/types-stage', '/projets-stage', '/activites-stage', '/mon-profil-stagiaire', '/statuts-stage')"
+  [class.active]="isAnyRouteActive('/stagiaires', '/types-stage', '/projets-stage', '/activites-stage', '/mon-profil-stagiaire', '/statuts-stage', '/espace-stage/documents')"
   (click)="toggleStagiaireMenu()">
     <span class="nav-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20">
@@ -642,20 +642,24 @@ class="nav-item nav-subitem-full" (click)="closeSidebar()">
       <span class="nav-label">Projets</span>
       <span class="nav-tooltip">Projets de stage</span>
     </a>
-  
-    <!-- ✅ Activités — admin + superviseur + stagiaire -->
-    <a *ngIf="perms.canSeeProjetsStageMenu()"
-       routerLink="/activites-stage" routerLinkActive="active"
+
+    <!-- ✅ NOUVEAU — Documents — visible dès que INT_DOC_VIEW est présent
+         (admin, superviseur ou stagiaire ; le niveau de détail des
+         documents affichés est résolu côté backend) -->
+    <a *ngIf="perms.canSeeDocEspaceStageMenu()"
+       routerLink="/espace-stage/documents" routerLinkActive="active"
        class="nav-item nav-subitem-full" (click)="closeSidebar()">
       <span class="nav-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="18" height="18">
-          <path d="M9 11l3 3 5-5M4 6h16M4 12h7M4 18h7"
-                stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M4 2h10l6 6v14H4V2z" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke-linejoin="round"/>
         </svg>
       </span>
-      <span class="nav-label">Activités</span>
-      <span class="nav-tooltip">Activités de stage</span>
+      <span class="nav-label">Documents</span>
+      <span class="nav-tooltip">Documents de l'espace stage</span>
     </a>
+  
+ 
   
     <!-- ✅ Mon profil — stagiaire uniquement -->
     <a *ngIf="perms.canSeeMonProfilStagiaire()"
@@ -694,8 +698,6 @@ class="nav-item nav-subitem-full" (click)="closeSidebar()">
 </div>
 
 
-
-
         
 
 <!-- layout-rh-nav-snippet.html
@@ -731,16 +733,19 @@ class="nav-item nav-subitem-full" (click)="closeSidebar()">
 
     <!-- ✅ Employés : visible si USER_CREATE (accès au formulaire de création) -->
     <a *ngIf="perms.canCreateUser()"
-       routerLink="/add-user" routerLinkActive="active"
-       class="nav-item nav-subitem-full" (click)="closeSidebar()">
-      <span class="nav-icon">
-        <svg fill="currentColor" width="20" height="20" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-          <path d="M166.5415,192.78516a7.99991,7.99991,0,0,1-6.54052,12.606l-144.0044.00537a8.0002,8.0002,0,0,1-6.542-12.60546,96.21448,96.21448,0,0,1,45.34753-34.84351,60.00007,60.00007,0,1,1,66.39661,0A96.21491,96.21491,0,0,1,166.5415,192.78516Zm81.522,0a96.214,96.214,0,0,0-45.34327-34.83765A60.00088,60.00088,0,0,0,153.24707,50.23535a8,8,0,0,0-4.251,12.47852,75.83151,75.83151,0,0,1,3.84082,84.88623,8,8,0,0,0,2.04493,10.60107,113.20643,113.20643,0,0,1,8.74365,7.2146c.14429.15674.28979.31275.44873.46021a112.03418,112.03418,0,0,1,25.479,34.90527,7.99971,7.99971,0,0,0,7.24951,4.61523l44.72071-.00537a8.0001,8.0001,0,0,0,6.54-12.606Z"/>
-        </svg>
-      </span>
-      <span class="nav-label">Employés</span>
-      <span class="nav-tooltip">Employés</span>
-    </a>
+    routerLink="/add-user" routerLinkActive="active"
+    class="nav-item nav-subitem-full" (click)="closeSidebar()">
+   <span class="nav-icon">
+     <svg fill="currentColor" width="20" height="20" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+       <circle cx="100" cy="76" r="40"/>
+       <path d="M28,208a72,72,0,0,1,144,0Z"/>
+       <rect x="184" y="116" width="16" height="56" rx="8"/>
+       <rect x="164" y="136" width="56" height="16" rx="8"/>
+     </svg>
+   </span>
+   <span class="nav-label">Ajouter un utilisateur</span>
+   <span class="nav-tooltip">Ajouter un utilisateur</span>
+ </a>
 
     <!-- ✅ Utilisateurs : visible si USER_VIEW -->
     <a *ngIf="perms.canViewUsers()"

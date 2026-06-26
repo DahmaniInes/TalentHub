@@ -36,7 +36,8 @@ export class UsersComponent implements OnInit {
   users   = signal<Utilisateur[]>([]);
   profils = signal<Profil[]>([]);
   groupes = signal<Groupe[]>([]);
-
+  photoPreview     = signal<string | null>(null);
+  uploadingPhoto   = signal(false);
   // ── State ──
   loading      = signal(true);
   search       = signal('');
@@ -277,4 +278,38 @@ export class UsersComponent implements OnInit {
     const mois = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
     return `${String(date.getDate()).padStart(2,'0')} ${mois[date.getMonth()]}, ${date.getFullYear()}`;
   }
+
+
+
+onPhotoSelected(event: Event): void {
+  const input = event.target as HTMLInputElement;
+  const file  = input.files?.[0];
+  const user  = this.selectedUser();
+  if (!file || !user) return;
+
+  if (file.size > 5 * 1024 * 1024) {
+    this.ui.warning('Image trop lourde (max 5 Mo).');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => this.photoPreview.set(reader.result as string);
+  reader.readAsDataURL(file);
+
+  this.uploadingPhoto.set(true);
+  this.userSvc.updateUserPhoto(user.id, file).subscribe({
+    next: (updated: Utilisateur) => {
+      this.ui.success('Photo mise à jour.');
+      this.selectedUser.set(updated);
+      this.loadAll();
+      this.uploadingPhoto.set(false);
+      this.photoPreview.set(null);
+    },
+    error: (err: HttpErrorResponse) => {
+      this.ui.error(this.errorSvc.parse(err).message);
+      this.uploadingPhoto.set(false);
+      this.photoPreview.set(null);
+    }
+  });
+}
 }

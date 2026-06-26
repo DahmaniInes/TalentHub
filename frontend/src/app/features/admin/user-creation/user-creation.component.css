@@ -1,11 +1,9 @@
-
-
 /* ============================================================
    USER-CREATION STEPPER — Composant CSS autonome
    Accent principal : #c026d3
    ============================================================ */
 
-.uc-wrapper {
+   .uc-wrapper {
     /* ════════════════════════════════════════════════════════
        VARIABLES CONNECTÉES AUX GLOBALES (style.css)
        ════════════════════════════════════════════════════════ */
@@ -38,9 +36,17 @@
 --uc-shadow: var(--shadow-card);
 --uc-shadow-modal: 0 20px 60px rgba(0,0,0,0.15);
 
-min-height: 100vh;
+/* ════════════════════════════════════════════════════════
+   VARIANTES À CONTRASTE RENFORCÉ — fix lisibilité light mode
+   S'adaptent automatiquement aux deux thèmes via color-mix()
+   ════════════════════════════════════════════════════════ */
+--uc-text-muted-safe: color-mix(in srgb, var(--uc-text-muted) 55%, var(--uc-text) 45%);
+--uc-text-2-safe: color-mix(in srgb, var(--uc-text-2) 70%, var(--uc-text) 30%);
+--uc-border-safe: color-mix(in srgb, var(--uc-border) 55%, var(--uc-text) 30%);
+
+min-height: 100%;
 padding: 32px 24px;
-font-family: 'Segoe UI', system-ui, sans-serif;
+font-family: 'Arimo', sans-serif;
 }
   
   /* ══════════════════════════════════════════
@@ -61,7 +67,7 @@ font-family: 'Segoe UI', system-ui, sans-serif;
     left: calc(12px + 40px);
     right: calc(12px + 40px);
     height: 2px;
-    background: var(--uc-border);
+    background: var(--uc-border-safe);
     border-radius: 99px;
     z-index: 0;
   }
@@ -90,7 +96,7 @@ font-family: 'Segoe UI', system-ui, sans-serif;
     align-items: center;
     justify-content: center;
     background: var(--uc-card);
-    border: 2px solid var(--uc-border);
+    border: 2px solid var(--uc-border-safe);
     color: var(--uc-text-muted);
     transition: all 0.3s ease;
     box-shadow: var(--uc-shadow);
@@ -109,15 +115,15 @@ font-family: 'Segoe UI', system-ui, sans-serif;
   }
   
   .uc-step-node.done .uc-step-circle {
-    background: var(--uc-accent-light);
+    background: linear-gradient(135deg, var(--uc-accent) 0%, var(--uc-accent-2) 100%);
     border-color: var(--uc-accent);
-    color: var(--uc-accent);
+    color: white;
   }
   
   .uc-step-label {
     font-size: 11px;
     font-weight: 600;
-    color: var(--uc-text-muted);
+    color: var(--uc-text-muted-safe);
     letter-spacing: 0.3px;
     transition: color 0.3s;
     white-space: nowrap;
@@ -188,7 +194,7 @@ font-family: 'Segoe UI', system-ui, sans-serif;
   
   .uc-step-subtitle {
     font-size: 13px;
-    color: var(--uc-text-muted);
+    color: var(--uc-text-muted-safe);
     margin: 0;
   }
   
@@ -215,7 +221,7 @@ font-family: 'Segoe UI', system-ui, sans-serif;
   .uc-label {
     font-size: 12px;
     font-weight: 600;
-    color: var(--uc-text-2);
+    color: var(--uc-text-2-safe);
     letter-spacing: 0.2px;
   }
   
@@ -611,7 +617,7 @@ font-family: 'Segoe UI', system-ui, sans-serif;
 
   .uc-profil-desc {
     font-size: 11px;
-    color: var(--uc-text-muted);
+    color: var(--uc-text-muted-safe);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -790,7 +796,7 @@ font-family: 'Segoe UI', system-ui, sans-serif;
     margin: 0;
   }
   
-  .uc-empty-state span { font-size: 11.5px; color: var(--uc-text-muted); }
+  .uc-empty-state span { font-size: 11.5px; color: var(--uc-text-muted-safe); }
   
   /* ── Loading ── */
   .uc-loading {
@@ -798,7 +804,7 @@ font-family: 'Segoe UI', system-ui, sans-serif;
     align-items: center;
     gap: 10px;
     padding: 18px 14px;
-    color: var(--uc-text-muted);
+    color: var(--uc-text-muted-safe);
     font-size: 13px;
   }
   
@@ -837,7 +843,7 @@ font-family: 'Segoe UI', system-ui, sans-serif;
     background: var(--uc-input-bg);
     font-size: 12px;
     font-weight: 700;
-    color: var(--uc-text-2);
+    color: var(--uc-text-2-safe);
     border-bottom: 1px solid var(--uc-border);
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -858,7 +864,7 @@ font-family: 'Segoe UI', system-ui, sans-serif;
   
   .uc-recap-key {
     font-size: 12px;
-    color: var(--uc-text-muted);
+    color: var(--uc-text-muted-safe);
     font-weight: 500;
     white-space: nowrap;
   }
@@ -1088,4 +1094,3 @@ font-family: 'Segoe UI', system-ui, sans-serif;
   background: var(--uc-accent-light);
   color: var(--uc-text);
 }
-  

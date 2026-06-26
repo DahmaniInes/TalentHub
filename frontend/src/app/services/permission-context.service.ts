@@ -343,15 +343,7 @@ canViewMyInterns():      boolean { return this.can('INT_SUPER_VIEW_MY_INTERNS');
 canSupervise():          boolean { return this.can('INT_SUPER_CAN_SUPERVISE'); }
 canTrackIntern():        boolean { return this.can('INT_SUPER_TRACK'); }
 canEvaluateIntern():     boolean { return this.can('INT_SUPER_EVALUATE'); }
-/** ✅ Ajouter un commentaire sur un projet de stage */
-canCommentProjetStage(): boolean {
-    return this.can('INT_PROJ_COMMENT');
-}
 
-/** ✅ Uploader un document sur un projet de stage */
-canUploadDocProjetStage(): boolean {
-    return this.can('INT_PROJ_DOC_UPLOAD');
-}
 // Stagiaire
 canViewMyProjet():       boolean { return this.can('INT_INTERN_VIEW_PROJ'); }
 canViewMySuperviseur():  boolean { return this.can('INT_INTERN_VIEW_SUPERVISOR'); }
@@ -431,6 +423,10 @@ canDeleteProjetStage():      boolean { return this.can('INT_PROJ_DELETE'); }
 canAssignProject():          boolean { return this.can('INT_ADMIN_ASSIGN_PROJECT'); }
 canViewMyProjetsStage():     boolean { return this.can('INT_SUPER_PROJ_VIEW_MY'); }
 canManageProjetStage():      boolean { return this.can('INT_SUPER_PROJ_MANAGE'); }
+/** ✅ Ajouter un commentaire sur un projet de stage */
+canCommentProjetStage():     boolean { return this.can('INT_PROJ_COMMENT'); }
+/** ✅ Uploader un document sur un projet de stage */
+canUploadDocProjetStage():   boolean { return this.can('INT_PROJ_DOC_UPLOAD'); }
 
 canSeeProjetsStageMenu(): boolean {
     return this.canViewAllProjetsStage() || this.canViewMyProjetsStage()
@@ -470,17 +466,6 @@ canSeeActivitesStageMenu(): boolean {
     return this.canViewActivitesStage() || this.canCreateActiviteStage();
 }
 
-
-
-
-
-/**
- * ✅ Peut noter (1 à 5 étoiles) une activité de projet de stage.
- * Exige LES DEUX permissions ensemble — pas l'une ou l'autre.
- */
-canEvaluerActiviteStage(): boolean {
-    return this.canEvaluateIntern() && this.canSupervise();
-}
 // ════════════════════════════════════════════════════════════════
 // ACTIVITÉS STAGE — NOUVEAU JEU PLAT (nomenclature INTERNSHIP_ACTIVITY)
 // ════════════════════════════════════════════════════════════════
@@ -511,6 +496,14 @@ canCommentActiviteStage():       boolean { return this.can('INT_ACT_COMMENT'); }
 /** Voir la section activités d'un projet de stage (table/kanban/timeline/overview) */
 canSeeActivitesStageNew(): boolean {
     return this.canViewAllActivitesStageNew() || this.canViewOwnActivitesStageNew();
+}
+
+/**
+ * ✅ Peut noter (1 à 5 étoiles) une activité de projet de stage.
+ * Exige LES DEUX permissions ensemble — pas l'une ou l'autre.
+ */
+canEvaluerActiviteStage(): boolean {
+    return this.canEvaluateIntern() && this.canSupervise();
 }
 
 
@@ -574,5 +567,25 @@ canDeletePrioriteActivite():  boolean { return this.can('ACT_PRIORITY_DELETE'); 
 
 canSeePrioriteActiviteMenu(): boolean {
   return this.canViewPrioriteActivite() || this.canCreatePrioriteActivite();
+}
+
+// ════════════════════════════════════════════════════════════════
+// DOCUMENTS — ESPACE STAGE (module INTERNSHIP_DOCUMENT)
+// ════════════════════════════════════════════════════════════════
+// INT_DOC_UPLOAD → importer un document administratif/général
+// INT_DOC_VIEW   → consulter la page Documents de l'espace stage
+//                  (le niveau de détail — tous les projets vs projets
+//                  où l'utilisateur a un accès légitime — est déterminé
+//                  côté backend selon INT_ADMIN_VIEW_ALL_INTERNS /
+//                  INT_PROJ_VIEW_ALL, voir DocumentEspaceStageService)
+// INT_DOC_DELETE → supprimer un document de l'espace stage
+
+canUploadDocEspaceStage(): boolean { return this.can('INT_DOC_UPLOAD'); }
+canViewDocEspaceStage():   boolean { return this.can('INT_DOC_VIEW'); }
+canDeleteDocEspaceStage(): boolean { return this.can('INT_DOC_DELETE'); }
+
+/** Menu "Documents" visible dès que INT_DOC_VIEW est présent. */
+canSeeDocEspaceStageMenu(): boolean {
+    return this.canViewDocEspaceStage();
 }
 }

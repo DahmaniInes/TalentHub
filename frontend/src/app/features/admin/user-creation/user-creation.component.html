@@ -121,7 +121,7 @@
         </div>
         <!-- Téléphone -->
         <div class="uc-field-group uc-field-full">
-          <label class="uc-label">Téléphone <span class="uc-optional">optionnel</span></label>
+          <label class="uc-label">Téléphone <span class="uc-optional"></span></label>
           <div class="uc-input-wrap" [class.focused]="focusState['telephone']"
                [class.error]="userForm.get('telephone')?.invalid && userForm.get('telephone')?.touched">
             <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
@@ -159,7 +159,7 @@
       <div class="uc-fields-grid">
         <!-- Poste -->
         <div class="uc-field-group">
-          <label class="uc-label">Poste <span class="uc-optional">optionnel</span></label>
+          <label class="uc-label">Poste <span class="uc-optional"></span></label>
           <div class="uc-input-wrap" [class.focused]="focusState['poste']">
             <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
               <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.6"/>
@@ -171,7 +171,7 @@
         </div>
         <!-- Département -->
         <div class="uc-field-group">
-          <label class="uc-label">Département <span class="uc-optional">optionnel</span></label>
+          <label class="uc-label">Département <span class="uc-optional"></span></label>
           <div class="uc-input-wrap" [class.focused]="focusState['departement']">
             <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
               <rect x="2" y="3" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/>
@@ -183,7 +183,7 @@
         </div>
         <!-- Date embauche -->
         <div class="uc-field-group">
-          <label class="uc-label">Date d'embauche <span class="uc-optional">optionnel</span></label>
+          <label class="uc-label">Date d'embauche <span class="uc-optional"></span></label>
           <div class="uc-input-wrap" [class.focused]="focusState['dateEmbauche']">
             <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
               <rect x="2" y="4" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/>
@@ -195,7 +195,7 @@
         </div>
         <!-- Date fin de contrat -->
         <div class="uc-field-group">
-          <label class="uc-label">Date de fin de contrat <span class="uc-optional">optionnel</span></label>
+          <label class="uc-label">Date de fin de contrat <span class="uc-optional"></span></label>
           <div class="uc-input-wrap" [class.focused]="focusState['dateFinContrat']">
             <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
               <rect x="2" y="4" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/>
@@ -208,7 +208,7 @@
         </div>
         <!-- Adresse -->
         <div class="uc-field-group uc-field-full">
-          <label class="uc-label">Adresse <span class="uc-optional">optionnel</span></label>
+          <label class="uc-label">Adresse <span class="uc-optional"></span></label>
           <div class="uc-textarea-wrap" [class.focused]="focusState['adresse']">
             <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none" style="align-self:flex-start;margin-top:2px">
               <path d="M10 2C6.686 2 4 4.686 4 8c0 4.5 6 10 6 10s6-5.5 6-10c0-3.314-2.686-6-6-6z" stroke="currentColor" stroke-width="1.6"/>
@@ -229,7 +229,7 @@
 
         <!-- Université — SELECT + ajout manuel -->
         <div class="uc-field-group">
-          <label class="uc-label">Université <span class="uc-optional">optionnel</span></label>
+          <label class="uc-label">Université <span class="uc-optional"></span></label>
 
           <!-- Mode select -->
           <div class="uc-input-wrap" *ngIf="!modeAjoutUniversite()" [class.focused]="focusState['universite']">
@@ -270,7 +270,7 @@
 
         <!-- Spécialité — SELECT + ajout manuel -->
         <div class="uc-field-group">
-          <label class="uc-label">Spécialité <span class="uc-optional">optionnel</span></label>
+          <label class="uc-label">Spécialité <span class="uc-optional"></span></label>
 
           <!-- Mode select -->
           <div class="uc-input-wrap" *ngIf="!modeAjoutSpecialite()" [class.focused]="focusState['specialite']">
@@ -313,7 +313,7 @@
 
         <!-- Niveau d'étude — SELECT + ajout manuel -->
         <div class="uc-field-group uc-field-full">
-          <label class="uc-label">Niveau d'étude <span class="uc-optional">optionnel</span></label>
+          <label class="uc-label">Niveau d'étude <span class="uc-optional"></span></label>
 
           <!-- Mode select -->
           <div class="uc-input-wrap" *ngIf="!modeAjoutNiveau()" [class.focused]="focusState['niveauEtude']">
@@ -366,7 +366,7 @@
 
           <!-- Type de stage -->
           <div class="uc-field-group uc-field-full">
-            <label class="uc-label">Type de stage <span class="uc-optional">optionnel</span></label>
+            <label class="uc-label">Type de stage <span class="uc-optional"></span></label>
             <div class="uc-input-wrap" [class.focused]="focusState['typeStageId']">
               <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
                 <path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -381,7 +381,7 @@
 
           <!-- Date début stage -->
           <div class="uc-field-group">
-            <label class="uc-label">Date début stage <span class="uc-optional">optionnel</span></label>
+            <label class="uc-label">Date début stage <span class="uc-optional"></span></label>
             <div class="uc-input-wrap"
                  [class.focused]="focusState['dateDebutStage']"
                  [class.error]="userForm.hasError('dateRange') && userForm.get('dateDebutStage')?.touched">
@@ -396,7 +396,7 @@
 
           <!-- Date fin stage -->
           <div class="uc-field-group">
-            <label class="uc-label">Date fin stage <span class="uc-optional">optionnel</span></label>
+            <label class="uc-label">Date fin stage <span class="uc-optional"></span></label>
             <div class="uc-input-wrap"
                  [class.focused]="focusState['dateFinStage']"
                  [class.error]="userForm.hasError('dateRange') && userForm.get('dateFinStage')?.touched">
@@ -417,7 +417,7 @@
 
           <!-- Date soutenance -->
           <div class="uc-field-group uc-field-full">
-            <label class="uc-label">Date de soutenance <span class="uc-optional">optionnel</span></label>
+            <label class="uc-label">Date de soutenance <span class="uc-optional"></span></label>
             <div class="uc-input-wrap" [class.focused]="focusState['dateSoutenance']">
               <svg class="uc-field-icon" viewBox="0 0 20 20" fill="none">
                 <rect x="2" y="4" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/>
@@ -431,7 +431,7 @@
 
           <!-- Superviseurs -->
           <div class="uc-field-group uc-field-full">
-            <label class="uc-label">Superviseurs <span class="uc-optional">optionnel</span></label>
+            <label class="uc-label">Superviseurs <span class="uc-optional"></span></label>
 
             <!-- Superviseurs sélectionnés -->
             <div *ngIf="superviseurSelectionnes().length > 0"

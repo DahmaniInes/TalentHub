@@ -62,4 +62,10 @@ export class UserService {
     return this.http.post<any>(
         `${this.apiUrl}/sync-keycloak-profil-ids`, {});
   }
+
+  updateUserPhoto(id: number, photo: File): Observable<Utilisateur> {
+    const formData = new FormData();
+    formData.append('photo', photo);
+    return this.http.patch<Utilisateur>(`${this.apiUrl}/${id}/photo`, formData);
+  }
 }

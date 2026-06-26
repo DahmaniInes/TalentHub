@@ -80,9 +80,39 @@ public class Document {
     @Column(name = "date_expiration")
     private LocalDateTime dateExpiration;
 
+    // ════════════════════════════════════════════════════════════
+    // ✅ NOUVEAU — Portée de visibilité pour les documents "généraux"
+    // (sans projet ni activité liée). Résout l'ambiguïté : un document
+    // sans lien n'indiquait jusqu'ici à QUI il est destiné, seulement
+    // qui l'a uploadé.
+    //
+    // Valeurs possibles :
+    //   TOUS_STAGE   → visible par quiconque a accès à l'espace stage
+    //                  (admin, superviseur, stagiaire) avec INT_DOC_VIEW.
+    //                  C'est la valeur par défaut.
+    //   ADMIN_ONLY   → visible seulement par ceux qui ont la vue large
+    //                  (INT_ADMIN_VIEW_ALL_INTERNS ou INT_PROJ_VIEW_ALL).
+    //   STAGIAIRE_ID → visible seulement par UN stagiaire précis, dont
+    //                  l'ID est dans `destinataireId` (ex: sa convention,
+    //                  son attestation personnelle).
+    //
+    // Pour les documents liés à un projet/activité, ce champ n'est PAS
+    // utilisé pour le filtrage — c'est l'appartenance au projet/activité
+    // qui détermine la visibilité (voir DocumentEspaceStageService).
+    // ════════════════════════════════════════════════════════════
+    @Column(name = "visible_pour", length = 20)
+    @Builder.Default
+    private String visiblePour = "TOUS_STAGE";
+
+    // ✅ NOUVEAU — Utilisateur ciblé si visiblePour = STAGIAIRE_ID.
+    // Null dans tous les autres cas.
+    @Column(name = "destinataire_id")
+    private Long destinataireId;
+
     @PrePersist
     protected void onCreate() {
         this.dateUpload = LocalDateTime.now();
         if (this.statutDocumentId == null) this.statutDocumentId = 1L;
+        if (this.visiblePour == null) this.visiblePour = "TOUS_STAGE";
     }
 }

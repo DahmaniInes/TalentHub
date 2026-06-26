@@ -1,0 +1,223 @@
+<!-- documents-stage.component.html — NOUVEAU -->
+<div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh">
+    <div class="dt-wrap">
+  
+      <!-- ACCÈS REFUSÉ -->
+      <div *ngIf="!perms.canSeeDocEspaceStageMenu()"
+           style="padding:80px 24px;text-align:center;color:var(--text-muted)">
+        <svg viewBox="0 0 48 48" fill="none" style="width:48px;height:48px;opacity:.3;margin:0 auto 16px">
+          <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M16 16l16 16M32 16L16 32" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <p style="font-weight:700;font-size:1rem;margin-bottom:6px;color:var(--text-primary)">Accès refusé</p>
+        <p style="font-size:.83rem">Permission INT_DOC_VIEW requise pour consulter cette page.</p>
+      </div>
+  
+      <ng-container *ngIf="perms.canSeeDocEspaceStageMenu()">
+  
+      <!-- HEADER -->
+      <div class="dt-header">
+        <div>
+          <h1 class="dt-title">
+            <svg class="dt-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M4 2h10l6 6v14H4V2z" stroke-linejoin="round"/>
+              <path d="M14 2v6h6" stroke-linejoin="round"/>
+            </svg>
+            Documents
+          </h1>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+            <span class="dt-badge dt-badge-accent" style="font-size:.66rem;padding:3px 9px">
+              <span class="dt-badge-dot"></span>{{ documents().length }} total
+            </span>
+            <span class="dt-badge dt-badge-blue" style="font-size:.66rem;padding:3px 9px;cursor:pointer"
+                  (click)="filterCategorie.set(filterCategorie()==='PROJET' ? '' : 'PROJET')">
+              <span class="dt-badge-dot"></span>{{ countProjet() }} projet
+            </span>
+            <span class="dt-badge dt-badge-accent" style="font-size:.66rem;padding:3px 9px;cursor:pointer"
+                  (click)="filterCategorie.set(filterCategorie()==='ACTIVITE' ? '' : 'ACTIVITE')">
+              <span class="dt-badge-dot"></span>{{ countActivite() }} activité
+            </span>
+            <span class="dt-badge dt-badge-delivered" style="font-size:.66rem;padding:3px 9px;cursor:pointer"
+                  (click)="filterCategorie.set(filterCategorie()==='GENERAL' ? '' : 'GENERAL')">
+              <span class="dt-badge-dot"></span>{{ countGeneral() }} général
+            </span>
+          </div>
+        </div>
+  
+        <div class="dt-header-actions">
+          <div class="dt-search-wrap">
+            <div class="dt-search-bar" style="min-width:240px">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px;flex-shrink:0;opacity:.6">
+                <circle cx="7" cy="7" r="5"/>
+                <path d="M11 11l3.5 3.5" stroke-linecap="round"/>
+              </svg>
+              <input class="dt-search-input" [value]="search()"
+                     (input)="search.set($any($event.target).value)"
+                     placeholder="Rechercher un document, projet, activité...">
+            </div>
+          </div>
+          <button *ngIf="filterCategorie() || search()" class="mx-btn mx-btn-ghost" (click)="resetFilters()">
+            Réinitialiser
+          </button>
+        </div>
+      </div>
+  
+      <div *ngIf="loading()" class="dt-loading"><div class="dt-spinner"></div> Chargement...</div>
+  
+      <!-- LISTE -->
+      <div *ngIf="!loading()" class="dt-scroll">
+        <table class="dt-table">
+          <thead>
+            <tr>
+              <th class="dt-th" style="min-width:240px">
+                <div class="dt-th-inner">
+                  <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
+                    <path d="M3 1h6l3 3v9H3V1z" stroke-linejoin="round"/>
+                  </svg>
+                  Document
+                </div>
+              </th>
+              <th class="dt-th" style="min-width:130px">
+                <div class="dt-th-inner">
+                  <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
+                    <rect x="1" y="1" width="5" height="5" rx="1"/>
+                    <rect x="8" y="1" width="5" height="5" rx="1"/>
+                    <rect x="1" y="8" width="5" height="5" rx="1"/>
+                    <rect x="8" y="8" width="5" height="5" rx="1"/>
+                  </svg>
+                  Catégorie
+                </div>
+              </th>
+              <th class="dt-th" style="min-width:220px">
+                <div class="dt-th-inner">
+                  <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
+                    <path d="M2 4h10M2 7h10M2 10h6" stroke-linecap="round"/>
+                  </svg>
+                  Contexte
+                </div>
+              </th>
+              <th class="dt-th" style="min-width:180px">
+                <div class="dt-th-inner">
+                  <svg class="dt-th-icon" viewBox="0 0 14 14" fill="currentColor">
+                    <path d="M7 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm-4 6a4 4 0 118 0H3z"/>
+                  </svg>
+                  Ajouté par
+                </div>
+              </th>
+              <th class="dt-th" style="min-width:120px">
+                <div class="dt-th-inner">
+                  <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
+                    <rect x="1" y="2" width="12" height="11" rx="1.5"/>
+                    <path d="M1 6h12M4.5 1v2M9.5 1v2" stroke-linecap="round"/>
+                  </svg>
+                  Ajouté le
+                </div>
+              </th>
+              <th class="dt-th dt-th-actions"></th>
+            </tr>
+          </thead>
+  
+          <tbody>
+            <tr *ngIf="filtered().length === 0">
+              <td colspan="6" class="dt-td">
+                <div class="dt-empty">
+                  <svg viewBox="0 0 48 48" fill="none" style="width:38px;height:38px;opacity:.35">
+                    <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+                    <path d="M24 16v8M24 28h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  <p class="dt-empty-title">Aucun document</p>
+                  <p class="dt-empty-sub">
+                    {{ search() || filterCategorie() ? 'Modifiez vos filtres' : 'Aucun document accessible pour le moment' }}
+                  </p>
+                </div>
+              </td>
+            </tr>
+  
+            <tr *ngFor="let d of filtered()" class="dt-tr">
+  
+              <!-- Document -->
+              <td class="dt-td">
+                <div class="dt-cell-with-avatar">
+                  <div class="dt-avatar" [style.background]="getDocIconColor(d.typeMime)" style="border-radius:8px">
+                    {{ getDocIconLabel(d.typeMime) }}
+                  </div>
+                  <div class="dt-cell-user">
+                    <span class="dt-cell-name">{{ d.nom }}</span>
+                    <span class="dt-cell-sub">{{ formatSize(d.tailleFichier) }}</span>
+                  </div>
+                </div>
+              </td>
+  
+              <!-- Catégorie -->
+              <td class="dt-td">
+                <span class="dt-badge" [style.background]="getCategorieColor(d.categorie)+'18'"
+                      [style.color]="getCategorieColor(d.categorie)"
+                      [style.border-color]="getCategorieColor(d.categorie)+'55'">
+                  <span class="dt-badge-dot" [style.background]="getCategorieColor(d.categorie)"></span>
+                  {{ getCategorieLabel(d.categorie) }}
+                </span>
+              </td>
+  
+              <!-- Contexte -->
+              <td class="dt-td">
+                <div *ngIf="d.categorie === 'ACTIVITE'" class="dt-cell-user">
+                  <span class="dt-cell-name" style="font-size:.78rem">{{ d.activiteNom }}</span>
+                  <span class="dt-cell-sub" *ngIf="d.projetNom">{{ d.projetNom }}</span>
+                </div>
+                <div *ngIf="d.categorie === 'PROJET'" class="dt-cell-user">
+                  <span class="dt-cell-name" style="font-size:.78rem">{{ d.projetNom }}</span>
+                </div>
+                <div *ngIf="d.categorie === 'GENERAL'" class="dt-cell-user">
+                  <span class="dt-cell-sub">{{ getVisibilitePourLabel(d.visiblePour) }}</span>
+                  <span *ngIf="d.destinataireNomComplet" class="dt-cell-name" style="font-size:.76rem">
+                    → {{ d.destinataireNomComplet }}
+                  </span>
+                </div>
+              </td>
+  
+              <!-- Ajouté par -->
+              <td class="dt-td">
+                <div class="dt-cell-with-avatar" *ngIf="d.utilisateurNomComplet">
+                  <div class="dt-avatar" [style.background]="getAvatarColor(d.utilisateurNomComplet)"
+                       style="width:28px;height:28px;overflow:hidden">
+                    <img *ngIf="d.utilisateurPhotoUrl" [src]="d.utilisateurPhotoUrl"
+                         style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                    <span *ngIf="!d.utilisateurPhotoUrl" style="font-size:.56rem">{{ getInitiales(d.utilisateurNomComplet) }}</span>
+                  </div>
+                  <span class="dt-cell-text">{{ d.utilisateurNomComplet }}</span>
+                </div>
+                <span *ngIf="!d.utilisateurNomComplet" class="dt-cell-muted">—</span>
+              </td>
+  
+              <!-- Date -->
+              <td class="dt-td">
+                <span class="dt-cell-muted" style="font-size:.75rem">{{ fmtDateTime(d.dateUpload) }}</span>
+              </td>
+  
+              <!-- Actions -->
+              <td class="dt-td dt-td-actions">
+                <div class="dt-td-actions-wrap">
+                  <a *ngIf="d.cheminFichier" class="dt-action-btn dt-action-edit"
+                     [href]="d.cheminFichier" target="_blank" title="Télécharger">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <path d="M8 2v8M5 7l3 3 3-3" stroke-linecap="round"/>
+                      <path d="M2 13h12" stroke-linecap="round"/>
+                    </svg>
+                  </a>
+                  <button *ngIf="perms.canDeleteDocEspaceStage()" class="dt-action-btn dt-action-del"
+                          (click)="delete(d)" title="Supprimer">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
+                  </button>
+                </div>
+              </td>
+  
+            </tr>
+          </tbody>
+        </table>
+      </div>
+  
+      </ng-container>
+    </div>
+  </div>

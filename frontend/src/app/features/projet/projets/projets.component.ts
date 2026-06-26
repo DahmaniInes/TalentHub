@@ -22,6 +22,12 @@ import { Groupe }         from '../../../shared/models/groupe.model';
 import { StatutActivite } from '../../../shared/models/statut-activite.model';
 import { HttpErrorResponse } from '@angular/common/http';
 
+// ✅ NOUVEAU — ID nomenclature du type de projet "STAGE_ACADEMIQUE" (confirmé
+// en base, déjà utilisé comme constante dans ProjetStageService côté Angular).
+// Cette page (Projets d'entreprise) ne doit JAMAIS afficher les projets de
+// stage, qui ont leur propre page dédiée (/projets-stage).
+const TYPE_PROJET_STAGE_ID = 4;
+
 @Component({
   selector: 'app-projets',
   standalone: true,
@@ -93,8 +99,19 @@ export class ProjetsComponent implements OnInit, OnDestroy {
   readonly TYPES_BUDGET = ['MENSUEL','TRIMESTRIEL','ANNUEL','ILLIMITE'];
 
   // ── Computed ──
+
+  /**
+   * ✅ NOUVEAU — Projets d'entreprise uniquement, en excluant les projets
+   * de stage (typeProjetId = 4). Appliqué en amont de filteredProjets()
+   * pour que TOUT (recherche, filtres, pagination, stats KPI) ignore
+   * systématiquement les projets de stage, sans devoir dupliquer ce filtre
+   * partout.
+   */
+  projetsEntreprise = computed(() =>
+      this.projets().filter(p => p.typeProjetId !== TYPE_PROJET_STAGE_ID));
+
   filteredProjets = computed(() => {
-    let list = this.projets();
+    let list = this.projetsEntreprise();
     const q = this.search().toLowerCase();
     if (this.filterStatutId())
       list = list.filter(p => p.statutProjetId === +this.filterStatutId());
@@ -124,15 +141,17 @@ export class ProjetsComponent implements OnInit, OnDestroy {
   });
   selectedCount = computed(() => this.selectedIds().size);
 
-  statsEnCours = computed(() => this.projets().filter(p => {
+  // ✅ Stats KPI calculées sur projetsEntreprise() (pas projets() brut) — les
+  // projets de stage ne doivent pas gonfler les compteurs de cette page.
+  statsEnCours = computed(() => this.projetsEntreprise().filter(p => {
     const s = this.statutsProjet().find(st => st.id === p.statutProjetId);
     return s?.code === 'EN_COURS';
   }).length);
-  statsPlanifies = computed(() => this.projets().filter(p => {
+  statsPlanifies = computed(() => this.projetsEntreprise().filter(p => {
     const s = this.statutsProjet().find(st => st.id === p.statutProjetId);
     return s?.code === 'PLANIFIE';
   }).length);
-  statsTermines = computed(() => this.projets().filter(p => {
+  statsTermines = computed(() => this.projetsEntreprise().filter(p => {
     const s = this.statutsProjet().find(st => st.id === p.statutProjetId);
     return s?.code === 'TERMINE';
   }).length);
@@ -198,6 +217,8 @@ export class ProjetsComponent implements OnInit, OnDestroy {
     this.projetForm.set({
       nom: '', description: '', couleur: '#6366f1',
       statutProjetId: this.statutsProjet().find(s => s.code === 'PLANIFIE')?.id,
+      // ✅ Type par défaut = ENTREPRISE_INTERNE — jamais STAGE_ACADEMIQUE
+      // depuis cette page (qui n'affiche/ne gère que les projets d'entreprise).
       typeProjetId:   this.typesProjet().find(t => t.code === 'ENTREPRISE_INTERNE')?.id,
       typeBudget: 'ILLIMITE', visible: true, facturable: true,
       autoriserActivitesGlobales: false,
@@ -263,6 +284,15 @@ export class ProjetsComponent implements OnInit, OnDestroy {
       activiteIds: this.activitesSelectionnees()
     };
     if (!f.nom?.trim()) { this.ui.warning('Le nom est obligatoire.'); return; }
+
+    // ✅ Garde-fou — cette page ne doit jamais créer/modifier un projet vers
+    // le type STAGE_ACADEMIQUE, même par erreur de sélection dans le select
+    // "Type de projet" du formulaire (qui liste tous les types existants).
+    if (f.typeProjetId === TYPE_PROJET_STAGE_ID) {
+      this.ui.warning('Les projets de stage se gèrent depuis la page "Projets de stage".');
+      return;
+    }
+
     const editing = this.editingProjet();
     const obs = editing ? this.projetSvc.update(editing.id, f) : this.projetSvc.create(f);
     obs.subscribe({

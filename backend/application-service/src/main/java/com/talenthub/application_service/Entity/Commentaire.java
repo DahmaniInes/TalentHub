@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 @Table(name = "commentaires")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Commentaire {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

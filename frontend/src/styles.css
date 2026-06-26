@@ -38,7 +38,7 @@
   --text-secondary: #475569;
   --text-muted:     #94a3b8;
 
-  --border-color:   rgba(0, 0, 0, 0);
+  --border-color:   rgba(0, 0, 0, 0.1);
   --shadow-card:    0 2px 12px rgba(0,0,0,0.06);
 
   --accent:         #c026d3;
@@ -49,7 +49,7 @@
   --scrollbar-thumb: #cbd5e1;
 
   --surface: #ffffff;
-  --border:  rgba(0, 0, 0, 0);
+  --border:  rgba(0, 0, 0, 0.1);
   --hover:   rgba(0, 0, 0, 0.04);
 
   /* Variables tableau dt-* — light */
@@ -59,7 +59,7 @@
   --dt-border:       rgba(0, 0, 0, 0.07);
   --dt-text:         #0f172a;
   --dt-text-sub:     #64748b;
-  --dt-text-head:    #94a3b8;
+  --dt-text-head:    #272829;
   --dt-shadow:       0 4px 24px rgba(0,0,0,0.06);
 }
 
@@ -358,11 +358,11 @@ html, body { height: 100%; }
 .mx-so-body { padding:16px 18px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:14px; }
 .mx-so-footer { display:flex; gap:8px; justify-content:flex-end; padding:11px 18px; border-top:1px solid var(--border-color); background:var(--bg-hover); flex-shrink:0; }
 .mx-so-section-title { font-size:0.63rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--text-muted); margin:0 0 8px; }
-.mx-info-list { display:flex; flex-direction:column; }
+.mx-info-list { display:flex; flex-direction:column; gap :20px }
 .mx-info-row { display:flex; justify-content:space-between; align-items:flex-start; padding:7px 0; border-bottom:1px solid var(--border-color); gap:12px; }
 .mx-info-row:last-child { border-bottom:none; }
-.mx-info-key { font-size:0.72rem; color:var(--text-muted); flex-shrink:0; }
-.mx-info-val { font-size:0.75rem; color:var(--text-primary); font-weight:500; text-align:right; word-break:break-word; }
+.mx-info-key { font-size:0.82rem; color:var(--text-muted); flex-shrink:0; }
+.mx-info-val { font-size:0.88rem; color:var(--text-primary); font-weight:500; text-align:right; word-break:break-word; }
 .mx-info-val-mono { font-family:'Courier New',monospace; font-size:0.65rem; }
 .mx-so-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .mx-so-full { grid-column:1/-1; }

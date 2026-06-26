@@ -162,7 +162,7 @@ export class GroupsComponent implements OnInit {
     const obs = editing ? this.groupeSvc.update(editing.id, f) : this.groupeSvc.create(f);
     obs.subscribe({
       next: () => {
-        this.ui.success(editing ? 'Groupe mis à jour.' : 'Groupe créé.');
+        this.ui.success(editing ? 'Équipe mis à jour.' : 'Équipe créé.');
         this.closeModal(); this.saving.set(false); this.loadAll();
       },
       error: (err: HttpErrorResponse) => {
@@ -175,13 +175,13 @@ export class GroupsComponent implements OnInit {
   delete(g: Groupe): void {
     if (!this.perms.canDeleteTeam()) { this.ui.warning('Permission TEAM_DELETE requise.'); return; }
     this.ui.confirm({
-      title: 'Supprimer le groupe',
-      message: `Supprimer "${g.nom}" ? Les membres ne seront pas supprimés.`,
-      confirmLabel: 'Supprimer', type: 'danger',
-      onConfirm: () => {
+      title: 'Supprimer l\'équipe',
+message: `Êtes-vous sûr de vouloir supprimer l'équipe "${g.nom}" ?`,
+confirmLabel: 'Supprimer', type: 'danger',
+onConfirm: () => {
         this.groupeSvc.delete(g.id).subscribe({
           next: () => {
-            this.ui.success('Groupe supprimé.');
+            this.ui.success(' supprimé.');
             if (this.selectedGroupe()?.id === g.id) this.selectedGroupe.set(null);
             this.loadAll();
           },
@@ -218,7 +218,7 @@ export class GroupsComponent implements OnInit {
     if (!g) return;
     this.ui.confirm({
       title: 'Retirer le membre',
-      message: `Retirer ${membre.prenom} ${membre.nom} du groupe ?`,
+      message: `Retirer ${membre.prenom} ${membre.nom} du Équipe ?`,
       confirmLabel: 'Retirer', type: 'warning',
       onConfirm: () => {
         this.groupeSvc.removeMembre(g.id, membre.id).subscribe({

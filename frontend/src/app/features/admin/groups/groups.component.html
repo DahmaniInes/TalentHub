@@ -1,4 +1,4 @@
-<!-- groups.component.html — COMPLET avec permissions + SVG originaux + accès refusé -->
+<!-- groups.component.html — COMPLET avec permissions + SVG originaux + accès refusé (libellés "Équipe") -->
 <div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh" (click)="closeMenu()">
   <div class="dt-wrap">
 
@@ -29,7 +29,7 @@
               <path d="M221.005,243.009c5.577,48.709,26.883,108.009,86.103,108.006s80.529-59.297,86.106-108.006c6.871-60.002-21.503-105.16-86.106-105.16C242.515,137.847,214.123,183.002,221.005,243.009z"/>
             </g></g>
           </svg>
-          Groupes
+          Équipes
         </h1>
 
         <div class="dt-header-stats dt-badge-group">
@@ -37,10 +37,10 @@
             <span class="dt-badge-dot"></span>{{ groupes().length }} total
           </span>
           <span class="dt-badge dt-badge-delivered" style="font-size:.66rem;padding:3px 9px">
-            <span class="dt-badge-dot"></span>{{ totalActifs() }} actifs
+            <span class="dt-badge-dot"></span>{{ totalActifs() }} actives
           </span>
           <span class="dt-badge dt-badge-canceled" style="font-size:.66rem;padding:3px 9px">
-            <span class="dt-badge-dot"></span>{{ totalInactifs() }} inactifs
+            <span class="dt-badge-dot"></span>{{ totalInactifs() }} inactives
           </span>
           <span class="dt-badge dt-badge-pending" style="font-size:.66rem;padding:3px 9px">
             <span class="dt-badge-dot"></span>{{ totalMembres() }} membres
@@ -60,7 +60,7 @@
               </svg>
             </button>
             <input class="dt-search-input" [value]="search()"
-                   (input)="search.set($any($event.target).value); resetPage()" placeholder="Rechercher un groupe...">
+                   (input)="search.set($any($event.target).value); resetPage()" placeholder="Rechercher une équipe...">
           </div>
 
           <div class="dt-filter-panel" [class.open]="filterPanelOpenG()">
@@ -75,8 +75,8 @@
                 <select class="dt-fp-select" [value]="filterStatut()"
                         (change)="filterStatut.set($any($event.target).value); resetPage()">
                   <option value="tous">Tous les statuts</option>
-                  <option value="actif">Actifs</option>
-                  <option value="inactif">Inactifs</option>
+                  <option value="actif">Actives</option>
+                  <option value="inactif">Inactives</option>
                 </select>
               </div>
             </div>
@@ -91,7 +91,7 @@
           <svg viewBox="0 0 14 14" fill="none" style="width:12px;height:12px">
             <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
           </svg>
-          Nouveau groupe
+          Nouvelle équipe
         </button>
       </div>
     </div>
@@ -119,14 +119,14 @@
                      (change)="toggleSelectAll()">
             </th>
 
-            <!-- Groupe -->
+            <!-- Équipe -->
             <th class="dt-th" style="min-width:210px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 611.998 611.998" fill="currentColor" style="width:13px;height:13px">
                   <path d="M221.005,243.009c5.577,48.709,26.883,108.009,86.103,108.006s80.529-59.297,86.106-108.006c6.871-60.002-21.503-105.16-86.106-105.16C242.515,137.847,214.123,183.002,221.005,243.009z"/>
                   <path d="M470.351,429.405l-0.493-2.805c-4.258-24.197-10.091-57.334-32.191-73.832c-9.321-6.957-19.872-10.404-30.078-13.74c-4.019-1.313-7.812-2.554-11.427-3.974c-5.269-2.07-10.016-4.097-14.464-6.338c-18.684,24.932-44.58,38.059-75.383,38.062c-30.795,0-56.687-13.128-75.371-38.062c-4.449,2.243-9.196,4.269-14.467,6.34c-3.61,1.418-7.406,2.659-11.424,3.972c-10.207,3.335-20.761,6.784-30.079,13.74c-22.107,16.5-27.936,49.645-32.193,73.846l-0.493,2.795c-3.557,20.086-5.68,39.572-6.308,57.914c-0.737,21.519,12.62,26.316,24.403,30.55l1.269,0.457c14.17,5.112,30.021,9.492,48.457,13.388c37.646,7.946,68.197,11.74,96.138,11.938h0.072h0.072c27.946-0.199,58.495-3.992,96.135-11.938c18.439-3.894,34.289-8.274,48.453-13.387l1.268-0.456c11.786-4.233,25.147-9.029,24.41-30.553C476.03,468.931,473.906,449.447,470.351,429.405z"/>
                 </svg>
-                Groupe
+                Équipe
               </div>
             </th>
 
@@ -249,7 +249,7 @@
                     [class.dt-badge-delivered]="g.actif"
                     [class.dt-badge-canceled]="!g.actif">
                 <span class="dt-badge-dot"></span>
-                {{ g.actif ? 'Actif' : 'Inactif' }}
+                {{ g.actif ? 'Active' : 'Inactive' }}
               </span>
             </td>
 
@@ -285,9 +285,9 @@
           <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
           <path d="M24 16v8M24 28h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         </svg>
-        <p class="dt-empty-title">Aucun groupe trouvé</p>
-        <p class="dt-empty-sub">Modifiez vos filtres ou créez un premier groupe</p>
-        <button *ngIf="perms.canCreateTeam()" class="dt-btn-create" style="margin-top:12px" (click)="openAdd()">Nouveau groupe</button>
+        <p class="dt-empty-title">Aucune équipe trouvée</p>
+        <p class="dt-empty-sub">Modifiez vos filtres ou créez une première équipe</p>
+        <button *ngIf="perms.canCreateTeam()" class="dt-btn-create" style="margin-top:12px" (click)="openAdd()">Nouvelle équipe</button>
       </div>
     </div>
 
@@ -324,7 +324,7 @@
   </div>
 </div>
 
-<!-- ════ SLIDE-OVER DÉTAIL GROUPE ════ -->
+<!-- ════ SLIDE-OVER DÉTAIL ÉQUIPE ════ -->
 <div *ngIf="selectedGroupe()" class="mx-overlay" (click)="selectedGroupe.set(null)"></div>
 <div *ngIf="selectedGroupe() as g" class="mx-slideover">
 
@@ -343,7 +343,7 @@
         <span class="dt-badge" style="font-size:.62rem"
               [class.dt-badge-delivered]="g.actif"
               [class.dt-badge-canceled]="!g.actif">
-          <span class="dt-badge-dot"></span>{{ g.actif ? 'Actif' : 'Inactif' }}
+          <span class="dt-badge-dot"></span>{{ g.actif ? 'Active' : 'Inactive' }}
         </span>
         <span class="dt-badge dt-badge-pending" style="font-size:.62rem">
           <span class="dt-badge-dot"></span>{{ g.membres?.length || 0 }} membres
@@ -409,7 +409,7 @@
         </div>
         <div *ngIf="!g.membres || g.membres.length === 0" class="dt-empty" style="padding:24px">
           <p class="dt-empty-title">Aucun membre</p>
-          <p class="dt-empty-sub">Ce groupe n'a pas encore de membres</p>
+          <p class="dt-empty-sub">Cette équipe n'a pas encore de membres</p>
         </div>
       </div>
     </div>
@@ -425,10 +425,10 @@
         <div class="mx-info-row">
           <span class="mx-info-key">Statut</span>
           <span class="dt-badge" style="font-size:.62rem" [class.dt-badge-delivered]="g.actif" [class.dt-badge-canceled]="!g.actif">
-            <span class="dt-badge-dot"></span>{{ g.actif ? 'Actif' : 'Inactif' }}
+            <span class="dt-badge-dot"></span>{{ g.actif ? 'Active' : 'Inactive' }}
           </span>
         </div>
-        <div class="mx-info-row" *ngIf="g.createdAt"><span class="mx-info-key">Créé le</span><span class="mx-info-val">{{ fmtDate(g.createdAt) }}</span></div>
+        <div class="mx-info-row" *ngIf="g.createdAt"><span class="mx-info-key">Créée le</span><span class="mx-info-val">{{ fmtDate(g.createdAt) }}</span></div>
         <div class="mx-info-row"><span class="mx-info-key">Membres</span><span class="mx-info-val">{{ g.membres?.length || 0 }}</span></div>
         <div class="mx-info-row">
           <span class="mx-info-key">Couleur</span>
@@ -466,7 +466,7 @@
         </svg>
       </div>
       <span style="flex:1;font-size:.9rem;font-weight:700;color:var(--text-primary)">
-        {{ editingGroupe() ? 'Modifier le groupe' : 'Nouveau groupe' }}
+        {{ editingGroupe() ? "Modifier l'équipe" : 'Nouvelle équipe' }}
       </span>
       <button class="mx-so-close" (click)="closeModal()">
         <svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -476,7 +476,7 @@
     <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1">
       <div class="mx-field">
         <label class="mx-field-label">Nom <span style="color:#ef4444">*</span></label>
-        <input [(ngModel)]="form().nom" [ngModelOptions]="{standalone:true}" placeholder="Nom du groupe" class="mx-field-input">
+        <input [(ngModel)]="form().nom" [ngModelOptions]="{standalone:true}" placeholder="Nom de l'équipe" class="mx-field-input">
       </div>
       <div class="mx-field">
         <label class="mx-field-label">Description</label>
@@ -525,7 +525,7 @@
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.78rem;color:var(--text-secondary)">
         <input type="checkbox" [(ngModel)]="form().actif" [ngModelOptions]="{standalone:true}" style="display:none">
         <div class="mx-toggle" [class.on]="form().actif"><div class="mx-toggle-knob"></div></div>
-        <span>Groupe actif</span>
+        <span>Équipe active</span>
       </label>
     </div>
 

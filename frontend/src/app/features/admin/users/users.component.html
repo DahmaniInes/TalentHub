@@ -357,6 +357,22 @@
   <div *ngIf="detailTab()==='infos'" class="mx-so-body">
     <!-- ✅ Formulaire modifiable seulement si USER_UPDATE_INFO -->
     <ng-container *ngIf="perms.canUpdateUserInfo()">
+      <div class="mx-field mx-so-full" style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+        <div class="dt-avatar" [style.background]="getAvatarColor(user)"
+             style="width:40px;height:40px;border-radius:12px;font-size:1.1rem;font-weight:800;position:relative;overflow:hidden">
+          <img *ngIf="photoPreview() || user.photoUrl" [src]="photoPreview() || user.photoUrl">
+          <span *ngIf="!photoPreview() && !user.photoUrl">{{ getInitiales(user) }}</span>
+          <div *ngIf="uploadingPhoto()" class="mx-spinner-sm"
+               style="position:absolute;inset:0;margin:auto;background:rgba(0,0,0,.3)"></div>
+        </div>
+        <div>
+          <label class="mx-btn mx-btn-ghost mx-btn-sm" style="cursor:pointer">
+            Changer la photo
+            <input type="file" accept="image/*" style="display:none" (change)="onPhotoSelected($event)">
+          </label>
+          <p style="font-size:.68rem;color:var(--text-muted);margin-top:4px">JPG, PNG — 5 Mo max</p>
+        </div>
+      </div>
       <div class="mx-so-grid">
         <div class="mx-field"><label class="mx-field-label">Prénom</label><input [(ngModel)]="editForm().prenom" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>
         <div class="mx-field"><label class="mx-field-label">Nom</label><input [(ngModel)]="editForm().nom" [ngModelOptions]="{standalone:true}" class="mx-field-input"></div>

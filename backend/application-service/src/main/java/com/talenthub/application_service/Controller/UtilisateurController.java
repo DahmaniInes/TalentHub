@@ -142,4 +142,16 @@ public class UtilisateurController {
         Map<String, Object> result = utilisateurService.syncAllProfilIdsToKeycloak();
         return ResponseEntity.ok(result);
     }
+
+
+
+    // ── Modifier photo (admin) — USER_UPDATE_INFO ──────────────────────────
+    @RequiresPermission("USER_UPDATE_INFO")
+    @PatchMapping(value = "/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UtilisateurResponseDTO> updateUserPhotoByAdmin(
+            @PathVariable Long id,
+            @RequestPart("photo") MultipartFile photo) throws IOException {
+        Utilisateur updated = utilisateurService.updatePhotoByAdmin(id, photo);
+        return ResponseEntity.ok(new UtilisateurResponseDTO(updated));
+    }
 }

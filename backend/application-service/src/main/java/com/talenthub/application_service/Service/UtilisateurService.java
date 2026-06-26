@@ -483,4 +483,14 @@ public class UtilisateurService {
                 "failed",  failed,
                 "message", "Sync terminé.");
     }
+
+
+
+    public Utilisateur updatePhotoByAdmin(Long id, MultipartFile photo) throws IOException {
+        Utilisateur u = getUtilisateurById(id);
+        if (photo != null && !photo.isEmpty()) {
+            u.setPhotoUrl(cloudinaryService.uploadImage(photo, "talenthub/profiles"));
+        }
+        return repository.save(u);
+    }
 }

@@ -1,133 +1,145 @@
-<!-- home.component.html -->
+<!-- home.component.html — REMPLACE COMPLET -->
 <div class="home-wrap">
 
-    <!-- ══ GREETING HERO ══ -->
-    <div class="hero-row">
-      <div class="hero-text">
-        <p class="hero-date">
-          <span class="live-dot"></span>
-          Monday · March 10, 2026
-        </p>
-        <h1 class="hero-title">Good morning, <em>Ines</em> 👋</h1>
-        <p class="hero-sub">Hope you have a beautiful and productive day.</p>
+  <!-- ══ LOADING ══ -->
+  <div *ngIf="loading()" class="home-loading">
+    <div class="home-spinner"></div>
+    <span>Chargement...</span>
+  </div>
+
+  <ng-container *ngIf="!loading()">
+
+  <!-- ══ GREETING HERO ══ -->
+  <div class="hero-row">
+    <div class="hero-text">
+      <p class="hero-date">
+        <span class="live-dot"></span>
+        {{ todayLabel() }}
+      </p>
+      <h1 class="hero-title">{{ greeting() }}, <em>{{ prenom() }}</em> 👋</h1>
+      <p class="hero-sub">Voici un résumé de votre activité.</p>
+    </div>
+    <div class="hero-kpis">
+      <div class="kpi-pill" *ngIf="perms.canSeeFTMenu()">
+        <span class="kpi-val">{{ heuresSemaineFmt() }}</span>
+        <span class="kpi-lbl">Cette semaine</span>
       </div>
-      <div class="hero-kpis">
-        <div class="kpi-pill">
-          <span class="kpi-val">92<small>%</small></span>
-          <span class="kpi-lbl">Attendance</span>
+      <div class="kpi-sep" *ngIf="perms.canSeeFTMenu() && perms.canSeeDemandeMenu()"></div>
+      <div class="kpi-pill" *ngIf="perms.canSeeDemandeMenu()">
+        <span class="kpi-val">{{ demandesEnAttente() }}</span>
+        <span class="kpi-lbl">Demande(s) en attente</span>
+      </div>
+      <div class="kpi-sep" *ngIf="(perms.canSeeFTMenu() || perms.canSeeDemandeMenu()) && mesActivites().length > 0"></div>
+      <div class="kpi-pill" *ngIf="mesActivites().length > 0">
+        <span class="kpi-val">{{ activitesEnCours() }}</span>
+        <span class="kpi-lbl">Activité(s) en cours</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ BENTO GRID ══ -->
+  <div class="bento">
+
+    <!-- ── PROFILE ── -->
+    <div class="bcard b-profile">
+      <div class="pb-top">
+        <div class="pb-avatar" [style.overflow]="currentUser()?.photoUrl ? 'hidden' : 'visible'">
+          <img *ngIf="currentUser()?.photoUrl" [src]="currentUser()!.photoUrl"
+               style="width:100%;height:100%;object-fit:cover">
+          <span *ngIf="!currentUser()?.photoUrl">{{ initiales() }}</span>
         </div>
-        <div class="kpi-sep"></div>
-        <div class="kpi-pill">
-          <span class="kpi-val">14</span>
-          <span class="kpi-lbl">Days to review</span>
+        <div class="pb-id">
+          <h2 class="pb-name">{{ currentUser()?.nomComplet || (currentUser()?.prenom + ' ' + currentUser()?.nom) }}</h2>
+          <span class="pb-role">{{ currentUser()?.poste || currentUser()?.profilNom || '—' }}</span>
         </div>
-        <div class="kpi-sep"></div>
-        <div class="kpi-pill">
-          <span class="kpi-val">3</span>
-          <span class="kpi-lbl">Pending tasks</span>
+        <span class="pb-online" [class.offline]="!currentUser()?.actif">
+          ● {{ currentUser()?.actif ? 'Actif' : 'Inactif' }}
+        </span>
+      </div>
+      <div class="pb-divider"></div>
+
+      <div class="pb-stats" *ngIf="mesActivites().length > 0 || mesProjetsStage().length > 0">
+        <div class="pbs-item">
+          <span class="pbs-n">{{ mesProjetsStage().length }}</span>
+          <span class="pbs-l">Projet(s)<br>de stage</span>
+        </div>
+        <div class="pbs-sep"></div>
+        <div class="pbs-item">
+          <span class="pbs-n">{{ activitesEnCours() }}</span>
+          <span class="pbs-l">Activité(s)<br>en cours</span>
+        </div>
+        <div class="pbs-sep"></div>
+        <div class="pbs-item">
+          <span class="pbs-n">{{ pctAvancementGlobal() }}<small style="font-size:12px">%</small></span>
+          <span class="pbs-l">Avancement<br>global</span>
+        </div>
+      </div>
+      <div class="pb-divider" *ngIf="mesActivites().length > 0 || mesProjetsStage().length > 0"></div>
+
+      <div class="pb-meta">
+        <div class="pbm-row">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          {{ currentUser()?.email }}
+        </div>
+        <div class="pbm-row" *ngIf="currentUser()?.telephone">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          {{ currentUser()?.telephone }}
+        </div>
+        <div class="pbm-row" *ngIf="currentUser()?.dateEmbauche">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Depuis le {{ fmtDateShort(currentUser()?.dateEmbauche) }}
+        </div>
+      </div>
+      <button class="pb-cta" (click)="goTo('/profil')">Modifier le profil</button>
+    </div>
+
+    <!-- ── CETTE SEMAINE (feuille de temps) ── -->
+    <div class="bcard b-week" *ngIf="perms.canSeeFTMenu()">
+      <div class="bc-head">
+        <span class="bc-title">Cette semaine</span>
+        <span class="bc-muted" *ngIf="feuilleSemaine()">{{ heuresSemaineFmt() }} enregistrées</span>
+        <a class="bc-link" (click)="goTo('/feuille-temps')">Feuille complète →</a>
+      </div>
+
+      <div *ngIf="loadingFeuille()" class="week-loading"><div class="home-spinner-sm"></div></div>
+
+      <div class="week-body" *ngIf="!loadingFeuille()">
+        <div class="week-bars" *ngIf="joursSemaine().length > 0">
+          <div class="wb-col" *ngFor="let j of joursSemaine()">
+            <div class="wb-track">
+              <div class="wb-fill" [class.now]="j.isToday" [class.late]="j.isPast && j.minutes === 0"
+                   [style.height.%]="j.minutes > 0 ? Math.max(j.pct, 6) : 0"></div>
+            </div>
+            <span class="wb-day" [class.today-lbl]="j.isToday">{{ j.label }}</span>
+            <span class="wb-t">{{ j.minutes > 0 ? (j.minutes / 60).toFixed(1) + 'h' : '—' }}</span>
+          </div>
+        </div>
+
+        <div class="week-empty" *ngIf="joursSemaine().length === 0">
+          <p>Aucune feuille de temps pour cette semaine.</p>
+          <button class="mx-btn mx-btn-primary mx-btn-sm" (click)="goTo('/feuille-temps')">Créer ma feuille</button>
+        </div>
+
+        <div class="week-chips" *ngIf="joursSemaine().length > 0">
+          <span class="wc hrs">⏱ {{ heuresSemaineFmt() }} cette semaine</span>
+          <span class="wc pres" *ngIf="feuilleSemaine()?.statut === 'VALIDEE'">✓ Validée</span>
+          <span class="wc late" *ngIf="feuilleSemaine()?.statut === 'SOUMISE'">⏳ Soumise</span>
+          <span class="wc abs" *ngIf="feuilleSemaine()?.statut === 'BROUILLON'">✎ Brouillon</span>
         </div>
       </div>
     </div>
-  
-    <!-- ══ BENTO GRID ══ -->
-    <div class="bento">
-  
-      <!-- ── PROFILE ── -->
-      <div class="bcard b-profile">
-        <div class="pb-top">
-          <div class="pb-avatar">ID</div>
-          <div class="pb-id">
-            <h2 class="pb-name">Ines Dahmani</h2>
-            <span class="pb-role">Internship · Human Resources</span>
-          </div>
-          <span class="pb-online">● Online</span>
-        </div>
-        <div class="pb-divider"></div>
-        <div class="pb-stats">
-          <div class="pbs-item">
-            <span class="pbs-n">38</span>
-            <span class="pbs-l">Days in<br>company</span>
-          </div>
-          <div class="pbs-sep"></div>
-          <div class="pbs-item">
-            <span class="pbs-n">12</span>
-            <span class="pbs-l">Leave<br>balance</span>
-          </div>
-          <div class="pbs-sep"></div>
-          <div class="pbs-item">
-            <span class="pbs-n">4</span>
-            <span class="pbs-l">Sick<br>remaining</span>
-          </div>
-        </div>
-        <div class="pb-divider"></div>
-        <div class="pb-meta">
-          <div class="pbm-row">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            ines.dahmani&#64;talenthub.com
-          </div>
-          <div class="pbm-row">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            Tunis, Tunisia
-          </div>
-          <div class="pbm-row">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            Started Feb 1, 2026
-          </div>
-        </div>
-        <button class="pb-cta">Edit Profile</button>
+
+    <!-- ── MES DEMANDES ── -->
+    <div class="bcard b-leave" *ngIf="perms.canSeeDemandeMenu()">
+      <div class="bc-head">
+        <span class="bc-title">Mes demandes</span>
+        <span class="leave-chip">{{ mesDemandes().length }} au total</span>
       </div>
-  
-      <!-- ── THIS WEEK ── -->
-      <div class="bcard b-week">
-        <div class="bc-head">
-          <span class="bc-title">This Week</span>
-          <span class="bc-muted">Mar 10 – 14, 2026</span>
-          <a class="bc-link">Full report →</a>
-        </div>
-        <div class="week-body">
-          <div class="week-bars">
-            <div class="wb-col">
-              <div class="wb-track"><div class="wb-fill pres" style="height:85%"></div></div>
-              <span class="wb-day">Mon</span>
-              <span class="wb-t">8h15</span>
-            </div>
-            <div class="wb-col">
-              <div class="wb-track"><div class="wb-fill pres" style="height:100%"></div></div>
-              <span class="wb-day">Tue</span>
-              <span class="wb-t">9h00</span>
-            </div>
-            <div class="wb-col">
-              <div class="wb-track"><div class="wb-fill late" style="height:65%"></div></div>
-              <span class="wb-day">Wed</span>
-              <span class="wb-t">5h30</span>
-            </div>
-            <div class="wb-col">
-              <div class="wb-track"><div class="wb-fill now" style="height:45%"></div></div>
-              <span class="wb-day today-lbl">Thu</span>
-              <span class="wb-t">Now</span>
-            </div>
-            <div class="wb-col">
-              <div class="wb-track"><div class="wb-fill" style="height:0%"></div></div>
-              <span class="wb-day">Fri</span>
-              <span class="wb-t">—</span>
-            </div>
-          </div>
-          <div class="week-chips">
-            <span class="wc pres">✓ 2 Present</span>
-            <span class="wc late">⚡ 1 Late</span>
-            <span class="wc abs">✗ 0 Absent</span>
-            <span class="wc hrs">⏱ 22h45</span>
-          </div>
-        </div>
-      </div>
-  
-      <!-- ── TIME OFF ── -->
-      <div class="bcard b-leave">
-        <div class="bc-head">
-          <span class="bc-title">Time Off</span>
-          <span class="leave-chip">12 days left</span>
-        </div>
-        <div class="leave-arc-wrap">
+
+      <div *ngIf="loadingDemandes()" class="week-loading"><div class="home-spinner-sm"></div></div>
+
+      <ng-container *ngIf="!loadingDemandes()">
+        <div class="leave-arc-wrap" *ngIf="mesDemandes().length > 0">
           <svg viewBox="0 0 120 68" class="arc-svg">
             <defs>
               <linearGradient id="ag" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -138,119 +150,116 @@
             <path d="M10,65 A55,55 0 0,1 110,65" fill="none" stroke-width="11" class="arc-bg" stroke-linecap="round"/>
             <path d="M10,65 A55,55 0 0,1 110,65" fill="none" stroke-width="11"
                   stroke="url(#ag)" stroke-linecap="round"
-                  stroke-dasharray="172.7" stroke-dashoffset="138"/>
+                  stroke-dasharray="172.7"
+                  [attr.stroke-dashoffset]="172.7 - (172.7 * (demandesApprouvees() / mesDemandes().length))"/>
           </svg>
           <div class="arc-label">
-            <span class="arc-big">3</span>
-            <span class="arc-sm">of 15 used</span>
+            <span class="arc-big">{{ demandesApprouvees() }}</span>
+            <span class="arc-sm">sur {{ mesDemandes().length }} traitées</span>
           </div>
         </div>
+
         <div class="leave-rows">
           <div class="lrow">
-            <span class="ldot teal"></span>
-            <span class="ll">Annual leave</span>
-            <span class="lv">12 remaining</span>
-          </div>
-          <div class="lrow">
             <span class="ldot amber"></span>
-            <span class="ll">Sick leave</span>
-            <span class="lv">4 remaining</span>
+            <span class="ll">En attente</span>
+            <span class="lv">{{ demandesEnAttente() }}</span>
           </div>
           <div class="lrow">
+            <span class="ldot teal"></span>
+            <span class="ll">Traitées</span>
+            <span class="lv">{{ demandesApprouvees() }}</span>
+          </div>
+          <div class="lrow" *ngIf="prochaineDemande() as p">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <span class="ll">Next off</span>
-            <span class="lv">Apr 14–18</span>
+            <span class="ll">Prochaine</span>
+            <span class="lv">{{ fmtDateShort(p.dateDebut) }}</span>
           </div>
         </div>
-        <button class="leave-btn">+ Request Leave</button>
+
+        <div class="leave-empty" *ngIf="mesDemandes().length === 0">
+          <p>Aucune demande pour le moment.</p>
+        </div>
+
+        <button class="leave-btn" (click)="goTo('/demande')">+ Nouvelle demande</button>
+      </ng-container>
+    </div>
+
+    <!-- ── ACTIVITÉ RÉCENTE ── -->
+    <div class="bcard b-inbox">
+      <div class="bc-head">
+        <span class="bc-title">Activité récente</span>
+        <span class="inbox-badge" *ngIf="fluxRecent().length > 0">{{ fluxRecent().length }}</span>
       </div>
-  
-      <!-- ── INBOX ── -->
-      <div class="bcard b-inbox">
-        <div class="bc-head">
-          <span class="bc-title">Inbox</span>
-          <span class="inbox-badge">3 new</span>
-        </div>
-        <div class="ilist">
-          <div class="irow unread">
-            <div class="iav c1">HR</div>
-            <div class="iinfo">
-              <div class="iname">HR Department</div>
-              <div class="imsg">Contract renewal ready for review</div>
-            </div>
-            <div class="itail">
-              <span class="itime">10m</span>
-              <span class="idot"></span>
-            </div>
+
+      <div class="ilist" *ngIf="fluxRecent().length > 0">
+        <div class="irow" *ngFor="let item of fluxRecent()">
+          <div class="iav" [style.background]="item.couleur">
+            <svg *ngIf="item.icone === 'check'" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="2"><path d="M3 8.5l3.5 3.5L13 5" stroke-linecap="round"/></svg>
+            <svg *ngIf="item.icone === 'doc'" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="1.6"><path d="M3 1h6l3 3v9H3V1z" stroke-linejoin="round"/></svg>
+            <svg *ngIf="item.icone === 'calendar'" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="1.5"><rect x="1" y="2" width="14" height="11" rx="1.5"/><path d="M1 6h14M5 1v2M11 1v2" stroke-linecap="round"/></svg>
           </div>
-          <div class="irow unread">
-            <div class="iav c2">AM</div>
-            <div class="iinfo">
-              <div class="iname">Ahmed Mansour</div>
-              <div class="imsg">Can we sync tomorrow at 10am?</div>
-            </div>
-            <div class="itail">
-              <span class="itime">1h</span>
-              <span class="idot"></span>
-            </div>
+          <div class="iinfo">
+            <div class="iname">{{ item.titre }}</div>
+            <div class="imsg">{{ item.sousTitre }}</div>
           </div>
-          <div class="irow unread">
-            <div class="iav c3">SY</div>
-            <div class="iinfo">
-              <div class="iname">System</div>
-              <div class="imsg">Payslip for February available</div>
-            </div>
-            <div class="itail">
-              <span class="itime">Yest.</span>
-              <span class="idot"></span>
-            </div>
+          <div class="itail">
+            <span class="itime">{{ fmtRelatif(item.date) }}</span>
           </div>
-          <div class="irow">
-            <div class="iav c4">LB</div>
-            <div class="iinfo">
-              <div class="iname">Lina Bensalem</div>
-              <div class="imsg">Welcome to the team, Ines!</div>
-            </div>
-            <div class="itail">
-              <span class="itime">Mar 1</span>
-            </div>
-          </div>
-        </div>
-        <button class="inbox-more">View all messages</button>
-      </div>
-  
-      <!-- ── QUICK ACTIONS ── -->
-      <div class="bcard b-actions">
-        <div class="bc-head">
-          <span class="bc-title">Quick Actions</span>
-        </div>
-        <div class="qa-grid">
-          <button class="qa-btn">
-            <span class="qa-ico teal">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            </span>
-            Request Leave
-          </button>
-          <button class="qa-btn">
-            <span class="qa-ico blue">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            </span>
-            My Payslips
-          </button>
-          <button class="qa-btn">
-            <span class="qa-ico purple">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-            </span>
-            HR Contact
-          </button>
-          <button class="qa-btn">
-            <span class="qa-ico pink">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            </span>
-            Support
-          </button>
         </div>
       </div>
-  
-    </div><!-- /bento -->
-  </div>
+
+      <div class="ilist-empty" *ngIf="fluxRecent().length === 0">
+        <p>Aucune activité récente.</p>
+      </div>
+    </div>
+
+    <!-- ── QUICK ACTIONS ── -->
+    <div class="bcard b-actions">
+      <div class="bc-head">
+        <span class="bc-title">Actions rapides</span>
+      </div>
+      <div class="qa-grid">
+        <button class="qa-btn" *ngIf="perms.canCreateOwnTS()" (click)="goTo('/feuille-temps')">
+          <span class="qa-ico teal">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </span>
+          Ma feuille de temps
+        </button>
+        <button class="qa-btn" *ngIf="perms.canCreateDemande()" (click)="goTo('/demande')">
+          <span class="qa-ico blue">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </span>
+          Nouvelle demande
+        </button>
+        <button class="qa-btn" *ngIf="perms.canSeeProjetsStageMenu()" (click)="goTo('/projets-stage')">
+          <span class="qa-ico purple">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          </span>
+          Mes projets
+        </button>
+        <button class="qa-btn" *ngIf="perms.canSeeDocEspaceStageMenu()" (click)="goTo('/espace-stage/documents')">
+          <span class="qa-ico pink">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2h10l6 6v14H4V2z"/><path d="M14 2v6h6"/></svg>
+          </span>
+          Documents
+        </button>
+        <button class="qa-btn" *ngIf="perms.canCreateReclamation()" (click)="goTo('/reclamations')">
+          <span class="qa-ico teal">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </span>
+          Réclamation
+        </button>
+        <button class="qa-btn" (click)="goTo('/profil')">
+          <span class="qa-ico blue">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          </span>
+          Mon profil
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /bento -->
+
+  </ng-container>
+</div>

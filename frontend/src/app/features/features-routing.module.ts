@@ -50,6 +50,7 @@ import { ReferentielActivitesComponent } from './activite/referentiel-activites/
 import { ReferentielProjetsComponent } from './projet/referentiel-projets/referentiel-projets.component';
 import { ReferentielStageComponent } from './stage/referentiel-stage/referentiel-stage.component';
 import { ReferentielReclamationComponent } from './reclamation/referentiel-reclamation/referentiel-reclamation.component';
+import { DocumentsStageComponent  } from './stage/document-espace-stage/document-espace-stage.component';
 
 
 
@@ -197,7 +198,8 @@ const routes: Routes = [
 {
   path: 'referentiel-reclamation/:tab',
   component: ReferentielReclamationComponent
-}
+},
+{ path: 'espace-stage/documents', component: DocumentsStageComponent }
 
 ];
 
