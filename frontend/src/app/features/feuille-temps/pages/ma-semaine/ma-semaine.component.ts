@@ -1,5 +1,9 @@
 // src/app/features/feuille-temps/pages/ma-semaine/ma-semaine.component.ts
 // ✅ COMPLET FINAL — Sélecteur utilisateur + permissions TS_* + notifications modification
+// ✅ NOUVEAU — Scénario B : sélectionner une activité globale dans le select
+//    déclenche la duplication idempotente côté backend (une seule copie par
+//    projet, jamais par personne) au lieu de pointer directement sur
+//    l'activité globale brute.
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -44,19 +48,23 @@ export class MaSemaineComponent implements OnInit {
   readonly perms      = inject(PermissionContextService);
 
   // ── Données ──
-  currentUser           = signal<Utilisateur | null>(null);   // utilisateur connecté
-  selectedUser          = signal<Utilisateur | null>(null);   // utilisateur visualisé/modifié
-  tousUtilisateurs      = signal<Utilisateur[]>([]);           // liste pour le select
-  utilisateursFiltres   = signal<Utilisateur[]>([]);           // selon permission (groupe ou tous)
+  currentUser           = signal<Utilisateur | null>(null);
+  selectedUser          = signal<Utilisateur | null>(null);
+  tousUtilisateurs      = signal<Utilisateur[]>([]);
+  utilisateursFiltres   = signal<Utilisateur[]>([]);
   projets               = signal<Projet[]>([]);
   activitesGlobales     = signal<Activite[]>([]);
   activitesParProjet    = signal<Record<number, Activite[]>>({});
   feuilleCourante       = signal<FeuilleTemps | null>(null);
-  mesGroupes            = signal<Groupe[]>([]);                // groupes de l'utilisateur connecté
+  mesGroupes            = signal<Groupe[]>([]);
 
   loading   = signal(false);
   saving    = signal(false);
   submitted = signal(false);
+
+  // ✅ NOUVEAU — état de "duplication en cours" par ligne (pour désactiver le
+  // select et montrer un feedback visuel pendant l'appel réseau)
+  dupliquantRowId = signal<string | null>(null);
 
   lundiCourant = signal<string>(FeuilleTempsService.getLundiSemaine());
   datesSemaine = computed(() => FeuilleTempsService.getDatesDesSemaine(this.lundiCourant()));
@@ -70,28 +78,15 @@ export class MaSemaineComponent implements OnInit {
 
   // ── Computed permissions ──
 
-  /** L'utilisateur connecté peut-il voir les feuilles de tous les utilisateurs */
   canReadAll     = computed(() => this.perms.can('TS_ALL_READ'));
-
-  /** Peut voir les feuilles de son groupe */
   canReadGroup   = computed(() => this.perms.can('TS_GROUP_READ'));
-
-  /** Peut modifier la feuille de n'importe quel utilisateur */
   canUpdateAll   = computed(() => this.perms.can('TS_ALL_UPDATE'));
-
-  /** Peut modifier les feuilles de son groupe */
   canUpdateGroup = computed(() => this.perms.can('TS_GROUP_UPDATE'));
-
-  /** Peut modifier sa propre feuille */
   canUpdateOwn   = computed(() => this.perms.can('TS_OWN_UPDATE'));
-
-  /** Peut créer sa propre feuille */
   canCreateOwn   = computed(() => this.perms.can('TS_OWN_CREATE'));
 
-  /** Le sélecteur d'utilisateur est visible si l'utilisateur a des droits étendus */
   showUserSelector = computed(() => this.canReadAll() || this.canReadGroup());
 
-  /** L'utilisateur courant est-il en train de voir sa propre feuille */
   isViewingOwnSheet = computed(() => {
     const me = this.currentUser();
     const sel = this.selectedUser();
@@ -99,7 +94,6 @@ export class MaSemaineComponent implements OnInit {
     return me.id === sel.id;
   });
 
-  /** Peut-on modifier la feuille affichée ? (selon les permissions + statut) */
   peutModifier = computed(() => {
     const statut = this.statutFeuille();
     const bloque = statut === 'SOUMISE' || statut === 'VALIDEE';
@@ -113,7 +107,6 @@ export class MaSemaineComponent implements OnInit {
     return false;
   });
 
-  /** Peut-on supprimer des lignes ? */
   peutSupprimer = computed(() => {
     if (this.isViewingOwnSheet()) return this.perms.can('TS_OWN_DELETE');
     return this.canUpdateAll() || this.canUpdateGroup();
@@ -146,7 +139,7 @@ export class MaSemaineComponent implements OnInit {
       this.userSvc.getUserByKeycloakId(kcId).subscribe({
         next: u => {
           this.currentUser.set(u);
-          this.selectedUser.set(u); // par défaut : voir sa propre feuille
+          this.selectedUser.set(u);
           this.loadDependencies();
           this.loadSemaine();
         },
@@ -156,23 +149,19 @@ export class MaSemaineComponent implements OnInit {
       this.loadSemaine();
     }
 
-    // Charger tous les projets et activités globales
     this.projetSvc.getAll().subscribe({ next: d => this.projets.set(d) });
     this.activiteSvc.getAll().subscribe({
       next: (all: Activite[]) => this.activitesGlobales.set(all.filter(a => a.estGlobale))
     });
   }
 
-  /** Charge la liste des utilisateurs affichables selon les permissions */
   private loadDependencies(): void {
     const me = this.currentUser();
     if (!me) return;
 
-    // Charger les groupes de l'utilisateur connecté
     this.groupeSvc.getAll().subscribe({ next: g => this.mesGroupes.set(g) });
 
     if (this.canReadAll()) {
-      // TS_ALL_READ → tous les utilisateurs
       this.userSvc.getAllUsers().subscribe({
         next: users => {
           this.tousUtilisateurs.set(users);
@@ -180,12 +169,9 @@ export class MaSemaineComponent implements OnInit {
         }
       });
     } else if (this.canReadGroup()) {
-      // TS_GROUP_READ → utilisateurs des mêmes groupes
       this.userSvc.getAllUsers().subscribe({
         next: users => {
           this.tousUtilisateurs.set(users);
-          // Filtrer les utilisateurs qui partagent au moins un groupe
-          // (si l'API groupe retourne les membres, utiliser sinon tous)
           const filtered = users.filter(u => u.id !== me.id);
           this.utilisateursFiltres.set(filtered);
         }
@@ -193,17 +179,14 @@ export class MaSemaineComponent implements OnInit {
     }
   }
 
-  /** Vérifie si l'utilisateur sélectionné est dans le même groupe que moi */
   isSelectedUserInMyGroup(): boolean {
-    // Implémentation simplifiée — à affiner selon votre modèle Groupe
-    return true; // On délègue la vérification au backend via les permissions
+    return true;
   }
 
   // ── Changement d'utilisateur ──
   onUserChange(userId: string): void {
     const id = userId ? +userId : null;
     if (!id) {
-      // Retour à la propre feuille
       this.selectedUser.set(this.currentUser());
     } else {
       const user = this.tousUtilisateurs().find(u => u.id === id) || null;
@@ -325,24 +308,38 @@ export class MaSemaineComponent implements OnInit {
     });
   }
 
+  /**
+   * ✅ MODIFIÉ — Scénario B : n'affiche plus les activités globales brutes
+   * mélangées aux activités du projet. À la place :
+   * - Les activités déjà liées au projet (qu'elles soient des copies issues
+   *   d'une duplication ou des activités créées normalement) s'affichent
+   *   normalement, sans distinction visuelle particulière.
+   * - Les activités globales pas encore "matérialisées" pour CE projet sont
+   *   listées séparément (voir activitesGlobalesNonDupliquees ci-dessous),
+   *   affichées dans un second groupe du select. Les sélectionner déclenche
+   *   onActiviteChange() → obtenirOuDupliquerPourProjet().
+   */
   getActivitesDuProjet(projetId?: number): Activite[] {
     if (!projetId) return [];
     const duProjet = this.activitesParProjet()[projetId] ?? [];
-    const projet   = this.projets().find(p => p.id === projetId);
-    
     const STATUT_TERMINE_ID = 4;
-    
-    let activites: Activite[];
-    if (projet?.autoriserActivitesGlobales) {
-        const idsProjet = new Set(duProjet.map(a => a.id));
-        activites = [...duProjet, ...this.activitesGlobales().filter(a => !idsProjet.has(a.id))];
-    } else {
-        activites = duProjet;
-    }
-    
-    // ✅ Filtrer les activités terminées
-    return activites.filter(a => a.statutActiviteId !== STATUT_TERMINE_ID);
-}
+    return duProjet.filter(a => a.statutActiviteId !== STATUT_TERMINE_ID);
+  }
+
+  /**
+   * ✅ NOUVEAU — Activités globales pas encore dupliquées pour ce projet
+   * précis. On déduit "déjà dupliquée" en comparant les IDs déjà présents
+   * dans activitesParProjet()[projetId] avec le champ activiteSourceGlobaleId
+   * de chacune (si le DTO l'expose) — sinon, on affiche systématiquement
+   * toutes les globales : la pire conséquence est un appel idempotent qui
+   * retourne la copie déjà existante (pas de doublon créé, juste un appel
+   * réseau légèrement superflu si jamais une copie existe déjà ailleurs
+   * dans la liste sans qu'on l'ait filtrée ici).
+   */
+  getActivitesGlobalesPourProjet(projetId?: number): Activite[] {
+    if (!projetId) return [];
+    return this.activitesGlobales();
+  }
 
   onProjetChange(rowId: string, val: string): void {
     const projetId = val ? +val : undefined;
@@ -354,22 +351,80 @@ export class MaSemaineComponent implements OnInit {
         projetNom:  projet?.nom,
         clientId:   undefined,
         clientNom:  undefined,
-        activiteId: undefined,  // ← reset activité quand projet change
+        activiteId: undefined,
         activiteNom: undefined
       }
     ));
     if (projetId) this.loadActivitesDuProjet(projetId);
   }
 
+  /**
+   * ✅ MODIFIÉ — Scénario B : distingue deux cas selon la valeur choisie.
+   *
+   * - Si l'ID choisi correspond à une activité DÉJÀ liée au projet (qu'elle
+   *   soit copie ou activité normale) → comportement inchangé, on assigne
+   *   directement.
+   * - Si l'ID choisi correspond à une activité GLOBALE (estGlobale=true,
+   *   pas encore liée à ce projet) → on appelle
+   *   obtenirOuDupliquerPourProjet() ; le backend retourne soit la copie
+   *   déjà existante pour ce projet, soit en crée une nouvelle. La ligne
+   *   est alors mise à jour pour pointer vers CETTE COPIE — jamais vers
+   *   l'activité globale brute.
+   */
   onActiviteChange(rowId: string, val: string): void {
     const activiteId = val ? +val : undefined;
+    if (!activiteId) {
+      this.lignesMatrice.update(ls => ls.map(l =>
+        l.rowId !== rowId ? l : { ...l, activiteId: undefined, activiteNom: undefined }));
+      return;
+    }
+
     const ligne = this.lignesMatrice().find(l => l.rowId === rowId);
-    const duProjet = ligne?.projetId ? (this.activitesParProjet()[ligne.projetId] ?? []) : [];
-    const toutes = [...duProjet, ...this.activitesGlobales()];
-    const act = toutes.find(a => a.id === activiteId);
-    this.lignesMatrice.update(ls => ls.map(l =>
-      l.rowId !== rowId ? l : { ...l, activiteId: act?.id, activiteNom: act?.nom }
-    ));
+    const projetId = ligne?.projetId;
+    if (!projetId) return;
+
+    const duProjet = this.activitesParProjet()[projetId] ?? [];
+    const dejaLiee = duProjet.find(a => a.id === activiteId);
+
+    if (dejaLiee) {
+      // Cas normal — activité déjà liée à ce projet (copie ou non).
+      this.lignesMatrice.update(ls => ls.map(l =>
+        l.rowId !== rowId ? l : { ...l, activiteId: dejaLiee.id, activiteNom: dejaLiee.nom }
+      ));
+      return;
+    }
+
+    const globale = this.activitesGlobales().find(a => a.id === activiteId);
+    if (!globale) return;
+
+    // ✅ Activité globale pas encore matérialisée pour ce projet —
+    // déclenche la duplication idempotente côté backend.
+    this.dupliquantRowId.set(rowId);
+    this.activiteSvc.obtenirOuDupliquerPourProjet(globale.id, projetId).subscribe({
+      next: copie => {
+        this.dupliquantRowId.set(null);
+        // Ajoute la copie à la liste locale du projet pour que les
+        // sélections suivantes (et l'affichage immédiat) la trouvent.
+        this.activitesParProjet.update(m => {
+          const liste = m[projetId] ?? [];
+          if (liste.some(a => a.id === copie.id)) return m;
+          return { ...m, [projetId]: [...liste, copie] };
+        });
+        this.lignesMatrice.update(ls => ls.map(l =>
+          l.rowId !== rowId ? l : { ...l, activiteId: copie.id, activiteNom: copie.nom }
+        ));
+      },
+      error: () => {
+        this.dupliquantRowId.set(null);
+        this.ui.error("Erreur lors de l'assignation de l'activité globale.");
+        // Réinitialise la sélection pour ne pas laisser la ligne dans un
+        // état incohérent (select affichant l'ID de l'activité globale
+        // brute alors qu'aucune copie n'a été créée).
+        this.lignesMatrice.update(ls => ls.map(l =>
+          l.rowId !== rowId ? l : { ...l, activiteId: undefined, activiteNom: undefined }
+        ));
+      }
+    });
   }
 
   onDureeChange(rowId: string, date: string, val: string): void {
@@ -442,7 +497,6 @@ export class MaSemaineComponent implements OnInit {
     return Object.values(l.jours).reduce((s, c) => s + c.minutes + c.minutesSupp, 0);
   }
 
-  // Libellé de l'utilisateur sélectionné (pour l'affichage)
   selectedUserLabel = computed(() => {
     const sel = this.selectedUser();
     const me  = this.currentUser();
@@ -467,25 +521,15 @@ export class MaSemaineComponent implements OnInit {
     return `${f(lundi)} – ${f(samedi)}`;
   }
 
-
-
-
-
-
-
-
-
-
-
   sauvegarder(soumettre = false, silencieux = false): void {
     const targetUser = this.selectedUser() ?? this.currentUser();
     const me = this.currentUser();
     if (!targetUser) { this.ui.warning("Utilisateur non identifié."); return; }
- 
+
     const lignesAvecHeures = this.lignesMatrice().filter(l => this.getLigneTotalMinutes(l) > 0);
     const lignesSansProjet   = lignesAvecHeures.filter(l => !l.projetId);
     const lignesSansActivite = lignesAvecHeures.filter(l => l.projetId && !l.activiteId);
- 
+
     if (lignesSansProjet.length > 0) {
       this.ui.warning("⚠️ Un projet doit être sélectionné pour chaque ligne saisie.");
       this.submitted.set(true);
@@ -496,8 +540,7 @@ export class MaSemaineComponent implements OnInit {
       this.submitted.set(true);
       return;
     }
- 
-    // ✅ IDs uniquement — AUCUN nom dans LigneFeuilleTempsRequest
+
     const lignes: LigneFeuilleTempsRequest[] = [];
     for (const l of this.lignesMatrice()) {
       for (const [date, c] of Object.entries(l.jours)) {
@@ -507,7 +550,6 @@ export class MaSemaineComponent implements OnInit {
             projetId:   l.projetId,
             activiteId: l.activiteId,
             clientId:   l.clientId,
-            // ← projetNom, activiteNom, clientNom SUPPRIMÉS
             minutesTravaillees:     c.minutes,
             minutesSupplementaires: c.minutesSupp,
             commentaire: c.commentaire?.trim() || undefined,
@@ -516,9 +558,9 @@ export class MaSemaineComponent implements OnInit {
         }
       }
     }
- 
+
     this.saving.set(true);
- 
+
     const req: FeuilleTempsRequest = {
       utilisateurId: targetUser.id,
       semaineDu: this.lundiCourant(),
@@ -528,11 +570,11 @@ export class MaSemaineComponent implements OnInit {
       commentaireEmploye: this.feuilleCourante()?.commentaireEmploye || '',
       lignes
     };
- 
+
     const id  = this.feuilleCourante()?.id;
     const obs = id ? this.ftSvc.update(id, req) : this.ftSvc.create(req);
     const isModifyingOther = me && targetUser && me.id !== targetUser.id;
- 
+
     obs.subscribe({
       next: ft => {
         this.feuilleCourante.set(ft);
@@ -554,18 +596,6 @@ export class MaSemaineComponent implements OnInit {
       }
     });
   }
-
-
-
-
-
-
-
-
-
-
-
-
 
   soumettreFeuille(): void {
     this.ui.confirm({

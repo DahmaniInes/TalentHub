@@ -758,7 +758,13 @@
 .pd5-kanban { display: flex; gap: 12px; padding: 14px 20px 18px; overflow-x: auto; align-items: flex-start; min-height: 180px; scrollbar-width: thin; }
 
 /* Une colonne kanban */
-.pd5-kanban-col { flex-shrink: 0; width: 280px; background:  rgba(0,0,0,.15);   border-radius: 8px; overflow: hidden; transition: border-color .15s, box-shadow .15s; }
+.pd5-kanban-col {    flex: 1;
+  min-width: 280px;   /* garde une largeur minimale */
+  max-width: 400px; 
+  background:  rgba(0,0,0,.15);  
+   border-radius: 8px; 
+   overflow: hidden;
+    transition: border-color .15s, box-shadow .15s; }
 .pd5-kanban-col.drag-over { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
 
 /* En-tête colonne kanban */
@@ -954,12 +960,26 @@ padding: 0;
 
 /* Liste des activités en vue gantt simplifié */
 .pd5-timeline { padding: 14px 20px; display: flex; flex-direction: column; gap: 8px; }
-.pd5-tl-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: var(--dt-bg-header); border: 1px solid var(--dt-border); border-radius: 8px; }
-.pd5-tl-info { display: flex; align-items: center; gap: 7px; width: 180px; flex-shrink: 0; }
-.pd5-tl-bar-color { width: 3px; height: 28px; border-radius: 2px; flex-shrink: 0; }
+.pd5-tl-row { display: flex;
+  flex-direction: column;      /* ← passe en colonne */
+  align-items: flex-start;     /* ← aligne tout à gauche */
+  gap: 6px;                    /* ← espace entre nom et barre */
+  padding: 9px 12px;
+  /* ... */ 
+  background: var(--dt-bg-header); border: 1px solid var(--dt-border); border-radius: 8px; }
+  .pd5-tl-info {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 100%;                 /* ← prend toute la largeur */
+    flex-shrink: 0;
+  }
+  .pd5-tl-bar-color { width: 3px; height: 28px; border-radius: 2px; flex-shrink: 0; }
 .pd5-tl-nom   { font-size: .76rem; font-weight: 600; color: var(--dt-text); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pd5-tl-dates { font-size: .63rem; color: var(--dt-text-sub); font-family: monospace; display: block; }
-.pd5-tl-gantt { flex: 1; height: 7px; background: var(--bg-hover); border-radius: 999px; overflow: hidden; }
+.pd5-tl-gantt {   width: 100%;                 /* ← même largeur que le conteneur */
+  height: 7px;
+   background: var(--bg-hover); border-radius: 999px; overflow: hidden; }
 .pd5-tl-gantt-fill { height: 100%; border-radius: 999px; opacity: .75; transition: width .4s; }
 
 

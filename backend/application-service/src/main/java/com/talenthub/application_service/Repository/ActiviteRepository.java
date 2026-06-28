@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ActiviteRepository extends JpaRepository<Activité, Long> {
 
@@ -55,4 +56,23 @@ public interface ActiviteRepository extends JpaRepository<Activité, Long> {
 
     @Query("SELECT COUNT(a) FROM Activité a JOIN a.projets p WHERE p.id = :projetId")
     long countByProjetId(@Param("projetId") Long projetId);
+
+    // ════════════════════════════════════════════════════════════
+    // ✅ NOUVEAU — Cœur du mécanisme d'idempotence (scénario B).
+    // Recherche une copie DÉJÀ créée de l'activité globale `sourceGlobaleId`
+    // pour le projet `projetId`. S'il en existe une (peu importe qui l'a
+    // créée — le premier employé du projet qui a sélectionné cette
+    // activité globale l'a déjà fait), on la réutilise au lieu d'en créer
+    // une nouvelle.
+    // ════════════════════════════════════════════════════════════
+    @Query("""
+        SELECT a FROM Activité a
+        JOIN a.projets p
+        WHERE a.activiteSourceGlobaleId = :sourceGlobaleId
+        AND p.id = :projetId
+        """)
+    Optional<Activité> findBySourceGlobaleIdAndProjetId(
+            @Param("sourceGlobaleId") Long sourceGlobaleId,
+            @Param("projetId") Long projetId
+    );
 }

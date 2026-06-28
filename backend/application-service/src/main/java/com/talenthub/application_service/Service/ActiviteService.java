@@ -4,7 +4,9 @@ package com.talenthub.application_service.Service;
 import com.talenthub.application_service.DTO.ActiviteDTO;
 import com.talenthub.application_service.Entity.Activité;
 import com.talenthub.application_service.Entity.Groupe;
+import com.talenthub.application_service.Entity.Projet;
 import com.talenthub.application_service.Entity.Utilisateur;
+import com.talenthub.application_service.Exception.ResourceNotFoundException;
 import com.talenthub.application_service.Repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +30,7 @@ public class ActiviteService {
     private final AvancementService avancementService;
     private final ActiviteRepository    activiteRepo;
     private final UtilisateurRepository utilisateurRepo;
+    private final ProjetRepository      projetRepo;
     private final RestTemplate          restTemplate;
     private final GroupeRepository      groupeRepo;
     private final CommentaireRepository commentaireRepository;
@@ -37,9 +40,7 @@ public class ActiviteService {
     private String nomenclatureUrl;
 
     // ── Caches ───────────────────────────────────────────────────────────────
-    // Cache statuts activité : id → { id, libelle, couleur, code }
     private final Map<Long, Map<String, Object>> statutsCache   = new ConcurrentHashMap<>();
-    // Cache priorités activité : id → { id, libelle, couleur, code }
     private final Map<Long, Map<String, Object>> prioritesCache = new ConcurrentHashMap<>();
 
     // ── Lecture ──────────────────────────────────────────────────────────────
@@ -77,7 +78,6 @@ public class ActiviteService {
     public ActiviteDTO toDTO(Activité a) {
         ActiviteDTO dto = new ActiviteDTO(a);
 
-        // Enrichir statut
         if (a.getStatutActiviteId() != null) {
             Map<String, Object> statut = getStatutFromCacheOrFetch(a.getStatutActiviteId());
             if (statut != null) {
@@ -90,7 +90,6 @@ public class ActiviteService {
             }
         }
 
-        // ── Enrichir priorité depuis nomenclature-service ──
         if (a.getPrioriteId() != null) {
             Map<String, Object> priorite = getPrioriteFromCacheOrFetch(a.getPrioriteId());
             if (priorite != null) {
@@ -99,7 +98,7 @@ public class ActiviteService {
                 dto.setPrioriteCode(String.valueOf(priorite.getOrDefault("code", "")));
             }
         }
-// Dans toDTO(), APRÈS avoir construit le dto, AVANT le return :
+
         dto.setNombreCommentaires(
                 (int) commentaireRepository.countByActiviteId(a.getId()));
         dto.setNombreDocuments(
@@ -155,7 +154,6 @@ public class ActiviteService {
     @SuppressWarnings("unchecked")
     private Map<String, Object> fetchPrioriteById(Long prioriteId) {
         try {
-            // Appel direct au nomenclature-service (pas via gateway pour éviter auth circulaire)
             String url = nomenclatureUrl + "/priorites-activite/" + prioriteId;
             Map<String, Object> priorite = restTemplate.getForObject(url, Map.class);
             if (priorite != null) prioritesCache.put(prioriteId, priorite);
@@ -230,7 +228,6 @@ public class ActiviteService {
         existing.setVisible(details.isVisible());
         existing.setFacturable(details.isFacturable());
         existing.setEstGlobale(details.isEstGlobale());
-        // ── PRIORITÉ : setter prioriteId au lieu de priorite ──
         existing.setPrioriteId(details.getPrioriteId());
         existing.setDateEcheance(details.getDateEcheance());
         existing.setDateDebutReelle(details.getDateDebutReelle());
@@ -289,4 +286,85 @@ public class ActiviteService {
 
     public void clearStatutsCache()   { statutsCache.clear(); }
     public void clearPrioritesCache() { prioritesCache.clear(); }
+
+    // ════════════════════════════════════════════════════════════
+    // ✅ NOUVEAU — Mécanisme central du scénario B (duplication
+    // idempotente des activités globales par projet).
+    //
+    // Étant donné une activité globale (estGlobale=true) et un projet :
+    // - Si une copie existe DÉJÀ pour ce projet (peu importe quel employé
+    //   l'a créée la première fois) → on la retourne directement, SANS
+    //   créer de doublon. C'est ce qui garantit qu'une activité globale
+    //   n'est dupliquée qu'UNE SEULE FOIS par projet, jamais par personne.
+    // - Sinon → on crée la copie, on la lie au projet, et on mémorise sa
+    //   source via activiteSourceGlobaleId pour les appels futurs.
+    //
+    // synchronized sur l'instance du service : une mesure simple contre la
+    // course entre deux employés qui sélectionneraient "Réunion" dans le
+    // même projet au même instant. Pas idéal à très grande échelle (verrou
+    // applicatif, pas base de données), mais largement suffisant ici — le
+    // volume d'appels concurrents sur ce chemin précis est très faible, et
+    // la contrainte d'unicité ci-dessous (si ajoutée en base) serait le
+    // filet de sécurité ultime en cas de double insertion malgré tout.
+    // ════════════════════════════════════════════════════════════
+    @Transactional
+    public synchronized Activité obtenirOuDupliquerPourProjet(Long activiteGlobaleId, Long projetId) {
+        // 1. Cherche si une copie existe déjà pour ce projet précis.
+        var copieExistante = activiteRepo.findBySourceGlobaleIdAndProjetId(activiteGlobaleId, projetId);
+        if (copieExistante.isPresent()) {
+            log.debug("♻️ Copie existante réutilisée pour activité globale {} / projet {}",
+                    activiteGlobaleId, projetId);
+            return copieExistante.get();
+        }
+
+        // 2. Aucune copie encore — on la crée à partir de la source globale.
+        Activité source = activiteRepo.findById(activiteGlobaleId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Activité globale non trouvée: " + activiteGlobaleId));
+
+        if (!source.isEstGlobale()) {
+            throw new IllegalArgumentException(
+                    "L'activité " + activiteGlobaleId + " n'est pas une activité globale.");
+        }
+
+        Projet projet = projetRepo.findById(projetId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Projet non trouvé: " + projetId));
+
+        // ✅ Champs copiés depuis la source : nom, description, couleur,
+        // priorité, heures estimées, visible, facturable.
+        // ✅ PAS copiés (repartent à des valeurs neutres propres à CE
+        // projet) : statut (1L = premier statut par défaut), dates
+        // d'échéance/réelles, assignation utilisateur/groupe, heures
+        // passées (toujours 0 pour une nouvelle copie).
+        Activité copie = new Activité();
+        copie.setNom(source.getNom());
+        copie.setDescription(source.getDescription());
+        copie.setCouleur(source.getCouleur());
+        copie.setPrioriteId(source.getPrioriteId());
+        copie.setHeuresEstimees(source.getHeuresEstimees());
+        copie.setVisible(source.isVisible());
+        copie.setFacturable(source.isFacturable());
+        copie.setStatutActiviteId(1L);
+        copie.setEstGlobale(false);
+        copie.setActiviteSourceGlobaleId(activiteGlobaleId);
+
+        long count = activiteRepo.count() + 1;
+        copie.setNumeroActivite(String.format("ACT-%03d", count));
+
+        Activité saved = activiteRepo.save(copie);
+
+        // Lier la copie au projet (relation ManyToMany côté Projet).
+        projet.getActivites().add(saved);
+        projetRepo.save(projet);
+
+        log.info("➕ Copie créée pour activité globale {} → projet {} (nouvelle activité id={})",
+                activiteGlobaleId, projetId, saved.getId());
+
+        try {
+            avancementService.recalculerProjet(projetId);
+        } catch (Exception ignored) {}
+
+        return saved;
+    }
 }

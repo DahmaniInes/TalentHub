@@ -299,8 +299,8 @@
   width: 0;
 }
 
-.user-name { font-size: 13px; font-weight: 700; color: #cbd5e1; margin: 0; transition: color 0.3s; }
-.user-role { font-size: 11px; color: var(--text-muted); margin: 0; }
+.user-name { font-size: 13px; font-weight: 700; color: var(--dt-text); margin: 0; transition: color 0.3s; }
+.user-role { font-size: 11px; color: var(--text); margin: 0; }
 
 /* Light mode overrides */
 :root:not(.dark) .nav-item { color: #475569; }

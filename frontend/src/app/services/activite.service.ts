@@ -54,4 +54,21 @@ export class ActiviteService {
   deleteBulk(ids: number[]): Observable<void> {
     return this.http.delete<void>(`${this.base}/bulk`, { body: ids });
   }
+
+  /**
+   * ✅ NOUVEAU — Scénario B : obtient la copie locale d'une activité
+   * globale pour CE projet précis, en la créant si c'est la première fois
+   * qu'elle est utilisée dans ce projet. Idempotent : appeler cette méthode
+   * plusieurs fois avec les mêmes IDs (par des employés différents, ou
+   * plusieurs fois par le même) retourne toujours LA MÊME activité — jamais
+   * de doublon créé.
+   *
+   * Utilisé par :
+   * - ma-semaine.component (sélection d'une activité globale dans le select)
+   * - projet-detail.component (bouton "Activité globale" du drawer de création)
+   */
+  obtenirOuDupliquerPourProjet(activiteGlobaleId: number, projetId: number): Observable<Activite> {
+    return this.http.post<Activite>(
+        `${this.base}/globale/${activiteGlobaleId}/dupliquer-pour-projet/${projetId}`, {});
+  }
 }

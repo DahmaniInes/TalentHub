@@ -992,29 +992,81 @@ cancelActField(): void { this.editingActField.set(null); }
   // DASHBOARDS — STACKED BAR CHART
   // ════════════════════════════════════════════════════════════
 
-  getYAxisLabels(): number[] {
-    const total = this.activites().length;
+ 
     
-    // Si moins de 5 activités : plafonner à 5 et afficher 0,1,2,3,4,5
-    if (total <= 5) {
-      return [5, 4, 3, 2, 1, 0];
+
+// ════════════════════════════════════════════════════════════
+// AXE Y — collé au vrai max affiché (pas au total des activités)
+// ════════════════════════════════════════════════════════════
+
+/** Construit les 6 labels (5..0) d'un axe Y collé au max réel */
+private buildYAxisLabels(max: number): number[] {
+  const step = Math.max(1, Math.ceil(max / 5));
+  const labels: number[] = [];
+  for (let i = 5; i >= 0; i--) labels.push(i * step);
+  return labels;
+}
+
+/** Max réel parmi les 12 barres empilées (somme des statuts par mois) */
+private getBarChartMax(): number {
+  const y = this.chartYear();
+  const statuts = this.statutsActivite();
+  const acts = this.activites();
+  let max = 0;
+  for (let mi = 0; mi < 12; mi++) {
+    let total = 0;
+    for (const s of statuts) {
+      total += acts.filter(a => {
+        if (!a.dateCreation) return false;
+        const dt = new Date(a.dateCreation);
+        return dt.getFullYear() === y && dt.getMonth() === mi && a.statutActiviteId === s.id;
+      }).length;
     }
-    
-    // Sinon : plafonner au nombre total d'activités, 5 paliers
-    const step = Math.ceil(total / 10);
-    
-    const labels: number[] = [];
-    for (let i = 5; i >= 0; i--) {
-      labels.push(i * step);
-    }
-    return labels;
+    if (total > max) max = total;
   }
-  
+  return max;
+}
 
+getYAxisLabels(): number[] {
+  return this.buildYAxisLabels(this.getBarChartMax());
+}
+
+/** Max réel parmi les points de la line chart (activités terminées) */
+private getLineChartMax(): number {
+  const y = this.lineYear();
+  const m = this.lineMonthIdx();
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const nextM = m === 11 ? 0 : m + 1;
+  const nextY = m === 11 ? y + 1 : y;
+  const daysInNextMonth = new Date(nextY, nextM + 1, 0).getDate();
+
+  const points: { year: number; month: number; day: number }[] = [];
+  for (let d = 1; d <= daysInMonth; d += 8) points.push({ year: y, month: m, day: d });
+  if (points[points.length - 1]?.day !== daysInMonth) points.push({ year: y, month: m, day: daysInMonth });
+  const halfNext = Math.floor(daysInNextMonth / 2);
+  for (let d = 1; d <= halfNext; d += 8) points.push({ year: nextY, month: nextM, day: d });
+
+  let max = 0;
+  for (let i = 0; i < points.length; i++) {
+    const pt = points[i];
+    const start = i === 0 ? 1 : points[i - 1].day + 1;
+    const count = this.activites().filter(a => {
+      if (a.statutActiviteId !== 4) return false;
+      if (!a.dateCreation) return false;
+      const dt = new Date(a.dateCreation);
+      return dt.getFullYear() === pt.year && dt.getMonth() === pt.month &&
+             dt.getDate() >= start && dt.getDate() <= pt.day;
+    }).length;
+    if (count > max) max = count;
+  }
+  return max;
+}
+
+getLineYLabels(): number[] {
+  return this.buildYAxisLabels(this.getLineChartMax());
+}
 
   
-  // Même méthode pour le line chart
-  getLineYLabels(): number[] { return this.getYAxisLabels(); }
 
 
 
@@ -1093,8 +1145,9 @@ getLinePoints2(): { x: number; y: number }[] {
     points.push({ label: `${this.MOIS_LABELS[nextM]}${d}`, year: nextY, month: nextM, day: d });
   }
 
-  const yLabels = this.getYAxisLabels();
-  const yMax = yLabels[0] || 1;
+  // APRÈS
+const yLabels = this.getLineYLabels();
+const yMax = yLabels[0] || 1;
 
   // Compter les activités TERMINÉES (statutActiviteId === 4) par période
   const counts = points.map((pt, i) => {

@@ -177,36 +177,53 @@
 
 
 
-            <!-- Select Activité -->
-          <!-- REMPLACER le <td> "Select Activité" (colonne activité dans le tableau) par ceci : -->
+
+
+
+  <!-- ✅ REMPLACE le <td> "Select Activité" dans ma-semaine.component.html
+     par ce bloc — gère le scénario B (duplication idempotente) -->
 <td class="dt-td" style="padding:8px 10px;vertical-align:middle;border-right:1px solid var(--dt-border)">
- 
+
   <!-- ✅ Select activité : affiché SEULEMENT si un projet est sélectionné -->
   <select *ngIf="ligne.projetId"
           class="ms-select ms-select-act"
           [ngModel]="ligne.activiteId ?? ''"
-          [disabled]="!peutModifier()"
+          [disabled]="!peutModifier() || dupliquantRowId() === ligne.rowId"
           (ngModelChange)="onActiviteChange(ligne.rowId, $event)">
     <option value="">— Choisir une activité —</option>
- 
-    <!-- Activités du projet sélectionné -->
-    <option *ngFor="let a of getActivitesDuProjet(ligne.projetId)" [value]="a.id">{{ a.nom }}</option>
- 
-    <!-- Activités globales en optgroup séparé si projet sélectionné -->
-   <!-- <optgroup *ngIf="activitesGlobales().length > 0" label="Activités globales">
-      <option *ngFor="let a of activitesGlobales()" [value]="a.id">{{ a.nom }}</option>
-    </optgroup> -->
+
+    <!-- Activités déjà liées à ce projet (copies issues d'une duplication
+         précédente, ou activités créées normalement) -->
+    <optgroup label="Activités du projet" *ngIf="getActivitesDuProjet(ligne.projetId).length > 0">
+      <option *ngFor="let a of getActivitesDuProjet(ligne.projetId)" [value]="a.id">{{ a.nom }}</option>
+    </optgroup>
+
+    <!-- ✅ NOUVEAU — Activités globales disponibles, pas encore matérialisées
+         pour ce projet. Les sélectionner déclenche la duplication
+         idempotente côté backend (voir onActiviteChange). -->
+    <optgroup label="Activités globales" *ngIf="getActivitesGlobalesPourProjet(ligne.projetId).length > 0">
+      <option *ngFor="let a of getActivitesGlobalesPourProjet(ligne.projetId)" [value]="a.id">{{ a.nom }}</option>
+    </optgroup>
   </select>
- 
+
+  <!-- ✅ NOUVEAU — Indicateur pendant la duplication idempotente -->
+  <div *ngIf="dupliquantRowId() === ligne.rowId" class="ms-select-placeholder" style="display:flex;align-items:center;gap:6px">
+    <div class="ms-spin" style="width:11px;height:11px;border-width:1.5px"></div>
+    Assignation en cours...
+  </div>
+
   <!-- Message si pas de projet sélectionné -->
   <span *ngIf="!ligne.projetId" class="ms-select-placeholder">
     ← Choisir un projet d'abord
   </span>
- 
+
   <!-- Erreur si ligne avec heures mais sans activité -->
   <div *ngIf="submitted() && ligne.projetId && !ligne.activiteId && getTotalLigne(ligne.rowId) > 0"
        class="ms-field-error">⚠️ Activité requise</div>
 </td>
+
+
+
 
 
 

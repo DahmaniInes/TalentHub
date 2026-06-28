@@ -27,8 +27,6 @@ public class ActiviteController {
     public ResponseEntity<?> getAll(
             @RequestParam(required = false) Long statutId,
             @RequestParam(required = false) Long utilisateurId,
-            // AVANT : @RequestParam(required = false) Integer priorite
-            // APRÈS : prioriteId (Long, correspond à priorite_activite.id)
             @RequestParam(required = false) Long prioriteId,
             @RequestParam(required = false) Boolean globalesUniquement) {
 
@@ -46,9 +44,6 @@ public class ActiviteController {
     }
 
     // ── GET par projet ────────────────────────────────────────────
-    // ✅ Élargi : un stagiaire ou superviseur (INT_ACT_VIEW_ALL/VIEW_OWN) peut
-    // lister les activités d'un projet de stage sans avoir les permissions
-    // ACTIVITY_*/PROJECT_* génériques de l'espace "projets d'entreprise".
     @GetMapping("/projet/{projetId}")
     public ResponseEntity<?> getByProjet(@PathVariable Long projetId) {
         if (!permCtx.has("ACTIVITY_VIEW_ALL") && !permCtx.has("ACTIVITY_VIEW_LEAD")
@@ -78,8 +73,6 @@ public class ActiviteController {
     }
 
     // ── GET par ID ────────────────────────────────────────────────
-    // ✅ Élargi pour les mêmes raisons que getByProjet (drawer détail activité
-    // dans la page projet-stage-detail).
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable Long id) {
         if (!permCtx.has("ACTIVITY_VIEW_ALL") && !permCtx.has("ACTIVITY_VIEW_LEAD")
@@ -94,10 +87,6 @@ public class ActiviteController {
     }
 
     // ── POST créer ────────────────────────────────────────────────
-    // ✅ Remplacé @RequiresPermission("ACTIVITY_CREATE") (fixe, bloquait avant
-    // même d'exécuter le code) par un check manuel acceptant aussi INT_ACT_CREATE,
-    // pour permettre la création d'activités de stage par un superviseur ou un
-    // admin de l'espace stagiaire sans la permission ACTIVITY_CREATE générique.
     @PostMapping
     public ResponseEntity<?> create(@RequestBody Map<String, Object> body) {
         if (!permCtx.has("ACTIVITY_CREATE") && !permCtx.has("INT_ACT_CREATE")) {
@@ -107,7 +96,7 @@ public class ActiviteController {
         Activité activite    = buildFromBody(body);
         Long utilisateurId   = extractLong(body, "utilisateurId");
         List<Long> groupeIds = extractLongList(body, "groupeIds");
-        List<Long> utilisateurIds = extractLongList(body, "utilisateurIds"); // ← AJOUTER
+        List<Long> utilisateurIds = extractLongList(body, "utilisateurIds");
 
         return new ResponseEntity<>(
                 activiteService.toDTO(activiteService.create(activite, utilisateurId, groupeIds,utilisateurIds)),
@@ -127,7 +116,7 @@ public class ActiviteController {
         Activité details     = buildFromBody(body);
         Long utilisateurId   = extractLong(body, "utilisateurId");
         List<Long> groupeIds = extractLongList(body, "groupeIds");
-        List<Long> utilisateurIds = extractLongList(body, "utilisateurIds"); // ← NOUVEAU
+        List<Long> utilisateurIds = extractLongList(body, "utilisateurIds");
         return ResponseEntity.ok(
                 activiteService.toDTO(activiteService.update(id, details, utilisateurId, groupeIds, utilisateurIds)));
     }
@@ -147,8 +136,6 @@ public class ActiviteController {
     }
 
     // ── DELETE ────────────────────────────────────────────────────
-    // ✅ Remplacé @RequiresPermission("ACTIVITY_DELETE_ALL") (fixe) par un check
-    // manuel acceptant aussi INT_ACT_DELETE.
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (!permCtx.has("ACTIVITY_DELETE_ALL") && !permCtx.has("INT_ACT_DELETE")) {
@@ -166,6 +153,37 @@ public class ActiviteController {
         }
         ids.forEach(activiteService::delete);
         return ResponseEntity.noContent().build();
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // ✅ NOUVEAU — Scénario B : obtient (ou crée si besoin) la copie
+    // locale d'une activité globale pour un projet précis. Appelé par
+    // Ma Semaine (sélection d'une activité globale dans un projet) ET par
+    // projet-detail (bouton "Activité globale" dans le drawer de création).
+    //
+    // Pas de @RequiresPermission strict ici : accessible à toute personne
+    // qui peut déjà créer/modifier une feuille de temps sur ce projet —
+    // TS_OWN_CREATE/TS_OWN_UPDATE suffisent, on ne réclame pas en plus
+    // ACTIVITY_CREATE (un employé normal n'a généralement pas ce droit,
+    // mais doit pouvoir déclencher cette duplication en pointant son temps).
+    // ════════════════════════════════════════════════════════════
+    @PostMapping("/globale/{globaleId}/dupliquer-pour-projet/{projetId}")
+    public ResponseEntity<?> obtenirOuDupliquerPourProjet(
+            @PathVariable Long globaleId, @PathVariable Long projetId) {
+        if (!permCtx.has("TS_OWN_CREATE") && !permCtx.has("TS_OWN_UPDATE")
+                && !permCtx.has("TS_ALL_UPDATE") && !permCtx.has("TS_GROUP_UPDATE")
+                && !permCtx.has("ACTIVITY_CREATE") && !permCtx.has("INT_ACT_CREATE")) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Permission requise pour assigner une activité."));
+        }
+        try {
+            Activité resultat = activiteService.obtenirOuDupliquerPourProjet(globaleId, projetId);
+            return ResponseEntity.ok(activiteService.toDTO(resultat));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("message", e.getMessage()));
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────
@@ -200,12 +218,8 @@ public class ActiviteController {
         if (body.get("creePar")          != null) a.setCreePar(body.get("creePar").toString());
         if (body.get("statutActiviteId") != null)
             a.setStatutActiviteId(Long.valueOf(body.get("statutActiviteId").toString()));
-
-        // AVANT : if (body.get("priorite") != null) a.setPriorite(Integer.parseInt(...))
-        // APRÈS : prioriteId (Long)
         if (body.get("prioriteId") != null)
             a.setPrioriteId(Long.valueOf(body.get("prioriteId").toString()));
-
         if (body.get("dateEcheance") != null)
             a.setDateEcheance(LocalDate.parse(body.get("dateEcheance").toString()));
         return a;

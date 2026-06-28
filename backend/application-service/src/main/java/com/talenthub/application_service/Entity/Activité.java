@@ -59,6 +59,32 @@ public class Activité {
     @Builder.Default
     private boolean estGlobale = false;
 
+    // ════════════════════════════════════════════════════════════
+    // ✅ NOUVEAU — Traçabilité de duplication depuis une activité globale.
+    //
+    // Rempli UNIQUEMENT pour les copies créées via le mécanisme de
+    // duplication par projet (scénario B) : quand un employé pointe sur une
+    // activité globale "Réunion" dans un projet pour la première fois, une
+    // copie locale est créée pour CE projet, et ce champ pointe vers
+    // l'activité globale d'origine (Activité.id de l'originale, qui a
+    // estGlobale=true).
+    //
+    // - null pour une activité globale originale (estGlobale=true)
+    // - null pour une activité créée normalement (jamais issue d'une
+    //   activité globale)
+    // - rempli UNIQUEMENT pour une copie locale de projet issue d'une
+    //   activité globale
+    //
+    // Permet de retrouver en une requête "la copie de l'activité globale X
+    // dans le projet Y" : WHERE activiteSourceGlobaleId = X AND projet = Y.
+    // C'est ce qui garantit l'IDEMPOTENCE de la duplication — sans ce champ,
+    // il serait impossible de savoir de façon fiable si une copie existe
+    // déjà pour ce projet (chercher par nom serait fragile : deux activités
+    // différentes peuvent porter le même nom).
+    // ════════════════════════════════════════════════════════════
+    @Column(name = "activite_source_globale_id")
+    private Long activiteSourceGlobaleId;
+
     // ── PRIORITÉ — ID vers la table priorite_activite du nomenclature-service ──
     // AVANT : private int priorite = 2;
     // APRÈS : FK vers priorite_activite (stocké comme simple Long, pas de @ManyToOne cross-service)
@@ -149,5 +175,7 @@ public class Activité {
         this.projets          = new ArrayList<>();
         this.utilisateurs     = new ArrayList<>();
         // prioriteId est null par défaut — sera rempli depuis le formulaire
+        // activiteSourceGlobaleId est null par défaut — rempli uniquement
+        // lors d'une duplication via obtenirOuDupliquerPourProjet()
     }
 }
