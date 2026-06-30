@@ -1,11 +1,4 @@
 // calendrier.component.ts — COMPLET CORRIGÉ
-// Corrections principales:
-// 1. Positionnement en PX (pas %) : top = (heureMinutes - 360)px, height = duréeMinutes px
-//    car chaque heure = 60px et la grille commence à 6h (360 min)
-// 2. Activités récentes : affichées AVEC projet + client (données issues des lignes existantes)
-// 3. Drag depuis sidebar : heure de début = ligne sur laquelle on drop, durée = 1h par défaut
-// 4. Permissions : page bloquée si aucun droit de lecture
-
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -22,10 +15,10 @@ import { Projet }      from '../../../../shared/models/projet.model';
 import { Activite }    from '../../../../shared/models/activite.model';
 import { Utilisateur } from '../../../../shared/models/utilisateur.model';
 import { HttpErrorResponse } from '@angular/common/http';
+import { GroupeService, MembreInfo } from '../../../../services/groupe.service';
 
 export type VueCal = 'mois' | 'semaine' | 'jour';
 
-// ─── Entrée affichée dans le calendrier (une ligne de feuille de temps) ───────
 export interface EntreeCal {
   id?:           number;
   feuilleId:     number;
@@ -42,7 +35,6 @@ export interface EntreeCal {
   couleur:       string;
 }
 
-// ─── Formulaire d'ajout/édition ───────────────────────────────────────────────
 export interface FormCal {
   date:               string;
   projetId?:          number;
@@ -53,8 +45,6 @@ export interface FormCal {
   commentaire:        string;
 }
 
-// ─── Activité récente pour la sidebar ────────────────────────────────────────
-// Représente la dernière occurrence d'une combinaison projet+activité
 export interface EntreeRecente {
   activiteId?:  number;  activiteNom?: string;
   projetId?:    number;  projetNom?:   string;
@@ -62,7 +52,7 @@ export interface EntreeRecente {
   heureDebut?:  string;  heureFin?:    string;
   minutesTravaillees: number;
   couleur:      string;
-  cle:          string; // clé unique "projetId-activiteId"
+  cle:          string;
 }
 
 @Component({
@@ -82,11 +72,13 @@ export class CalendrierFtComponent implements OnInit {
   readonly ui         = inject(UiService);
   private errorSvc    = inject(ErrorService);
   readonly perms      = inject(PermissionContextService);
+  private groupeSvc   = inject(GroupeService);
+  private readonly STATUT_TERMINE_ID = 4;
 
   // ── Données ──────────────────────────────────────────────────────────────
   currentUser      = signal<Utilisateur | null>(null);
   selectedUser     = signal<Utilisateur | null>(null);
-  tousUtilisateurs = signal<Utilisateur[]>([]);
+  utilisateursDropdown = signal<MembreInfo[]>([]);
   feuilles         = signal<FeuilleTemps[]>([]);
   projets          = signal<Projet[]>([]);
   activitesGlobales   = signal<Activite[]>([]);
@@ -105,20 +97,15 @@ export class CalendrierFtComponent implements OnInit {
   canReadGroup  = computed(() => this.perms.can('TS_GROUP_READ'));
   canUpdateGroup = computed(() => this.perms.can('TS_GROUP_UPDATE'));
 
-  // Peut-il voir le calendrier ?
   canViewCalendar = computed(() =>
     this.canReadOwn() || this.canReadAll() || this.canReadGroup()
   );
 
-  // Peut-il modifier la feuille affichée ?
   canModify = computed(() => {
     const isOwn = this.selectedUser()?.id === this.currentUser()?.id;
     if (isOwn) return this.canUpdateOwn() || this.canCreateOwn();
     return this.canUpdateAll() || this.canUpdateGroup();
   });
-
-  // Affiche le sélecteur utilisateur si droits étendus
-  showUserSelector = computed(() => this.canReadAll() || this.canReadGroup());
 
   // ── Navigation ────────────────────────────────────────────────────────────
   dateCourante = signal<Date>(new Date());
@@ -142,15 +129,11 @@ export class CalendrierFtComponent implements OnInit {
   readonly COULEURS = ['#6366f1','#8b5cf6','#10b981','#f97316','#ef4444',
                        '#3b82f6','#c026d3','#eab308','#06b6d4','#84cc16'];
 
-  // Grille de 06:00 à 23:00 inclus = 18 créneaux de 60px chacun
-  // Chaque créneau = 1 heure = 60px => hauteur totale = 1080px
   readonly HEURES_JOUR = Array.from({length: 18}, (_, i) =>
     `${String(i + 6).padStart(2, '0')}:00`
   );
-  // Heure de début de la grille = 6h = 360 minutes depuis minuit
   readonly START_HOUR    = 6;
-  readonly START_MINUTES = this.START_HOUR * 60;  // 360
-  // Chaque heure correspond à SLOT_PX pixels dans la grille
+  readonly START_MINUTES = this.START_HOUR * 60;
   readonly SLOT_PX = 60;
 
   private _couleurs: Record<string, string> = {};
@@ -161,71 +144,81 @@ export class CalendrierFtComponent implements OnInit {
     return this._couleurs[k];
   }
 
-  // ── Calcul position en PX (FIX principal) ────────────────────────────────
-  // Retourne le décalage en px depuis le haut de la grille
-  // top_px = (heure*60 + minutes - START_MINUTES) * SLOT_PX/60
-  // Comme SLOT_PX = 60, top_px = (h*60 + m - START_MINUTES) px
-  // Ex: 10:00 => (600 - 360) = 240px = exactement sur la ligne 10h ✅
-  // Ex: 08:00 => (480 - 360) = 120px = exactement sur la ligne 8h ✅
+  private loadUtilisateursDropdown(): void {
+    const me = this.currentUser();
+    if (!me) return;
+
+    if (this.canReadAll() || this.canUpdateAll()) {
+      this.groupeSvc.getTousMembresDeGroupes(me.id).subscribe({
+        next: d => this.utilisateursDropdown.set(d),
+        error: () => this.utilisateursDropdown.set([])
+      });
+    } else if (this.canReadGroup() || this.canUpdateGroup()) {
+      this.groupeSvc.getCoequipiers(me.id).subscribe({
+        next: d => this.utilisateursDropdown.set(d),
+        error: () => this.utilisateursDropdown.set([])
+      });
+    }
+  }
+
   getTopPx(heureDebut?: string): number {
     if (!heureDebut) return 0;
     const [h, m] = heureDebut.split(':').map(Number);
     const minutesDepuisDebut = h * 60 + m - this.START_MINUTES;
-    // Clamp entre 0 et la hauteur max de la grille
     return Math.max(0, Math.min(minutesDepuisDebut, this.HEURES_JOUR.length * this.SLOT_PX));
   }
 
-  // Retourne la hauteur en px proportionnelle à la durée
-  // height_px = duréeMinutes px (car 1 min = 1px, 60min = 60px = 1 slot)
-  // Ex: 3h = 180 min = 180px = exactement 3 créneaux ✅
   getHeightPx(dureeMinutes: number): number {
-    return Math.max(22, dureeMinutes); // minimum 22px pour voir l'entrée
+    return Math.max(22, dureeMinutes);
   }
 
-  // ── Activités récentes du user sélectionné ────────────────────────────────
-  // On déduplique par combinaison (projetId + activiteId)
-  // et on garde uniquement la plus récente (dernière date)
-  entreesRecentes = computed((): EntreeRecente[] => {
-    // Map clé => entrée la plus récente pour cette combinaison
-    const map = new Map<string, { date: string; entry: EntreeRecente }>();
+  entreesRecentes = signal<EntreeRecente[]>([]);
 
-    for (const ft of this.feuilles()) {
-      for (const l of ft.lignes ?? []) {
-        // Ignorer les lignes sans durée
-        if (!l.minutesTravaillees || l.minutesTravaillees <= 0) continue;
-
-        const lDate = typeof l.date === 'string' ? l.date : String(l.date);
-        const cle   = `${l.projetId ?? 'null'}-${l.activiteId ?? 'null'}`;
-
-        const existing = map.get(cle);
-        // Garder seulement la plus récente
-        if (!existing || lDate > existing.date) {
-          map.set(cle, {
-            date: lDate,
-            entry: {
-              cle,
-              activiteId:  l.activiteId,
-              activiteNom: l.activiteNom,
-              projetId:    l.projetId,
-              projetNom:   l.projetNom,
-              clientId:    l.clientId,
-              clientNom:   l.clientNom,
-              heureDebut:  l.heureDebut,
-              heureFin:    l.heureFin,
-              minutesTravaillees: l.minutesTravaillees,
-              couleur:     this.couleurProjet(l.projetId),
-            }
+  /**
+   * ✅ CORRIGÉ — Exclut désormais du bloc "Reprendre une activité" toute
+   * entrée dont l'activité résolue est marquée Terminée. Comme
+   * activitesParProjet/activitesGlobales ne contiennent déjà que des
+   * activités NON terminées (chargées via getByProjet /
+   * getGlobalesDisponiblesPourProjet), une activité terminée n'y figure
+   * pas — on la considère donc explicitement exclue plutôt que de la
+   * laisser passer faute de correspondance trouvée.
+   */
+  private loadEntreesRecentes(utilisateurId: number): void {
+    this.ftSvc.getActivitesRecentesDisponibles(utilisateurId).subscribe({
+      next: dtos => {
+        const projets = this.projets();
+        const recentes: EntreeRecente[] = dtos
+          .filter(d => {
+            if (!d.activiteId) return true;
+            const activitesDuProjet = d.projetId ? (this.activitesParProjet()[d.projetId] ?? []) : [];
+            const activite = activitesDuProjet.find(a => a.id === d.activiteId)
+                           ?? this.activitesGlobales().find(a => a.id === d.activiteId);
+            return !!activite && activite.statutActiviteId !== this.STATUT_TERMINE_ID;
+          })
+          .map(d => {
+            const projet = projets.find(p => p.id === d.projetId);
+            const activitesDuProjet = d.projetId ? (this.activitesParProjet()[d.projetId] ?? []) : [];
+            const activite = activitesDuProjet.find(a => a.id === d.activiteId)
+                           ?? this.activitesGlobales().find(a => a.id === d.activiteId);
+            return {
+              cle: `${d.projetId ?? 'null'}-${d.activiteId ?? 'null'}`,
+              activiteId: d.activiteId,
+              activiteNom: activite?.nom,
+              projetId: d.projetId,
+              projetNom: projet?.nom,
+              clientId: d.clientId,
+              clientNom: undefined,
+              heureDebut: d.heureDebut,
+              heureFin: d.heureFin,
+              minutesTravaillees: d.minutesTravaillees,
+              couleur: this.couleurProjet(d.projetId),
+            };
           });
-        }
-      }
-    }
-
-    // Trier par date décroissante et prendre les 5 premières
-    return Array.from(map.values())
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .slice(0, 5)
-      .map(v => v.entry);
-  });
+        this.entreesRecentes.set(recentes);
+      },
+      error: () => this.entreesRecentes.set([])
+    });
+  }
 
   // ── Labels navigation ─────────────────────────────────────────────────────
   labelNav = computed(() => {
@@ -248,7 +241,6 @@ export class CalendrierFtComponent implements OnInit {
     return all.reduce((s, e) => s + e.minutesTravaillees + e.minutesSupplementaires, 0);
   });
 
-  // ── Computed des jours pour chaque vue ───────────────────────────────────
   joursMois = computed(() => {
     const d = this.dateCourante();
     const today = new Date().toISOString().split('T')[0];
@@ -293,7 +285,6 @@ export class CalendrierFtComponent implements OnInit {
     return [{ date: ds, entrees: this.entreesDate(ds) }];
   });
 
-  // Récupère les entrées d'une date depuis les feuilles chargées
   entreesDate(date: string): EntreeCal[] {
     const res: EntreeCal[] = [];
     for (const ft of this.feuilles()) {
@@ -315,7 +306,6 @@ export class CalendrierFtComponent implements OnInit {
         }
       }
     }
-    // Trier par heure de début croissante
     return res.sort((a, b) => (a.heureDebut || '00:00').localeCompare(b.heureDebut || '00:00'));
   }
 
@@ -327,22 +317,54 @@ export class CalendrierFtComponent implements OnInit {
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
   ngOnInit(): void {
-    this.projetSvc.getAll().subscribe({ next: ps => { this.projets.set(ps); for (const p of ps) this.loadActivitesDuProjet(p.id); } });
-    this.activiteSvc.getAll().subscribe({ next: (all: Activite[]) => this.activitesGlobales.set(all.filter(a => a.estGlobale)) });
     const kcId = this.keycloak.getKeycloakUserId();
-    if (kcId) {
-      this.userSvc.getUserByKeycloakId(kcId).subscribe({
-        next: u => {
-          this.currentUser.set(u);
-          this.selectedUser.set(u);
-          this.loadFeuilles(u.id);
-          if (this.canReadAll() || this.canReadGroup()) {
-            this.userSvc.getAllUsers().subscribe({ next: d => this.tousUtilisateurs.set(d) });
+    if (!kcId) { this.loadFeuilles(); return; }
+
+    this.userSvc.getUserByKeycloakId(kcId).subscribe({
+      next: u => {
+        this.currentUser.set(u);
+        this.selectedUser.set(u);
+
+        this.projetSvc.getVisiblesPourFeuilleTemps(u.id).subscribe({
+          next: ps => {
+            this.projets.set(ps);
+
+            const projetActivitePromises = ps.map(p => Promise.all([
+              new Promise<void>(resolve => {
+                this.activiteSvc.getByProjet(p.id).subscribe({
+                  next: d => { this.activitesParProjet.update(m => ({ ...m, [p.id]: d })); resolve(); },
+                  error: () => resolve()
+                });
+              }),
+              new Promise<void>(resolve => {
+                this.activiteSvc.getGlobalesDisponiblesPourProjet(p.id).subscribe({
+                  next: d => {
+                    this.activitesGlobales.update(g => {
+                      const ids = new Set(g.map(a => a.id));
+                      return [...g, ...d.filter(a => !ids.has(a.id))];
+                    });
+                    resolve();
+                  },
+                  error: () => resolve()
+                });
+              })
+            ]));
+
+            Promise.all(projetActivitePromises).then(() => {
+              this.loadFeuilles(u.id);
+              this.loadEntreesRecentes(u.id);
+              this.loadUtilisateursDropdown();
+            });
+          },
+          error: () => {
+            this.loadFeuilles(u.id);
+            this.loadEntreesRecentes(u.id);
+            this.loadUtilisateursDropdown();
           }
-        },
-        error: () => this.loadFeuilles()
-      });
-    }
+        });
+      },
+      error: () => this.loadFeuilles()
+    });
   }
 
   loadFeuilles(userId?: number): void {
@@ -357,10 +379,21 @@ export class CalendrierFtComponent implements OnInit {
   }
 
   onUserChange(val: string): void {
-    const uid  = val ? +val : this.currentUser()?.id;
-    const user = this.tousUtilisateurs().find(u => u.id === uid) ?? this.currentUser();
-    this.selectedUser.set(user ?? null);
-    if (uid) this.loadFeuilles(uid);
+    const me = this.currentUser();
+    const id = val ? +val : me?.id;
+    if (!id || (me && id === me.id)) {
+      this.selectedUser.set(me ?? null);
+      if (me) { this.loadFeuilles(me.id); this.loadEntreesRecentes(me.id); }
+      return;
+    }
+    this.userSvc.getUserById(id).subscribe({
+      next: user => {
+        this.selectedUser.set(user);
+        this.loadFeuilles(user.id);
+        this.loadEntreesRecentes(user.id);
+      },
+      error: () => this.ui.error("Erreur lors du chargement de l'utilisateur sélectionné.")
+    });
   }
 
   loadActivitesDuProjet(projetId: number): void {
@@ -405,7 +438,6 @@ export class CalendrierFtComponent implements OnInit {
 
   private newForm(date: string, heureDebut = '09:00'): FormCal {
     const [h, m] = heureDebut.split(':').map(Number);
-    // Heure de fin = début + 1h par défaut
     const heureFin = `${String(Math.min(h+1, 23)).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
     return {
       date, projetId: undefined, activiteId: undefined,
@@ -460,15 +492,12 @@ export class CalendrierFtComponent implements OnInit {
     return { ft, lundiDate };
   }
 
-
-
   private buildLignesExistantes(ft: FeuilleTemps): LigneFeuilleTempsRequest[] {
     return (ft.lignes ?? []).map(l => ({
       date:          l.date,
       projetId:      l.projetId,
       activiteId:    l.activiteId,
       clientId:      l.clientId,
-      // ← projetNom, activiteNom, clientNom SUPPRIMÉS
       heureDebut:    l.heureDebut,
       heureFin:      l.heureFin,
       minutesTravaillees:     l.minutesTravaillees,
@@ -478,12 +507,6 @@ export class CalendrierFtComponent implements OnInit {
     }));
   }
 
-
-
-
-
-
-
   private notifierSiAutreUser(date: string): void {
     const me  = this.currentUser();
     const sel = this.selectedUser();
@@ -492,23 +515,6 @@ export class CalendrierFtComponent implements OnInit {
     const lundi  = FeuilleTempsService.getLundiSemaine(new Date(date));
     this.ftSvc.notifierModification(sel.keycloakId, nomMe, lundi).subscribe({ error: () => {} });
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   sauvegarderFormulaire(): void {
     if (!this.canModify()) {
@@ -521,13 +527,11 @@ export class CalendrierFtComponent implements OnInit {
     }
     const user = this.selectedUser() ?? this.currentUser();
     if (!user) { this.ui.warning('Utilisateur non identifié.'); return; }
- 
-    // ✅ IDs uniquement — AUCUN nom dans la request
+
     const nouvelleLigne: LigneFeuilleTempsRequest = {
       date:          this.form.date,
       projetId:      this.form.projetId,
       activiteId:    this.form.activiteId,
-      // ← projetNom, activiteNom SUPPRIMÉS
       heureDebut:    this.form.heureDebut,
       heureFin:      this.form.heureFin,
       minutesTravaillees:     this.form.minutesTravaillees,
@@ -535,10 +539,10 @@ export class CalendrierFtComponent implements OnInit {
       commentaire:   this.form.commentaire || undefined,
       estWeekend:    FeuilleTempsService.isWeekend(this.form.date)
     };
- 
+
     this.saving.set(true);
     const mode = this.formulaireMode();
- 
+
     if (mode === 'ajout') {
       const { ft: ftExist, lundiDate } = this.getOrCreateFeuille(this.form.date);
       if (ftExist) {
@@ -587,7 +591,6 @@ export class CalendrierFtComponent implements OnInit {
         });
       }
     } else {
-      // Mode édition
       const edition = this.entreeEnEdition();
       if (!edition) return;
       const ft = this.feuilles().find(f => f.id === edition.feuilleId);
@@ -596,7 +599,6 @@ export class CalendrierFtComponent implements OnInit {
         this.saving.set(false);
         return;
       }
-      // ✅ Reconstruire les lignes sans noms
       const lignes: LigneFeuilleTempsRequest[] = (ft.lignes ?? []).map(l =>
         l.id === edition.id
           ? nouvelleLigne
@@ -634,22 +636,6 @@ export class CalendrierFtComponent implements OnInit {
       });
     }
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   supprimerEntree(e: EntreeCal): void {
     if (!this.canModify()) { this.ui.warning("Vous n'avez pas la permission de supprimer."); return; }
@@ -691,7 +677,6 @@ export class CalendrierFtComponent implements OnInit {
     event.dataTransfer?.setData('type', 'entree');
   }
 
-  // Drag depuis la sidebar — activité récente
   onRecenteDragStart(event: DragEvent, r: EntreeRecente): void {
     if (!this.canModify()) { event.preventDefault(); return; }
     this.draggingRecente.set(r);
@@ -704,28 +689,22 @@ export class CalendrierFtComponent implements OnInit {
     if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
   }
 
-  // Drop sur un créneau horaire ou une cellule de mois
-  // heure = l'heure du slot sur lequel on drop (ex: "10:00")
-  // → devient l'heureDebut, heureFin = heureDebut + 1h, durée = 60 min par défaut
   onDrop(event: DragEvent, date: string, heure?: string): void {
     event.preventDefault();
 
-    // ── Drop d'une activité récente ──
     const r = this.draggingRecente();
     if (r) {
       const heureDebut = heure || '09:00';
       const [dh, dm]   = heureDebut.split(':').map(Number);
       const heureFin   = `${String(Math.min(dh+1, 23)).padStart(2,'0')}:${String(dm).padStart(2,'0')}`;
 
-      // Pré-remplir le formulaire avec projet + activité de l'entrée récente
-      // Durée par défaut = 1h (pas la durée originale — l'utilisateur ajuste)
       this.form = {
         date,
         projetId:    r.projetId,
         activiteId:  r.activiteId,
         heureDebut,
         heureFin,
-        minutesTravaillees: 60, // 1h par défaut
+        minutesTravaillees: 60,
         commentaire: '',
       };
       if (r.projetId) this.loadActivitesDuProjet(r.projetId);
@@ -737,7 +716,6 @@ export class CalendrierFtComponent implements OnInit {
       return;
     }
 
-    // ── Déplacement d'une entrée existante ──
     const drag = this.draggingEntree();
     if (!drag || drag.date === date) { this.draggingEntree.set(null); return; }
     const ft = this.feuilles().find(f => f.id === drag.feuilleId);
@@ -780,27 +758,30 @@ export class CalendrierFtComponent implements OnInit {
     return ({ BROUILLON:'Brouillon', SOUMISE:'Soumise', VALIDEE:'Validée', REJETEE:'Rejetée' } as any)[s] ?? s;
   }
 
-    // ── Helpers avatar ────────────────────────────────────────────────────────
-    getInitiales(nomComplet: string): string {
-      if (!nomComplet) return '?';
-      return nomComplet
-        .split(' ')
-        .filter(m => m.length > 0)
-        .map(m => m[0].toUpperCase())
-        .slice(0, 2)
-        .join('');
+  getInitiales(nomComplet: string): string {
+    if (!nomComplet) return '?';
+    return nomComplet
+      .split(' ')
+      .filter(m => m.length > 0)
+      .map(m => m[0].toUpperCase())
+      .slice(0, 2)
+      .join('');
+  }
+
+  getAvatarColor(nom: string): string {
+    if (!nom) return '#6366f1';
+    const couleurs = [
+      '#6366f1', '#8b5cf6', '#10b981', '#f97316', '#ef4444',
+      '#3b82f6', '#c026d3', '#eab308', '#06b6d4', '#84cc16'
+    ];
+    let hash = 0;
+    for (let i = 0; i < nom.length; i++) {
+      hash = nom.charCodeAt(i) + ((hash << 5) - hash);
     }
-  
-    getAvatarColor(nom: string): string {
-      if (!nom) return '#6366f1';
-      const couleurs = [
-        '#6366f1', '#8b5cf6', '#10b981', '#f97316', '#ef4444',
-        '#3b82f6', '#c026d3', '#eab308', '#06b6d4', '#84cc16'
-      ];
-      let hash = 0;
-      for (let i = 0; i < nom.length; i++) {
-        hash = nom.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      return couleurs[Math.abs(hash) % couleurs.length];
-    }
+    return couleurs[Math.abs(hash) % couleurs.length];
+  }
+
+  showUserSelector = computed(() =>
+    this.canReadGroup() || this.canUpdateGroup() || this.canReadAll() || this.canUpdateAll()
+  );
 }

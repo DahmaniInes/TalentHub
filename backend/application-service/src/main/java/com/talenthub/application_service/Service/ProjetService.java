@@ -16,6 +16,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProjetService {
 
+    // ✅ ID nomenclature du type de projet "STAGE_ACADEMIQUE" — jamais
+    // proposé dans le contexte de la feuille de temps standard (Ma Semaine).
+    private static final Long TYPE_PROJET_STAGE_ID = 4L;
+
     private final ProjetRepository       projetRepository;
     private final ClientRepository       clientRepository;
     private final GroupeRepository       groupeRepository;
@@ -23,7 +27,6 @@ public class ProjetService {
     private final UtilisateurRepository  utilisateurRepository;
     private final CommentaireRepository  commentaireRepository;
     private final MembreEquipeRepository membreEquipeRepository;
-    // ✅ NOUVEAU — nécessaire pour getSuperviseursDesStagiaires()
     private final StagiaireSuperviseurRepository stagiaireSuperviseurRepository;
 
     @Transactional(readOnly = true)
@@ -34,7 +37,6 @@ public class ProjetService {
         return projetRepository.findByClientId(clientId);
     }
 
-    // ✅ Remplace findByStatut(String) — utilise l'ID nomenclature
     @Transactional(readOnly = true)
     public List<Projet> getByStatutId(Long statutId) {
         return projetRepository.findByStatutProjetId(statutId);
@@ -274,14 +276,6 @@ public class ProjetService {
                 .orElse(List.of());
     }
 
-    // ── Superviseurs des stagiaires d'un projet ───────────────────
-    // ✅ NOUVEAU — utilisé par GET /projets/{id}/superviseurs-stagiaires.
-    // Ne nécessite PAS INT_ADMIN_VIEW_ALL_INTERNS : les permissions vérifiées
-    // sont les mêmes que celles qui donnent déjà accès à GET /projets/{id}
-    // (PROJECT_VIEW_*, INT_ADMIN_PROJ_VIEW_ALL, INT_SUPER_TRACK,
-    // INT_INTERN_VIEW_PROJ) — voir ProjetController.getSuperviseursStagiaires().
-    // Pour chaque membre du projet ayant un stage lié, on récupère ses
-    // superviseurs actifs via StagiaireSuperviseurRepository.
     @Transactional(readOnly = true)
     public List<SuperviseurStagiaireDTO> getSuperviseursDesStagiaires(Long projetId) {
         List<MembreEquipe> membresStagiaires = membreEquipeRepository
@@ -300,5 +294,37 @@ public class ProjetService {
                     return new SuperviseurStagiaireDTO(stagiaireId, superviseurs);
                 })
                 .toList();
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // Projets visibles dans le contexte de la feuille de temps (dropdown
+    // Projet de Ma Semaine), pour UN utilisateur donné : projets
+    // d'entreprise (hors stage) dont au moins un groupe assigné contient
+    // cet utilisateur.
+    //
+    // Utilisée dans deux situations différentes côté contrôleur :
+    // 1. Cas "ma propre feuille" (peu importe mes permissions) → appelée
+    //    avec mon propre ID.
+    // 2. Cas TS_ALL_READ/TS_ALL_UPDATE + un autre utilisateur sélectionné
+    //    → appelée avec l'ID de CET utilisateur, sans aucune intersection
+    //    avec mes propres projets (la personne avec TS_ALL_* voit TOUT ce
+    //    à quoi l'utilisateur sélectionné est rattaché, indépendamment de
+    //    son propre rattachement).
+    // ════════════════════════════════════════════════════════════
+    @Transactional(readOnly = true)
+    public List<Projet> getVisiblesPourFeuilleTemps(Long utilisateurId) {
+        return projetRepository.findVisiblesPourFeuilleTempsParGroupe(utilisateurId, TYPE_PROJET_STAGE_ID);
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // ✅ NOUVEAU — Intersection des projets entre deux utilisateurs : sert
+    // au dropdown Projet quand un utilisateur avec TS_GROUP_READ/UPDATE a
+    // sélectionné un coéquipier dans le sélecteur. Ne propose que les
+    // projets où LES DEUX personnes ont un rattachement d'équipe réel.
+    // ════════════════════════════════════════════════════════════
+    @Transactional(readOnly = true)
+    public List<Projet> getIntersectionPourFeuilleTemps(Long utilisateurId, Long autreUtilisateurId) {
+        return projetRepository.findIntersectionPourFeuilleTemps(
+                utilisateurId, autreUtilisateurId, TYPE_PROJET_STAGE_ID);
     }
 }

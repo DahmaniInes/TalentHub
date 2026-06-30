@@ -19,8 +19,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -35,11 +37,11 @@ public class ActiviteService {
     private final GroupeRepository      groupeRepo;
     private final CommentaireRepository commentaireRepository;
     private final DocumentRepository    documentRepo;
-
+    private final LigneFeuilleTempsRepository ligneFeuilleTempsRepo;
+    private final EvaluationActiviteRepository evaluationActiviteRepo;
     @Value("${nomenclature.service.url:http://localhost:8083/api}")
     private String nomenclatureUrl;
 
-    // ── Caches ───────────────────────────────────────────────────────────────
     private final Map<Long, Map<String, Object>> statutsCache   = new ConcurrentHashMap<>();
     private final Map<Long, Map<String, Object>> prioritesCache = new ConcurrentHashMap<>();
 
@@ -71,6 +73,30 @@ public class ActiviteService {
         refreshStatutsCache();
         refreshPrioritesCache();
         return activiteRepo.findGlobales().stream().map(this::toDTO).toList();
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // ✅ NOUVEAU — Vérification serveur de autoriserActivitesGlobales.
+    //
+    // Retourne la liste des activités globales à proposer pour CE projet
+    // précis : liste vide si le projet n'autorise pas les activités
+    // globales (autoriserActivitesGlobales=false), liste complète des
+    // activités globales sinon.
+    //
+    // Avant ce correctif, cette règle était vérifiée uniquement côté
+    // frontend (ma-semaine.component.ts) — un appel direct à l'API pouvait
+    // donc contourner la restriction. Désormais le frontend n'a plus à
+    // connaître cette règle : il appelle cet endpoint et affiche ce qu'il
+    // reçoit.
+    // ════════════════════════════════════════════════════════════
+    @Transactional(readOnly = true)
+    public List<ActiviteDTO> getGlobalesDisponiblesPourProjet(Long projetId) {
+        Projet projet = projetRepo.findById(projetId)
+                .orElseThrow(() -> new ResourceNotFoundException("Projet non trouvé: " + projetId));
+        if (!projet.isAutoriserActivitesGlobales()) {
+            return List.of();
+        }
+        return getGlobales();
     }
 
     // ── Enrichissement DTO ───────────────────────────────────────────────────
@@ -260,22 +286,59 @@ public class ActiviteService {
 
     // ── Suppression ───────────────────────────────────────────────────────────
 
+
+
+
     @Transactional
     public void delete(Long id) {
         Activité activite = activiteRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Activité non trouvée: " + id));
         log.info("🗑️ Suppression activité id={} '{}'", id, activite.getNom());
+
+        // ✅ AJOUT — Supprimer les évaluations avant l'activité pour
+        // éviter la violation de contrainte FK evaluations_activite.activite_id
+        try {
+            evaluationActiviteRepo.deleteByActiviteId(id);
+            log.debug("  → évaluations supprimées pour activité {}", id);
+        } catch (Exception e) {
+            log.warn("  ⚠️ Évaluations: {}", e.getMessage());
+        }
+
+        try {
+            Set<Long> feuillesImpactees = new HashSet<>(
+                    ligneFeuilleTempsRepo.findDistinctFeuilleTempsIdsByActiviteId(id));
+            ligneFeuilleTempsRepo.deleteByActiviteId(id);
+            log.debug("  → lignes de feuille de temps supprimées (feuilles impactées: {})",
+                    feuillesImpactees.size());
+        } catch (Exception e) {
+            log.warn("  ⚠️ Lignes feuille de temps: {}", e.getMessage());
+        }
+
         try {
             int nb = commentaireRepository.deleteByActiviteId(id);
             log.debug("  → {} commentaire(s) supprimé(s)", nb);
-        } catch (Exception e) { log.warn("  ⚠️ Commentaires: {}", e.getMessage()); }
+        } catch (Exception e) {
+            log.warn("  ⚠️ Commentaires: {}", e.getMessage());
+        }
+
         try {
             activite.getGroupes().clear();
             activiteRepo.save(activite);
-        } catch (Exception e) { log.warn("  ⚠️ Groupes: {}", e.getMessage()); }
+        } catch (Exception e) {
+            log.warn("  ⚠️ Groupes: {}", e.getMessage());
+        }
+
+        List<Long> projetIdsImpactes = activite.getProjets().stream().map(Projet::getId).toList();
+
         activiteRepo.deleteById(id);
         log.info("  ✅ Activité id={} supprimée", id);
+
+        try {
+            projetIdsImpactes.forEach(avancementService::recalculerProjet);
+        } catch (Exception ignored) {}
     }
+
+
 
     @Transactional
     public Activité changerStatut(Long activiteId, Long nouveauStatutId) {
@@ -288,28 +351,11 @@ public class ActiviteService {
     public void clearPrioritesCache() { prioritesCache.clear(); }
 
     // ════════════════════════════════════════════════════════════
-    // ✅ NOUVEAU — Mécanisme central du scénario B (duplication
-    // idempotente des activités globales par projet).
-    //
-    // Étant donné une activité globale (estGlobale=true) et un projet :
-    // - Si une copie existe DÉJÀ pour ce projet (peu importe quel employé
-    //   l'a créée la première fois) → on la retourne directement, SANS
-    //   créer de doublon. C'est ce qui garantit qu'une activité globale
-    //   n'est dupliquée qu'UNE SEULE FOIS par projet, jamais par personne.
-    // - Sinon → on crée la copie, on la lie au projet, et on mémorise sa
-    //   source via activiteSourceGlobaleId pour les appels futurs.
-    //
-    // synchronized sur l'instance du service : une mesure simple contre la
-    // course entre deux employés qui sélectionneraient "Réunion" dans le
-    // même projet au même instant. Pas idéal à très grande échelle (verrou
-    // applicatif, pas base de données), mais largement suffisant ici — le
-    // volume d'appels concurrents sur ce chemin précis est très faible, et
-    // la contrainte d'unicité ci-dessous (si ajoutée en base) serait le
-    // filet de sécurité ultime en cas de double insertion malgré tout.
+    // ✅ Mécanisme central du scénario B (duplication idempotente des
+    // activités globales par projet).
     // ════════════════════════════════════════════════════════════
     @Transactional
     public synchronized Activité obtenirOuDupliquerPourProjet(Long activiteGlobaleId, Long projetId) {
-        // 1. Cherche si une copie existe déjà pour ce projet précis.
         var copieExistante = activiteRepo.findBySourceGlobaleIdAndProjetId(activiteGlobaleId, projetId);
         if (copieExistante.isPresent()) {
             log.debug("♻️ Copie existante réutilisée pour activité globale {} / projet {}",
@@ -317,7 +363,6 @@ public class ActiviteService {
             return copieExistante.get();
         }
 
-        // 2. Aucune copie encore — on la crée à partir de la source globale.
         Activité source = activiteRepo.findById(activiteGlobaleId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Activité globale non trouvée: " + activiteGlobaleId));
@@ -331,12 +376,15 @@ public class ActiviteService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Projet non trouvé: " + projetId));
 
-        // ✅ Champs copiés depuis la source : nom, description, couleur,
-        // priorité, heures estimées, visible, facturable.
-        // ✅ PAS copiés (repartent à des valeurs neutres propres à CE
-        // projet) : statut (1L = premier statut par défaut), dates
-        // d'échéance/réelles, assignation utilisateur/groupe, heures
-        // passées (toujours 0 pour une nouvelle copie).
+        // ✅ Garde-fou cohérent avec la demande B : on ne crée pas de copie
+        // si le projet n'autorise pas les activités globales (même si
+        // l'appel arrive directement sur cet endpoint, sans passer par le
+        // dropdown qui ne les propose normalement pas dans ce cas).
+        if (!projet.isAutoriserActivitesGlobales()) {
+            throw new IllegalArgumentException(
+                    "Le projet " + projetId + " n'autorise pas les activités globales.");
+        }
+
         Activité copie = new Activité();
         copie.setNom(source.getNom());
         copie.setDescription(source.getDescription());
@@ -354,7 +402,6 @@ public class ActiviteService {
 
         Activité saved = activiteRepo.save(copie);
 
-        // Lier la copie au projet (relation ManyToMany côté Projet).
         projet.getActivites().add(saved);
         projetRepo.save(projet);
 

@@ -5,11 +5,11 @@ import { FormsModule } from '@angular/forms';
 import { FeuilleTempsService }  from '../../../../services/feuille-temps.service';
 import { ProjetService }        from '../../../../services/projet.service';
 import { ActiviteService }      from '../../../../services/activite.service';
-import { ClientService }        from '../../../../services/client.service';
 import { UserService }          from '../../../../services/user.service';
 import { KeycloakService }      from '../../../../services/keycloak.service';
 import { UiService }            from '../../../../services/ui.service';
 import { ErrorService }         from '../../../../services/error.service';
+import { PermissionContextService } from '../../../../services/permission-context.service';
 import {
   LigneFeuilleTemps,
   FeuilleTemps,
@@ -17,11 +17,9 @@ import {
 } from '../../../../shared/models/feuille-temps.model';
 import { Projet }       from '../../../../shared/models/projet.model';
 import { Activite }     from '../../../../shared/models/activite.model';
-import { Client }       from '../../../../shared/models/client.model';
 import { Utilisateur }  from '../../../../shared/models/utilisateur.model';
 import { HttpErrorResponse } from '@angular/common/http';
 
-// ─── Vue aplatie d'une entrée ────────────────────────────────────────────────
 export interface EntreeFT {
   id?: number;
   feuilleId: number;
@@ -31,8 +29,6 @@ export interface EntreeFT {
   projetNom?: string;
   activiteId?: number;
   activiteNom?: string;
-  clientId?: number;
-  clientNom?: string;
   heureDebut?: string;
   heureFin?: string;
   minutesTravaillees: number;
@@ -49,52 +45,45 @@ export interface EntreeFT {
 })
 export class MesEntreesComponent implements OnInit {
 
-  // ── Services ────────────────────────────────────────────────────────────────
   private ftSvc       = inject(FeuilleTempsService);
   private projetSvc   = inject(ProjetService);
   private activiteSvc = inject(ActiviteService);
-  private clientSvc   = inject(ClientService);
   private userSvc     = inject(UserService);
   private keycloak    = inject(KeycloakService);
   readonly ui         = inject(UiService);
   private errorSvc    = inject(ErrorService);
+  readonly perms      = inject(PermissionContextService);
+  private readonly STATUT_TERMINE_ID = 4;
 
-  // ── Données ─────────────────────────────────────────────────────────────────
   currentUser = signal<Utilisateur | null>(null);
   feuilles    = signal<FeuilleTemps[]>([]);
   projets     = signal<Projet[]>([]);
-  activites   = signal<Activite[]>([]);
-  clients     = signal<Client[]>([]);
+
+  activitesParProjet = signal<Record<number, Activite[]>>({});
+  activitesGlobales  = signal<Activite[]>([]);
+
   loading     = signal(false);
   saving      = signal(false);
 
-  // ── Filtres ─────────────────────────────────────────────────────────────────
   filterProjet   = signal('');
   filterActivite = signal('');
-  filterClient   = signal('');
-  filterStatut   = signal('');          // ← NOUVEAU
+  filterStatut   = signal('');
   filterDateDu   = signal('');
   filterDateAu   = signal('');
   searchText     = signal('');
-  showFilterPanel = signal(false);      // ← NOUVEAU
+  showFilterPanel = signal(false);
 
-  // ── Sélection bulk ──────────────────────────────────────────────────────────
-  selectedIds = signal<Set<string>>(new Set()); // ← NOUVEAU
+  selectedIds = signal<Set<string>>(new Set());
+  openMenuId = signal<string | null>(null);
 
-  // ── Menus contextuels ───────────────────────────────────────────────────────
-  openMenuId = signal<string | null>(null);     // ← NOUVEAU
-
-  // ── Edition / Ajout ─────────────────────────────────────────────────────────
   editingEntree = signal<EntreeFT | null>(null);
-  addingEntree  = signal(false);                // ← NOUVEAU
+  addingEntree  = signal(false);
   editForm      = signal<Partial<EntreeFT>>({});
 
-  // ── Utilitaires statiques ───────────────────────────────────────────────────
   readonly fmt      = FeuilleTempsService.formatMinutes;
   readonly fmtAMPM  = FeuilleTempsService.formatHeureAMPM;
   readonly fmtDuree = FeuilleTempsService.getDureeFmt;
 
-  // ── Computed : vue aplatie ───────────────────────────────────────────────────
   toutesEntrees = computed((): EntreeFT[] => {
     const entrees: EntreeFT[] = [];
     for (const ft of this.feuilles()) {
@@ -108,8 +97,6 @@ export class MesEntreesComponent implements OnInit {
           projetNom: l.projetNom,
           activiteId: l.activiteId,
           activiteNom: l.activiteNom,
-          clientId: l.clientId,
-          clientNom: l.clientNom,
           heureDebut: l.heureDebut,
           heureFin: l.heureFin,
           minutesTravaillees: l.minutesTravaillees,
@@ -126,14 +113,12 @@ export class MesEntreesComponent implements OnInit {
     const q = this.searchText().toLowerCase();
     if (this.filterProjet())   list = list.filter(e => e.projetId === +this.filterProjet());
     if (this.filterActivite()) list = list.filter(e => e.activiteId === +this.filterActivite());
-    if (this.filterClient())   list = list.filter(e => e.clientId === +this.filterClient());
-    if (this.filterStatut())   list = list.filter(e => e.feuilleStatut === this.filterStatut()); // ← NOUVEAU
+    if (this.filterStatut())   list = list.filter(e => e.feuilleStatut === this.filterStatut());
     if (this.filterDateDu())   list = list.filter(e => e.date >= this.filterDateDu());
     if (this.filterDateAu())   list = list.filter(e => e.date <= this.filterDateAu());
     if (q) list = list.filter(e =>
       (e.projetNom  || '').toLowerCase().includes(q) ||
-      (e.activiteNom || '').toLowerCase().includes(q) ||
-      (e.clientNom  || '').toLowerCase().includes(q)
+      (e.activiteNom || '').toLowerCase().includes(q)
     );
     return list;
   });
@@ -144,53 +129,94 @@ export class MesEntreesComponent implements OnInit {
     )
   );
 
-  // ── Computed : filtres actifs ────────────────────────────────────────────────
-  /** NOUVEAU — true si au moins un filtre est actif */
   hasFilters = computed(() =>
-    !!(this.filterProjet() || this.filterActivite() || this.filterClient() ||
+    !!(this.filterProjet() || this.filterActivite() ||
        this.filterStatut() || this.filterDateDu() || this.filterDateAu() ||
        this.searchText())
   );
 
-  /** NOUVEAU — nombre de filtres actifs (hors searchText) */
   activeFiltersCount = computed(() => {
     let n = 0;
     if (this.filterProjet())   n++;
     if (this.filterActivite()) n++;
-    if (this.filterClient())   n++;
     if (this.filterStatut())   n++;
     if (this.filterDateDu() || this.filterDateAu()) n++;
     return n;
   });
 
-  // ── Computed : sélection ────────────────────────────────────────────────────
-  /** NOUVEAU */
   allSelected = computed(() => {
     const ids = this.selectedIds();
     const list = this.filteredEntrees();
     return list.length > 0 && list.every(e => ids.has(this.getEntreeKey(e)));
   });
 
-  /** NOUVEAU */
   someSelected = computed(() => {
     const ids = this.selectedIds();
     const list = this.filteredEntrees();
     return list.some(e => ids.has(this.getEntreeKey(e))) && !this.allSelected();
   });
 
-  // ── Lifecycle ────────────────────────────────────────────────────────────────
+  /**
+   * Liste des activités proposées pour une NOUVELLE saisie — exclut
+   * toujours les activités terminées.
+   */
+  get toutesActivitesVisibles(): Activite[] {
+    const fromProjets = Object.values(this.activitesParProjet()).flat()
+      .filter(a => a.statutActiviteId !== this.STATUT_TERMINE_ID);
+    const ids = new Set(fromProjets.map(a => a.id));
+    return [...fromProjets, ...this.activitesGlobales().filter(a => !ids.has(a.id) && a.statutActiviteId !== this.STATUT_TERMINE_ID)];
+  }
+
+  /**
+   * ✅ NOUVEAU — Vrai si l'activité actuellement sélectionnée dans le
+   * formulaire d'édition est terminée (et donc absente de
+   * toutesActivitesVisibles). Utilisé pour verrouiller les champs de durée
+   * tout en conservant le nom affiché.
+   */
+  editActiviteEstTerminee(): boolean {
+    const id = this.editForm().activiteId;
+    if (!id) return false;
+    return !this.toutesActivitesVisibles.some(a => a.id === id);
+  }
+
   ngOnInit(): void {
     const kcId = this.keycloak.getKeycloakUserId();
     if (kcId) {
       this.userSvc.getUserByKeycloakId(kcId).subscribe({
-        next: u => { this.currentUser.set(u); this.loadData(u.id); },
+        next: u => {
+          this.currentUser.set(u);
+          this.loadData(u.id);
+          this.loadProjetsEtActivites(u.id);
+        },
         error: () => this.loadData()
       });
     } else {
       this.loadData();
     }
-    this.projetSvc.getAll().subscribe({ next: d => this.projets.set(d) });
-    this.clientSvc.getAll(true).subscribe({ next: d => this.clients.set(d) });
+  }
+
+  private loadProjetsEtActivites(userId: number): void {
+    this.projetSvc.getVisiblesPourFeuilleTemps(userId).subscribe({
+      next: ps => {
+        this.projets.set(ps);
+        ps.forEach(p => this.loadActivitesDuProjet(p.id));
+      },
+      error: () => this.ui.error('Erreur lors du chargement des projets.')
+    });
+  }
+
+  private loadActivitesDuProjet(projetId: number): void {
+    if (!this.activitesParProjet()[projetId]) {
+      this.activiteSvc.getByProjet(projetId).subscribe({
+        next: d => this.activitesParProjet.update(m => ({ ...m, [projetId]: d }))
+      });
+    }
+    this.activiteSvc.getGlobalesDisponiblesPourProjet(projetId).subscribe({
+      next: d => this.activitesGlobales.update(g => {
+        const ids = new Set(g.map(a => a.id));
+        return [...g, ...d.filter(a => !ids.has(a.id))];
+      })
+    });
   }
 
   loadData(userId?: number): void {
@@ -202,19 +228,14 @@ export class MesEntreesComponent implements OnInit {
     });
   }
 
-  // ── Clé unique par ligne ─────────────────────────────────────────────────────
-  /** NOUVEAU — identifiant stable : id si dispo, sinon feuilleId+date+activiteId */
   getEntreeKey(e: EntreeFT): string {
     return e.id ? `${e.id}` : `${e.feuilleId}-${e.date}-${e.activiteId ?? 0}`;
   }
 
-  // ── Sélection bulk ───────────────────────────────────────────────────────────
-  /** NOUVEAU */
   isSelected(key: string): boolean {
     return this.selectedIds().has(key);
   }
 
-  /** NOUVEAU */
   toggleSelect(key: string, event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
     this.selectedIds.update(set => {
@@ -224,7 +245,6 @@ export class MesEntreesComponent implements OnInit {
     });
   }
 
-  /** NOUVEAU */
   toggleSelectAll(): void {
     if (this.allSelected()) {
       this.clearSelection();
@@ -234,24 +254,20 @@ export class MesEntreesComponent implements OnInit {
     }
   }
 
-  /** NOUVEAU */
   clearSelection(): void {
     this.selectedIds.set(new Set());
   }
 
-  /** NOUVEAU — suppression en masse des entrées sélectionnées */
   supprimerSelection(): void {
     const keys = this.selectedIds();
     const entrees = this.filteredEntrees().filter(e => keys.has(this.getEntreeKey(e)));
 
-    // Grouper par feuille
     const parFeuille = new Map<number, EntreeFT[]>();
     for (const e of entrees) {
       if (!parFeuille.has(e.feuilleId)) parFeuille.set(e.feuilleId, []);
       parFeuille.get(e.feuilleId)!.push(e);
     }
 
-    // Pour chaque feuille concernée, retirer les lignes et sauvegarder
     const feuillesATraiter = Array.from(parFeuille.entries());
     let remaining = feuillesATraiter.length;
     if (remaining === 0) return;
@@ -268,7 +284,6 @@ export class MesEntreesComponent implements OnInit {
               projetId:      l.projetId,
               activiteId:    l.activiteId,
               clientId:      l.clientId,
-              // ← projetNom, activiteNom, clientNom SUPPRIMÉS
               heureDebut:    l.heureDebut,
               heureFin:      l.heureFin,
               minutesTravaillees:     l.minutesTravaillees,
@@ -304,21 +319,16 @@ export class MesEntreesComponent implements OnInit {
     }
   }
 
-  // ── Menus contextuels ────────────────────────────────────────────────────────
-  /** NOUVEAU */
   toggleMenu(e: EntreeFT, event: MouseEvent): void {
     event.stopPropagation();
     const key = this.getEntreeKey(e);
     this.openMenuId.set(this.openMenuId() === key ? null : key);
   }
 
-  /** NOUVEAU */
   closeAllMenus(): void {
     this.openMenuId.set(null);
   }
 
-  // ── Formulaire ajout / édition ───────────────────────────────────────────────
-  /** NOUVEAU — ouvre le slide-over en mode ajout */
   ouvrirAjout(): void {
     this.editingEntree.set(null);
     this.editForm.set({
@@ -327,11 +337,8 @@ export class MesEntreesComponent implements OnInit {
       minutesSupplementaires: 0
     });
     this.addingEntree.set(true);
-    // Charger toutes les activités par défaut
-    this.activiteSvc.getAll().subscribe({ next: d => this.activites.set(d) });
   }
 
-  /** Ouvre le slide-over en mode édition */
   ouvrirEdition(entree: EntreeFT): void {
     if (!this.peutEditer(entree)) {
       this.ui.warning('Cette feuille est en lecture seule.');
@@ -340,14 +347,9 @@ export class MesEntreesComponent implements OnInit {
     this.addingEntree.set(false);
     this.editingEntree.set(entree);
     this.editForm.set({ ...entree });
-    if (entree.projetId) {
-      this.activiteSvc.getByProjet(entree.projetId).subscribe({ next: d => this.activites.set(d) });
-    } else {
-      this.activiteSvc.getAll().subscribe({ next: d => this.activites.set(d) });
-    }
+    if (entree.projetId) this.loadActivitesDuProjet(entree.projetId);
   }
 
-  /** NOUVEAU — ferme le slide-over (ajout ou édition) */
   fermerFormulaire(): void {
     this.editingEntree.set(null);
     this.addingEntree.set(false);
@@ -360,18 +362,14 @@ export class MesEntreesComponent implements OnInit {
       ...this.editForm(),
       projetId: projet?.id,
       projetNom: projet?.nom,
-      clientId: (projet as any)?.clientId,
-      clientNom: projet?.clientNom,
       activiteId: undefined,
       activiteNom: undefined
     });
-    if (projet) {
-      this.activiteSvc.getByProjet(projet.id).subscribe({ next: d => this.activites.set(d) });
-    }
+    if (projet) this.loadActivitesDuProjet(projet.id);
   }
 
   onEditActiviteChange(activiteId: number): void {
-    const act = this.activites().find(a => a.id === +activiteId);
+    const act = this.toutesActivitesVisibles.find(a => a.id === +activiteId);
     this.editForm.set({ ...this.editForm(), activiteId: act?.id, activiteNom: act?.nom });
   }
 
@@ -387,7 +385,6 @@ export class MesEntreesComponent implements OnInit {
     }
   }
 
-  /** NOUVEAU — dispatch ajout ou édition selon l'état actif */
   sauvegarderFormulaire(): void {
     if (this.addingEntree()) {
       this.ajouterEntree();
@@ -396,8 +393,6 @@ export class MesEntreesComponent implements OnInit {
     }
   }
 
-  // ── Ajout d'une nouvelle entrée ──────────────────────────────────────────────
-  /** NOUVEAU — crée ou réutilise la feuille de la semaine courante */
   private ajouterEntree(): void {
     const form = this.editForm();
     if (!form.date) { this.ui.warning('La date est obligatoire.'); return; }
@@ -407,7 +402,6 @@ export class MesEntreesComponent implements OnInit {
 
     this.saving.set(true);
 
-    // Trouver la feuille correspondant à la semaine de la date saisie
     const lundi = FeuilleTempsService.getLundiSemaine(new Date(form.date));
     const feuilleExistante = this.feuilles().find(f => f.semaineDu === lundi);
 
@@ -415,8 +409,6 @@ export class MesEntreesComponent implements OnInit {
       date:          form.date,
       projetId:      form.projetId,
       activiteId:    form.activiteId,
-      clientId:      form.clientId,
-      // ← projetNom, activiteNom, clientNom SUPPRIMÉS
       heureDebut:    form.heureDebut,
       heureFin:      form.heureFin,
       minutesTravaillees:     form.minutesTravaillees || 0,
@@ -425,14 +417,12 @@ export class MesEntreesComponent implements OnInit {
     };
 
     if (feuilleExistante) {
-      // Ajouter la ligne à la feuille existante
       const lignesReq: LigneFeuilleTempsRequest[] = [
         ...feuilleExistante.lignes.map(l => ({
           date:          l.date,
           projetId:      l.projetId,
           activiteId:    l.activiteId,
           clientId:      l.clientId,
-          // ← projetNom, activiteNom, clientNom SUPPRIMÉS
           heureDebut:    l.heureDebut,
           heureFin:      l.heureFin,
           minutesTravaillees:     l.minutesTravaillees,
@@ -460,7 +450,6 @@ export class MesEntreesComponent implements OnInit {
         }
       });
     } else {
-      // Créer une nouvelle feuille pour la semaine
       this.ftSvc.create({
         utilisateurId: user.id,
         semaineDu: lundi,
@@ -482,7 +471,6 @@ export class MesEntreesComponent implements OnInit {
     }
   }
 
-  // ── Modification d'une entrée existante ──────────────────────────────────────
   private sauvegarderEdition(): void {
     const entree = this.editingEntree();
     const form   = this.editForm();
@@ -492,16 +480,13 @@ export class MesEntreesComponent implements OnInit {
 
     this.ftSvc.getById(entree.feuilleId).subscribe({
       next: ft => {
-
-
         const lignesReq: LigneFeuilleTempsRequest[] = ft.lignes.map(l => {
           if (l.id === entree.id) {
             return {
               date:          form.date || l.date,
               projetId:      form.projetId,
               activiteId:    form.activiteId,
-              clientId:      form.clientId,
-              // ← projetNom, activiteNom, clientNom SUPPRIMÉS
+              clientId:      l.clientId,
               heureDebut:    form.heureDebut,
               heureFin:      form.heureFin,
               minutesTravaillees:     form.minutesTravaillees || 0,
@@ -514,7 +499,6 @@ export class MesEntreesComponent implements OnInit {
             projetId:      l.projetId,
             activiteId:    l.activiteId,
             clientId:      l.clientId,
-            // ← projetNom, activiteNom, clientNom SUPPRIMÉS
             heureDebut:    l.heureDebut,
             heureFin:      l.heureFin,
             minutesTravaillees:     l.minutesTravaillees,
@@ -522,25 +506,6 @@ export class MesEntreesComponent implements OnInit {
             commentaire:   l.commentaire
           };
         });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         this.ftSvc.update(ft.id, {
           utilisateurId: ft.utilisateurId,
@@ -565,8 +530,6 @@ export class MesEntreesComponent implements OnInit {
     });
   }
 
-  // ── Copie d'une entrée ───────────────────────────────────────────────────────
-  /** NOUVEAU */
   copierEntree(entree: EntreeFT): void {
     if (!this.peutEditer(entree)) {
       this.ui.warning('Impossible de copier une entrée en lecture seule.');
@@ -576,17 +539,13 @@ export class MesEntreesComponent implements OnInit {
     this.editingEntree.set(null);
     this.editForm.set({
       ...entree,
-      id: undefined,             // nouvelle ligne
-      date: new Date().toISOString().split('T')[0] // date = aujourd'hui
+      id: undefined,
+      date: new Date().toISOString().split('T')[0]
     });
     this.addingEntree.set(true);
-    if (entree.projetId) {
-      this.activiteSvc.getByProjet(entree.projetId).subscribe({ next: d => this.activites.set(d) });
-    }
+    if (entree.projetId) this.loadActivitesDuProjet(entree.projetId);
   }
 
-  // ── Suppression individuelle ─────────────────────────────────────────────────
-  /** NOUVEAU */
   supprimerEntree(entree: EntreeFT): void {
     if (!this.peutEditer(entree)) {
       this.ui.warning('Impossible de supprimer une entrée en lecture seule.');
@@ -602,7 +561,6 @@ export class MesEntreesComponent implements OnInit {
           projetId:      l.projetId,
           activiteId:    l.activiteId,
           clientId:      l.clientId,
-          // ← projetNom, activiteNom, clientNom SUPPRIMÉS
           heureDebut:    l.heureDebut,
           heureFin:      l.heureFin,
           minutesTravaillees:     l.minutesTravaillees,
@@ -632,28 +590,21 @@ export class MesEntreesComponent implements OnInit {
     });
   }
 
-  // ── Réinitialisation des filtres ─────────────────────────────────────────────
-  /** NOUVEAU */
   resetFilters(): void {
     this.filterProjet.set('');
     this.filterActivite.set('');
-    this.filterClient.set('');
     this.filterStatut.set('');
     this.filterDateDu.set('');
     this.filterDateAu.set('');
     this.searchText.set('');
   }
 
-  // ── Export CSV ───────────────────────────────────────────────────────────────
   exportCSV(): void {
     const entrees = this.filteredEntrees();
-    const header = ['Date','Début','Fin','Durée','Client','Projet','Activité','Heures','Commentaire'];
+    const header = ['Date','Durée','Projet','Activité','Heures','Commentaire'];
     const rows = entrees.map(e => [
       e.date,
-      e.heureDebut || '—',
-      e.heureFin   || '—',
       this.fmtDuree(e.heureDebut || '', e.heureFin || ''),
-      e.clientNom  || '—',
       e.projetNom  || '—',
       e.activiteNom || '—',
       this.fmt(e.minutesTravaillees),
@@ -669,8 +620,12 @@ export class MesEntreesComponent implements OnInit {
     a.click();
   }
 
-  // ── Guard ────────────────────────────────────────────────────────────────────
   peutEditer(e: EntreeFT): boolean {
     return e.feuilleStatut === 'BROUILLON' || e.feuilleStatut === 'REJETEE';
   }
+
+
+
+
+  
 }

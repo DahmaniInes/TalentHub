@@ -10,6 +10,9 @@ import { Subscription } from 'rxjs';
 import { ToastModalComponent } from '../components/toast-modal-component/toast-modal-component.component';
 import { HttpClient } from '@angular/common/http';
 import { PermissionContextService } from '../../services/permission-context.service';
+import { StagiaireContextService } from '../../services/stagiaire-context.service';
+
+
 
 @Component({
   selector: 'app-layout',
@@ -34,6 +37,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   demandeMenuOpen = false;
   stagiaireMenuOpen = false;
 
+  stagCtx = inject(StagiaireContextService);
   readonly perms = inject(PermissionContextService);
   currentUser = signal<Utilisateur | null>(null);
   currentUrl  = signal('');

@@ -31,6 +31,17 @@ export class ActiviteService {
     return this.http.get<Activite[]>(`${this.base}/projet/${projetId}`);
   }
 
+  /**
+   * ✅ NOUVEAU — Demande B : vérification serveur de
+   * autoriserActivitesGlobales. Retourne la liste des activités globales à
+   * proposer pour CE projet précis (liste vide si le projet ne les
+   * autorise pas) — le frontend n'a plus à connaître cette règle, il
+   * affiche simplement ce que l'endpoint renvoie.
+   */
+  getGlobalesDisponiblesPourProjet(projetId: number): Observable<Activite[]> {
+    return this.http.get<Activite[]>(`${this.base}/projet/${projetId}/globales-disponibles`);
+  }
+
   getById(id: number): Observable<Activite> {
     return this.http.get<Activite>(`${this.base}/${id}`);
   }
@@ -56,16 +67,9 @@ export class ActiviteService {
   }
 
   /**
-   * ✅ NOUVEAU — Scénario B : obtient la copie locale d'une activité
-   * globale pour CE projet précis, en la créant si c'est la première fois
-   * qu'elle est utilisée dans ce projet. Idempotent : appeler cette méthode
-   * plusieurs fois avec les mêmes IDs (par des employés différents, ou
-   * plusieurs fois par le même) retourne toujours LA MÊME activité — jamais
-   * de doublon créé.
-   *
-   * Utilisé par :
-   * - ma-semaine.component (sélection d'une activité globale dans le select)
-   * - projet-detail.component (bouton "Activité globale" du drawer de création)
+   * Scénario B : obtient la copie locale d'une activité globale pour CE
+   * projet précis, en la créant si c'est la première fois qu'elle est
+   * utilisée dans ce projet. Idempotent.
    */
   obtenirOuDupliquerPourProjet(activiteGlobaleId: number, projetId: number): Observable<Activite> {
     return this.http.post<Activite>(

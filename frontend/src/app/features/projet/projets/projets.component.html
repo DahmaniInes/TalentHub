@@ -331,7 +331,7 @@
   </div>
 </div>
 
-<!-- ════ MODAL PROJET (inchangé — voir projets.component.ts déjà fourni) ════ -->
+<!-- ════ MODAL PROJET ════ -->
 <div *ngIf="showProjetModal()" class="mx-modal-backdrop" (click)="closeProjetModal()">
   <div class="mx-modal" style="max-width:560px;padding:0;overflow:hidden;max-height:92vh;display:flex;flex-direction:column"
        (click)="$event.stopPropagation()">
@@ -417,29 +417,6 @@
         <select class="mx-field-select" (change)="addGroupeToForm(+$any($event.target).value); $any($event.target).value=''">
           <option value="">+ Ajouter une équipe...</option>
           <option *ngFor="let g of groupesDispo()" [value]="g.id">{{ g.nom }}</option>
-        </select>
-      </div>
-
-      <div class="mx-field">
-        <label class="mx-field-label">Activités assignées <span style="font-size:.6rem;color:var(--accent);background:var(--accent-soft);padding:1px 5px;border-radius:4px;margin-left:3px">{{ activitesSelectionnees().length }}</span></label>
-        <div *ngIf="activitesSelectionneesInfo().length > 0"
-             style="display:flex;flex-direction:column;gap:4px;margin-bottom:7px;max-height:140px;overflow-y:auto">
-          <div *ngFor="let a of activitesSelectionneesInfo()"
-               style="display:flex;align-items:center;gap:8px;padding:6px 9px;background:var(--bg-hover);border-radius:7px;border:1px solid var(--border-color)">
-            <div style="width:3px;height:22px;border-radius:2px;flex-shrink:0" [style.background]="a.couleur || '#94a3b8'"></div>
-            <span style="flex:1;font-size:.77rem;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.nom }}</span>
-            <span *ngIf="a.estGlobale" style="font-size:.58rem;color:#8b5cf6;background:rgba(139,92,246,.1);padding:1px 5px;border-radius:3px;flex-shrink:0">GLOB.</span>
-            <button style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:.9rem;line-height:1;padding:0;flex-shrink:0" (click)="removeActiviteFromProjet(a.id)">×</button>
-          </div>
-        </div>
-        <select class="mx-field-select" (change)="addActiviteToProjet(+$any($event.target).value); $any($event.target).value=''">
-          <option value="">+ Assigner une activité existante...</option>
-          <optgroup *ngIf="activitesGlobalesDispo().length > 0" label="🌐 Activités globales">
-            <option *ngFor="let a of activitesGlobalesDispo()" [value]="a.id">{{ a.nom }}</option>
-          </optgroup>
-          <optgroup *ngIf="activitesNonGlobalesDispo().length > 0" label="Autres activités">
-            <option *ngFor="let a of activitesNonGlobalesDispo()" [value]="a.id">{{ a.nom }}</option>
-          </optgroup>
         </select>
       </div>
 

@@ -7,6 +7,7 @@ import com.talenthub.application_service.DTO.LigneFeuilleTempsRequest;
 import com.talenthub.application_service.Entity.Activité;
 import com.talenthub.application_service.Entity.FeuilleTemps;
 import com.talenthub.application_service.Entity.LigneFeuilleTemps;
+import com.talenthub.application_service.Entity.Projet;
 import com.talenthub.application_service.Entity.Utilisateur;
 import com.talenthub.application_service.Enum.NotificationType;
 import com.talenthub.application_service.Exception.DuplicateResourceException;
@@ -14,7 +15,6 @@ import com.talenthub.application_service.Exception.ResourceNotFoundException;
 import com.talenthub.application_service.Repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.talenthub.application_service.Repository.ActiviteRepository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -33,7 +33,9 @@ public class FeuilleTempsService {
     private final ProjetRepository            projetRepository;
     private final ActiviteRepository          activiteRepository;
     private final ClientRepository            clientRepository;
-    private final AvancementService           avancementService;  // ✅ NOUVEAU
+    private final AvancementService           avancementService;
+    // ✅ NOUVEAU — nécessaire pour filtrer les activités récentes (demande D)
+    private final ProjetService               projetService;
 
     public FeuilleTempsService(
             FeuilleTempsRepository repository,
@@ -44,16 +46,18 @@ public class FeuilleTempsService {
             ProjetRepository projetRepository,
             ActiviteRepository activiteRepository,
             ClientRepository clientRepository,
-            AvancementService avancementService) {           // ✅ NOUVEAU
-        this.repository                = repository;
-        this.utilisateurRepository     = utilisateurRepository;
-        this.ligneRepository           = ligneRepository;
-        this.notificationService       = notificationService;
+            AvancementService avancementService,
+            ProjetService projetService) {
+        this.repository                 = repository;
+        this.utilisateurRepository      = utilisateurRepository;
+        this.ligneRepository            = ligneRepository;
+        this.notificationService        = notificationService;
         this.profilPermissionRepository = profilPermissionRepository;
-        this.projetRepository          = projetRepository;
+        this.projetRepository           = projetRepository;
         this.activiteRepository        = activiteRepository;
         this.clientRepository          = clientRepository;
-        this.avancementService         = avancementService;  // ✅ NOUVEAU
+        this.avancementService         = avancementService;
+        this.projetService             = projetService;
     }
 
     public FeuilleTempsDTO toDTO(FeuilleTemps ft) {
@@ -70,6 +74,59 @@ public class FeuilleTempsService {
     }
     public List<FeuilleTemps> getByUtilisateur(Long utilisateurId) {
         return repository.findByUtilisateurIdOrderBySemaineDuDesc(utilisateurId);
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // ✅ CORRIGÉ — Demande D : activités "récentes" à proposer dans le
+    // calendrier (bloc "Reprendre une activité"), calculées et FILTRÉES
+    // côté serveur.
+    //
+    // ⚠️ Le filtre de visibilité des projets s'applique désormais
+    // SYSTÉMATIQUEMENT (même règle que ProjetService.getVisiblesPourFeuilleTemps,
+    // sans paramètre voitToutEntreprise) — TS_ALL_READ/TS_ALL_UPDATE ne
+    // concernent que le sélecteur d'utilisateur, jamais l'accès aux projets.
+    //
+    // Principe : on part des lignes de feuille de temps historiques de cet
+    // utilisateur (jamais supprimées), mais on exclut celles dont le
+    // projet n'est PLUS dans la liste des projets visibles pour lui
+    // (mêmes équipes que le dropdown Projet de Ma Semaine). Ainsi, si
+    // l'utilisateur a été retiré de tous les groupes donnant accès à un
+    // projet, ce projet disparaît de la liste de suggestions, SANS
+    // qu'aucune ligne de feuille de temps ne soit supprimée ni modifiée.
+    //
+    // On déduplique par combinaison (projetId, activiteId), en gardant
+    // l'occurrence la plus récente, puis on limite à 5 résultats.
+    // ════════════════════════════════════════════════════════════
+    @Transactional(readOnly = true)
+    public List<LigneFeuilleTemps> getActivitesRecentesDisponibles(Long utilisateurId) {
+        List<LigneFeuilleTemps> toutes = ligneRepository.findRecentesByUtilisateurId(utilisateurId);
+
+        Set<Long> projetsVisiblesIds = projetService
+                .getVisiblesPourFeuilleTemps(utilisateurId)
+                .stream().map(Projet::getId).collect(Collectors.toSet());
+
+        // Lignes sans projet (categorieCode = ACTIVITE/AUTRE) restent
+        // toujours proposées — seul le filtre par visibilité de PROJET
+        // s'applique ici, conformément à la demande qui ne concerne que
+        // les projets de groupes retirés.
+        List<LigneFeuilleTemps> filtrees = toutes.stream()
+                .filter(l -> l.getProjetId() == null || projetsVisiblesIds.contains(l.getProjetId()))
+                .toList();
+
+        Map<String, LigneFeuilleTemps> dernierParCle = new LinkedHashMap<>();
+        for (LigneFeuilleTemps l : filtrees) {
+            String cle = (l.getProjetId() != null ? l.getProjetId() : "null")
+                    + "-" + (l.getActiviteId() != null ? l.getActiviteId() : "null");
+            LigneFeuilleTemps existante = dernierParCle.get(cle);
+            if (existante == null || l.getDate().isAfter(existante.getDate())) {
+                dernierParCle.put(cle, l);
+            }
+        }
+
+        return dernierParCle.values().stream()
+                .sorted(Comparator.comparing(LigneFeuilleTemps::getDate).reversed())
+                .limit(5)
+                .toList();
     }
 
     // ── Créer ─────────────────────────────────────────────────────────────────
@@ -104,7 +161,6 @@ public class FeuilleTempsService {
 
         FeuilleTemps result = repository.findById(saved.getId()).orElse(saved);
 
-        // ✅ Recalcul avancement après création
         recalculerAvancementDeFeuille(result);
 
         return result;
@@ -139,7 +195,6 @@ public class FeuilleTempsService {
         FeuilleTemps saved = repository.save(ft);
         FeuilleTemps result = repository.findById(saved.getId()).orElse(saved);
 
-        // ✅ Recalcul avancement après modification
         recalculerAvancementDeFeuille(result);
 
         return result;
@@ -232,14 +287,12 @@ public class FeuilleTempsService {
         if (!"BROUILLON".equals(ft.getStatut()) && !"REJETEE".equals(ft.getStatut()))
             throw new RuntimeException("Seules les feuilles en brouillon ou rejetées peuvent être supprimées.");
 
-        // ✅ Collecter les IDs avant suppression pour recalcul post-delete
         Set<Long> projetIds   = new HashSet<>(ligneRepository.findDistinctProjetIdsByFeuilleTempsId(id));
         Set<Long> activiteIds = new HashSet<>(ligneRepository.findDistinctActiviteIdsByFeuilleTempsId(id));
 
         ligneRepository.deleteByFeuilleTempsId(id);
         repository.deleteById(id);
 
-        // ✅ Recalcul avancement après suppression
         avancementService.recalculer(projetIds, activiteIds);
     }
 
@@ -285,14 +338,11 @@ public class FeuilleTempsService {
         });
     }
 
-
-    // ✅ NOUVELLE méthode : ajouter l'user dans activite_utilisateurs si pas déjà là
     private void assignerUtilisateurActivite(Long utilisateurId, Long activiteId) {
         try {
             Activité activite = activiteRepository.findById(activiteId).orElse(null);
             if (activite == null) return;
 
-            // Vérifier si déjà assigné
             boolean dejaAssigne = activite.getUtilisateurs().stream()
                     .anyMatch(u -> u.getId().equals(utilisateurId));
 
@@ -307,8 +357,6 @@ public class FeuilleTempsService {
         }
     }
 
-
-    // ✅ Helper : collecte les projetIds et activiteIds d'une feuille puis recalcule
     private void recalculerAvancementDeFeuille(FeuilleTemps ft) {
         try {
             Set<Long> projetIds   = new HashSet<>(
@@ -317,7 +365,7 @@ public class FeuilleTempsService {
                     ligneRepository.findDistinctActiviteIdsByFeuilleTempsId(ft.getId()));
             avancementService.recalculer(projetIds, activiteIds);
         } catch (Exception e) {
-            // Non bloquant — on ne fait pas échouer la sauvegarde si le recalcul échoue
+            // Non bloquant
         }
     }
 

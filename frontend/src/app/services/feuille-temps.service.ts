@@ -6,6 +6,17 @@ import { FeuilleTemps, FeuilleTempsRequest } from '../shared/models/feuille-temp
 
 const BASE = 'http://localhost:8085/api/application/feuilles-temps';
 
+// ✅ NOUVEAU — forme renvoyée par /activites-recentes-disponibles/{id}
+export interface ActiviteRecenteDTO {
+  projetId?: number;
+  activiteId?: number;
+  clientId?: number;
+  heureDebut?: string;
+  heureFin?: string;
+  minutesTravaillees: number;
+  date: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class FeuilleTempsService {
   private http = inject(HttpClient);
@@ -27,8 +38,6 @@ export class FeuilleTempsService {
   }
   delete(id: number): Observable<void> { return this.http.delete<void>(`${BASE}/${id}`); }
 
-  // ✅ NOUVEAU — Notifier l'utilisateur cible d'une modification de sa feuille
-  // Appelé quand un admin/manager modifie la feuille d'un autre utilisateur
   notifierModification(
     destinataireKeycloakId: string,
     nomModificateur: string,
@@ -39,6 +48,16 @@ export class FeuilleTempsService {
       nomModificateur,
       semaineDu
     });
+  }
+
+  /**
+   * ✅ NOUVEAU — Demande D : activités récentes à proposer dans le bloc
+   * "Reprendre une activité" du calendrier, calculées et FILTRÉES
+   * côté serveur (exclut les projets dont l'utilisateur n'a plus accès via
+   * aucun groupe, sans jamais supprimer de ligne de feuille de temps).
+   */
+  getActivitesRecentesDisponibles(utilisateurId: number): Observable<ActiviteRecenteDTO[]> {
+    return this.http.get<ActiviteRecenteDTO[]>(`${BASE}/activites-recentes-disponibles/${utilisateurId}`);
   }
 
   // ── Utilitaires statiques ──
@@ -88,55 +107,27 @@ export class FeuilleTempsService {
     return `${noms[d.getDay()]}${d.getDate()}`;
   }
 
+  static formatHeureAMPM(heure: string): string {
+    if (!heure) return '—';
+    const [hStr, mStr] = heure.split(':');
+    let h = parseInt(hStr, 10);
+    const m = mStr || '00';
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    h = h ? h : 12;
+    return `${h}:${m} ${ampm}`;
+  }
 
+  static getDureeFmt(debut: string, fin: string): string {
+    if (!debut || !fin) return '—';
+    const mins = FeuilleTempsService.minutesFromHHMM(debut, fin);
+    return FeuilleTempsService.formatMinutes(mins);
+  }
 
-// ── Utilitaires statiques ──
-
-
-// ✅ AJOUTER CES MÉTHODES :
-
-/** Formate une heure HH:MM en format 12h (AM/PM) */
-static formatHeureAMPM(heure: string): string {
-  if (!heure) return '—';
-  const [hStr, mStr] = heure.split(':');
-  let h = parseInt(hStr, 10);
-  const m = mStr || '00';
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  h = h % 12;
-  h = h ? h : 12; // 0 → 12
-  return `${h}:${m} ${ampm}`;
-}
-
-/** Calcule la durée formatée entre deux heures HH:MM */
-static getDureeFmt(debut: string, fin: string): string {
-  if (!debut || !fin) return '—';
-  const mins = FeuilleTempsService.minutesFromHHMM(debut, fin);
-  return FeuilleTempsService.formatMinutes(mins);
-}
-
-/** Calcule les minutes entre deux heures au format HH:MM */
-static minutesFromHHMM(debut: string, fin: string): number {
-  if (!debut || !fin) return 0;
-  const [h1, m1] = debut.split(':').map(Number);
-  const [h2, m2] = fin.split(':').map(Number);
-  return (h2 * 60 + m2) - (h1 * 60 + m1);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  static minutesFromHHMM(debut: string, fin: string): number {
+    if (!debut || !fin) return 0;
+    const [h1, m1] = debut.split(':').map(Number);
+    const [h2, m2] = fin.split(':').map(Number);
+    return (h2 * 60 + m2) - (h1 * 60 + m1);
+  }
 }

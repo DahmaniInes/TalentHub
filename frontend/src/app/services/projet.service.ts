@@ -50,6 +50,25 @@ export class ProjetService {
         `${this.base}/${projetId}/activites`, activiteIds);
   }
 
+  /**
+   * ✅ MODIFIÉ — Projets visibles dans le dropdown Projet de Ma Semaine.
+   *
+   * - autreUtilisateurId absent → "ma propre feuille" : projets où
+   *   utilisateurId est membre d'un groupe assigné.
+   * - autreUtilisateurId présent → le backend applique automatiquement la
+   *   bonne règle selon les permissions de la personne connectée :
+   *   intersection (TS_GROUP_*) ou tous les projets de l'autre utilisateur
+   *   sans filtre (TS_ALL_*). Le frontend n'a pas à connaître cette
+   *   distinction, il transmet juste les deux IDs.
+   */
+  getVisiblesPourFeuilleTemps(utilisateurId: number, autreUtilisateurId?: number): Observable<Projet[]> {
+    let params = new HttpParams().set('utilisateurId', String(utilisateurId));
+    if (autreUtilisateurId != null) {
+      params = params.set('autreUtilisateurId', String(autreUtilisateurId));
+    }
+    return this.http.get<Projet[]>(`${this.base}/visibles-pour-feuille-temps`, { params });
+  }
+
   // Projets de stage
   getProjetsStage(): Observable<Projet[]> {
     return this.http.get<Projet[]>(`${this.base}/stage`);

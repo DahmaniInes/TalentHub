@@ -50,7 +50,11 @@ public class ActiviteController {
                 && !permCtx.has("ACTIVITY_VIEW_OWN")
                 && !permCtx.has("PROJECT_VIEW_OWN") && !permCtx.has("PROJECT_VIEW_LEAD")
                 && !permCtx.has("PROJECT_VIEW_ALL") && !permCtx.has("PROJECT_DETAILS_VIEW")
-                && !permCtx.has("INT_ACT_VIEW_ALL") && !permCtx.has("INT_ACT_VIEW_OWN")) {
+                && !permCtx.has("INT_ACT_VIEW_ALL") && !permCtx.has("INT_ACT_VIEW_OWN")
+                && !permCtx.has("TS_OWN_CREATE") && !permCtx.has("TS_OWN_UPDATE")
+                && !permCtx.has("TS_OWN_READ") && !permCtx.has("TS_GROUP_READ")
+                && !permCtx.has("TS_GROUP_UPDATE") && !permCtx.has("TS_ALL_READ")
+                && !permCtx.has("TS_ALL_UPDATE")) {
             return ResponseEntity.status(403)
                     .body(Map.of("message", "Permission ACTIVITY_VIEW_ALL requise."));
         }
@@ -70,6 +74,33 @@ public class ActiviteController {
                     .body(Map.of("message", "Permission ACTIVITY_VIEW_ALL requise."));
         }
         return ResponseEntity.ok(activiteService.getGlobales());
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // ✅ NOUVEAU — Demande B : vérification serveur de
+    // autoriserActivitesGlobales. Retourne la liste des activités globales
+    // à proposer pour CE projet (liste vide si le projet ne les autorise
+    // pas). Mêmes permissions que getByProjet() — c'est un endpoint de
+    // support à la saisie de temps.
+    // ════════════════════════════════════════════════════════════
+    @GetMapping("/projet/{projetId}/globales-disponibles")
+    public ResponseEntity<?> getGlobalesDisponiblesPourProjet(@PathVariable Long projetId) {
+        if (!permCtx.has("ACTIVITY_VIEW_ALL") && !permCtx.has("ACTIVITY_VIEW_LEAD")
+                && !permCtx.has("ACTIVITY_VIEW_OWN")
+                && !permCtx.has("PROJECT_VIEW_OWN") && !permCtx.has("PROJECT_VIEW_LEAD")
+                && !permCtx.has("PROJECT_VIEW_ALL") && !permCtx.has("PROJECT_DETAILS_VIEW")
+                && !permCtx.has("TS_OWN_CREATE") && !permCtx.has("TS_OWN_UPDATE")
+                && !permCtx.has("TS_OWN_READ") && !permCtx.has("TS_GROUP_READ")
+                && !permCtx.has("TS_GROUP_UPDATE") && !permCtx.has("TS_ALL_READ")
+                && !permCtx.has("TS_ALL_UPDATE")) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Permission requise."));
+        }
+        try {
+            return ResponseEntity.ok(activiteService.getGlobalesDisponiblesPourProjet(projetId));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("message", e.getMessage()));
+        }
     }
 
     // ── GET par ID ────────────────────────────────────────────────
@@ -155,18 +186,7 @@ public class ActiviteController {
         return ResponseEntity.noContent().build();
     }
 
-    // ════════════════════════════════════════════════════════════
-    // ✅ NOUVEAU — Scénario B : obtient (ou crée si besoin) la copie
-    // locale d'une activité globale pour un projet précis. Appelé par
-    // Ma Semaine (sélection d'une activité globale dans un projet) ET par
-    // projet-detail (bouton "Activité globale" dans le drawer de création).
-    //
-    // Pas de @RequiresPermission strict ici : accessible à toute personne
-    // qui peut déjà créer/modifier une feuille de temps sur ce projet —
-    // TS_OWN_CREATE/TS_OWN_UPDATE suffisent, on ne réclame pas en plus
-    // ACTIVITY_CREATE (un employé normal n'a généralement pas ce droit,
-    // mais doit pouvoir déclencher cette duplication en pointant son temps).
-    // ════════════════════════════════════════════════════════════
+    // ── Scénario B : duplication idempotente d'activité globale ───
     @PostMapping("/globale/{globaleId}/dupliquer-pour-projet/{projetId}")
     public ResponseEntity<?> obtenirOuDupliquerPourProjet(
             @PathVariable Long globaleId, @PathVariable Long projetId) {

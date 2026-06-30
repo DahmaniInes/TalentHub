@@ -3,11 +3,13 @@ package com.talenthub.application_service.Controller;
 
 import com.talenthub.application_service.DTO.FeuilleTempsDTO;
 import com.talenthub.application_service.DTO.FeuilleTempsRequest;
+import com.talenthub.application_service.Entity.LigneFeuilleTemps;
+import com.talenthub.application_service.Security.PermissionContext;
 import com.talenthub.application_service.Service.FeuilleTempsService;
 import com.talenthub.application_service.Service.NotificationService;
 import com.talenthub.application_service.Enum.NotificationType;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,24 +19,18 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/feuilles-temps")
+@RequiredArgsConstructor
 public class FeuilleTempsController {
 
     private final FeuilleTempsService service;
     private final NotificationService notificationService;
-
-    @Autowired
-    public FeuilleTempsController(FeuilleTempsService service,
-                                  NotificationService notificationService) {
-        this.service             = service;
-        this.notificationService = notificationService;
-    }
+    private final PermissionContext   permCtx;
 
     // ── GET tous ─────────────────────────────────────────────────────────────
     @GetMapping
     public ResponseEntity<List<FeuilleTempsDTO>> getAll() {
         return ResponseEntity.ok(
                 service.getAllFeuillesTemps().stream()
-                        // ✅ toDTO() résout projetNom + activiteNom depuis les repositories
                         .map(service::toDTO)
                         .toList());
     }
@@ -82,6 +78,48 @@ public class FeuilleTempsController {
                 service.getPourApprobation().stream()
                         .map(service::toDTO)
                         .toList());
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // ✅ CORRIGÉ — Demande D : activités récentes à proposer dans le
+    // calendrier ("Reprendre une activité"), calculées et filtrées
+    // côté serveur. Exclut les lignes dont le projet n'est plus visible
+    // pour l'utilisateur (ex: retiré de tous les groupes donnant accès à
+    // ce projet) — sans jamais supprimer de ligne de feuille de temps.
+    //
+    // ⚠️ Le filtre s'applique systématiquement : TS_ALL_READ/TS_ALL_UPDATE
+    // ne concernent que le sélecteur d'utilisateur (qui peut consulter/
+    // modifier la feuille de qui), jamais la visibilité des projets.
+    // ════════════════════════════════════════════════════════════
+    @GetMapping("/activites-recentes-disponibles/{utilisateurId}")
+    public ResponseEntity<?> getActivitesRecentesDisponibles(@PathVariable Long utilisateurId) {
+        if (!permCtx.has("TS_OWN_CREATE") && !permCtx.has("TS_OWN_UPDATE")
+                && !permCtx.has("TS_OWN_READ")
+                && !permCtx.has("TS_GROUP_UPDATE") && !permCtx.has("TS_GROUP_READ")
+                && !permCtx.has("TS_ALL_UPDATE") && !permCtx.has("TS_ALL_READ")) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Permission de feuille de temps requise."));
+        }
+        try {
+            List<LigneFeuilleTemps> lignes = service
+                    .getActivitesRecentesDisponibles(utilisateurId);
+            // ✅ DTO simple inline — évite tout souci de sérialisation de la
+            // relation LAZY feuilleTemps sur LigneFeuilleTemps.
+            List<Map<String, Object>> dto = lignes.stream().map(l -> {
+                Map<String, Object> m = new java.util.LinkedHashMap<>();
+                m.put("projetId", l.getProjetId());
+                m.put("activiteId", l.getActiviteId());
+                m.put("clientId", l.getClientId());
+                m.put("heureDebut", l.getHeureDebut());
+                m.put("heureFin", l.getHeureFin());
+                m.put("minutesTravaillees", l.getMinutesTravaillees());
+                m.put("date", l.getDate());
+                return m;
+            }).toList();
+            return ResponseEntity.ok(dto);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("message", e.getMessage()));
+        }
     }
 
     // ── POST créer ────────────────────────────────────────────────────────────

@@ -1,9 +1,4 @@
 // src/app/features/feuille-temps/pages/ma-semaine/ma-semaine.component.ts
-// ✅ COMPLET FINAL — Sélecteur utilisateur + permissions TS_* + notifications modification
-// ✅ NOUVEAU — Scénario B : sélectionner une activité globale dans le select
-//    déclenche la duplication idempotente côté backend (une seule copie par
-//    projet, jamais par personne) au lieu de pointer directement sur
-//    l'activité globale brute.
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -16,7 +11,7 @@ import { UiService }               from '../../../../services/ui.service';
 import { ErrorService }            from '../../../../services/error.service';
 import { PermissionContextService } from '../../../../services/permission-context.service';
 import { NotificationService }     from '../../../../services/notification.service';
-import { GroupeService }           from '../../../../services/groupe.service';
+import { GroupeService, MembreInfo } from '../../../../services/groupe.service';
 import {
   FeuilleTemps, FeuilleTempsRequest,
   LigneFeuilleTempsRequest, MatriceLigne
@@ -24,7 +19,6 @@ import {
 import { Projet }      from '../../../../shared/models/projet.model';
 import { Activite }    from '../../../../shared/models/activite.model';
 import { Utilisateur } from '../../../../shared/models/utilisateur.model';
-import { Groupe }      from '../../../../shared/models/groupe.model';
 import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
@@ -46,24 +40,23 @@ export class MaSemaineComponent implements OnInit {
   private notifSvc    = inject(NotificationService);
   readonly ui         = inject(UiService);
   readonly perms      = inject(PermissionContextService);
+  private readonly STATUT_TERMINE_ID = 4;
 
   // ── Données ──
   currentUser           = signal<Utilisateur | null>(null);
   selectedUser          = signal<Utilisateur | null>(null);
-  tousUtilisateurs      = signal<Utilisateur[]>([]);
-  utilisateursFiltres   = signal<Utilisateur[]>([]);
-  projets               = signal<Projet[]>([]);
-  activitesGlobales     = signal<Activite[]>([]);
-  activitesParProjet    = signal<Record<number, Activite[]>>({});
-  feuilleCourante       = signal<FeuilleTemps | null>(null);
-  mesGroupes            = signal<Groupe[]>([]);
+
+  utilisateursDropdown   = signal<MembreInfo[]>([]);
+
+  projetsVisibles        = signal<Projet[]>([]);
+  activitesGlobalesParProjet = signal<Record<number, Activite[]>>({});
+  activitesParProjet     = signal<Record<number, Activite[]>>({});
+  feuilleCourante        = signal<FeuilleTemps | null>(null);
 
   loading   = signal(false);
   saving    = signal(false);
   submitted = signal(false);
 
-  // ✅ NOUVEAU — état de "duplication en cours" par ligne (pour désactiver le
-  // select et montrer un feedback visuel pendant l'appel réseau)
   dupliquantRowId = signal<string | null>(null);
 
   lundiCourant = signal<string>(FeuilleTempsService.getLundiSemaine());
@@ -78,14 +71,16 @@ export class MaSemaineComponent implements OnInit {
 
   // ── Computed permissions ──
 
-  canReadAll     = computed(() => this.perms.can('TS_ALL_READ'));
   canReadGroup   = computed(() => this.perms.can('TS_GROUP_READ'));
-  canUpdateAll   = computed(() => this.perms.can('TS_ALL_UPDATE'));
   canUpdateGroup = computed(() => this.perms.can('TS_GROUP_UPDATE'));
+  canReadAll     = computed(() => this.perms.can('TS_ALL_READ'));
+  canUpdateAll   = computed(() => this.perms.can('TS_ALL_UPDATE'));
   canUpdateOwn   = computed(() => this.perms.can('TS_OWN_UPDATE'));
   canCreateOwn   = computed(() => this.perms.can('TS_OWN_CREATE'));
 
-  showUserSelector = computed(() => this.canReadAll() || this.canReadGroup());
+  showUserSelector = computed(() =>
+    this.canReadGroup() || this.canUpdateGroup() || this.canReadAll() || this.canUpdateAll()
+  );
 
   isViewingOwnSheet = computed(() => {
     const me = this.currentUser();
@@ -99,11 +94,11 @@ export class MaSemaineComponent implements OnInit {
     const bloque = statut === 'SOUMISE' || statut === 'VALIDEE';
     if (bloque) return false;
 
-    const isOwn = this.isViewingOwnSheet();
-
-    if (isOwn) return this.canUpdateOwn() || this.canCreateOwn();
+    if (this.isViewingOwnSheet()) {
+      return this.canUpdateOwn() || this.canCreateOwn();
+    }
     if (this.canUpdateAll()) return true;
-    if (this.canUpdateGroup()) return this.isSelectedUserInMyGroup();
+    if (this.canUpdateGroup()) return true;
     return false;
   });
 
@@ -140,7 +135,8 @@ export class MaSemaineComponent implements OnInit {
         next: u => {
           this.currentUser.set(u);
           this.selectedUser.set(u);
-          this.loadDependencies();
+          this.loadUtilisateursDropdown();
+          this.loadProjetsVisibles();
           this.loadSemaine();
         },
         error: () => this.loadSemaine()
@@ -148,51 +144,55 @@ export class MaSemaineComponent implements OnInit {
     } else {
       this.loadSemaine();
     }
-
-    this.projetSvc.getAll().subscribe({ next: d => this.projets.set(d) });
-    this.activiteSvc.getAll().subscribe({
-      next: (all: Activite[]) => this.activitesGlobales.set(all.filter(a => a.estGlobale))
-    });
   }
 
-  private loadDependencies(): void {
+  private loadUtilisateursDropdown(): void {
     const me = this.currentUser();
     if (!me) return;
 
-    this.groupeSvc.getAll().subscribe({ next: g => this.mesGroupes.set(g) });
-
-    if (this.canReadAll()) {
-      this.userSvc.getAllUsers().subscribe({
-        next: users => {
-          this.tousUtilisateurs.set(users);
-          this.utilisateursFiltres.set(users.filter(u => u.id !== me.id));
-        }
+    if (this.canReadAll() || this.canUpdateAll()) {
+      this.groupeSvc.getTousMembresDeGroupes(me.id).subscribe({
+        next: d => this.utilisateursDropdown.set(d),
+        error: () => this.utilisateursDropdown.set([])
       });
-    } else if (this.canReadGroup()) {
-      this.userSvc.getAllUsers().subscribe({
-        next: users => {
-          this.tousUtilisateurs.set(users);
-          const filtered = users.filter(u => u.id !== me.id);
-          this.utilisateursFiltres.set(filtered);
-        }
+    } else if (this.canReadGroup() || this.canUpdateGroup()) {
+      this.groupeSvc.getCoequipiers(me.id).subscribe({
+        next: d => this.utilisateursDropdown.set(d),
+        error: () => this.utilisateursDropdown.set([])
       });
     }
   }
 
-  isSelectedUserInMyGroup(): boolean {
-    return true;
+  private loadProjetsVisibles(): void {
+    const me = this.currentUser();
+    if (!me) return;
+    const sel = this.selectedUser();
+    const autreId = sel && sel.id !== me.id ? sel.id : undefined;
+
+    this.projetSvc.getVisiblesPourFeuilleTemps(me.id, autreId).subscribe({
+      next: d => this.projetsVisibles.set(d),
+      error: () => this.ui.error('Erreur lors du chargement des projets.')
+    });
   }
 
   // ── Changement d'utilisateur ──
   onUserChange(userId: string): void {
+    const me = this.currentUser();
     const id = userId ? +userId : null;
-    if (!id) {
-      this.selectedUser.set(this.currentUser());
-    } else {
-      const user = this.tousUtilisateurs().find(u => u.id === id) || null;
-      this.selectedUser.set(user);
+    if (!id || (me && id === me.id)) {
+      this.selectedUser.set(me);
+      this.loadProjetsVisibles();
+      this.loadSemaine();
+      return;
     }
-    this.loadSemaine();
+    this.userSvc.getUserById(id).subscribe({
+      next: user => {
+        this.selectedUser.set(user);
+        this.loadProjetsVisibles();
+        this.loadSemaine();
+      },
+      error: () => this.ui.error("Erreur lors du chargement de l'utilisateur sélectionné.")
+    });
   }
 
   // ── Chargement feuille ──
@@ -241,7 +241,10 @@ export class MaSemaineComponent implements OnInit {
       }
     }
     const projetIds = [...new Set(Object.values(g).map(l => l.projetId).filter(Boolean) as number[])];
-    for (const pid of projetIds) this.loadActivitesDuProjet(pid);
+    for (const pid of projetIds) {
+      this.loadActivitesDuProjet(pid);
+      this.loadActivitesGlobalesDuProjet(pid);
+    }
     this.lignesMatrice.set(Object.values(g));
   }
 
@@ -255,31 +258,39 @@ export class MaSemaineComponent implements OnInit {
   // ── Actions lignes ──
   ajouterLigne(): void { this.lignesMatrice.update(l => [...l, this.newLigne()]); }
 
+  /**
+   * ✅ CORRIGÉ — La suppression déclenche désormais immédiatement une
+   * sauvegarde silencieuse côté backend. Avant ce correctif, seule la
+   * matrice en mémoire était modifiée : tant que l'utilisateur ne cliquait
+   * pas explicitement sur "Sauvegarder", rien n'était persisté et la ligne
+   * réapparaissait après actualisation de la page.
+   */
   supprimerLignesSelectionnees(): void {
     const sel = this.selectedRows();
     if (sel.size === 0) {
       if (this.lignesMatrice().length <= 1) return;
       this.lignesMatrice.update(l => l.slice(0, -1));
+      this.sauvegarder(false, true);
       return;
     }
     this.lignesMatrice.update(ls => ls.filter(l => !sel.has(l.rowId)));
     this.selectedRows.set(new Set());
+    this.sauvegarder(false, true);
   }
 
+  /**
+   * ✅ CORRIGÉ — Réinitialiser persiste désormais immédiatement l'état
+   * vide en base (même raison que supprimerLignesSelectionnees ci-dessus).
+   */
   reinitialiser(): void {
-    const sel = this.selectedRows();
     this.ui.confirm({
       title: 'Réinitialiser',
-      message: sel.size > 0 ? `Remettre ${sel.size} ligne(s) à zéro ?` : 'Remettre toutes les heures à zéro ?',
+      message: 'Supprimer toutes les lignes et revenir à l\'état initial de la semaine ?',
       confirmLabel: 'Réinitialiser', type: 'warning',
       onConfirm: () => {
-        this.lignesMatrice.update(ls => ls.map(l => {
-          if (sel.size > 0 && !sel.has(l.rowId)) return l;
-          const jours = { ...l.jours };
-          for (const d of Object.keys(jours))
-            jours[d] = { ...jours[d], minutes: 0, minutesSupp: 0 };
-          return { ...l, jours };
-        }));
+        this.lignesMatrice.set([this.newLigne()]);
+        this.selectedRows.set(new Set());
+        this.sauvegarder(false, true);
       }
     });
   }
@@ -308,42 +319,54 @@ export class MaSemaineComponent implements OnInit {
     });
   }
 
+  private loadActivitesGlobalesDuProjet(projetId: number): void {
+    if (this.activitesGlobalesParProjet()[projetId]) return;
+    this.activiteSvc.getGlobalesDisponiblesPourProjet(projetId).subscribe({
+      next: d => this.activitesGlobalesParProjet.update(m => ({ ...m, [projetId]: d }))
+    });
+  }
+
   /**
-   * ✅ MODIFIÉ — Scénario B : n'affiche plus les activités globales brutes
-   * mélangées aux activités du projet. À la place :
-   * - Les activités déjà liées au projet (qu'elles soient des copies issues
-   *   d'une duplication ou des activités créées normalement) s'affichent
-   *   normalement, sans distinction visuelle particulière.
-   * - Les activités globales pas encore "matérialisées" pour CE projet sont
-   *   listées séparément (voir activitesGlobalesNonDupliquees ci-dessous),
-   *   affichées dans un second groupe du select. Les sélectionner déclenche
-   *   onActiviteChange() → obtenirOuDupliquerPourProjet().
+   * Liste des activités proposées dans le dropdown — exclut toujours les
+   * activités terminées (elles ne doivent jamais être choisies pour une
+   * NOUVELLE saisie).
    */
   getActivitesDuProjet(projetId?: number): Activite[] {
     if (!projetId) return [];
     const duProjet = this.activitesParProjet()[projetId] ?? [];
-    const STATUT_TERMINE_ID = 4;
-    return duProjet.filter(a => a.statutActiviteId !== STATUT_TERMINE_ID);
+    return duProjet.filter(a => a.statutActiviteId !== this.STATUT_TERMINE_ID);
+  }
+
+  getActivitesGlobalesPourProjet(projetId?: number): Activite[] {
+    if (!projetId) return [];
+    return this.activitesGlobalesParProjet()[projetId] ?? [];
   }
 
   /**
-   * ✅ NOUVEAU — Activités globales pas encore dupliquées pour ce projet
-   * précis. On déduit "déjà dupliquée" en comparant les IDs déjà présents
-   * dans activitesParProjet()[projetId] avec le champ activiteSourceGlobaleId
-   * de chacune (si le DTO l'expose) — sinon, on affiche systématiquement
-   * toutes les globales : la pire conséquence est un appel idempotent qui
-   * retourne la copie déjà existante (pas de doublon créé, juste un appel
-   * réseau légèrement superflu si jamais une copie existe déjà ailleurs
-   * dans la liste sans qu'on l'ait filtrée ici).
+   * ✅ NOUVEAU — Retrouve l'activité réelle (avec son statut) liée à une
+   * ligne, même si elle a été exclue du dropdown car terminée. Permet de
+   * savoir si on doit verrouiller la ligne sans jamais perdre le nom déjà
+   * affiché.
    */
-  getActivitesGlobalesPourProjet(projetId?: number): Activite[] {
-    if (!projetId) return [];
-    return this.activitesGlobales();
+  private findActiviteReelle(ligne: MatriceLigne): Activite | undefined {
+    if (!ligne.activiteId || !ligne.projetId) return undefined;
+    const liste = this.activitesParProjet()[ligne.projetId] ?? [];
+    return liste.find(a => a.id === ligne.activiteId);
+  }
+
+  /**
+   * ✅ NOUVEAU — Vrai si l'activité actuellement sélectionnée sur cette
+   * ligne a le statut "Terminée". Utilisé pour verrouiller la saisie
+   * d'heures sur cette ligne sans supprimer ni masquer son nom.
+   */
+  ligneActiviteTerminee(ligne: MatriceLigne): boolean {
+    const a = this.findActiviteReelle(ligne);
+    return a?.statutActiviteId === this.STATUT_TERMINE_ID;
   }
 
   onProjetChange(rowId: string, val: string): void {
     const projetId = val ? +val : undefined;
-    const projet   = this.projets().find(p => p.id === projetId);
+    const projet   = this.projetsVisibles().find(p => p.id === projetId);
     this.lignesMatrice.update(ls => ls.map(l =>
       l.rowId !== rowId ? l : {
         ...l,
@@ -355,22 +378,12 @@ export class MaSemaineComponent implements OnInit {
         activiteNom: undefined
       }
     ));
-    if (projetId) this.loadActivitesDuProjet(projetId);
+    if (projetId) {
+      this.loadActivitesDuProjet(projetId);
+      this.loadActivitesGlobalesDuProjet(projetId);
+    }
   }
 
-  /**
-   * ✅ MODIFIÉ — Scénario B : distingue deux cas selon la valeur choisie.
-   *
-   * - Si l'ID choisi correspond à une activité DÉJÀ liée au projet (qu'elle
-   *   soit copie ou activité normale) → comportement inchangé, on assigne
-   *   directement.
-   * - Si l'ID choisi correspond à une activité GLOBALE (estGlobale=true,
-   *   pas encore liée à ce projet) → on appelle
-   *   obtenirOuDupliquerPourProjet() ; le backend retourne soit la copie
-   *   déjà existante pour ce projet, soit en crée une nouvelle. La ligne
-   *   est alors mise à jour pour pointer vers CETTE COPIE — jamais vers
-   *   l'activité globale brute.
-   */
   onActiviteChange(rowId: string, val: string): void {
     const activiteId = val ? +val : undefined;
     if (!activiteId) {
@@ -387,24 +400,19 @@ export class MaSemaineComponent implements OnInit {
     const dejaLiee = duProjet.find(a => a.id === activiteId);
 
     if (dejaLiee) {
-      // Cas normal — activité déjà liée à ce projet (copie ou non).
       this.lignesMatrice.update(ls => ls.map(l =>
         l.rowId !== rowId ? l : { ...l, activiteId: dejaLiee.id, activiteNom: dejaLiee.nom }
       ));
       return;
     }
 
-    const globale = this.activitesGlobales().find(a => a.id === activiteId);
+    const globale = (this.activitesGlobalesParProjet()[projetId] ?? []).find(a => a.id === activiteId);
     if (!globale) return;
 
-    // ✅ Activité globale pas encore matérialisée pour ce projet —
-    // déclenche la duplication idempotente côté backend.
     this.dupliquantRowId.set(rowId);
     this.activiteSvc.obtenirOuDupliquerPourProjet(globale.id, projetId).subscribe({
       next: copie => {
         this.dupliquantRowId.set(null);
-        // Ajoute la copie à la liste locale du projet pour que les
-        // sélections suivantes (et l'affichage immédiat) la trouvent.
         this.activitesParProjet.update(m => {
           const liste = m[projetId] ?? [];
           if (liste.some(a => a.id === copie.id)) return m;
@@ -417,9 +425,6 @@ export class MaSemaineComponent implements OnInit {
       error: () => {
         this.dupliquantRowId.set(null);
         this.ui.error("Erreur lors de l'assignation de l'activité globale.");
-        // Réinitialise la sélection pour ne pas laisser la ligne dans un
-        // état incohérent (select affichant l'ID de l'activité globale
-        // brute alors qu'aucune copie n'a été créée).
         this.lignesMatrice.update(ls => ls.map(l =>
           l.rowId !== rowId ? l : { ...l, activiteId: undefined, activiteNom: undefined }
         ));
@@ -624,4 +629,15 @@ export class MaSemaineComponent implements OnInit {
       error: (err: HttpErrorResponse) => this.ui.error(this.errorSvc.parse(err).message)
     });
   }
+
+
+  /**
+ * ✅ Vrai si on doit bloquer la SAISIE sur cette cellule précise : ligne
+ * dont l'activité est terminée ET cellule actuellement vide (0 minute).
+ * Une cellule qui contient déjà des heures reste éditable (modification
+ * ou suppression), seul l'AJOUT de nouvelles heures est interdit.
+ */
+celluleAjoutInterdit(ligne: MatriceLigne, date: string): boolean {
+  return this.ligneActiviteTerminee(ligne) && this.getCellMinutes(ligne, date) === 0;
+}
 }

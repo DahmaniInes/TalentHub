@@ -1,1 +1,161 @@
-<p>centre-donnees works!</p>
+<div class="cd-page">
+
+    <!-- Header -->
+    <div class="cd-header">
+      <div>
+        <h1 class="cd-title">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" style="width:20px;height:20px">
+            <path d="M10 2L2.5 6v8L10 18l7.5-4V6L10 2z"/>
+            <path d="M10 2v16M2.5 6l7.5 4 7.5-4" stroke-linecap="round"/>
+          </svg>
+          Centre de données
+        </h1>
+        <p class="cd-subtitle">Exportez vos fiches de temps selon vos critères</p>
+      </div>
+    </div>
+  
+    <!-- Formulaire filtres -->
+    <div class="cd-form-card">
+      <p class="cd-section-label">Critères d'exportation</p>
+  
+      <div class="cd-grid">
+        <!-- Plage horaire -->
+        <div class="cd-field">
+          <label class="cd-label">Date de début</label>
+          <input type="date" class="cd-input" [(ngModel)]="filtres.dateDu">
+        </div>
+        <div class="cd-field">
+          <label class="cd-label">Date de fin</label>
+          <input type="date" class="cd-input" [(ngModel)]="filtres.dateAu">
+        </div>
+  
+        
+  
+        <!-- Statut -->
+        <div class="cd-field">
+          <label class="cd-label">Statut</label>
+          <select class="cd-input" [(ngModel)]="filtres.statut">
+            <option value="">Tous</option>
+            <option value="BROUILLON">Brouillon</option>
+            <option value="SOUMISE">Soumise</option>
+            <option value="VALIDEE">Validée</option>
+            <option value="REJETEE">Rejetée</option>
+          </select>
+        </div>
+  
+        <!-- Projet -->
+        <div class="cd-field">
+          <label class="cd-label">Projet</label>
+          <select class="cd-input" [(ngModel)]="filtres.projetId" (change)="onProjetChange()">
+            <option value="">Tous les projets</option>
+            <option *ngFor="let p of projets()" [value]="p.id">{{ p.nom }}</option>
+          </select>
+        </div>
+  
+        <!-- Activité — désactivée tant qu'aucun projet n'est sélectionné -->
+    <!-- Groupe — remplace l'ancien champ Employé -->
+            <div class="cd-field">
+                <label class="cd-label">Groupe</label>
+                <select class="cd-input" [(ngModel)]="filtres.groupeId">
+                <option value="">Tous les groupes</option>
+                <option *ngFor="let g of groupesDisponibles()" [value]="g.id">{{ g.nom }}</option>
+                </select>
+            </div>
+
+
+      </div>
+  
+      <!-- Boutons action -->
+      <div class="cd-actions">
+        <button class="cd-btn cd-btn-ghost" (click)="resetFiltres()">
+          <svg viewBox="0 0 14 14" fill="none"><path d="M2 7a5 5 0 105-5H5m0 0L3 2m2 0L3 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Réinitialiser
+        </button>
+        <button class="cd-btn cd-btn-preview" [disabled]="loading()" (click)="chargerApercu()">
+          <div *ngIf="loading()" class="cd-spin"></div>
+          <svg *ngIf="!loading()" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.3"/><circle cx="7" cy="7" r="2.5" stroke="currentColor" stroke-width="1.3"/></svg>
+          Aperçu ({{ lignesExport().length }})
+        </button>
+
+
+
+        <button class="cd-btn cd-btn-csv" [disabled]="lignesExport().length === 0" (click)="exporterCSV()">
+            <svg viewBox="0 0 14 14" fill="none"><path d="M7 2v8M4 7l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Export CSV
+          </button>
+          <button class="cd-btn cd-btn-xls" [disabled]="lignesExport().length === 0" (click)="exporterXLS()">
+            <svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M4 4l6 6M10 4L4 10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            Export XLS
+          </button>
+          <button class="cd-btn cd-btn-pdf" [disabled]="lignesExport().length === 0" (click)="exporterPDF()">
+            <svg viewBox="0 0 14 14" fill="none"><path d="M3 1h6l3 3v9a1 1 0 01-1 1H3a1 1 0 01-1-1V2a1 1 0 011-1z" stroke="currentColor" stroke-width="1.2"/><path d="M9 1v4h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            Export PDF
+          </button>
+
+
+
+
+      </div>
+    </div>
+  
+    <!-- Aperçu résultats -->
+    <div *ngIf="lignesExport().length > 0" class="cd-preview-card">
+      <div class="cd-preview-header">
+        <div class="cd-preview-title">
+          Aperçu — {{ lignesExport().length }} entrées · {{ fmt(totalMinutes()) }} au total
+        </div>
+        <div class="cd-preview-stats">
+          <span class="cd-stat-chip cd-stat-blue">{{ totalFeuilles() }} fiche(s)</span>
+          <span class="cd-stat-chip cd-stat-green">{{ fmt(totalMinutes()) }} travaillés</span>
+          <span *ngIf="totalSupp() > 0" class="cd-stat-chip cd-stat-orange">+{{ fmt(totalSupp()) }} suppl.</span>
+        </div>
+      </div>
+  
+      <div class="cd-table-scroll">
+        <table class="cd-table">
+          <thead>
+            <tr>
+              <th>Employé</th>
+              <th>Semaine</th>
+              <th>Date</th>
+              <th>Projet</th>
+              <th>Activité</th>
+              <th>Durée</th>
+              <th>Suppl.</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let l of pagedLignes()">
+              <td class="cd-td-name">{{ l.utilisateur }}</td>
+              <td class="cd-td-muted">{{ l.semaine }}</td>
+              <td class="cd-td-muted" style="white-space:nowrap">{{ l.date }}</td>
+              <td style="font-size:.76rem;font-weight:600">{{ l.projet || '—' }}</td>
+              <td class="cd-td-muted">{{ l.activite || '—' }}</td>
+              <td style="font-size:.76rem;font-weight:700;color:var(--accent)">{{ l.duree }}</td>
+              <td style="font-size:.73rem;color:#10b981">{{ l.supp !== '0:00' ? '+' + l.supp : '—' }}</td>
+              <td>
+                <span class="cd-statut" [class]="'cd-s-' + l.statut.toLowerCase()">{{ l.statut }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+  
+      <!-- Pagination simple -->
+      <div *ngIf="lignesExport().length > pageSize" class="cd-pagination">
+        <span class="cd-page-info">{{ (currentPage-1)*pageSize+1 }}–{{ min(currentPage*pageSize, lignesExport().length) }} / {{ lignesExport().length }}</span>
+        <div style="display:flex;gap:4px">
+          <button class="cd-page-btn" [disabled]="currentPage===1" (click)="currentPage=currentPage-1">←</button>
+          <button class="cd-page-btn" [disabled]="currentPage*pageSize>=lignesExport().length" (click)="currentPage=currentPage+1">→</button>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Empty -->
+    <div *ngIf="lignesExport().length === 0 && apercu()" class="cd-empty">
+      <svg viewBox="0 0 48 48" fill="none" style="width:48px;height:48px;opacity:.3"><circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="2"/><path d="M16 24h16M24 16v16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <p>Aucune donnée pour ces critères</p>
+    </div>
+  
+  </div>

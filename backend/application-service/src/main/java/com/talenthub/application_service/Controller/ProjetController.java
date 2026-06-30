@@ -81,6 +81,64 @@ public class ProjetController {
         }
     }
 
+    // ════════════════════════════════════════════════════════════
+    // ✅ REFAIT — Dropdown Projet de Ma Semaine : logique à 3 cas selon que
+    // l'utilisateur connecté regarde sa propre feuille ou celle d'un autre,
+    // et selon ses permissions étendues (TS_GROUP_* / TS_ALL_*).
+    //
+    // - autreUtilisateurId absent (ou égal à utilisateurId) → "ma propre
+    //   feuille" : projets où utilisateurId est membre d'un groupe assigné.
+    // - autreUtilisateurId présent + utilisateur connecté a TS_ALL_READ ou
+    //   TS_ALL_UPDATE → tous les projets de autreUtilisateurId, SANS
+    //   intersection avec ceux de utilisateurId.
+    // - autreUtilisateurId présent + utilisateur connecté a SEULEMENT
+    //   TS_GROUP_READ/UPDATE (pas TS_ALL_*) → intersection des projets de
+    //   utilisateurId ET autreUtilisateurId.
+    //
+    // utilisateurId désigne TOUJOURS la personne CONNECTÉE qui édite.
+    // autreUtilisateurId désigne la personne actuellement SÉLECTIONNÉE
+    // dans le dropdown Utilisateur (absent quand on regarde sa propre
+    // feuille).
+    // ════════════════════════════════════════════════════════════
+    @GetMapping("/visibles-pour-feuille-temps")
+    public ResponseEntity<?> getVisiblesPourFeuilleTemps(
+            @RequestParam Long utilisateurId,
+            @RequestParam(required = false) Long autreUtilisateurId) {
+        if (!permCtx.has("TS_OWN_CREATE") && !permCtx.has("TS_OWN_UPDATE")
+                && !permCtx.has("TS_OWN_READ")
+                && !permCtx.has("TS_GROUP_UPDATE") && !permCtx.has("TS_GROUP_READ")
+                && !permCtx.has("TS_ALL_UPDATE") && !permCtx.has("TS_ALL_READ")) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Permission de feuille de temps requise."));
+        }
+        try {
+            List<Projet> projets;
+
+            boolean regardeAutreUser = autreUtilisateurId != null
+                    && !autreUtilisateurId.equals(utilisateurId);
+
+            if (!regardeAutreUser) {
+                // Cas 1 : ma propre feuille, peu importe mes permissions.
+                projets = projetService.getVisiblesPourFeuilleTemps(utilisateurId);
+            } else if (permCtx.has("TS_ALL_READ") || permCtx.has("TS_ALL_UPDATE")) {
+                // Cas 2 : TS_ALL_* — tous les projets de l'utilisateur
+                // sélectionné, sans intersection.
+                projets = projetService.getVisiblesPourFeuilleTemps(autreUtilisateurId);
+            } else {
+                // Cas 3 : TS_GROUP_* — intersection entre mes projets et
+                // ceux de l'utilisateur sélectionné.
+                projets = projetService.getIntersectionPourFeuilleTemps(utilisateurId, autreUtilisateurId);
+            }
+
+            List<ProjetDTO> list = projets.stream().map(ProjetDTO::new).toList();
+            return ResponseEntity.ok(list);
+        } catch (Exception e) {
+            log.error("Erreur GET /projets/visibles-pour-feuille-temps: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("message", e.getMessage()));
+        }
+    }
+
     // ── POST créer — PROJECT_CREATE ───────────────────────────────
     @RequiresPermission("PROJECT_CREATE")
     @PostMapping
@@ -153,12 +211,6 @@ public class ProjetController {
     }
 
     // ── PATCH assigner activités ──────────────────────────────────
-    // ✅ CORRIGÉ — ajout de INT_ACT_CREATE et INT_ACT_EDIT (nouveau jeu plat
-    // de permissions de l'espace stagiaire). C'est cet endpoint qu'appelle
-    // saveAct() dans projet-stage-detail.component.ts juste après avoir créé
-    // une activité, pour la lier au projet. Sans cet ajout, un superviseur ou
-    // un admin de l'espace stagiaire ayant INT_ACT_CREATE recevait un 403 ici
-    // même si la création de l'activité elle-même (POST /activites) réussissait.
     @PatchMapping("/{id}/activites")
     public ResponseEntity<?> assignerActivites(@PathVariable Long id,
                                                @RequestBody List<Long> activiteIds) {
@@ -182,11 +234,6 @@ public class ProjetController {
     }
 
     // ── Superviseurs des stagiaires d'un projet ───────────────────
-    // ✅ NOUVEAU — mêmes permissions que getById() : toute personne qui peut
-    // voir le détail de CE projet peut voir la liste de ses stagiaires et
-    // leurs superviseurs. N'exige PAS INT_ADMIN_VIEW_ALL_INTERNS (cette
-    // permission concerne la page globale "tous les stagiaires de
-    // l'entreprise", pas ce contexte projet par projet).
     @GetMapping("/{id}/superviseurs-stagiaires")
     public ResponseEntity<?> getSuperviseursStagiaires(@PathVariable Long id) {
         if (!permCtx.has("PROJECT_VIEW_ALL") && !permCtx.has("PROJECT_VIEW_LEAD")

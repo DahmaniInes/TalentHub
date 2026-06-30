@@ -37,12 +37,15 @@
         <option [value]="currentUser()?.id ?? ''">
           {{ currentUser()?.prenom }} {{ currentUser()?.nom }} (moi)
         </option>
-        <option *ngFor="let u of utilisateursFiltres()" [value]="u.id">
+        <option *ngFor="let u of utilisateursDropdown()" [value]="u.id">
           {{ u.prenom }} {{ u.nom }}
           <ng-container *ngIf="u.email"> — {{ u.email }}</ng-container>
         </option>
       </select>
 
+
+
+      
       <!-- Badge indicateur si on visualise un autre utilisateur -->
       <div *ngIf="!isViewingOwnSheet()" class="ms-viewing-other-badge">
         <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" style="width:11px;height:11px">
@@ -157,108 +160,107 @@
                      [disabled]="!peutModifier()">
             </td>
 
-
-
             <!-- Select Projet -->
-        <td class="dt-td" style="padding:8px 10px;vertical-align:middle">
-  <select class="ms-select ms-select-proj"
-          [class.ms-field-invalid]="submitted() && !ligne.projetId && getTotalLigne(ligne.rowId) > 0"
-          [ngModel]="ligne.projetId ?? ''"
-          [disabled]="!peutModifier()"
-          (ngModelChange)="onProjetChange(ligne.rowId, $event)">
-    <option value="">— Choisir un projet —</option>
-    <option *ngFor="let p of projets()" [value]="p.id">{{ p.nom }}</option>
-  </select>
-  <div *ngIf="submitted() && !ligne.projetId && getTotalLigne(ligne.rowId) > 0"
-       class="ms-field-error">⚠️ Projet requis</div>
-</td>
+            <td class="dt-td" style="padding:8px 10px;vertical-align:middle">
+
+              <select class="ms-select ms-select-proj"
+              [class.ms-field-invalid]="submitted() && !ligne.projetId && getTotalLigne(ligne.rowId) > 0"
+              [ngModel]="ligne.projetId ?? ''"
+              [disabled]="!peutModifier()"
+              (ngModelChange)="onProjetChange(ligne.rowId, $event)">
+        <option value="">— Choisir un projet —</option>
+        <option *ngFor="let p of projetsVisibles()" [value]="p.id">{{ p.nom }}</option>
+      </select>
 
 
 
+              <div *ngIf="submitted() && !ligne.projetId && getTotalLigne(ligne.rowId) > 0"
+                   class="ms-field-error">⚠️ Projet requis</div>
+            </td>
+
+            <!-- Select Activité -->
+            <td class="dt-td" style="padding:8px 10px;vertical-align:middle;border-right:1px solid var(--dt-border)">
 
 
 
+              <select *ngIf="ligne.projetId"
+        class="ms-select ms-select-act"
+        [ngModel]="ligne.activiteId ?? ''"
+        [disabled]="!peutModifier() || dupliquantRowId() === ligne.rowId"
+        (ngModelChange)="onActiviteChange(ligne.rowId, $event)">
+  <option value="">— Choisir une activité —</option>
 
+  <option *ngIf="ligneActiviteTerminee(ligne)" [value]="ligne.activiteId" disabled selected>
+    {{ ligne.activiteNom }} (Terminée)
+  </option>
 
-  <!-- ✅ REMPLACE le <td> "Select Activité" dans ma-semaine.component.html
-     par ce bloc — gère le scénario B (duplication idempotente) -->
-<td class="dt-td" style="padding:8px 10px;vertical-align:middle;border-right:1px solid var(--dt-border)">
+  <optgroup label="Activités du projet" *ngIf="getActivitesDuProjet(ligne.projetId).length > 0">
+    <option *ngFor="let a of getActivitesDuProjet(ligne.projetId)" [value]="a.id">{{ a.nom }}</option>
+  </optgroup>
 
-  <!-- ✅ Select activité : affiché SEULEMENT si un projet est sélectionné -->
-  <select *ngIf="ligne.projetId"
-          class="ms-select ms-select-act"
-          [ngModel]="ligne.activiteId ?? ''"
-          [disabled]="!peutModifier() || dupliquantRowId() === ligne.rowId"
-          (ngModelChange)="onActiviteChange(ligne.rowId, $event)">
-    <option value="">— Choisir une activité —</option>
-
-    <!-- Activités déjà liées à ce projet (copies issues d'une duplication
-         précédente, ou activités créées normalement) -->
-    <optgroup label="Activités du projet" *ngIf="getActivitesDuProjet(ligne.projetId).length > 0">
-      <option *ngFor="let a of getActivitesDuProjet(ligne.projetId)" [value]="a.id">{{ a.nom }}</option>
-    </optgroup>
-
-    <!-- ✅ NOUVEAU — Activités globales disponibles, pas encore matérialisées
-         pour ce projet. Les sélectionner déclenche la duplication
-         idempotente côté backend (voir onActiviteChange). -->
-    <optgroup label="Activités globales" *ngIf="getActivitesGlobalesPourProjet(ligne.projetId).length > 0">
-      <option *ngFor="let a of getActivitesGlobalesPourProjet(ligne.projetId)" [value]="a.id">{{ a.nom }}</option>
-    </optgroup>
-  </select>
-
-  <!-- ✅ NOUVEAU — Indicateur pendant la duplication idempotente -->
-  <div *ngIf="dupliquantRowId() === ligne.rowId" class="ms-select-placeholder" style="display:flex;align-items:center;gap:6px">
-    <div class="ms-spin" style="width:11px;height:11px;border-width:1.5px"></div>
-    Assignation en cours...
-  </div>
-
-  <!-- Message si pas de projet sélectionné -->
-  <span *ngIf="!ligne.projetId" class="ms-select-placeholder">
-    ← Choisir un projet d'abord
-  </span>
-
-  <!-- Erreur si ligne avec heures mais sans activité -->
-  <div *ngIf="submitted() && ligne.projetId && !ligne.activiteId && getTotalLigne(ligne.rowId) > 0"
-       class="ms-field-error">⚠️ Activité requise</div>
-</td>
+  <optgroup label="Activités globales" *ngIf="getActivitesGlobalesPourProjet(ligne.projetId).length > 0">
+    <option *ngFor="let a of getActivitesGlobalesPourProjet(ligne.projetId)" [value]="a.id">{{ a.nom }}</option>
+  </optgroup>
+</select>
 
 
 
+              <!-- ✅ Indicateur pendant la duplication idempotente -->
+              <div *ngIf="dupliquantRowId() === ligne.rowId" class="ms-select-placeholder" style="display:flex;align-items:center;gap:6px">
+                <div class="ms-spin" style="width:11px;height:11px;border-width:1.5px"></div>
+                Assignation en cours...
+              </div>
 
+              <!-- Message si pas de projet sélectionné -->
+              <span *ngIf="!ligne.projetId" class="ms-select-placeholder">
+                ← Choisir un projet d'abord
+              </span>
 
+              <!-- ✅ Message si l'activité de cette ligne est terminée -->
+              <div *ngIf="ligneActiviteTerminee(ligne)" class="ms-field-error" style="color:var(--text-muted)">
+              </div>
 
-
-
-
-
-
-
+              <!-- Erreur si ligne avec heures mais sans activité -->
+              <div *ngIf="submitted() && ligne.projetId && !ligne.activiteId && getTotalLigne(ligne.rowId) > 0"
+                   class="ms-field-error">⚠️ Activité requise</div>
+            </td>
 
             <!-- Cellules jours (Lun → Sam) -->
             <td *ngFor="let date of datesSemaine()"
                 class="dt-td ms-td-jour" [class.ms-we]="isWE(date)"
                 style="padding:5px 3px;text-align:center;vertical-align:middle;border-left:1px solid var(--dt-border)">
               <div class="ms-cell">
+
+
+
                 <input type="text"
-                       class="ms-input"
-                       [class.ms-we-input]="isWE(date)"
-                       [class.ms-has-val]="getCellMinutes(ligne, date) > 0"
-                       [disabled]="!peutModifier()"
-                       [value]="formatCellDisplay(ligne, date)"
-                       (change)="onDureeChange(ligne.rowId, date, $any($event.target).value)"
-                       (focus)="onCellFocus($event)">
-                <!-- Icône commentaire -->
-                <button class="ms-comment-btn"
-                        [class.ms-has-comment]="hasComment(ligne.rowId, date)"
-                        (click)="ouvrirCommentaire(ligne.rowId, date)"
-                        [title]="hasComment(ligne.rowId, date) ? 'Commentaire : ' + (ligne.jours[date]?.commentaire ?? '') : 'Ajouter un commentaire'"
-                        [disabled]="!peutModifier()">
-                  <svg viewBox="0 0 12 12" fill="none">
-                    <path d="M1.5 1.5h9a.5.5 0 01.5.5v5a.5.5 0 01-.5.5H4L1.5 10V2a.5.5 0 01.5-.5z"
-                          stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"
-                          [attr.fill]="hasComment(ligne.rowId, date) ? 'currentColor' : 'none'"/>
-                  </svg>
-                </button>
+                class="ms-input"
+                [class.ms-we-input]="isWE(date)"
+                [class.ms-has-val]="getCellMinutes(ligne, date) > 0"
+                [disabled]="!peutModifier() || celluleAjoutInterdit(ligne, date)"
+                [value]="formatCellDisplay(ligne, date)"
+                (change)="onDureeChange(ligne.rowId, date, $any($event.target).value)"
+                (focus)="onCellFocus($event)">
+         
+         <button class="ms-comment-btn"
+                 [class.ms-has-comment]="hasComment(ligne.rowId, date)"
+                 (click)="ouvrirCommentaire(ligne.rowId, date)"
+                 [title]="hasComment(ligne.rowId, date) ? 'Commentaire : ' + (ligne.jours[date]?.commentaire ?? '') : 'Ajouter un commentaire'"
+                 [disabled]="!peutModifier()">
+           <svg viewBox="0 0 12 12" fill="none">
+             <path d="M1.5 1.5h9a.5.5 0 01.5.5v5a.5.5 0 01-.5.5H4L1.5 10V2a.5.5 0 01.5-.5z"
+                   stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"
+                   [attr.fill]="hasComment(ligne.rowId, date) ? 'currentColor' : 'none'"/>
+           </svg>
+         </button>
+
+
+
+
+
+
+
+
               </div>
             </td>
 

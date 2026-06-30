@@ -4,6 +4,7 @@ package com.talenthub.application_service.Controller;
 import com.talenthub.application_service.DTO.GroupeDTO;
 import com.talenthub.application_service.DTO.GroupeRequest;
 import com.talenthub.application_service.Entity.Groupe;
+import com.talenthub.application_service.Entity.Utilisateur;
 import com.talenthub.application_service.Security.PermissionContext;
 import com.talenthub.application_service.Security.RequiresPermission;
 import com.talenthub.application_service.Service.GroupeService;
@@ -108,5 +109,52 @@ public class GroupeController {
     public ResponseEntity<GroupeDTO> removeMembre(@PathVariable Long groupeId,
                                                   @PathVariable Long userId) {
         return ResponseEntity.ok(new GroupeDTO(groupeService.removeMembre(groupeId, userId)));
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // ✅ NOUVEAU — Dropdown Utilisateur de Ma Semaine, cas TS_GROUP_READ/
+    // UPDATE : tous les coéquipiers de l'utilisateur connecté (membres
+    // distincts de tous les groupes auxquels il appartient).
+    //
+    // Permissions TS_* plutôt que TEAM_* : cet endpoint est appelé par
+    // n'importe quel employé ayant un droit de feuille de temps étendu,
+    // pas seulement par les gestionnaires d'équipes.
+    //
+    // Retourne GroupeDTO.MembreInfo (déjà existant, léger, sans cycle
+    // JSON) plutôt que l'entité Utilisateur brute.
+    // ════════════════════════════════════════════════════════════
+    @GetMapping("/coequipiers/{utilisateurId}")
+    public ResponseEntity<?> getCoequipiers(@PathVariable Long utilisateurId) {
+        if (!permCtx.has("TS_GROUP_READ") && !permCtx.has("TS_GROUP_UPDATE")) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Permission TS_GROUP_READ requise."));
+        }
+        List<GroupeDTO.MembreInfo> dtos = groupeService.getCoequipiersDe(utilisateurId).stream()
+                .map(GroupeController::toMembreInfo)
+                .toList();
+        return ResponseEntity.ok(dtos);
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // ✅ NOUVEAU — Dropdown Utilisateur de Ma Semaine, cas TS_ALL_READ/
+    // UPDATE : tous les utilisateurs membres d'au moins un groupe dans
+    // toute l'application.
+    // ════════════════════════════════════════════════════════════
+    @GetMapping("/tous-membres")
+    public ResponseEntity<?> getTousMembres(@RequestParam Long utilisateurConnecteId) {
+        if (!permCtx.has("TS_ALL_READ") && !permCtx.has("TS_ALL_UPDATE")) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Permission TS_ALL_READ requise."));
+        }
+        List<GroupeDTO.MembreInfo> dtos = groupeService.getTousMembresDeGroupes(utilisateurConnecteId).stream()
+                .map(GroupeController::toMembreInfo)
+                .toList();
+        return ResponseEntity.ok(dtos);
+    }
+
+    private static GroupeDTO.MembreInfo toMembreInfo(Utilisateur u) {
+        return new GroupeDTO.MembreInfo(
+                u.getId(), u.getNom(), u.getPrenom(), u.getEmail(), u.getPhotoUrl(), u.getPoste(), u.getKeycloakId()
+        );
     }
 }

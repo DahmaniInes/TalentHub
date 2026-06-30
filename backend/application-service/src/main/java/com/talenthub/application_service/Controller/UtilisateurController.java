@@ -51,7 +51,7 @@ public class UtilisateurController {
     }
 
     // ── Par ID — USER_VIEW ────────────────────────────────────────────────
-    @RequiresPermission("USER_VIEW")
+    //@RequiresPermission("USER_VIEW")
     @GetMapping("/{id}")
     public ResponseEntity<UtilisateurResponseDTO> getUtilisateurById(@PathVariable Long id) {
         return ResponseEntity.ok(

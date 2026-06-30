@@ -2,6 +2,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { HomeComponent } from './home/home.component';
+import { AcceuilComponent } from './acceuil/acceuil.component';
+
 import {DashboardComponent} from './dashboard/dashboard.component';
 import {UserCreationComponent} from './admin/user-creation/user-creation.component';
 import { FeuilleTempsComponent } from './feuille-temps/feuille-temps.component';   // ← Correction ici
@@ -57,6 +59,7 @@ import { DocumentsStageComponent  } from './stage/document-espace-stage/document
 
 const routes: Routes = [
   { path: 'home', component: HomeComponent },
+  { path: 'acceuil', component: AcceuilComponent },
   { path: 'dashboard', component: DashboardComponent },
   { path: 'add-user', component: UserCreationComponent },
   { path: 'feuille-temps', component: FeuilleTempsComponent } ,  // ← Nom correct

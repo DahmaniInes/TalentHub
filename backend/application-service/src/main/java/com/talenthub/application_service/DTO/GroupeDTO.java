@@ -28,6 +28,8 @@ public class GroupeDTO {
         private String email;
         private String photoUrl;
         private String poste;
+        private String keycloakId;   // ✅ AJOUTÉ
+
     }
 
     public GroupeDTO(Groupe g) {
@@ -42,7 +44,8 @@ public class GroupeDTO {
 
         if (g.getMembres() != null) {
             this.membres = g.getMembres().stream().map(u -> new MembreInfo(
-                    u.getId(), u.getNom(), u.getPrenom(), u.getEmail(), u.getPhotoUrl(), u.getPoste()
+                    u.getId(), u.getNom(), u.getPrenom(), u.getEmail(), u.getPhotoUrl(), u.getPoste(), u.getKeycloakId()
+
             )).toList();
 
             // Enrichir teamLead depuis la liste des membres

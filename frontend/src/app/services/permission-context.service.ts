@@ -124,7 +124,11 @@ export class PermissionContextService {
     canUpdateGroupTS(): boolean { return this.can('TS_GROUP_UPDATE'); }
     canExportGroupTS(): boolean { return this.can('TS_GROUP_EXPORT'); }
     canValidateTS():   boolean { return this.can('TS_VALIDATE'); }
-
+/** Visible uniquement avec des droits étendus (équipe ou global) */
+canSeeFichesEtCentre(): boolean {
+    return this.canReadGroupTS() || this.canUpdateGroupTS()
+        || this.canReadAllTS()   || this.canUpdateAllTS();
+  }
     canSeeFTMenu(): boolean {
         return this.canReadOwnTS()  || this.canCreateOwnTS() ||
                this.canReadAllTS()  || this.canReadGroupTS() ||
@@ -349,6 +353,14 @@ canViewMyProjet():       boolean { return this.can('INT_INTERN_VIEW_PROJ'); }
 canViewMySuperviseur():  boolean { return this.can('INT_INTERN_VIEW_SUPERVISOR'); }
 canSubmitLivrables():    boolean { return this.can('INT_INTERN_SUBMIT'); }
 
+/** Vrai si l'utilisateur est UNIQUEMENT un stagiaire (ni admin ni superviseur) */
+estStagiairePur(): boolean {
+    return this.can('INT_INTERN_VIEW_PROJ')
+        && !this.can('INT_ADMIN_VIEW_ALL_INTERNS')
+        && !this.can('INT_SUPER_CAN_SUPERVISE')
+        && !this.can('INT_ADMIN_PROJ_VIEW_ALL');
+  }
+  
 // Projets stage
 canManageProjetsStage(): boolean {
     return this.can('INT_ADMIN_PROJ_CREATE') || this.can('INT_ADMIN_PROJ_EDIT');

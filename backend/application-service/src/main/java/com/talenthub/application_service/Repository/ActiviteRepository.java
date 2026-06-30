@@ -11,7 +11,6 @@ import java.util.Optional;
 
 public interface ActiviteRepository extends JpaRepository<Activité, Long> {
 
-    // Activités d'un projet via la table de jointure
     @Query("""
         SELECT a FROM Activité a
         LEFT JOIN FETCH a.groupes
@@ -26,8 +25,6 @@ public interface ActiviteRepository extends JpaRepository<Activité, Long> {
     @Query("SELECT a FROM Activité a WHERE a.utilisateur.id = :userId")
     List<Activité> findByUtilisateurId(@Param("userId") Long userId);
 
-    // AVANT : @Param("priorite") Integer priorite  + a.priorite = :priorite
-    // APRÈS : @Param("prioriteId") Long prioriteId + a.prioriteId = :prioriteId
     @Query("""
         SELECT DISTINCT a FROM Activité a
         LEFT JOIN FETCH a.groupes
@@ -57,14 +54,6 @@ public interface ActiviteRepository extends JpaRepository<Activité, Long> {
     @Query("SELECT COUNT(a) FROM Activité a JOIN a.projets p WHERE p.id = :projetId")
     long countByProjetId(@Param("projetId") Long projetId);
 
-    // ════════════════════════════════════════════════════════════
-    // ✅ NOUVEAU — Cœur du mécanisme d'idempotence (scénario B).
-    // Recherche une copie DÉJÀ créée de l'activité globale `sourceGlobaleId`
-    // pour le projet `projetId`. S'il en existe une (peu importe qui l'a
-    // créée — le premier employé du projet qui a sélectionné cette
-    // activité globale l'a déjà fait), on la réutilise au lieu d'en créer
-    // une nouvelle.
-    // ════════════════════════════════════════════════════════════
     @Query("""
         SELECT a FROM Activité a
         JOIN a.projets p
@@ -74,5 +63,24 @@ public interface ActiviteRepository extends JpaRepository<Activité, Long> {
     Optional<Activité> findBySourceGlobaleIdAndProjetId(
             @Param("sourceGlobaleId") Long sourceGlobaleId,
             @Param("projetId") Long projetId
+    );
+
+    // ════════════════════════════════════════════════════════════
+    // ✅ NOUVEAU — Activités ASSIGNÉES à un utilisateur donné, restreintes
+    // à un ensemble de projets précis. Utilisée par le nettoyage des
+    // assignations lors du retrait d'un membre de groupe (on a besoin de
+    // savoir, pour CE user et CE(S) projet(s) précis, quelles activités il
+    // a comme assignation).
+    // ════════════════════════════════════════════════════════════
+    @Query("""
+        SELECT DISTINCT a FROM Activité a
+        JOIN a.utilisateurs u
+        JOIN a.projets p
+        WHERE u.id = :utilisateurId
+          AND p.id IN :projetIds
+        """)
+    List<Activité> findByUtilisateurIdAndProjetIdIn(
+            @Param("utilisateurId") Long utilisateurId,
+            @Param("projetIds") List<Long> projetIds
     );
 }

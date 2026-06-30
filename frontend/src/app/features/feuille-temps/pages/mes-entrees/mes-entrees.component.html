@@ -75,15 +75,7 @@
               <label class="me-filter-label">Activité</label>
               <select class="mx-field-select" [value]="filterActivite()" (change)="filterActivite.set($any($event.target).value)">
                 <option value="">Toutes les activités</option>
-                <option *ngFor="let a of activites()" [value]="a.id">{{ a.nom }}</option>
-              </select>
-            </div>
-
-            <div class="me-filter-group">
-              <label class="me-filter-label">Client</label>
-              <select class="mx-field-select" [value]="filterClient()" (change)="filterClient.set($any($event.target).value)">
-                <option value="">Tous les clients</option>
-                <option *ngFor="let c of clients()" [value]="c.id">{{ c.nom }}</option>
+                <option *ngFor="let a of toutesActivitesVisibles" [value]="a.id">{{ a.nom }}</option>
               </select>
             </div>
 
@@ -100,8 +92,8 @@
           </div>
         </div>
 
-        <!-- Export -->
-        <button class="me-toolbar-btn" (click)="exportCSV()">
+        <!-- Export — visible seulement avec TS_OWN_EXPORT -->
+        <button *ngIf="perms.can('TS_OWN_EXPORT')" class="me-toolbar-btn" (click)="exportCSV()">
           <svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px">
             <path d="M7 2v8M4 7l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
@@ -177,39 +169,6 @@
               </div>
             </th>
 
-            <!-- Client -->
-            <th class="dt-th" style="min-width:110px">
-              <div class="dt-th-inner">
-                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="currentColor">
-                  <path d="M7 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm-4 6a4 4 0 118 0H3z"/>
-                </svg>
-                Client
-              </div>
-            </th>
-
-            <!-- ✅ Début (nouvelle colonne) -->
-            <th class="dt-th" style="min-width:100px">
-              <div class="dt-th-inner">
-                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
-                  <circle cx="7" cy="7" r="5.5"/>
-                  <path d="M7 4v3l1.5 1" stroke-linecap="round"/>
-                </svg>
-                Début
-              </div>
-            </th>
-
-            <!-- ✅ Fin (nouvelle colonne) -->
-            <th class="dt-th" style="min-width:100px">
-              <div class="dt-th-inner">
-                <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3">
-                  <circle cx="7" cy="7" r="5.5"/>
-                  <path d="M7 4v3l1.5 1" stroke-linecap="round"/>
-                  <path d="M10.5 10.5l2 2" stroke-linecap="round" stroke-width="1.5"/>
-                </svg>
-                Fin
-              </div>
-            </th>
-
             <!-- ✅ Durée -->
             <th class="dt-th" style="min-width:90px">
               <div class="dt-th-inner">
@@ -266,35 +225,6 @@
             <td class="dt-td">
               <span *ngIf="e.activiteNom" class="dt-cell-sub">{{ e.activiteNom }}</span>
               <span *ngIf="!e.activiteNom" class="dt-cell-muted">—</span>
-            </td>
-
-            <!-- Client -->
-            <td class="dt-td">
-              <span class="dt-cell-muted">{{ e.clientNom || '—' }}</span>
-            </td>
-
-            <!-- ✅ Début -->
-            <td class="dt-td">
-              <span *ngIf="e.heureDebut" class="me-time-chip me-time-start">
-                <svg viewBox="0 0 10 10" fill="none" style="width:9px;height:9px;flex-shrink:0">
-                  <circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.2"/>
-                  <path d="M5 3v2l1.2 1" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
-                </svg>
-                {{ e.heureDebut }}
-              </span>
-              <span *ngIf="!e.heureDebut" class="dt-cell-muted">—</span>
-            </td>
-
-            <!-- ✅ Fin -->
-            <td class="dt-td">
-              <span *ngIf="e.heureFin" class="me-time-chip me-time-end">
-                <svg viewBox="0 0 10 10" fill="none" style="width:9px;height:9px;flex-shrink:0">
-                  <circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.2"/>
-                  <path d="M5 3v2l1.2 1" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
-                </svg>
-                {{ e.heureFin }}
-              </span>
-              <span *ngIf="!e.heureFin" class="dt-cell-muted">—</span>
             </td>
 
             <!-- ✅ Durée (calculée depuis heureDebut/heureFin ou minutesTravaillees) -->
@@ -475,17 +405,27 @@
     </div>
 
     <!-- Activité -->
-    <div class="mx-field">
-      <label class="mx-field-label">Activité</label>
-      <select [(ngModel)]="editForm().activiteId"
-              [ngModelOptions]="{standalone:true}"
-              class="mx-field-select"
-              (ngModelChange)="onEditActiviteChange($event)">
-        <option [ngValue]="undefined">— Sans activité —</option>
-        <option *ngFor="let a of activites()" [ngValue]="a.id">{{ a.nom }}</option>
-      </select>
-    </div>
-
+ <!-- Activité -->
+ <div class="mx-field">
+  <label class="mx-field-label">Activité</label>
+  <select [(ngModel)]="editForm().activiteId"
+          [ngModelOptions]="{standalone:true}"
+          class="mx-field-select"
+          [disabled]="editActiviteEstTerminee()"
+          (ngModelChange)="onEditActiviteChange($event)">
+    <option [ngValue]="undefined">— Sans activité —</option>
+    <!-- ✅ Option de secours pour une activité terminée déjà
+         sélectionnée — conserve le nom affiché sans la proposer pour
+         une nouvelle saisie. -->
+    <option *ngIf="editActiviteEstTerminee()" [ngValue]="editForm().activiteId" disabled selected>
+      {{ editForm().activiteNom }} (Terminée)
+    </option>
+    <option *ngFor="let a of toutesActivitesVisibles" [ngValue]="a.id">{{ a.nom }}</option>
+  </select>
+  <div *ngIf="editActiviteEstTerminee()" style="font-size:.68rem;color:var(--text-muted);margin-top:4px">
+    🔒 Cette activité est terminée — modification verrouillée
+  </div>
+</div>
     <!-- Heure début / fin -->
     <div class="mx-so-grid">
       <div class="mx-field">

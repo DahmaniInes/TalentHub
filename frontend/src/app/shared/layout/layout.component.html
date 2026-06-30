@@ -32,7 +32,16 @@
           <span class="nav-label">Accueil</span>
           <span class="nav-tooltip">Accueil</span>
         </a>
-
+   <!-- Home -->
+   <a routerLink="acceuil" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
+    <span class="nav-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M2.5192 7.82274C2 8.77128 2 9.91549 2 12.2039V13.725C2 17.6258 2 19.5763 3.17157 20.7881C4.34315 22 6.22876 22 10 22H14C17.7712 22 19.6569 22 20.8284 20.7881C22 19.5763 22 17.6258 22 13.725V12.2039C22 9.91549 22 8.77128 21.4808 7.82274C20.9616 6.87421 20.0131 6.28551 18.116 5.10812L16.116 3.86687C14.1106 2.62229 13.1079 2 12 2C10.8921 2 9.88939 2.62229 7.88403 3.86687L5.88403 5.10813C3.98695 6.28551 3.0384 6.87421 2.5192 7.82274ZM11.25 18C11.25 18.4142 11.5858 18.75 12 18.75C12.4142 18.75 12.75 18.4142 12.75 18V15C12.75 14.5858 12.4142 14.25 12 14.25C11.5858 14.25 11.25 14.5858 11.25 15V18Z"/>
+      </svg>
+    </span>
+    <span class="nav-label">Accueil2</span>
+    <span class="nav-tooltip">Accueil2</span>
+  </a>
         <!-- Dashboard -->
         <a routerLink="/dashboard" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
           <span class="nav-icon">
@@ -198,7 +207,7 @@ routerLink="/Demande" routerLinkActive="active" class="nav-item" (click)="closeS
     </a>
 
     <!-- Fiches admin -->
-    <a *ngIf="permCtx.canSeeFiches()"
+    <a *ngIf="permCtx.canSeeFichesEtCentre()"
        routerLink="/feuille-temps" [queryParams]="{page:'fiches'}"
        class="nav-item nav-subitem-full" routerLinkActive="active"
        [routerLinkActiveOptions]="{exact:false}" (click)="closeSidebar()">
@@ -212,7 +221,10 @@ routerLink="/Demande" routerLinkActive="active" class="nav-item" (click)="closeS
       <span class="nav-tooltip">Fiches de temps</span>
     </a>
 
-    <a routerLink="/feuille-temps" [queryParams]="{page:'centre'}"
+
+
+
+    <a *ngIf="permCtx.canSeeFichesEtCentre()" routerLink="/feuille-temps" [queryParams]="{page:'centre'}"
     class="nav-item nav-subitem-full" routerLinkActive="active"
     [routerLinkActiveOptions]="{exact:false}" (click)="closeSidebar()">
    <span class="nav-icon">
@@ -224,6 +236,11 @@ routerLink="/Demande" routerLinkActive="active" class="nav-item" (click)="closeS
    <span class="nav-label">Centre de données</span>
    <span class="nav-tooltip">Centre de données</span>
  </a>
+
+
+
+
+
 
     <!-- Approbations : TS_VALIDATE uniquement -->
     <a *ngIf="permCtx.canSeeApprobations()"
@@ -560,11 +577,12 @@ class="nav-item nav-subitem-full" (click)="closeSidebar()">
 
 
 
-<!-- ══ ESPACE STAGIAIRE ══ -->
-<div class="nav-group" *ngIf="perms.canSeeEspaceStagiaire()">
+<!-- ══ ESPACE STAGIAIRE ══ — Groupe menu (admin / superviseur) -->
+<div class="nav-group"
+     *ngIf="perms.canSeeEspaceStagiaire() && !perms.estStagiairePur()">
   <button class="nav-item nav-group-btn"
-  [class.active]="isAnyRouteActive('/stagiaires', '/types-stage', '/projets-stage', '/activites-stage', '/mon-profil-stagiaire', '/statuts-stage', '/espace-stage/documents')"
-  (click)="toggleStagiaireMenu()">
+          [class.active]="isAnyRouteActive('/stagiaires','/types-stage','/projets-stage','/activites-stage','/mon-profil-stagiaire','/statuts-stage','/espace-stage/documents')"
+          (click)="toggleStagiaireMenu()">
     <span class="nav-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20">
         <path d="M12 14l9-5-9-5-9 5 9 5z"/>
@@ -574,28 +592,14 @@ class="nav-item nav-subitem-full" (click)="closeSidebar()">
     <span class="nav-label">Espace Stagiaire</span>
     <svg viewBox="0 0 12 12" fill="none" class="nav-sub-chevron"
          [style.transform]="stagiaireMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)'">
-      <path d="M2.5 4.5l3.5 3 3.5-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M2.5 4.5l3.5 3 3.5-3" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
     <span class="nav-tooltip">Espace Stagiaire</span>
   </button>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   <div class="nav-submenu" [class.nav-submenu-open]="stagiaireMenuOpen">
 
-    <!-- Stagiaires — admin/superviseur uniquement -->
     <a *ngIf="perms.canSeeGestionStagiaires()"
        routerLink="/stagiaires" routerLinkActive="active"
        class="nav-item nav-subitem-full" (click)="closeSidebar()">
@@ -609,25 +613,21 @@ class="nav-item nav-subitem-full" (click)="closeSidebar()">
       <span class="nav-label">Stagiaires</span>
       <span class="nav-tooltip">Stagiaires</span>
     </a>
-  
-    <!-- Types de stage — admin uniquement -->
-  <!-- REMPLACER les liens types-stage et statuts-stage par : -->
-<a *ngIf="perms.canSeeTypeStageMenu() || perms.canSeeStatutStageMenu()"
-routerLink="/referentiel-stage/types"
-routerLinkActive="active"
-[routerLinkActiveOptions]="{exact: false}"
-class="nav-item nav-subitem-full" (click)="closeSidebar()">
-<span class="nav-icon">
- <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="18" height="18">
-   <path d="M12 14l9-5-9-5-9 5 9 5z"/>
-   <path d="M12 14l6.16-3.422A12.083 12.083 0 0112 21.5a12.083 12.083 0 01-6.16-10.922L12 14z" stroke-linecap="round"/>
- </svg>
-</span>
-<span class="nav-label">Référentiel de stage</span>
-<span class="nav-tooltip">Types et statuts de stage</span>
-</a>
 
-    <!-- ✅ Projets — admin + superviseur + stagiaire -->
+    <a *ngIf="perms.canSeeTypeStageMenu() || perms.canSeeStatutStageMenu()"
+       routerLink="/referentiel-stage/types" routerLinkActive="active"
+       [routerLinkActiveOptions]="{exact:false}"
+       class="nav-item nav-subitem-full" (click)="closeSidebar()">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="18" height="18">
+          <path d="M12 14l9-5-9-5-9 5 9 5z"/>
+          <path d="M12 14l6.16-3.422A12.083 12.083 0 0112 21.5a12.083 12.083 0 01-6.16-10.922L12 14z" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="nav-label">Référentiel de stage</span>
+      <span class="nav-tooltip">Types et statuts de stage</span>
+    </a>
+
     <a *ngIf="perms.canSeeProjetsStageMenu()"
        routerLink="/projets-stage" routerLinkActive="active"
        class="nav-item nav-subitem-full" (click)="closeSidebar()">
@@ -643,9 +643,6 @@ class="nav-item nav-subitem-full" (click)="closeSidebar()">
       <span class="nav-tooltip">Projets de stage</span>
     </a>
 
-    <!-- ✅ NOUVEAU — Documents — visible dès que INT_DOC_VIEW est présent
-         (admin, superviseur ou stagiaire ; le niveau de détail des
-         documents affichés est résolu côté backend) -->
     <a *ngIf="perms.canSeeDocEspaceStageMenu()"
        routerLink="/espace-stage/documents" routerLinkActive="active"
        class="nav-item nav-subitem-full" (click)="closeSidebar()">
@@ -658,10 +655,7 @@ class="nav-item nav-subitem-full" (click)="closeSidebar()">
       <span class="nav-label">Documents</span>
       <span class="nav-tooltip">Documents de l'espace stage</span>
     </a>
-  
- 
-  
-    <!-- ✅ Mon profil — stagiaire uniquement -->
+
     <a *ngIf="perms.canSeeMonProfilStagiaire()"
        routerLink="/mon-profil-stagiaire" routerLinkActive="active"
        class="nav-item nav-subitem-full" (click)="closeSidebar()">
@@ -674,31 +668,79 @@ class="nav-item nav-subitem-full" (click)="closeSidebar()">
       <span class="nav-label">Mon profil</span>
       <span class="nav-tooltip">Mon profil stagiaire</span>
     </a>
-  
-<!-- Dans le nav-submenu du groupe Système -->
-<a *ngIf="perms.canSeeNomenclatureAcademique()"
-   routerLink="/admin/nomenclature-academique" routerLinkActive="active"
-   class="nav-item nav-subitem-full" (click)="closeSidebar()">
-  <span class="nav-icon">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="18" height="18">
-      <path d="M12 14l9-5-9-5-9 5 9 5z"/>
-      <path d="M12 14l6.16-3.422A12.083 12.083 0 0112 21.5a12.083 12.083 0 01-6.16-10.922L12 14z" stroke-linecap="round"/>
-    </svg>
-  </span>
-  <span class="nav-label">Nomenclature académique</span>
-  <span class="nav-tooltip">Universités, Spécialités, Niveaux</span>
-</a>
-
-
-
   </div>
-
-
-
 </div>
 
+<!-- ══ ESPACE STAGIAIRE ══ — Liens directs (stagiaire pur, sans groupe) -->
+<ng-container *ngIf="perms.canSeeEspaceStagiaire() && perms.estStagiairePur()">
 
-        
+  <!-- ✅ Mon projet — lien direct vers le détail, renommé avec le nom du projet -->
+  <a *ngIf="perms.canSeeProjetsStageMenu() && stagCtx.projetId()"
+     [routerLink]="['/projets-stage', stagCtx.projetId()]"
+     routerLinkActive="active"
+     class="nav-item" (click)="closeSidebar()">
+    <span class="nav-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="20" height="20">
+        <rect x="3" y="3" width="7" height="7" rx="1"/>
+        <rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="14" y="14" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/>
+      </svg>
+    </span>
+    <span class="nav-label">{{ stagCtx.projetNom() }}</span>
+    <span class="nav-tooltip">{{ stagCtx.projetNom() }}</span>
+  </a>
+
+  <!-- Fallback si l'ID n'est pas encore chargé -->
+  <a *ngIf="perms.canSeeProjetsStageMenu() && !stagCtx.projetId()"
+     routerLink="/projets-stage" routerLinkActive="active"
+     class="nav-item" (click)="closeSidebar()">
+    <span class="nav-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="20" height="20">
+        <rect x="3" y="3" width="7" height="7" rx="1"/>
+        <rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="14" y="14" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/>
+      </svg>
+    </span>
+    <span class="nav-label">Mon projet</span>
+    <span class="nav-tooltip">Mon projet de stage</span>
+  </a>
+
+  <a *ngIf="perms.canSeeDocEspaceStageMenu()"
+     routerLink="/espace-stage/documents" routerLinkActive="active"
+     class="nav-item" (click)="closeSidebar()">
+    <span class="nav-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="20" height="20">
+        <path d="M4 2h10l6 6v14H4V2z" stroke-linejoin="round"/>
+        <path d="M14 2v6h6" stroke-linejoin="round"/>
+      </svg>
+    </span>
+    <span class="nav-label">Documents</span>
+    <span class="nav-tooltip">Documents de stage</span>
+  </a>
+
+  <a *ngIf="perms.canSeeMonProfilStagiaire()"
+     routerLink="/mon-profil-stagiaire" routerLinkActive="active"
+     class="nav-item" (click)="closeSidebar()">
+    <span class="nav-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="20" height="20">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke-linecap="round"/>
+      </svg>
+    </span>
+    <span class="nav-label">Mon profil</span>
+    <span class="nav-tooltip">Mon profil stagiaire</span>
+  </a>
+
+</ng-container>
+      
+
+
+
+
+
+
 
 <!-- layout-rh-nav-snippet.html
      Remplacer le GROUPE 2 : RESSOURCES HUMAINES / SYSTÈME dans layout.component.html
@@ -774,7 +816,19 @@ class="nav-item nav-subitem-full" (click)="closeSidebar()">
       <span class="nav-label">Permissions</span>
       <span class="nav-tooltip">Permissions</span>
     </a>
-
+<!-- Dans le nav-submenu du groupe Système -->
+<a *ngIf="perms.canSeeNomenclatureAcademique()"
+   routerLink="/admin/nomenclature-academique" routerLinkActive="active"
+   class="nav-item nav-subitem-full" (click)="closeSidebar()">
+  <span class="nav-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="18" height="18">
+      <path d="M12 14l9-5-9-5-9 5 9 5z"/>
+      <path d="M12 14l6.16-3.422A12.083 12.083 0 0112 21.5a12.083 12.083 0 01-6.16-10.922L12 14z" stroke-linecap="round"/>
+    </svg>
+  </span>
+  <span class="nav-label">Référentiel académique</span>
+  <span class="nav-tooltip">Universités, Spécialités, Niveaux</span>
+</a>
   </div>
 </div>
 

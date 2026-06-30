@@ -75,6 +75,7 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
 
   // ── SERVICES ──
   private route       = inject(ActivatedRoute);
+
   private router      = inject(Router);
   private projetSvc   = inject(ProjetService);
   private activiteSvc = inject(ActiviteService);

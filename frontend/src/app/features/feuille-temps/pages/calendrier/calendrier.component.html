@@ -231,16 +231,15 @@
           Utilisateur
         </div>
         <select class="gcal-sidebar-user-select"
-                [value]="selectedUser()?.id ?? ''"
-                (change)="onUserChange($any($event.target).value)">
-          <option [value]="currentUser()?.id ?? ''">
-            {{ currentUser()?.prenom }} {{ currentUser()?.nom }} (moi)
-          </option>
-          <option *ngFor="let u of tousUtilisateurs()" [value]="u.id"
-                  [disabled]="u.id === currentUser()?.id">
-            {{ u.prenom }} {{ u.nom }}
-          </option>
-        </select>
+        [value]="selectedUser()?.id ?? ''"
+        (change)="onUserChange($any($event.target).value)">
+  <option [value]="currentUser()?.id ?? ''">
+    {{ currentUser()?.prenom }} {{ currentUser()?.nom }} (moi)
+  </option>
+  <option *ngFor="let u of utilisateursDropdown()" [value]="u.id">
+    {{ u.prenom }} {{ u.nom }}
+  </option>
+</select>
         <!-- Avatar + badge si autre user -->
         <div *ngIf="selectedUser()?.id !== currentUser()?.id" class="gcal-sidebar-other-user">
           <div class="gcal-sidebar-user-avatar"

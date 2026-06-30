@@ -16,6 +16,7 @@ import { DocumentService }          from '../../../services/document.service';
 import { Projet, ProjetRequest, StatutProjet } from '../../../shared/models/projet.model';
 import { Utilisateur }              from '../../../shared/models/utilisateur.model';
 import { HttpErrorResponse }        from '@angular/common/http';
+import { StagiaireContextService } from '../../../services/stagiaire-context.service';
 
 // ✅ ID fixe du type de projet "STAGE_ACADEMIQUE" dans la nomenclature (confirmé en dur)
 const TYPE_PROJET_STAGE_ID = 4;
@@ -36,7 +37,7 @@ interface SuperviseurInfo {
   templateUrl: './projets-stage.component.html'
 })
 export class ProjetsStageComponent implements OnInit {
-
+  private stagCtx = inject(StagiaireContextService);
   private svc       = inject(ProjetStageService);
   private projetSvc = inject(ProjetService);
   private stagSvc   = inject(StagiaireService);
@@ -175,16 +176,37 @@ export class ProjetsStageComponent implements OnInit {
         next: d => { this.projets.set(d); this.loading.set(false); this.chargerSuperviseursPourTousLesProjets(d); },
         error: () => this.loading.set(false)
       });
+
+
+
     } else if (this.perms.canViewMyProjetsStage()) {
       this.svc.getBySuperviseur(userId).subscribe({
         next: d => { this.projets.set(d); this.loading.set(false); this.chargerSuperviseursPourTousLesProjets(d); },
         error: () => this.loading.set(false)
       });
-    } else if (this.perms.canViewMyProjet()) {
-      this.svc.getByStagiaire(userId).subscribe({
-        next: d => { this.projets.set(d); this.loading.set(false); this.chargerSuperviseursPourTousLesProjets(d); },
-        error: () => this.loading.set(false)
-      });
+
+
+  } else if (this.perms.canViewMyProjet()) {
+  this.svc.getByStagiaire(userId).subscribe({
+    next: d => {
+      const projetsStage = d.filter(p => p.typeProjetId === TYPE_PROJET_STAGE_ID);
+      
+      // ✅ Un seul projet → stocker dans le contexte + rediriger directement
+      if (projetsStage.length === 1) {
+        this.stagCtx.projetId.set(projetsStage[0].id);
+        this.stagCtx.projetNom.set(projetsStage[0].nom);
+        this.router.navigate(['/projets-stage', projetsStage[0].id], { replaceUrl: true });
+        return;
+      }
+
+      this.projets.set(d);
+      this.loading.set(false);
+      this.chargerSuperviseursPourTousLesProjets(d);
+    },
+    error: () => this.loading.set(false)
+  });
+
+
     } else {
       this.projets.set([]);
       this.loading.set(false);
