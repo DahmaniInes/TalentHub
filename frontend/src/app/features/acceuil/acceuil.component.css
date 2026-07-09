@@ -712,3 +712,11 @@
      .b-inbox, .b-actions { grid-column: 1; grid-row: auto; }
      .qa-grid    { grid-template-columns: 1fr 1fr; }
    }
+
+
+
+   /* ✅ Permet au chapeau 3D de dépasser la section hero */
+.hero-row {
+  overflow: visible !important;
+  position: relative;  /* nécessaire pour le position: absolute de l'enfant */
+}

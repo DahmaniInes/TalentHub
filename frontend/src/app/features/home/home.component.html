@@ -1,7 +1,7 @@
-<!-- home.component.html — REMPLACE COMPLET -->
+<!-- home.component.html — COMPLET -->
 <div class="home-wrap">
 
-  <!-- ══ LOADING ══ -->
+  <!-- ══ LOADING GLOBAL ══ -->
   <div *ngIf="loading()" class="home-loading">
     <div class="home-spinner"></div>
     <span>Chargement...</span>
@@ -10,6 +10,7 @@
   <ng-container *ngIf="!loading()">
 
   <!-- ══ GREETING HERO ══ -->
+  <!-- ══ GREETING HERO ══ -->
   <div class="hero-row">
     <div class="hero-text">
       <p class="hero-date">
@@ -17,31 +18,56 @@
         {{ todayLabel() }}
       </p>
       <h1 class="hero-title">{{ greeting() }}, <em>{{ prenom() }}</em> 👋</h1>
-      <p class="hero-sub">Voici un résumé de votre activité.</p>
+      <p class="hero-sub">Nous vous souhaitons une excellente journée.</p>
     </div>
-    <div class="hero-kpis">
+
+    <!-- ✅ Stagiaire pur : cap de graduation à la place des KPI -->
+    <app-graduation-cap *ngIf="perms.estStagiairePur()"></app-graduation-cap>
+
+    <!-- Employé / superviseur : KPI habituels -->
+    <div class="hero-kpis" *ngIf="!perms.estStagiairePur()">
+
+      <!-- Heures cette semaine -->
       <div class="kpi-pill" *ngIf="perms.canSeeFTMenu()">
-        <span class="kpi-val">{{ heuresSemaineFmt() }}</span>
+        <span class="kpi-val">{{ heuresSemaineFmt() }}/h</span>
         <span class="kpi-lbl">Cette semaine</span>
       </div>
+
       <div class="kpi-sep" *ngIf="perms.canSeeFTMenu() && perms.canSeeDemandeMenu()"></div>
+
+      <!-- Demandes en attente -->
       <div class="kpi-pill" *ngIf="perms.canSeeDemandeMenu()">
         <span class="kpi-val">{{ demandesEnAttente() }}</span>
         <span class="kpi-lbl">Demande(s) en attente</span>
       </div>
-      <div class="kpi-sep" *ngIf="(perms.canSeeFTMenu() || perms.canSeeDemandeMenu()) && mesActivites().length > 0"></div>
+
+      <!-- Réclamations en attente -->
+      <div class="kpi-sep" *ngIf="perms.canSeeDemandeMenu() && perms.canViewOwnRec()"></div>
+      <div class="kpi-pill" *ngIf="perms.canViewOwnRec()">
+        <span class="kpi-val">{{ reclamationsEnAttente() }}</span>
+        <span class="kpi-lbl">Réclamation(s) en attente</span>
+      </div>
+
+      <!-- Activités en cours -->
+      <div class="kpi-sep" *ngIf="mesActivites().length > 0"></div>
       <div class="kpi-pill" *ngIf="mesActivites().length > 0">
         <span class="kpi-val">{{ activitesEnCours() }}</span>
         <span class="kpi-lbl">Activité(s) en cours</span>
       </div>
+
     </div>
   </div>
 
-  <!-- ══ BENTO GRID ══ -->
-  <div class="bento">
+  <!-- ══ BENTO GRID ══
+       .has-right   → 3 colonnes : profil | centre | droite
+       sans class   → 2 colonnes : profil | centre (droite absente)
+  ══ -->
+  <div class="bento" [class.has-right]="hasRightCol()">
 
     <!-- ── PROFILE ── -->
     <div class="bcard b-profile">
+
+      <!-- Avatar + nom + statut -->
       <div class="pb-top">
         <div class="pb-avatar" [style.overflow]="currentUser()?.photoUrl ? 'hidden' : 'visible'">
           <img *ngIf="currentUser()?.photoUrl" [src]="currentUser()!.photoUrl"
@@ -49,215 +75,574 @@
           <span *ngIf="!currentUser()?.photoUrl">{{ initiales() }}</span>
         </div>
         <div class="pb-id">
-          <h2 class="pb-name">{{ currentUser()?.nomComplet || (currentUser()?.prenom + ' ' + currentUser()?.nom) }}</h2>
-          <span class="pb-role">{{ currentUser()?.poste || currentUser()?.profilNom || '—' }}</span>
+          <h2 class="pb-name">{{ currentUser()?.prenom }} {{ currentUser()?.nom }}</h2>
+          <p class="pb-email">{{ currentUser()?.email }}</p>
+        
         </div>
-        <span class="pb-online" [class.offline]="!currentUser()?.actif">
-          ● {{ currentUser()?.actif ? 'Actif' : 'Inactif' }}
-        </span>
       </div>
+
+
+
+
       <div class="pb-divider"></div>
+   <!-- Stats mini (stage uniquement si données dispo) -->
+   <div class="pb-stats" *ngIf="mesActivites().length > 0 || mesProjetsStage().length > 0">
+    <div class="pbs-item">
+      <span class="pbs-n"> 1 </span>
+      <span class="pbs-l">Projets<br>stage</span>
+    </div>
+    <div class="pbs-sep"></div>
+    <div class="pbs-item">
+      <span class="pbs-n">{{ activitesEnCours() }}</span>
+      <span class="pbs-l">En<br>cours</span>
+    </div>
+    <div class="pbs-sep"></div>
+    <div class="pbs-item">
+      <span class="pbs-n">{{ joursAnciennete() }}</span>
+      <span class="pbs-l">Jours<br>ancienneté</span>
+    </div>
+  </div>
 
-      <div class="pb-stats" *ngIf="mesActivites().length > 0 || mesProjetsStage().length > 0">
-        <div class="pbs-item">
-          <span class="pbs-n">{{ mesProjetsStage().length }}</span>
-          <span class="pbs-l">Projet(s)<br>de stage</span>
+
+
+  <ng-container *ngIf="!perms.estStagiairePur()">
+
+<!-- ✅ KPI employé — toujours visibles, aucune permission requise -->
+<div class="pb-stats">
+  <div class="pbs-item">
+    <span class="pbs-n">{{ joursAnciennete() }}</span>
+    <span class="pbs-l">Jours<br>ancienneté</span>
+  </div>
+   <!-- Groupe(s) : masqué pour les stagiaires purs -->
+    <div class="pbs-sep"></div>
+    <div class="pbs-item">
+      <span class="pbs-n">{{ nbGroupesRejoints() }}</span>
+      <span class="pbs-l">Groupe(s)</span>
+    </div>
+  <div class="pbs-sep"></div>
+  <div class="pbs-item">
+    <span class="pbs-n">{{ nbProjetsRejoints() }}</span>
+    <span class="pbs-l">Projet(s)</span>
+  </div>
+</div>
+
+</ng-container>
+
+  
+  <div class="pb-divider"></div>
+
+      <!-- Toutes les infos du user (sauf dateFinContrat) -->
+      <div class="pb-info-list">
+
+        <div class="pb-info-row" *ngIf="currentUser()?.poste">
+          <svg class="pb-info-icon" width="11" height="11" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.2">
+            <path d="M20 7h-4V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+            <path d="M16 7V5"/>
+          </svg>
+          <span class="pb-info-val">{{ currentUser()?.poste }}</span>
         </div>
-        <div class="pbs-sep"></div>
-        <div class="pbs-item">
-          <span class="pbs-n">{{ activitesEnCours() }}</span>
-          <span class="pbs-l">Activité(s)<br>en cours</span>
+        <div class="pb-info-row" *ngIf="currentUser()?.telephone">
+          <svg class="pb-info-icon" width="11" height="11" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.2">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07
+                     19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1
+                     4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0
+                     1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1
+                     2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+          <span class="pb-info-val">{{ currentUser()?.telephone }}</span>
         </div>
-        <div class="pbs-sep"></div>
-        <div class="pbs-item">
-          <span class="pbs-n">{{ pctAvancementGlobal() }}<small style="font-size:12px">%</small></span>
-          <span class="pbs-l">Avancement<br>global</span>
+        <div class="pb-info-row" *ngIf="currentUser()?.email">
+          <svg class="pb-info-icon" width="11" height="11" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.2">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+          <span class="pb-info-val">{{ currentUser()?.email }}</span>
+        </div>
+        <div class="pb-info-row" *ngIf="currentUser()?.telephone">
+          <svg class="pb-info-icon" width="11" height="11" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.2">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07
+                     19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1
+                     4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0
+                     1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1
+                     2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+          <span class="pb-info-val">{{ currentUser()?.telephone }}</span>
+        </div>
+        <div class="pb-info-row" *ngIf="currentUser()?.departement">
+          <svg class="pb-info-icon" width="11" height="11" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <span class="pb-info-val">{{ currentUser()?.departement }}</span>
+        </div>
+        <div class="pb-info-row" *ngIf="currentUser()?.adresse">
+          <svg class="pb-info-icon" width="11" height="11" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          <span class="pb-info-val">{{ currentUser()?.adresse }}</span>
+        </div>
+        <div class="pb-info-row" *ngIf="currentUser()?.dateEmbauche">
+          <svg class="pb-info-icon" width="11" height="11" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.2">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8"  y1="2" x2="8"  y2="6"/>
+            <line x1="3"  y1="10" x2="21" y2="10"/>
+          </svg>
+          <span class="pb-info-val">Embauché(e) le {{ fmtDateShort(currentUser()?.dateEmbauche) }}</span>
+        </div>
+        <div class="pb-info-row" *ngIf="currentUser()?.dateNaissance">
+          <svg class="pb-info-icon" width="11" height="11" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span class="pb-info-val">Né(e) le {{ fmtDateShort(currentUser()?.dateNaissance) }}</span>
         </div>
       </div>
-      <div class="pb-divider" *ngIf="mesActivites().length > 0 || mesProjetsStage().length > 0"></div>
 
-      <div class="pb-meta">
-        <div class="pbm-row">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          {{ currentUser()?.email }}
-        </div>
-        <div class="pbm-row" *ngIf="currentUser()?.telephone">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-          {{ currentUser()?.telephone }}
-        </div>
-        <div class="pbm-row" *ngIf="currentUser()?.dateEmbauche">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          Depuis le {{ fmtDateShort(currentUser()?.dateEmbauche) }}
-        </div>
-      </div>
+
+
+
+
+
+   
+
+    
+
+
+
       <button class="pb-cta" (click)="goTo('/profil')">Modifier le profil</button>
     </div>
 
-    <!-- ── CETTE SEMAINE (feuille de temps) ── -->
-    <div class="bcard b-week" *ngIf="perms.canSeeFTMenu()">
-      <div class="bc-head">
-        <span class="bc-title">Cette semaine</span>
-        <span class="bc-muted" *ngIf="feuilleSemaine()">{{ heuresSemaineFmt() }} enregistrées</span>
-        <a class="bc-link" (click)="goTo('/feuille-temps')">Feuille complète →</a>
-      </div>
+    <!-- ── COLONNE CENTRALE (toujours présente) ── -->
+    <div class="b-center-col">
 
-      <div *ngIf="loadingFeuille()" class="week-loading"><div class="home-spinner-sm"></div></div>
+      <!-- CETTE SEMAINE -->
+      <div class="bcard b-week" *ngIf="perms.canSeeFTMenu()">
+        <div class="bc-head">
+          <span class="bc-title">Cette semaine</span>
+          <span class="bc-muted">{{ heuresSemaineFmt() }} enregistrées</span>
+          <a class="bc-link" (click)="goTo('/feuille-temps')">Feuille complète →</a>
+        </div>
 
-      <div class="week-body" *ngIf="!loadingFeuille()">
-        <div class="week-bars" *ngIf="joursSemaine().length > 0">
-          <div class="wb-col" *ngFor="let j of joursSemaine()">
-            <div class="wb-track">
-              <div class="wb-fill" [class.now]="j.isToday" [class.late]="j.isPast && j.minutes === 0"
-                   [style.height.%]="j.minutes > 0 ? Math.max(j.pct, 6) : 0"></div>
+        <div *ngIf="loadingFeuille()" class="week-loading"><div class="home-spinner-sm"></div></div>
+
+        <div class="week-body" *ngIf="!loadingFeuille()">
+          <div class="week-line-wrap" *ngIf="joursSemaine().length > 0">
+            <svg class="week-line-svg" [attr.viewBox]="'0 0 ' + WEEK_LINE_W + ' ' + WEEK_LINE_H"
+                 preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="weekLineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="var(--accent)" stop-opacity=".22"/>
+                  <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path [attr.d]="weekLineAreaPath()" fill="url(#weekLineGrad)"/>
+              <path [attr.d]="weekLinePath()" fill="none" stroke="var(--accent)" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+              <g *ngFor="let p of weekLinePoints()">
+                <circle [attr.cx]="p.x" [attr.cy]="p.y" [attr.r]="p.isToday ? 5 : 3.5"
+                        [attr.fill]="p.isToday ? 'var(--accent)' : 'var(--bg-card)'"
+                        stroke="var(--accent)" stroke-width="2">
+                  <title>{{ p.label }} — {{ p.minutes > 0 ? (p.minutes / 60).toFixed(1) + 'h' : 'Aucune heure' }}</title>
+                </circle>
+              </g>
+            </svg>
+            <div class="week-line-xaxis">
+              <span *ngFor="let j of joursSemaine()" class="week-line-xlbl" [class.today-lbl]="j.isToday">
+                {{ j.label }}
+              </span>
             </div>
-            <span class="wb-day" [class.today-lbl]="j.isToday">{{ j.label }}</span>
-            <span class="wb-t">{{ j.minutes > 0 ? (j.minutes / 60).toFixed(1) + 'h' : '—' }}</span>
+          </div>
+
+          <div class="week-empty" *ngIf="joursSemaine().length === 0">
+            <p>Aucune feuille de temps pour cette semaine.</p>
+            <button class="mx-btn mx-btn-primary mx-btn-sm" (click)="goTo('/feuille-temps')">
+              Créer ma feuille
+            </button>
+          </div>
+
+          <div class="week-chips" *ngIf="joursSemaine().length > 0">
+            <span class="wc hrs">⏱ {{ heuresSemaineFmt() }} cette semaine</span>
+            <span class="wc pres" *ngIf="feuilleSemaine()?.statut === 'VALIDEE'">✓ Validée</span>
+            <span class="wc late" *ngIf="feuilleSemaine()?.statut === 'SOUMISE'">⏳ Soumise</span>
+            <span class="wc abs"  *ngIf="feuilleSemaine()?.statut === 'BROUILLON'">✎ Brouillon</span>
           </div>
         </div>
+      </div>
 
-        <div class="week-empty" *ngIf="joursSemaine().length === 0">
-          <p>Aucune feuille de temps pour cette semaine.</p>
-          <button class="mx-btn mx-btn-primary mx-btn-sm" (click)="goTo('/feuille-temps')">Créer ma feuille</button>
+<!-- ── MES STAGIAIRES — visible uniquement si superviseur avec au moins 1 stagiaire ── -->
+<div class="bcard"
+     *ngIf="perms.can('INT_SUPER_CAN_SUPERVISE')">
+  <div class="bc-head">
+    <span class="bc-title">Mes stagiaires</span>
+  
+  </div>
+  <div style="display:flex;flex-direction:column;gap:6px">
+    <div *ngFor="let s of mesStagiaires()"
+    style="display:flex;align-items:center;gap:10px;padding:7px 8px;">
+ <!-- Avatar rond -->
+ <div style="width:38px;height:38px;border-radius:50%;flex-shrink:0;
+             overflow:hidden;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+             display:flex;align-items:center;justify-content:center;
+             font-size:.56rem;font-weight:800;color:#fff">
+   <img *ngIf="s.photoUrl" [src]="s.photoUrl"
+        style="width:100%;height:100%;object-fit:cover">
+   <span *ngIf="!s.photoUrl">{{ getInitiales((s.prenom||'') + ' ' + (s.nom||'')) }}</span>
+ </div>
+ <!-- Infos : email au-dessus, nom en dessous -->
+ <div style="flex:1;min-width:0">
+  <div style="font-size:12px;font-weight:700;color:var(--text-primary);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px">
+{{ s.full}}
+</div>
+   <div style="font-size:12px;color:var(--text-secondary);
+               white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+     {{ s.email }}
+   </div>
+  
+ </div>
+ <!-- Badge poste -->
+ <span *ngIf="s.poste" class="dt-badge"
+       style="background:var(--accent-soft);color:var(--accent);
+              border-color:rgba(192,38,211,.25);flex-shrink:0">
+   {{ s.poste }}
+ </span>
+</div>
+
+
+  </div>
+</div>
+<!-- ── MES SUPERVISEURS — visible uniquement si stagiaire pur avec superviseurs ── -->
+<div class="bcard"
+     *ngIf="perms.estStagiairePur()">
+  <div class="bc-head">
+    <span class="bc-title">Mes superviseurs</span>
+  
+  </div>
+  <div style="display:flex;flex-direction:column;gap:6px">
+    <div *ngFor="let s of mesSuperviseurs()"
+         style="display:flex;align-items:center;gap:10px;padding:7px 8px;
+                border-radius:9px">
+      <!-- Avatar -->
+      <div style="width:40px;height:40px;border-radius:50%;flex-shrink:0;
+                  overflow:hidden;background:linear-gradient(135deg,#3b82f6,#06b6d4);
+                  display:flex;align-items:center;justify-content:center;
+                  font-size:.56rem;font-weight:800;color:#fff">
+        <img *ngIf="s.photoUrl" [src]="s.photoUrl"
+             style="width:100%;height:100%;object-fit:cover">
+        <span *ngIf="!s.photoUrl">{{ getInitiales((s.nomComplet || s.prenom + ' ' + s.nom)) }}</span>
+      </div>
+      <!-- Infos -->
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:700;color:var(--text-primary);
+                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          {{ s.nomComplet || ((s.prenom || '') + ' ' + (s.nom || '')) }}
         </div>
-
-        <div class="week-chips" *ngIf="joursSemaine().length > 0">
-          <span class="wc hrs">⏱ {{ heuresSemaineFmt() }} cette semaine</span>
-          <span class="wc pres" *ngIf="feuilleSemaine()?.statut === 'VALIDEE'">✓ Validée</span>
-          <span class="wc late" *ngIf="feuilleSemaine()?.statut === 'SOUMISE'">⏳ Soumise</span>
-          <span class="wc abs" *ngIf="feuilleSemaine()?.statut === 'BROUILLON'">✎ Brouillon</span>
+        <div style="font-size:12px;color:var(--text-secondary);
+                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          {{ s.email }}
         </div>
       </div>
+      <!-- Badge poste -->
+      <span *ngIf="s.poste" class="dt-badge"
+            style="background:rgba(59,130,246,.1);color:#3b82f6;
+                   border-color:rgba(59,130,246,.25);flex-shrink:0">
+        {{ s.poste }}
+      </span>
     </div>
 
-    <!-- ── MES DEMANDES ── -->
-    <div class="bcard b-leave" *ngIf="perms.canSeeDemandeMenu()">
-      <div class="bc-head">
-        <span class="bc-title">Mes demandes</span>
-        <span class="leave-chip">{{ mesDemandes().length }} au total</span>
-      </div>
-
-      <div *ngIf="loadingDemandes()" class="week-loading"><div class="home-spinner-sm"></div></div>
-
-      <ng-container *ngIf="!loadingDemandes()">
-        <div class="leave-arc-wrap" *ngIf="mesDemandes().length > 0">
-          <svg viewBox="0 0 120 68" class="arc-svg">
-            <defs>
-              <linearGradient id="ag" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#14b8a6"/>
-                <stop offset="100%" stop-color="#06b6d4"/>
-              </linearGradient>
-            </defs>
-            <path d="M10,65 A55,55 0 0,1 110,65" fill="none" stroke-width="11" class="arc-bg" stroke-linecap="round"/>
-            <path d="M10,65 A55,55 0 0,1 110,65" fill="none" stroke-width="11"
-                  stroke="url(#ag)" stroke-linecap="round"
-                  stroke-dasharray="172.7"
-                  [attr.stroke-dashoffset]="172.7 - (172.7 * (demandesApprouvees() / mesDemandes().length))"/>
-          </svg>
-          <div class="arc-label">
-            <span class="arc-big">{{ demandesApprouvees() }}</span>
-            <span class="arc-sm">sur {{ mesDemandes().length }} traitées</span>
-          </div>
+    <!-- Vide — ne s'affiche pas car la carte entière est cachée via *ngIf -->
+  </div>
+</div>
+      <!-- ACTIVITÉ RÉCENTE -->
+      <div class="bcard b-inbox">
+        <div class="bc-head">
+          <span class="bc-title">Activité récente</span>
+          <span class="inbox-badge" *ngIf="fluxRecent().length > 0">{{ fluxRecent().length }}</span>
         </div>
 
-        <div class="leave-rows">
-          <div class="lrow">
-            <span class="ldot amber"></span>
-            <span class="ll">En attente</span>
-            <span class="lv">{{ demandesEnAttente() }}</span>
-          </div>
-          <div class="lrow">
-            <span class="ldot teal"></span>
-            <span class="ll">Traitées</span>
-            <span class="lv">{{ demandesApprouvees() }}</span>
-          </div>
-          <div class="lrow" *ngIf="prochaineDemande() as p">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <span class="ll">Prochaine</span>
-            <span class="lv">{{ fmtDateShort(p.dateDebut) }}</span>
+        <div class="ilist" *ngIf="fluxRecent().length > 0">
+          <div class="irow" *ngFor="let item of activitesAffichees()">
+            <div class="iav" [style.background]="item.couleur">
+              <svg *ngIf="item.icone === 'check'" width="13" height="13" viewBox="0 0 16 16"
+                   fill="none" stroke="white" stroke-width="2">
+                <path d="M3 8.5l3.5 3.5L13 5" stroke-linecap="round"/>
+              </svg>
+              <svg *ngIf="item.icone === 'doc'" width="13" height="13" viewBox="0 0 16 16"
+                   fill="none" stroke="white" stroke-width="1.6">
+                <path d="M3 1h6l3 3v9H3V1z" stroke-linejoin="round"/>
+              </svg>
+              <svg *ngIf="item.icone === 'calendar'" width="13" height="13" viewBox="0 0 16 16"
+                   fill="none" stroke="white" stroke-width="1.5">
+                <rect x="1" y="2" width="14" height="11" rx="1.5"/>
+                <path d="M1 6h14M5 1v2M11 1v2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="iinfo">
+              <div class="iname">{{ item.titre }}</div>
+              <div class="imsg">{{ item.sousTitre }}</div>
+            </div>
+            <div class="itail">
+              <span class="itime">{{ fmtRelatif(item.date) }}</span>
+            </div>
           </div>
         </div>
-
-        <div class="leave-empty" *ngIf="mesDemandes().length === 0">
-          <p>Aucune demande pour le moment.</p>
+        
+        <!-- ✅ Lien "voir plus" — n'apparaît que s'il y a plus de 4 items -->
+        <div *ngIf="fluxRecent().length > 4" style="text-align:center;margin-top:8px">
+          <a class="bc-link" style="margin:0;display:inline-block"
+             (click)="activiteRecenteExpanded.set(!activiteRecenteExpanded())">
+            {{ activiteRecenteExpanded() ? 'Réduire ▲' : 'Voir ' + (fluxRecent().length - 4) + ' de plus ▼' }}
+          </a>
+        </div>
+        
+        <div class="ilist-empty" *ngIf="fluxRecent().length === 0">
+          <p>Aucune activité récente.</p>
         </div>
 
-        <button class="leave-btn" (click)="goTo('/demande')">+ Nouvelle demande</button>
-      </ng-container>
-    </div>
 
-    <!-- ── ACTIVITÉ RÉCENTE ── -->
-    <div class="bcard b-inbox">
-      <div class="bc-head">
-        <span class="bc-title">Activité récente</span>
-        <span class="inbox-badge" *ngIf="fluxRecent().length > 0">{{ fluxRecent().length }}</span>
-      </div>
 
-      <div class="ilist" *ngIf="fluxRecent().length > 0">
-        <div class="irow" *ngFor="let item of fluxRecent()">
-          <div class="iav" [style.background]="item.couleur">
-            <svg *ngIf="item.icone === 'check'" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="2"><path d="M3 8.5l3.5 3.5L13 5" stroke-linecap="round"/></svg>
-            <svg *ngIf="item.icone === 'doc'" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="1.6"><path d="M3 1h6l3 3v9H3V1z" stroke-linejoin="round"/></svg>
-            <svg *ngIf="item.icone === 'calendar'" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="1.5"><rect x="1" y="2" width="14" height="11" rx="1.5"/><path d="M1 6h14M5 1v2M11 1v2" stroke-linecap="round"/></svg>
-          </div>
-          <div class="iinfo">
-            <div class="iname">{{ item.titre }}</div>
-            <div class="imsg">{{ item.sousTitre }}</div>
-          </div>
-          <div class="itail">
-            <span class="itime">{{ fmtRelatif(item.date) }}</span>
-          </div>
+
+
+        <div class="ilist-empty" *ngIf="fluxRecent().length === 0">
+          <p>Aucune activité récente.</p>
         </div>
       </div>
 
-      <div class="ilist-empty" *ngIf="fluxRecent().length === 0">
-        <p>Aucune activité récente.</p>
+      <!-- QUICK ACTIONS -->
+      <div class="bcard b-actions">
+        <div class="bc-head">
+          <span class="bc-title">Actions rapides</span>
+        </div>
+        <div class="qa-grid">
+          <button class="qa-btn" *ngIf="perms.canCreateOwnTS()" (click)="goTo('/feuille-temps')">
+            <span class="qa-ico teal">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </span>
+            Ma feuille de temps
+          </button>
+          <button class="qa-btn" *ngIf="perms.canCreateDemande()" (click)="goTo('/demande')">
+            <span class="qa-ico blue">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+            </span>
+            Nouvelle demande
+          </button>
+          <button class="qa-btn" *ngIf="perms.canSeeProjetsStageMenu()" (click)="goTo('/projets-stage')">
+            <span class="qa-ico purple">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                <rect x="14" y="14" width="7" height="7" rx="1"/>
+                <rect x="3" y="14" width="7" height="7" rx="1"/>
+              </svg>
+            </span>
+            Mes projets
+          </button>
+          <button class="qa-btn" *ngIf="perms.canSeeDocEspaceStageMenu()" (click)="goTo('/espace-stage/documents')">
+            <span class="qa-ico pink">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 2h10l6 6v14H4V2z"/><path d="M14 2v6h6"/>
+              </svg>
+            </span>
+            Documents
+          </button>
+          <button class="qa-btn" *ngIf="perms.canCreateReclamation()" (click)="goTo('/reclamations')">
+            <span class="qa-ico teal">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+            </span>
+            Réclamation
+          </button>
+          <button class="qa-btn" (click)="goTo('/profil')">
+            <span class="qa-ico blue">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+              </svg>
+            </span>
+            Mon profil
+          </button>
+        </div>
       </div>
-    </div>
 
-    <!-- ── QUICK ACTIONS ── -->
-    <div class="bcard b-actions">
-      <div class="bc-head">
-        <span class="bc-title">Actions rapides</span>
-      </div>
-      <div class="qa-grid">
-        <button class="qa-btn" *ngIf="perms.canCreateOwnTS()" (click)="goTo('/feuille-temps')">
-          <span class="qa-ico teal">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          </span>
-          Ma feuille de temps
-        </button>
-        <button class="qa-btn" *ngIf="perms.canCreateDemande()" (click)="goTo('/demande')">
-          <span class="qa-ico blue">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          </span>
-          Nouvelle demande
-        </button>
-        <button class="qa-btn" *ngIf="perms.canSeeProjetsStageMenu()" (click)="goTo('/projets-stage')">
-          <span class="qa-ico purple">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
-          </span>
-          Mes projets
-        </button>
-        <button class="qa-btn" *ngIf="perms.canSeeDocEspaceStageMenu()" (click)="goTo('/espace-stage/documents')">
-          <span class="qa-ico pink">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2h10l6 6v14H4V2z"/><path d="M14 2v6h6"/></svg>
-          </span>
-          Documents
-        </button>
-        <button class="qa-btn" *ngIf="perms.canCreateReclamation()" (click)="goTo('/reclamations')">
-          <span class="qa-ico teal">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          </span>
-          Réclamation
-        </button>
-        <button class="qa-btn" (click)="goTo('/profil')">
-          <span class="qa-ico blue">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-          </span>
-          Mon profil
-        </button>
-      </div>
-    </div>
+    </div><!-- /b-center-col -->
+
+    <!-- ── COLONNE DROITE (n'existe que si au moins une carte droite est visible) ── -->
+    <div class="b-right-col" *ngIf="hasRightCol()">
+
+      <!-- ═══════════════════════════════════════════════════════
+           CARTE MES DEMANDES — style jauge concentrique (pd5)
+      ═══════════════════════════════════════════════════════ -->
+      <div class="bcard b-leave" *ngIf="perms.canSeeDemandeMenu()">
+
+        <!-- En-tête : titre + badge dt total -->
+        <div class="bc-head">
+          <span class="bc-title">Mes demandes</span>
+          <!-- Badge accent style dt-badge -->
+          <a class="bc-link" (click)="goTo('/demande')">Voir tous →</a>
+
+        </div>
+
+        <div *ngIf="loadingDemandes()" class="week-loading"><div class="home-spinner-sm"></div></div>
+
+        <ng-container *ngIf="!loadingDemandes()">
+
+          <!-- Jauge concentrique SVG (même style que pd5-dash-donut-card) -->
+          <!-- Remplacer tout le <div class="home-gauge-wrap"> de b-leave par : -->
+<div class="home-gauge-wrap" *ngIf="mesDemandes().length > 0">
+  <svg class="home-gauge-svg" viewBox="0 0 140 140">
+    <!-- PAS de cercle de fond — même style que pd5 "Taux de complétion" -->
+
+    <!-- Anneau extérieur — traitées (--accent). Masqué si 0 -->
+    <circle *ngIf="demandesApprouvees() > 0"
+            class="home-ring-accent" cx="70" cy="70" r="52"
+            transform="rotate(180 70 70)"
+            [attr.stroke-dasharray]="demandesRing1Dash()"/>
+
+    <!-- Anneau médian — en attente (amber). Masqué si 0 -->
+    <circle *ngIf="demandesEnAttente() > 0"
+            class="home-ring-amber" cx="70" cy="70" r="38"
+transform="rotate(180 70 70)"            [attr.stroke-dasharray]="demandesRing2Dash()"/>
+
+    <!-- Centre : nombre total (pas de %) -->
+    <text x="70" y="66" text-anchor="middle" class="home-gauge-num">
+      {{ mesDemandes().length }}
+    </text>
+    <text x="70" y="88" text-anchor="middle" class="home-gauge-sub">demandes</text>
+  </svg>
+</div>
+
+
+
+
+
+
+
+          <!-- Légende — style pd5-gauge-legend -->
+          <div class="home-gauge-legend" *ngIf="mesDemandes().length > 0">
+            <!-- Anneau r=55 → accent -->
+            <div class="home-legend-row" *ngIf="demandesApprouvees() > 0">
+              <span class="home-legend-dot" style="background:var(--accent)"></span>
+              <span class="home-legend-label">Traitées</span>
+              <span class="home-legend-pct">{{ demandesApprouvees() }}</span>
+            </div>
+            <!-- Anneau r=47 → amber -->
+            <div class="home-legend-row" *ngIf="demandesEnAttente() > 0">
+              <span class="home-legend-dot" style="background:#f59e0b"></span>
+              <span class="home-legend-label">En attente</span>
+              <span class="home-legend-pct">{{ demandesEnAttente() }}</span>
+            </div>
+          </div>
+
+          <div class="leave-empty" *ngIf="mesDemandes().length === 0">
+            <p>Aucune demande pour le moment.</p>
+          </div>
+
+          <button class="home-cta-dashed home-cta-teal" (click)="goTo('/demande')">
+            + Nouvelle demande
+          </button>
+
+        </ng-container>
+      </div><!-- /b-leave -->
+
+      <!-- ═══════════════════════════════════════════════════════
+           CARTE MES RÉCLAMATIONS — même style jauge concentrique
+      ═══════════════════════════════════════════════════════ -->
+      <div class="bcard b-rec" *ngIf="perms.canViewOwnRec()">
+
+        <!-- En-tête : titre + badge dt total accent -->
+        <div class="bc-head">
+          <span class="bc-title">Mes réclamations</span>
+            <a class="bc-link" (click)="goTo('/reclamations')">Voir tous →</a>
+          
+        </div>
+
+        <div *ngIf="loadingReclamations()" class="week-loading"><div class="home-spinner-sm"></div></div>
+
+        <ng-container *ngIf="!loadingReclamations()">
+
+          <!-- Jauge concentrique SVG — 3 anneaux -->
+        <!-- Remplacer tout le <div class="home-gauge-wrap"> de b-rec par : -->
+<div class="home-gauge-wrap" *ngIf="mesReclamations().length > 0">
+  <svg class="home-gauge-svg" viewBox="0 0 140 140">
+    <!-- PAS de cercle de fond — même style que pd5 "Taux de complétion" -->
+
+    <!-- Anneau extérieur — résolues (--accent). Masqué si 0 -->
+    <circle *ngIf="reclamationsResolues() > 0"
+            class="home-ring-accent" cx="70" cy="70" r="55"
+            transform="rotate(180 70 70)"
+            [attr.stroke-dasharray]="reclamationsRing1Dash()"/>
+
+    <!-- Anneau médian — en cours (blue). Masqué si 0 -->
+    <circle *ngIf="reclamationsEnCours() > 0"
+            class="home-ring-blue" cx="70" cy="70" r="47"
+            transform="rotate(180 70 70)"
+            [attr.stroke-dasharray]="reclamationsRing2Dash()"/>
+
+    <!-- Anneau intérieur — en attente (amber). Masqué si 0 -->
+    <circle *ngIf="reclamationsEnAttente() > 0"
+            class="home-ring-amber" cx="70" cy="70" r="39"
+            transform="rotate(180 70 70)"
+            [attr.stroke-dasharray]="reclamationsRing3Dash()"/>
+
+    <!-- Centre : nombre total (pas de %) -->
+    <text x="70" y="66" text-anchor="middle" class="home-gauge-num">
+      {{ mesReclamations().length }}
+    </text>
+    <text x="70" y="88" text-anchor="middle" class="home-gauge-sub">réclamations</text>
+  </svg>
+</div>
+
+          <!-- Légende -->
+          <div class="home-gauge-legend" *ngIf="mesReclamations().length > 0">
+            <!-- Anneau r=55 → accent -->
+            <div class="home-legend-row" *ngIf="reclamationsResolues() > 0">
+              <span class="home-legend-dot" style="background:var(--accent)"></span>
+              <span class="home-legend-label">Résolues</span>
+              <span class="home-legend-pct">{{ reclamationsResolues() }}</span>
+            </div>
+            <!-- Anneau r=47 → blue -->
+            <div class="home-legend-row" *ngIf="reclamationsEnCours() > 0">
+              <span class="home-legend-dot" style="background:#3b82f6"></span>
+              <span class="home-legend-label">En cours</span>
+              <span class="home-legend-pct">{{ reclamationsEnCours() }}</span>
+            </div>
+            <!-- Anneau r=39 → amber -->
+            <div class="home-legend-row" *ngIf="reclamationsEnAttente() > 0">
+              <span class="home-legend-dot" style="background:#f59e0b"></span>
+              <span class="home-legend-label">En attente</span>
+              <span class="home-legend-pct">{{ reclamationsEnAttente() }}</span>
+            </div>
+          </div>
+          <div class="leave-empty" *ngIf="mesReclamations().length === 0">
+            <p>Aucune réclamation pour le moment.</p>
+          </div>
+
+          <button class="home-cta-dashed home-cta-accent" (click)="goTo('/reclamations')">
+            + Nouvelle réclamation
+          </button>
+
+        </ng-container>
+      </div><!-- /b-rec -->
+
+    </div><!-- /b-right-col -->
 
   </div><!-- /bento -->
 

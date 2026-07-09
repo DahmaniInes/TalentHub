@@ -1,727 +1,874 @@
-/* =====================================================
-   HOME PAGE  —  Pro redesign (données dynamiques)
-   Font: DM Sans (imported in component via @import)
-   ViewEncapsulation.None
-   ===================================================== */
-
-   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,700&family=DM+Mono:wght@400;500&display=swap');
-
-   /* ── Root overrides scoped to this page ── */
-   .home-wrap { font-family: 'DM Sans', sans-serif; }
-
-   /* ─────────────────────────────────────────
-      WRAPPER
-   ───────────────────────────────────────── */
-   .home-wrap {
-     display: flex;
-     flex-direction: column;
-     gap: 18px;
-   }
-
-   /* staggered fade-up on load */
-   .home-wrap > * {
-     animation: fadeUp 0.45s ease both;
-   }
-   .hero-row  { animation-delay: 0.00s; }
-   .bento     { animation-delay: 0.08s; }
-
-   @keyframes fadeUp {
-     from { opacity: 0; transform: translateY(12px); }
-     to   { opacity: 1; transform: translateY(0); }
-   }
-
-   /* ─────────────────────────────────────────
-      LOADING
-   ───────────────────────────────────────── */
-   .home-loading {
-     display: flex;
-     align-items: center;
-     justify-content: center;
-     gap: 12px;
-     padding: 100px 0;
-     color: var(--text-muted);
-     font-size: 13px;
-   }
-   .home-spinner {
-     width: 22px; height: 22px;
-     border: 2.5px solid var(--border-color);
-     border-top-color: var(--accent);
-     border-radius: 50%;
-     animation: homeSpin .65s linear infinite;
-   }
-   .home-spinner-sm {
-     width: 16px; height: 16px;
-     border: 2px solid var(--border-color);
-     border-top-color: var(--accent);
-     border-radius: 50%;
-     animation: homeSpin .65s linear infinite;
-     margin: 20px auto;
-   }
-   @keyframes homeSpin { to { transform: rotate(360deg); } }
-
-   .week-loading { display: flex; justify-content: center; padding: 24px 0; }
-
-   /* ─────────────────────────────────────────
-      HERO ROW
-   ───────────────────────────────────────── */
-   .hero-row {
-     display: flex;
-     align-items: center;
-     justify-content: space-between;
-     gap: 20px;
-     background: var(--bg-card);
-     border: 1px solid var(--border-color);
-     border-radius: 16px;
-     padding: 22px 28px;
-     box-shadow: var(--shadow-card);
-     position: relative;
-     overflow: hidden;
-     transition: background-color 0.4s, border-color 0.4s;
-   }
-
-   .hero-row::after {
-     content: '';
-     position: absolute;
-     top: -60px; right: -60px;
-     width: 200px; height: 200px;
-     background: radial-gradient(circle, rgba(192,38,211,.10) 0%, transparent 65%);
-     pointer-events: none;
-   }
-
-   .hero-date {
-     display: flex;
-     align-items: center;
-     gap: 7px;
-     font-size: 11px;
-     font-weight: 600;
-     letter-spacing: .7px;
-     text-transform: uppercase;
-     color: var(--text-muted);
-     margin: 0 0 7px;
-     transition: color .4s;
-   }
-
-   .live-dot {
-     width: 7px; height: 7px;
-     border-radius: 50%;
-     background: #10b981;
-     box-shadow: 0 0 0 3px rgba(16,185,129,.18);
-     animation: livePulse 2s ease infinite;
-     flex-shrink: 0;
-   }
-   @keyframes livePulse {
-     0%,100% { box-shadow: 0 0 0 3px rgba(16,185,129,.18); }
-     50%      { box-shadow: 0 0 0 6px rgba(16,185,129,.06); }
-   }
-
-   .hero-title {
-     font-size: 26px;
-     font-weight: 800;
-     color: var(--text-primary);
-     margin: 0 0 4px;
-     letter-spacing: -.6px;
-     line-height: 1.15;
-     transition: color .4s;
-   }
-   .hero-title em {
-     font-style: italic;
-     background: linear-gradient(120deg, var(--accent), var(--accent-2));
-     -webkit-background-clip: text;
-     -webkit-text-fill-color: transparent;
-     background-clip: text;
-   }
-
-   .hero-sub {
-     font-size: 13.5px;
-     color: var(--text-muted);
-     margin: 0;
-     font-weight: 400;
-     transition: color .4s;
-   }
-
-   .hero-kpis {
-     display: flex;
-     align-items: center;
-     gap: 20px;
-     flex-shrink: 0;
-     flex-wrap: wrap;
-   }
-
-   .kpi-pill {
-     display: flex;
-     flex-direction: column;
-     align-items: center;
-     gap: 2px;
-   }
-
-   .kpi-val {
-     font-size: 24px;
-     font-weight: 800;
-     color: var(--text-primary);
-     letter-spacing: -1px;
-     line-height: 1;
-     font-family: 'DM Mono', monospace;
-     transition: color .4s;
-     white-space: nowrap;
-   }
-
-   .kpi-lbl {
-     font-size: 10.5px;
-     color: var(--text-muted);
-     font-weight: 500;
-     text-align: center;
-     transition: color .4s;
-     white-space: nowrap;
-   }
-
-   .kpi-sep {
-     width: 1px; height: 36px;
-     background: var(--border-color);
-     transition: background .4s;
-   }
-
-   /* ─────────────────────────────────────────
-      BENTO GRID
-   ───────────────────────────────────────── */
-   .bento {
-     display: grid;
-     grid-template-columns: 240px 1fr 220px;
-     grid-template-rows: auto auto;
-     gap: 14px;
-   }
-
-   .b-profile  { grid-column: 1; grid-row: 1 / 3; }
-   .b-week     { grid-column: 2; grid-row: 1; }
-   .b-leave    { grid-column: 3; grid-row: 1 / 3; }
-   .b-inbox    { grid-column: 2; grid-row: 2; }
-   .b-actions  { grid-column: 2 / 3; grid-row: 3; }
-
-   .bcard {
-     background: var(--bg-card);
-     border: 1px solid var(--border-color);
-     border-radius: 14px;
-     padding: 16px;
-     box-shadow: var(--shadow-card);
-     transition: background-color .4s, border-color .4s;
-   }
-
-   .bc-head {
-     display: flex;
-     align-items: center;
-     gap: 8px;
-     margin-bottom: 14px;
-   }
-
-   .bc-title {
-     font-size: 13px;
-     font-weight: 700;
-     color: var(--text-primary);
-     transition: color .4s;
-   }
-
-   .bc-muted {
-     font-size: 11px;
-     color: var(--text-muted);
-     margin-left: 2px;
-     transition: color .4s;
-   }
-
-   .bc-link {
-     font-size: 11.5px;
-     font-weight: 600;
-     color: var(--accent);
-     cursor: pointer;
-     margin-left: auto;
-     text-decoration: none;
-   }
-   .bc-link:hover { opacity: .75; }
-
-   /* ─────────────────────────────────────────
-      PROFILE CARD
-   ───────────────────────────────────────── */
-   .b-profile { display: flex; flex-direction: column; gap: 0; }
-
-   .pb-top {
-     display: flex;
-     align-items: center;
-     gap: 10px;
-     margin-bottom: 14px;
-   }
-
-   .pb-avatar {
-     width: 46px; height: 46px;
-     border-radius: 12px;
-     background: linear-gradient(135deg, var(--accent), var(--accent-2));
-     display: flex;
-     align-items: center;
-     justify-content: center;
-     font-size: 14px;
-     font-weight: 800;
-     color: #fff;
-     letter-spacing: .5px;
-     flex-shrink: 0;
-   }
-
-   .pb-id { flex: 1; min-width: 0; }
-
-   .pb-name {
-     font-size: 14px;
-     font-weight: 800;
-     color: var(--text-primary);
-     margin: 0 0 2px;
-     white-space: nowrap;
-     overflow: hidden;
-     text-overflow: ellipsis;
-     transition: color .4s;
-   }
-
-   .pb-role {
-     font-size: 11px;
-     color: var(--text-muted);
-     transition: color .4s;
-   }
-
-   .pb-online {
-     font-size: 10px;
-     font-weight: 700;
-     color: #10b981;
-     white-space: nowrap;
-     flex-shrink: 0;
-   }
-   .pb-online.offline { color: #ef4444; }
-
-   .pb-divider {
-     height: 1px;
-     background: var(--border-color);
-     margin: 12px -16px;
-     transition: background .4s;
-   }
-
-   .pb-stats {
-     display: flex;
-     align-items: center;
-     justify-content: space-between;
-     padding: 4px 0;
-     margin-bottom: 2px;
-   }
-
-   .pbs-item {
-     display: flex;
-     flex-direction: column;
-     align-items: center;
-     gap: 3px;
-     flex: 1;
-   }
-
-   .pbs-n {
-     font-family: 'DM Mono', monospace;
-     font-size: 22px;
-     font-weight: 700;
-     color: var(--text-primary);
-     line-height: 1;
-     transition: color .4s;
-   }
-
-   .pbs-l {
-     font-size: 10px;
-     color: var(--text-muted);
-     text-align: center;
-     line-height: 1.3;
-     transition: color .4s;
-   }
-
-   .pbs-sep {
-     width: 1px; height: 32px;
-     background: var(--border-color);
-     transition: background .4s;
-   }
-
-   .pb-meta {
-     display: flex;
-     flex-direction: column;
-     gap: 6px;
-     margin-bottom: 14px;
-   }
-
-   .pbm-row {
-     display: flex;
-     align-items: center;
-     gap: 7px;
-     font-size: 11.5px;
-     color: var(--text-muted);
-     transition: color .4s;
-     overflow: hidden;
-     text-overflow: ellipsis;
-     white-space: nowrap;
-   }
-
-   .pb-cta {
-     width: 100%;
-     padding: 9px;
-     border: none;
-     border-radius: 9px;
-     background: linear-gradient(135deg, var(--accent), var(--accent-2));
-     color: #fff;
-     font-size: 12.5px;
-     font-weight: 700;
-     font-family: 'DM Sans', sans-serif;
-     cursor: pointer;
-     transition: opacity .2s, transform .15s;
-     margin-top: auto;
-   }
-   .pb-cta:hover { opacity: .88; transform: translateY(-1px); }
-
-   /* ─────────────────────────────────────────
-      THIS WEEK
-   ───────────────────────────────────────── */
-   .week-body { display: flex; flex-direction: column; gap: 12px; }
-
-   .week-bars {
-     display: flex;
-     gap: 10px;
-     align-items: flex-end;
-     height: 90px;
-   }
-
-   .wb-col {
-     flex: 1;
-     display: flex;
-     flex-direction: column;
-     align-items: center;
-     gap: 5px;
-     height: 100%;
-   }
-
-   .wb-track {
-     flex: 1;
-     width: 100%;
-     background: var(--bg-input);
-     border-radius: 6px;
-     overflow: hidden;
-     display: flex;
-     align-items: flex-end;
-     transition: background .4s;
-   }
-
-   .wb-fill {
-     width: 100%;
-     border-radius: 6px;
-     background: linear-gradient(180deg, #10b981, #34d399);
-     transition: height .8s cubic-bezier(.4,0,.2,1);
-   }
-   .wb-fill.late { background: linear-gradient(180deg, #f59e0b, #fbbf24); }
-   .wb-fill.now  {
-     background: linear-gradient(180deg, var(--accent), var(--accent-2));
-     animation: nowBlink 2s ease infinite;
-   }
-   @keyframes nowBlink {
-     0%,100% { opacity: 1; }
-     50%      { opacity: .65; }
-   }
-
-   .wb-day {
-     font-size: 10px;
-     font-weight: 700;
-     letter-spacing: .4px;
-     text-transform: uppercase;
-     color: var(--text-muted);
-     transition: color .4s;
-   }
-   .today-lbl { color: var(--accent) !important; }
-
-   .wb-t {
-     font-size: 10px;
-     color: var(--text-muted);
-     font-family: 'DM Mono', monospace;
-     transition: color .4s;
-   }
-
-   .week-chips {
-     display: flex;
-     gap: 6px;
-     flex-wrap: wrap;
-   }
-
-   .wc {
-     font-size: 11px;
-     font-weight: 600;
-     padding: 3px 9px;
-     border-radius: 20px;
-   }
-   .wc.pres { background: rgba(16,185,129,.12); color: #10b981; }
-   .wc.late { background: rgba(245,158,11,.12); color: #f59e0b; }
-   .wc.abs  { background: rgba(239,68,68,.10);  color: #ef4444; }
-   .wc.hrs  { background: rgba(59,130,246,.12); color: #3b82f6; }
-
-   .week-empty, .leave-empty, .ilist-empty {
-     display: flex;
-     flex-direction: column;
-     align-items: center;
-     gap: 10px;
-     padding: 24px 8px;
-     text-align: center;
-     color: var(--text-muted);
-     font-size: 12px;
-   }
-
-   /* ─────────────────────────────────────────
-      TIME OFF / MES DEMANDES
-   ───────────────────────────────────────── */
-   .b-leave { display: flex; flex-direction: column; }
-
-   .leave-chip {
-     font-size: 10.5px;
-     font-weight: 700;
-     padding: 2px 9px;
-     border-radius: 20px;
-     background: rgba(20,184,166,.13);
-     color: #14b8a6;
-     margin-left: auto;
-     white-space: nowrap;
-   }
-
-   .leave-arc-wrap {
-     position: relative;
-     display: flex;
-     justify-content: center;
-     margin: 4px 0 10px;
-   }
-
-   .arc-svg {
-     width: 130px;
-     height: 75px;
-     overflow: visible;
-   }
-
-   .arc-bg { stroke: var(--bg-input); transition: stroke .4s; }
-
-   .arc-label {
-     position: absolute;
-     bottom: 2px;
-     left: 50%;
-     transform: translateX(-50%);
-     display: flex;
-     flex-direction: column;
-     align-items: center;
-     gap: 0px;
-     pointer-events: none;
-   }
-   .arc-big {
-     font-family: 'DM Mono', monospace;
-     font-size: 26px;
-     font-weight: 700;
-     color: var(--text-primary);
-     line-height: 1;
-     transition: color .4s;
-   }
-   .arc-sm {
-     font-size: 10px;
-     color: var(--text-muted);
-     transition: color .4s;
-     text-align: center;
-   }
-
-   .leave-rows {
-     display: flex;
-     flex-direction: column;
-     gap: 7px;
-     margin-bottom: 12px;
-     flex: 1;
-   }
-
-   .lrow {
-     display: flex;
-     align-items: center;
-     gap: 7px;
-     font-size: 12px;
-   }
-
-   .ldot {
-     width: 7px; height: 7px;
-     border-radius: 50%;
-     flex-shrink: 0;
-   }
-   .ldot.teal  { background: #14b8a6; }
-   .ldot.amber { background: #f59e0b; }
-
-   .ll {
-     color: var(--text-muted);
-     flex: 1;
-     transition: color .4s;
-   }
-   .lv {
-     font-weight: 700;
-     color: var(--text-primary);
-     transition: color .4s;
-     white-space: nowrap;
-   }
-
-   .leave-btn {
-     width: 100%;
-     padding: 8px;
-     border: 1.5px dashed var(--border-color);
-     border-radius: 9px;
-     background: transparent;
-     color: var(--text-muted);
-     font-size: 12px;
-     font-weight: 700;
-     font-family: 'DM Sans', sans-serif;
-     cursor: pointer;
-     transition: border-color .2s, color .2s, background .2s;
-   }
-   .leave-btn:hover {
-     border-color: #14b8a6;
-     color: #14b8a6;
-     background: rgba(20,184,166,.06);
-   }
-
-   /* ─────────────────────────────────────────
-      ACTIVITÉ RÉCENTE
-   ───────────────────────────────────────── */
-   .ilist {
-     display: flex;
-     flex-direction: column;
-     gap: 1px;
-     margin-bottom: 10px;
-   }
-
-   .irow {
-     display: flex;
-     align-items: center;
-     gap: 9px;
-     padding: 7px 8px;
-     border-radius: 9px;
-     cursor: default;
-     transition: background .15s;
-   }
-   .irow:hover { background: var(--bg-hover); }
-
-   .iav {
-     width: 30px; height: 30px;
-     border-radius: 9px;
-     display: flex;
-     align-items: center;
-     justify-content: center;
-     font-size: 9.5px;
-     font-weight: 800;
-     color: #fff;
-     flex-shrink: 0;
-   }
-
-   .iinfo { flex: 1; min-width: 0; }
-
-   .iname {
-     font-size: 12px;
-     font-weight: 700;
-     color: var(--text-primary);
-     margin-bottom: 1px;
-     transition: color .4s;
-     white-space: nowrap;
-     overflow: hidden;
-     text-overflow: ellipsis;
-   }
-
-   .imsg {
-     font-size: 11.5px;
-     color: var(--text-muted);
-     white-space: nowrap;
-     overflow: hidden;
-     text-overflow: ellipsis;
-     transition: color .4s;
-   }
-
-   .itail {
-     display: flex;
-     flex-direction: column;
-     align-items: flex-end;
-     gap: 4px;
-     flex-shrink: 0;
-   }
-
-   .itime {
-     font-size: 10px;
-     color: var(--text-muted);
-     white-space: nowrap;
-     transition: color .4s;
-   }
-
-   .inbox-badge {
-     margin-left: auto;
-     font-size: 10.5px;
-     font-weight: 700;
-     padding: 2px 8px;
-     border-radius: 20px;
-     background: var(--accent-soft);
-     color: var(--accent);
-   }
-
-   /* ─────────────────────────────────────────
-      QUICK ACTIONS
-   ───────────────────────────────────────── */
-   .b-actions { grid-column: 2; grid-row: 3; }
-
-   .qa-grid {
-     display: grid;
-     grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-     gap: 8px;
-   }
-
-   .qa-btn {
-     display: flex;
-     align-items: center;
-     gap: 8px;
-     padding: 9px 12px;
-     border: 1px solid var(--border-color);
-     border-radius: 10px;
-     background: var(--bg-input);
-     color: var(--text-secondary);
-     font-size: 12px;
-     font-weight: 600;
-     font-family: 'DM Sans', sans-serif;
-     cursor: pointer;
-     transition: all .18s;
-     white-space: nowrap;
-   }
-   .qa-btn:hover {
-     background: var(--bg-hover);
-     border-color: var(--accent);
-     color: var(--text-primary);
-     transform: translateY(-1px);
-   }
-
-   .qa-ico {
-     width: 26px; height: 26px;
-     border-radius: 7px;
-     display: flex;
-     align-items: center;
-     justify-content: center;
-     flex-shrink: 0;
-   }
-   .qa-ico.teal   { background: rgba(20,184,166,.15);  color: #14b8a6; }
-   .qa-ico.blue   { background: rgba(59,130,246,.15);  color: #3b82f6; }
-   .qa-ico.purple { background: rgba(192,38,211,.15);  color: #c026d3; }
-   .qa-ico.pink   { background: rgba(236,72,153,.15);  color: #ec4899; }
-
-   /* ─────────────────────────────────────────
-      RESPONSIVE
-   ───────────────────────────────────────── */
-   @media (max-width: 1100px) {
-     .bento {
-       grid-template-columns: 1fr 1fr;
-       grid-template-rows: auto;
-     }
-     .b-profile { grid-column: 1; grid-row: 1; }
-     .b-week    { grid-column: 2; grid-row: 1; }
-     .b-leave   { grid-column: 1; grid-row: 2; }
-     .b-inbox   { grid-column: 2; grid-row: 2; }
-     .b-actions { grid-column: 1 / 3; grid-row: 3; }
-   }
-
-   @media (max-width: 768px) {
-     .hero-row   { flex-direction: column; align-items: flex-start; gap: 16px; }
-     .hero-kpis  { width: 100%; justify-content: space-around; }
-     .bento      { grid-template-columns: 1fr; }
-     .b-profile, .b-week, .b-leave,
-     .b-inbox, .b-actions { grid-column: 1; grid-row: auto; }
-     .qa-grid    { grid-template-columns: 1fr 1fr; }
-   }
+/* ==========================================================
+   HOME PAGE — Styles complets avec commentaires détaillés
+   ViewEncapsulation.None : ces styles sont globaux dans l'app
+   ========================================================== */
+
+/* ── Police DM Sans + DM Mono pour la page home ── */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,700&family=DM+Mono:wght@400;500&display=swap');
+
+/* ─────────────────────────────────────────
+   WRAPPER PRINCIPAL
+   Conteneur flex vertical qui empile
+   hero-row puis bento avec un gap uniforme
+───────────────────────────────────────── */
+.home-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* Animation d'apparition staggerée sur les enfants directs */
+.home-wrap > * { animation: fadeUp 0.45s ease both; }
+.hero-row      { animation-delay: 0.00s; }
+.bento         { animation-delay: 0.08s; }
+
+/* Glissement vers le haut depuis l'opacité 0 */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─────────────────────────────────────────
+   CHARGEMENT GLOBAL
+   Spinner centré occupant la page entière
+───────────────────────────────────────── */
+.home-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 100px 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* Grand spinner rotatif pour l'état de chargement global */
+.home-spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid var(--border-color);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: homeSpin .65s linear infinite;
+}
+
+/* Petit spinner pour les blocs de données individuels */
+.home-spinner-sm {
+  width: 16px; height: 16px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: homeSpin .65s linear infinite;
+  margin: 20px auto;
+}
+
+/* Animation de rotation continue pour les spinners */
+@keyframes homeSpin { to { transform: rotate(360deg); } }
+
+/* Conteneur centré pour un spinner dans une carte */
+.week-loading { display: flex; justify-content: center; padding: 24px 0; }
+
+/* ─────────────────────────────────────────
+   HERO ROW
+   Bandeau bienvenue : texte + KPIs en ligne
+   Fond card, halo violet top-right en ::after
+───────────────────────────────────────── */
+.hero-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 22px 28px;
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+  transition: background-color .4s, border-color .4s;
+}
+
+/* Halo décoratif violet positionné en haut à droite */
+.hero-row::after {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(192,38,211,.10) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+/* Texte de gauche du hero */
+.hero-text { display: flex; flex-direction: column; }
+
+/* Label date avec point live */
+.hero-date {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 900px;
+  letter-spacing: .7px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 7px;
+  transition: color .4s;
+}
+
+/* Point vert pulsant indiquant "actif / live" */
+.live-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16,185,129,.18);
+  animation: livePulse 2s ease infinite;
+  flex-shrink: 0;
+}
+@keyframes livePulse {
+  0%,100% { box-shadow: 0 0 0 3px rgba(16,185,129,.18); }
+  50%      { box-shadow: 0 0 0 6px rgba(16,185,129,.06); }
+}
+
+/* Titre "Bonjour, Prénom 👋" */
+.hero-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+  letter-spacing: -.6px;
+  line-height: 1.15;
+  transition: color .4s;
+}
+/* Prénom en italique avec dégradé accent-violet */
+.hero-title em {
+  font-style: italic;
+  background: linear-gradient(120deg, var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Sous-titre du hero */
+.hero-sub {
+  font-size: 14.5px;
+  color: var(--text-secondary);
+  margin: 0;
+  
+  transition: color .4s;
+}
+.pb-email {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color .4s;
+}
+/* Conteneur des pills KPI à droite du hero */
+.hero-kpis {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+/* Pill KPI individuelle : valeur + label empilés */
+.kpi-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Grande valeur numérique de la KPI (monospace) */
+.kpi-val {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -1px;
+  line-height: 1;
+  font-family: 'DM Mono', monospace;
+  transition: color .4s;
+  white-space: nowrap;
+}
+
+/* Libellé sous la valeur KPI */
+.kpi-lbl {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-align: center;
+  transition: color .4s;
+  white-space: nowrap;
+}
+
+/* Séparateur vertical entre deux pills KPI */
+.kpi-sep {
+  width: 1px; height: 36px;
+  background: var(--border-color);
+  transition: background .4s;
+}
+
+/* ─────────────────────────────────────────
+   BENTO GRID
+   Grille principale à 2 ou 3 colonnes.
+   Par défaut : profil | centre
+   .has-right : profil | centre | droite
+   align-items: start → chaque colonne
+   fait sa propre hauteur (pas d'étirement)
+───────────────────────────────────────── */
+.bento {
+  display: grid;
+  grid-template-columns: 240px 1fr;   /* 2 colonnes par défaut */
+  gap: 14px;
+  align-items: start;
+}
+
+/* Quand la colonne droite est présente → 3 colonnes */
+.bento.has-right {
+  grid-template-columns: 270px 1fr 280px;
+}
+
+/* ── Carte générique : fond, bordure, ombre, padding ── */
+.bcard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: var(--shadow-card);
+  transition: background-color .4s, border-color .4s;
+}
+
+/* Colonne centrale : flex vertical, les cartes s'empilent
+   et la première disparaît (*ngIf) sans laisser de vide */
+.b-center-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0; /* empêche le débordement horizontal */
+}
+
+/* Colonne droite : flex vertical, même comportement */
+.b-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* ── En-tête d'une carte : titre + lien + badge ── */
+.bc-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+/* Titre de section dans une carte */
+.bc-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  transition: color .4s;
+}
+
+/* Texte secondaire/muted à côté du titre */
+.bc-muted {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: 2px;
+  transition: color .4s;
+}
+
+/* Lien "voir tout →" aligné à droite */
+.bc-link {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  margin-left: auto;
+  text-decoration: none;
+}
+.bc-link:hover { opacity: .75; }
+
+/* ─────────────────────────────────────────
+   PROFILE CARD (b-profile)
+   Occupe la colonne 1, span toutes les lignes
+───────────────────────────────────────── */
+.b-profile { display: flex; flex-direction: column; gap: 0; }
+
+/* Ligne supérieure : avatar + nom + statut */
+.pb-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+/* Rond avatar avec dégradé violet si pas de photo */
+.pb-avatar {
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: .5px;
+  flex-shrink: 0;
+}
+
+/* Bloc nom + poste à droite de l'avatar */
+.pb-id { flex: 1; min-width: 0; }
+
+/* Nom complet (tronqué si long) */
+.pb-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color .4s;
+}
+
+/* Poste ou profil de l'utilisateur */
+.pb-role {
+  font-size: 11px;
+  color: var(--text-secondary);
+  transition: color .4s;
+}
+
+/* Point de statut actif (vert) / inactif (rouge) */
+.pb-status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+.pb-status-dot-actif   { background: #10b981; box-shadow: 0 0 0 2px rgba(16,185,129,.2); }
+.pb-status-dot-inactif { background: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,.2); }
+
+/* Libellé "Actif / Inactif" à côté du point */
+.pb-online { font-size: 10px; font-weight: 700; color: #10b981; white-space: nowrap; }
+.pb-online.offline { color: #ef4444; }
+
+/* Ligne séparatrice horizontale (déborde du padding) */
+.pb-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 12px -16px;
+  transition: background .4s;
+}
+
+/* Liste des infos personnelles (email, tél, dépt, adresse...) */
+.pb-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  margin-bottom: 80px;
+}
+
+/* Ligne d'info individuelle : icône + valeur */
+.pb-info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+
+/* Petite icône SVG devant chaque info */
+.pb-info-icon { flex-shrink: 0; color: var(--accent);  }
+
+/* Valeur textuelle de l'info (tronquée si débordement) */
+.pb-info-val {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color .4s;
+}
+
+/* Stats compactes (projets / en cours / avancement) */
+.pb-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+  margin-bottom: 8px;
+}
+
+/* Bloc d'une stat individuelle */
+.pbs-item { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; }
+
+/* Valeur numérique large (monospace) */
+.pbs-n {
+  font-family: 'DM Mono', monospace;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  transition: color .4s;
+}
+
+/* Libellé sous la valeur de stat */
+.pbs-l {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.3;
+  transition: color .4s;
+
+}
+
+/* Séparateur vertical entre les stats */
+.pbs-sep { width: 1px; height: 32px; background: var(--border-color); transition: background .4s; }
+
+/* Zone de badges dt-badge (feuille, projets, réclamations...) */
+.pb-badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+
+/* Bouton CTA "Modifier le profil" en bas de la carte */
+.pb-cta {
+
+  width: 100%;
+  padding: 9px ;
+  border: none;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: opacity .2s, transform .15s;
+  margin-top: auto;
+}
+.pb-cta:hover { opacity: .88; transform: translateY(-1px); }
+
+/* ─────────────────────────────────────────
+   CARTE FEUILLE DE TEMPS (b-week)
+   Barres journalières + chips résumé
+───────────────────────────────────────── */
+
+/* Corps principal de la carte semaine */
+.week-body { display: flex; flex-direction: column; gap: 12px; }
+
+/* Zone des 7 barres journalières */
+.week-bars {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  height: 90px;
+}
+/* ── Graphique linéaire "Cette semaine" ── */
+.b-week { padding: 18px 22px; }
+
+.week-line-wrap { width: 100%; margin: 4px 0 12px; }
+
+.week-line-svg {
+  width: 100%;
+  height: 150px;
+  display: block;
+}
+
+.week-line-xaxis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding: 0 2px;
+}
+
+.week-line-xlbl {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  transition: color .4s;
+}
+/* Colonne barre (track + label + valeur) */
+.wb-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  height: 100%;
+}
+
+/* Piste grise de fond de la barre */
+.wb-track {
+  flex: 1;
+  width: 100%;
+  background: var(--bg-input);
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  transition: background .4s;
+}
+
+/* Remplissage coloré (hauteur dynamique via [style.height.%]) */
+.wb-fill {
+  width: 100%;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #10b981, #34d399);
+  transition: height .8s cubic-bezier(.4,0,.2,1);
+}
+/* Jour passé avec 0h → retard (orange) */
+.wb-fill.late { background: linear-gradient(180deg, #f59e0b, #fbbf24); }
+/* Aujourd'hui → accent pulsant */
+.wb-fill.now  { background: linear-gradient(180deg, var(--accent), var(--accent-2)); animation: nowBlink 2s ease infinite; }
+@keyframes nowBlink { 0%,100% { opacity: 1; } 50% { opacity: .65; } }
+
+/* Label abrégé du jour (Lun, Mar...) */
+.wb-day {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  transition: color .4s;
+}
+.today-lbl { color: var(--accent) !important; }
+
+/* Valeur horaire sous la barre (ex: 7.5h) */
+.wb-t { font-size: 10px; color: var(--text-muted); font-family: 'DM Mono', monospace; transition: color .4s; }
+
+/* Chips résumé (heures, statut) */
+.week-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* Chip individuelle de statut ou d'info */
+.wc { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
+.wc.pres { background: rgba(16,185,129,.12); color: #10b981; }  /* Validée */
+.wc.late { background: rgba(245,158,11,.12); color: #f59e0b; }  /* Soumise */
+.wc.abs  { background: rgba(239,68,68,.10);  color: #ef4444; }  /* Brouillon */
+.wc.hrs  { background: rgba(59,130,246,.12); color: #3b82f6; }  /* Total heures */
+
+/* État vide (aucune donnée) centré */
+.week-empty, .leave-empty, .ilist-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 8px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* ─────────────────────────────────────────
+   JAUGE CONCENTRIQUE SVG — pd5 style
+   Utilisée dans b-leave ET b-rec.
+   Même design que pd5-dash-donut-card :
+   - Anneaux concentriques avec stroke-dasharray
+   - Départ du haut via rotate(-90 cx cy)
+   - Texte central (%, libellé)
+   - Légende en dessous
+───────────────────────────────────────── */
+
+/* Wrapper centrant le SVG dans la carte */
+.home-gauge-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 4px 0 10px;
+}
+
+/* SVG des anneaux concentriques */
+.home-gauge-svg {
+  width: 140px;
+  height: 140px;
+  overflow: visible;
+}
+
+/* Anneau de fond (gris — track) commun à tous les rangs */
+.home-ring-bg {
+  fill: none;
+  transition: stroke .4s;
+}
+
+/* Anneau coloré : résolues / traitées → couleur accent (thème) */
+.home-ring-accent {
+  fill: none;
+  stroke: var(--accent);           /* couleur principale */
+  --ring-border: #4d2c93;  
+  stroke-width: 7;
+  transition: stroke-dasharray .9s cubic-bezier(.4,0,.2,1);
+}
+
+/* Anneau coloré : en attente → amber/orange */
+.home-ring-amber {
+  fill: none;
+  stroke: #0d41f6;
+  --ring-border: #0d32b3;
+  stroke-width: 7;
+  transition: stroke-dasharray .9s cubic-bezier(.4,0,.2,1);
+}
+
+/* Anneau coloré : en cours → bleu */
+.home-ring-blue {
+  fill: none;
+  stroke: #00c2ff;
+  --ring-border: #047fb1;
+    stroke-width: 7;
+  transition: stroke-dasharray .9s cubic-bezier(.4,0,.2,1);
+}
+
+/* Nombre central grand (pourcentage) — style monospace */
+.home-gauge-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 26px;
+  font-weight: 700;
+  fill: var(--text-primary);
+}
+
+/* Unité "%" sous le chiffre */
+.home-gauge-unit {
+  font-size: 12px;
+  font-weight: 600;
+  fill: var(--text-muted);
+}
+
+/* Libellé "traitées / résolues" sous le % */
+.home-gauge-sub {
+  font-size: 10px;
+  fill: var(--text-muted);
+}
+
+/* Légende sous la jauge : liste de lignes colorées */
+.home-gauge-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 30px;
+}
+
+/* Ligne de légende : point + libellé + pourcentage */
+.home-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11.5px;
+}
+
+/* Point de couleur correspondant à l'anneau */
+.home-legend-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Libellé de la catégorie */
+.home-legend-label { color: var(--text-secondary); flex: 1; transition: color .4s; }
+
+/* Pourcentage en gras à droite */
+.home-legend-pct { font-size: 15px; font-weight: 700; color: var(--text-primary); transition: color .4s; }
+
+/* ─────────────────────────────────────────
+   BOUTONS CTA POINTILLÉS (bas des cartes droite)
+   Deux variantes : teal (demandes) + accent (réclamations)
+───────────────────────────────────────── */
+
+/* Base commune : bordure pointillée, fond transparent */
+.home-cta-dashed {
+  width: 100%;
+  padding: 8px;
+  border-radius: 9px;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  margin-top: auto;
+  transition: border-color .2s, background .2s, color .2s;
+}
+
+/* Variante teal pour la carte demandes */
+.home-cta-teal {
+  border: 1.5px dashed var(--accent);
+  color: var(--accent);
+}
+.home-cta-teal:hover { border-color: #14b8a6; background: rgba(20,184,166,.07); }
+
+/* Variante accent (violet) pour la carte réclamations */
+.home-cta-accent {
+  border: 1.5px dashed var(--accent);
+  color: var(--accent);
+}
+.home-cta-accent:hover { background: var(--accent-soft); }
+
+/* ─────────────────────────────────────────
+   ACTIVITÉ RÉCENTE (b-inbox)
+   Liste de flux (activités + docs + demandes)
+───────────────────────────────────────── */
+
+/* Liste des items de flux */
+.ilist { display: flex; flex-direction: column; gap: 1px; margin-bottom: 10px; }
+
+/* Ligne d'item : avatar rond + info + date */
+.irow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 8px;
+  border-radius: 9px;
+  cursor: default;
+  transition: background .15s;
+}
+.irow:hover { background: var(--bg-hover); }
+
+/* Mini avatar coloré avec icône SVG selon le type */
+.iav {
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+/* Bloc info : titre + sous-titre */
+.iinfo { flex: 1; min-width: 0; }
+
+/* Titre de l'item (nom activité, doc...) */
+.iname {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1px;
+  transition: color .4s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Sous-titre (statut ou catégorie) */
+.imsg {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color .4s;
+}
+
+/* Colonne droite : date relative */
+.itail { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+
+/* Date relative (Xmin, Xh, hier...) */
+.itime { font-size: 10px; color: var(--text-muted); white-space: nowrap; transition: color .4s; }
+
+/* Badge nombre d'items dans le header activité récente */
+.inbox-badge {
+  margin-left: auto;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* ─────────────────────────────────────────
+   QUICK ACTIONS (b-actions)
+   Grille auto-fill de boutons d'accès rapide
+───────────────────────────────────────── */
+
+/* Grille responsive auto-fill */
+.qa-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+/* Bouton action rapide : icône + libellé */
+.qa-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all .18s;
+  white-space: nowrap;
+}
+.qa-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+/* Icône colorée dans le bouton quick action */
+.qa-ico {
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+/* Variantes couleurs des icônes */
+.qa-ico.teal   { background: rgba(20,184,166,.15);  color: #14b8a6; }
+.qa-ico.blue   { background: rgba(59,130,246,.15);  color: #3b82f6; }
+.qa-ico.purple { background: rgba(192,38,211,.15);  color: #c026d3; }
+.qa-ico.pink   { background: rgba(236,72,153,.15);  color: #ec4899; }
+
+/* ─────────────────────────────────────────
+   RESPONSIVE
+   1100px : 2 colonnes (sans colonne droite dédiée)
+   768px  : 1 seule colonne mobile
+───────────────────────────────────────── */
+@media (max-width: 1100px) {
+  /* 2 colonnes : profil + centre (droite passe sous le centre) */
+  .bento,
+  .bento.has-right {
+    grid-template-columns: 240px 1fr;
+    grid-template-rows: auto auto;
+  }
+  /* La colonne droite passe en bas sur toute la largeur */
+  .b-right-col {
+    grid-column: 1 / -1;
+    flex-direction: row; /* côte à côte en ligne */
+    flex-wrap: wrap;
+  }
+  .b-right-col > .bcard { flex: 1; min-width: 200px; }
+}
+
+@media (max-width: 768px) {
+  /* Hero en colonne sur mobile */
+  .hero-row { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .hero-kpis { width: 100%; justify-content: space-around; }
+
+  /* 1 seule colonne pour toutes les cartes */
+  .bento,
+  .bento.has-right { grid-template-columns: 1fr; }
+
+  /* La colonne droite redevient verticale */
+  .b-right-col { flex-direction: column; }
+  .b-right-col > .bcard { min-width: unset; }
+
+  /* Actions en 2 colonnes sur mobile */
+  .qa-grid { grid-template-columns: 1fr 1fr; }
+}

@@ -10,10 +10,20 @@ overleaf Ensuite, dans le corps du texte, au lieu d'écrire « SIG » à la main
 */
 
 
+//////////////////////////////////////*
+\subsection{Diagramme de cas d'utilisation}
+
+La figure \ref{fig:usecase-epic2} présente le raffinement des besoins relatifs à la gestion des projets et des équipes, sous la forme d'un diagramme de cas d'utilisation.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{usecaseepic2.png}
+    \caption{Diagramme de cas d'utilisation de la gestion des projets et des équipes}
+    \label{fig:usecase-epic2}
+\end{figure}
 
 
-
-
+*///////////////////////////////////////
 
 
 

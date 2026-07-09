@@ -32,16 +32,7 @@
           <span class="nav-label">Accueil</span>
           <span class="nav-tooltip">Accueil</span>
         </a>
-   <!-- Home -->
-   <a routerLink="acceuil" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
-    <span class="nav-icon">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M2.5192 7.82274C2 8.77128 2 9.91549 2 12.2039V13.725C2 17.6258 2 19.5763 3.17157 20.7881C4.34315 22 6.22876 22 10 22H14C17.7712 22 19.6569 22 20.8284 20.7881C22 19.5763 22 17.6258 22 13.725V12.2039C22 9.91549 22 8.77128 21.4808 7.82274C20.9616 6.87421 20.0131 6.28551 18.116 5.10812L16.116 3.86687C14.1106 2.62229 13.1079 2 12 2C10.8921 2 9.88939 2.62229 7.88403 3.86687L5.88403 5.10813C3.98695 6.28551 3.0384 6.87421 2.5192 7.82274ZM11.25 18C11.25 18.4142 11.5858 18.75 12 18.75C12.4142 18.75 12.75 18.4142 12.75 18V15C12.75 14.5858 12.4142 14.25 12 14.25C11.5858 14.25 11.25 14.5858 11.25 15V18Z"/>
-      </svg>
-    </span>
-    <span class="nav-label">Accueil2</span>
-    <span class="nav-tooltip">Accueil2</span>
-  </a>
+
         <!-- Dashboard -->
         <a routerLink="/dashboard" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
           <span class="nav-icon">
@@ -656,18 +647,7 @@ class="nav-item nav-subitem-full" (click)="closeSidebar()">
       <span class="nav-tooltip">Documents de l'espace stage</span>
     </a>
 
-    <a *ngIf="perms.canSeeMonProfilStagiaire()"
-       routerLink="/mon-profil-stagiaire" routerLinkActive="active"
-       class="nav-item nav-subitem-full" (click)="closeSidebar()">
-      <span class="nav-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="18" height="18">
-          <circle cx="12" cy="8" r="4"/>
-          <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke-linecap="round"/>
-        </svg>
-      </span>
-      <span class="nav-label">Mon profil</span>
-      <span class="nav-tooltip">Mon profil stagiaire</span>
-    </a>
+
   </div>
 </div>
 
@@ -675,37 +655,25 @@ class="nav-item nav-subitem-full" (click)="closeSidebar()">
 <ng-container *ngIf="perms.canSeeEspaceStagiaire() && perms.estStagiairePur()">
 
   <!-- ✅ Mon projet — lien direct vers le détail, renommé avec le nom du projet -->
-  <a *ngIf="perms.canSeeProjetsStageMenu() && stagCtx.projetId()"
-     [routerLink]="['/projets-stage', stagCtx.projetId()]"
-     routerLinkActive="active"
-     class="nav-item" (click)="closeSidebar()">
-    <span class="nav-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="20" height="20">
-        <rect x="3" y="3" width="7" height="7" rx="1"/>
-        <rect x="14" y="3" width="7" height="7" rx="1"/>
-        <rect x="14" y="14" width="7" height="7" rx="1"/>
-        <rect x="3" y="14" width="7" height="7" rx="1"/>
-      </svg>
-    </span>
-    <span class="nav-label">{{ stagCtx.projetNom() }}</span>
-    <span class="nav-tooltip">{{ stagCtx.projetNom() }}</span>
-  </a>
+<!-- ✅ Mon projet — texte toujours fixe, seul le lien change selon l'ID connu -->
+<a *ngIf="perms.canSeeProjetsStageMenu()"
+   [routerLink]="stagCtx.projetId() ? ['/projets-stage', stagCtx.projetId()] : ['/projets-stage']"
+   routerLinkActive="active"
+   class="nav-item" (click)="closeSidebar()">
+  <span class="nav-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="20" height="20">
+      <rect x="3" y="3" width="7" height="7" rx="1"/>
+      <rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="14" y="14" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/>
+    </svg>
+  </span>
+  <span class="nav-label">Mon projet</span>
+  <span class="nav-tooltip">Mon projet de stage</span>
+</a>
 
-  <!-- Fallback si l'ID n'est pas encore chargé -->
-  <a *ngIf="perms.canSeeProjetsStageMenu() && !stagCtx.projetId()"
-     routerLink="/projets-stage" routerLinkActive="active"
-     class="nav-item" (click)="closeSidebar()">
-    <span class="nav-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="20" height="20">
-        <rect x="3" y="3" width="7" height="7" rx="1"/>
-        <rect x="14" y="3" width="7" height="7" rx="1"/>
-        <rect x="14" y="14" width="7" height="7" rx="1"/>
-        <rect x="3" y="14" width="7" height="7" rx="1"/>
-      </svg>
-    </span>
-    <span class="nav-label">Mon projet</span>
-    <span class="nav-tooltip">Mon projet de stage</span>
-  </a>
+
+
 
   <a *ngIf="perms.canSeeDocEspaceStageMenu()"
      routerLink="/espace-stage/documents" routerLinkActive="active"
@@ -720,18 +688,15 @@ class="nav-item nav-subitem-full" (click)="closeSidebar()">
     <span class="nav-tooltip">Documents de stage</span>
   </a>
 
-  <a *ngIf="perms.canSeeMonProfilStagiaire()"
-     routerLink="/mon-profil-stagiaire" routerLinkActive="active"
-     class="nav-item" (click)="closeSidebar()">
-    <span class="nav-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="20" height="20">
-        <circle cx="12" cy="8" r="4"/>
-        <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke-linecap="round"/>
-      </svg>
-    </span>
-    <span class="nav-label">Mon profil</span>
-    <span class="nav-tooltip">Mon profil stagiaire</span>
-  </a>
+
+
+
+
+
+
+
+
+
 
 </ng-container>
       

@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { catchError, of } from 'rxjs';
 
 import { StagiaireService }         from '../../../services/stagiaire.service';
 import { ProjetStageService }       from '../../../services/projet-stage-service.service';
@@ -115,11 +116,24 @@ export class StagiairesComponent implements OnInit {
 
   ngOnInit(): void {
     if (!this.perms.canSeeGestionStagiaires()) return;
-
+  
     const kcId = this.keycloak.getKeycloakUserId();
     if (kcId) {
       this.userSvc.getUserByKeycloakId(kcId).subscribe({
-        next: u => { this.currentUserId.set(u.id); this.loadStagiaires(u.id); }
+        next: u => {
+          this.currentUserId.set(u.id);
+          this.loadStagiaires(u.id);
+  
+          // Projets de stage (typeProjetId = 4) — via /projets/superviseur/{id},
+          // seule route accessible avec les permissions INT_SUPER_*/INT_ADMIN_*
+          // de cette page (GET /projets sans filtre exige PROJECT_VIEW_ALL,
+          // que ces profils n'ont pas → 403 systématique évité ici).
+          if (this.perms.canAssignProject() || this.perms.canCreateProjetStage()) {
+            this.projetSvc.getBySuperviseur(u.id).pipe(catchError(() => of([]))).subscribe({
+              next: (d: Projet[]) => this.tousLesProjets.set(d.filter((p: Projet) => p.typeProjetId === 4))
+            });
+          }
+        }
       });
     }
     this.svc.getTypesStage().subscribe({ next: d => this.typesStage.set(d) });
@@ -127,11 +141,7 @@ export class StagiairesComponent implements OnInit {
     this.nomencSvc.getAllUniversites().subscribe({ next: d => this.universites.set(d) });
     this.nomencSvc.getAllSpecialites().subscribe({ next: d => this.specialites.set(d) });
     this.nomencSvc.getAllNiveaux().subscribe({ next: d => this.niveaux.set(d) });
-    if (this.perms.canAssignProject() || this.perms.canCreateProjetStage()) {
-      this.projetSvc.getAll().subscribe({ next: d => this.tousLesProjets.set(d) });
-    }
   }
-
   private loadStagiaires(userId: number): void {
     this.loading.set(true);
     if (this.perms.canViewAllInterns()) {

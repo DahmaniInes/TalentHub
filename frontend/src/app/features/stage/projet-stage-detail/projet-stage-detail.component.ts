@@ -1447,37 +1447,89 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
   // DASHBOARDS — STACKED BAR CHART
   // ════════════════════════════════════════════════════════════
 
-  getYAxisLabels(): number[] {
-    const total = this.activites().length;
-
-    if (total <= 5) {
-      return [5, 4, 3, 2, 1, 0];
-    }
-
-    const step = Math.ceil(total / 10);
-
+  private buildYAxisLabels(max: number): number[] {
+    const step = Math.max(1, Math.ceil(max / 5));
     const labels: number[] = [];
-    for (let i = 5; i >= 0; i--) {
-      labels.push(i * step);
-    }
+    for (let i = 5; i >= 0; i--) labels.push(i * step);
     return labels;
   }
-
-  getLineYLabels(): number[] { return this.getYAxisLabels(); }
+  
+  /** Points de 8 jours communs aux deux graphiques (bar + line), pour un mois/année donné */
+  private getMonthlyPeriodPoints(y: number, m: number): { year: number; month: number; day: number }[] {
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const nextM = m === 11 ? 0 : m + 1;
+    const nextY = m === 11 ? y + 1 : y;
+    const daysInNextMonth = new Date(nextY, nextM + 1, 0).getDate();
+  
+    const points: { year: number; month: number; day: number }[] = [];
+    for (let d = 1; d <= daysInMonth; d += 8) points.push({ year: y, month: m, day: d });
+    if (points[points.length - 1]?.day !== daysInMonth) points.push({ year: y, month: m, day: daysInMonth });
+    const halfNext = Math.floor(daysInNextMonth / 2);
+    for (let d = 1; d <= halfNext; d += 8) points.push({ year: nextY, month: nextM, day: d });
+    return points;
+  }
+  
+  /** Max réel parmi les barres empilées affichées (bar chart "Activités créées par mois") */
+  private getBarChartMax(): number {
+    const points = this.getMonthlyPeriodPoints(this.chartYear(), this.chartMonthIdx());
+    const acts = this.activites();
+    let max = 0;
+    points.forEach((pt, i) => {
+      const start = i === 0 ? 1 : points[i - 1].day + 1;
+      const total = acts.filter(a => {
+        if (!a.dateCreation) return false;
+        const dt = new Date(a.dateCreation);
+        return dt.getFullYear() === pt.year && dt.getMonth() === pt.month &&
+               dt.getDate() >= start && dt.getDate() <= pt.day;
+      }).length;
+      if (total > max) max = total;
+    });
+    return max;
+  }
+  
+  getYAxisLabels(): number[] {
+    return this.buildYAxisLabels(this.getBarChartMax());
+  }
+  
+  /** Max réel parmi les points de "Activités terminées (tendance)" — calcul indépendant du bar chart */
+  private getLineChartMax(): number {
+    const points = this.getMonthlyPeriodPoints(this.lineYear(), this.lineMonthIdx());
+    let max = 0;
+    points.forEach((pt, i) => {
+      const start = i === 0 ? 1 : points[i - 1].day + 1;
+      const count = this.activites().filter(a => {
+        if (a.statutActiviteId !== 4) return false;
+        if (!a.dateMiseAJour) return false;
+        const dt = new Date(a.dateMiseAJour);
+        return dt.getFullYear() === pt.year && dt.getMonth() === pt.month &&
+               dt.getDate() >= start && dt.getDate() <= pt.day;
+      }).length;
+      if (count > max) max = count;
+    });
+    return max;
+  }
+  
+  getLineYLabels(): number[] {
+    return this.buildYAxisLabels(this.getLineChartMax());
+  }
 
   getMonthlyData(): MonthData[] {
-    const y = this.chartYear();
     const statuts = this.statutsActivite();
     const acts = this.activites();
     const yLabels = this.getYAxisLabels();
     const yMax = yLabels[0] || 1;
-
-    return this.MOIS_LABELS.map((lbl, mi) => {
+  
+    const points = this.getMonthlyPeriodPoints(this.chartYear(), this.chartMonthIdx());
+  
+    return points.map((pt, i) => {
+      const start = i === 0 ? 1 : points[i - 1].day + 1;
       const segments = statuts.map((s, si) => {
         const count = acts.filter(a => {
           if (!a.dateCreation) return false;
           const dt = new Date(a.dateCreation);
-          return dt.getFullYear() === y && dt.getMonth() === mi && a.statutActiviteId === s.id;
+          return dt.getFullYear() === pt.year && dt.getMonth() === pt.month &&
+                 dt.getDate() >= start && dt.getDate() <= pt.day &&
+                 a.statutActiviteId === s.id;
         }).length;
         return {
           statutId: s.id,
@@ -1487,7 +1539,7 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
           pct: yMax > 0 ? (count / yMax) * 100 : 0
         };
       }).filter(seg => seg.count > 0);
-      return { label: lbl, segments };
+      return { label: `${this.MOIS_LABELS[pt.month]}${pt.day}`, segments };
     });
   }
 
@@ -1523,15 +1575,14 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
       const start = i === 0 ? 1 : points[i - 1].day + 1;
       return this.activites().filter(a => {
         if (a.statutActiviteId !== 4) return false;
-        if (!a.dateCreation) return false;
-        const dt = new Date(a.dateCreation);
+        if (!a.dateMiseAJour) return false;
+        const dt = new Date(a.dateMiseAJour);
         return dt.getFullYear() === pt.year &&
                dt.getMonth() === pt.month &&
                dt.getDate() >= start &&
                dt.getDate() <= pt.day;
       }).length;
     });
-
     return points.map((_, i) => ({
       x: 10 + (i / Math.max(points.length - 1, 1)) * (this.LINE_W - 20),
       y: this.LINE_H - 10 - (yMax > 0 ? (counts[i] / yMax) * (this.LINE_H - 20) : 0)
@@ -1584,17 +1635,7 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
     { colorClass: 'pd5-color-senary',      hex: '#ef4444'       },
   ];
 
-  getGaugeLegend(): GaugeLegendItem[] {
-    const items = this.getPrioritesByCount();
-    const total = this.activites().length;
 
-    return items.map((item, i) => ({
-      label: item.priorite.libelle,
-      couleur: item.priorite.couleur,
-      ringCouleur: this.GAUGE_COLORS[i % this.GAUGE_COLORS.length].hex,
-      pct: total > 0 ? Math.round((item.count / total) * 100) : 0
-    }));
-  }
 
   getGaugeDash(rankIndex: number, r: number): string {
     const sorted = [...this.priorites()]
@@ -1701,40 +1742,64 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
     return `${visible.toFixed(2)} ${total}`;
   }
 
-  private getPrioritesByCount(): { priorite: PrioriteActivite; count: number; terminées: number }[] {
-    const STATUT_TERMINE_ID = 4;
-    return [...this.priorites()]
-      .map(p => ({
-        priorite: p,
-        count: this.activites().filter(a => a.prioriteId === p.id).length,
-        terminées: this.activites().filter(a => a.prioriteId === p.id && a.statutActiviteId === STATUT_TERMINE_ID).length
-      }))
-      .filter(item => item.count > 0)
-      .sort((a, b) => b.count - a.count);
-  }
 
-  getGaugePct(index: number): number {
-    const items = this.getPrioritesByCount();
-    const item = items[index];
-    if (!item || item.count === 0) return 0;
-    return Math.round((item.terminées / item.count) * 100);
-  }
+/**
+ * ✅ Répartition des ACTIVITÉS TERMINÉES par priorité (pas un taux de
+ * complétion). Triée par "terminées" décroissant, pour que le rayon
+ * (assigné par rang dans getGaugeRings) corresponde exactement au
+ * pourcentage affiché — plus le % est grand, plus l'anneau est grand.
+ */
+private getPrioritesByCount(): { priorite: PrioriteActivite; terminees: number }[] {
+  const STATUT_TERMINE_ID = 4;
+  return [...this.priorites()]
+    .map(p => ({
+      priorite: p,
+      terminees: this.activites().filter(a => a.prioriteId === p.id && a.statutActiviteId === STATUT_TERMINE_ID).length
+    }))
+    .filter(item => item.terminees > 0)
+    .sort((a, b) => b.terminees - a.terminees);
+}
 
-  getGaugeRings(): { r: number; colorClass: string; count: number; label: string; terminées: number }[] {
-    const items = this.getPrioritesByCount();
-    if (items.length === 0) return [];
-    const outerR = 84;
-    const STEP = 12;
-    const minInnerR = outerR - (items.length - 1) * STEP;
-    const effectiveOuterR = minInnerR < 15 ? outerR + (15 - minInnerR) : outerR;
-    return items.map((item, i) => ({
-      r: effectiveOuterR - i * STEP,
-      colorClass: this.GAUGE_COLORS[i % this.GAUGE_COLORS.length].colorClass,
-      count: item.count,
-      terminées: item.terminées,
-      label: item.priorite.libelle
-    }));
-  }
+private getTotalActivitesTerminees(): number {
+  return this.activites().filter(a => a.statutActiviteId === 4).length;
+}
+
+getGaugeLegend(): GaugeLegendItem[] {
+  const items = this.getPrioritesByCount();
+  const total = this.getTotalActivitesTerminees();
+
+  return items.map((item, i) => ({
+    label: item.priorite.libelle,
+    couleur: item.priorite.couleur,
+    ringCouleur: this.GAUGE_COLORS[i % this.GAUGE_COLORS.length].hex,
+    pct: total > 0 ? Math.round((item.terminees / total) * 100) : 0
+  }));
+}
+
+getGaugePct(index: number): number {
+  const items = this.getPrioritesByCount();
+  const item = items[index];
+  const total = this.getTotalActivitesTerminees();
+  if (!item || total === 0) return 0;
+  return Math.round((item.terminees / total) * 100);
+}
+ 
+
+getGaugeRings(): { r: number; colorClass: string; count: number; label: string; terminées: number }[] {
+  const items = this.getPrioritesByCount();
+  if (items.length === 0) return [];
+  const outerR = 84;
+  const STEP = 12;
+  const minInnerR = outerR - (items.length - 1) * STEP;
+  const effectiveOuterR = minInnerR < 15 ? outerR + (15 - minInnerR) : outerR;
+  return items.map((item, i) => ({
+    r: effectiveOuterR - i * STEP,
+    colorClass: this.GAUGE_COLORS[i % this.GAUGE_COLORS.length].colorClass,
+    count: item.terminees,
+    terminées: item.terminees,
+    label: item.priorite.libelle
+  }));
+}
 
   /** Nombre de membres distincts dans tous les groupes du projet */
   getNombreMembresDistincts(): number {

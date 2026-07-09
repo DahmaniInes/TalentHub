@@ -82,7 +82,7 @@
           <svg class="pd5-gauge-svg" viewBox="0 0 200 200">
             <circle *ngFor="let ring of getGaugeRings(); let i = index" class="pd5-ring" [ngClass]="ring.colorClass"
               cx="100" cy="100" [attr.r]="ring.r" [attr.stroke-dasharray]="getGaugeDashFull(i, ring.r)"
-              transform="rotate(-90 100 100)" />
+              transform="rotate(180 100 100)" />
             <text x="100" y="95" text-anchor="middle" class="pd5-gauge-center-num">{{ activites().length }}</text>
             <text x="100" y="118" text-anchor="middle" class="pd5-gauge-center-label">activités</text>
           </svg>
