@@ -12,6 +12,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { PermissionContextService } from '../../../services/permission-context.service';
 import { Subscription } from 'rxjs';
 import { NotificationService } from '../../../services/notification.service';
+import { CongeService, SoldeConge } from '../../../services/conge.service';
 
 @Component({
   selector: 'app-mes-demandes',
@@ -27,6 +28,8 @@ export class MesDemandesComponent implements OnInit {
   private keycloak       = inject(KeycloakService);
   private ui             = inject(UiService);
   private fb             = inject(FormBuilder);
+  private congeSvc = inject(CongeService);
+
   private notifService = inject(NotificationService);
   private subs = new Subscription();
   readonly permCtx = inject(PermissionContextService);
@@ -37,7 +40,7 @@ export class MesDemandesComponent implements OnInit {
   statuts     = signal<StatutDemande[]>([]);
   loading     = signal(false);
   currentUser = signal<Utilisateur | null>(null);
-
+  soldeConge = signal<SoldeConge | null>(null);
   // Filtre
   filterOpen     = signal(false);
   searchText     = signal('');
@@ -112,15 +115,19 @@ private loadUserAndDemandes(): void {
   if (!kcId) { this.loading.set(false); return; }
 
   this.userService.getUserByKeycloakId(kcId).subscribe({
-      next: (u) => {
-          this.currentUser.set(u);
-          this.demandeService.getByUtilisateur(u.id).subscribe({
-              next: d => { this.demandes.set(d); this.loading.set(false); },
-              error: () => this.loading.set(false)
-          });
-      },
-      error: () => { this.demandes.set([]); this.loading.set(false); }
-  });
+    next: (u) => {
+        this.currentUser.set(u);
+        this.congeSvc.getSolde(u.id).subscribe({
+          next: s => this.soldeConge.set(s),
+          error: () => {}
+        });
+        this.demandeService.getByUtilisateur(u.id).subscribe({
+            next: d => { this.demandes.set(d); this.loading.set(false); },
+            error: () => this.loading.set(false)
+        });
+    },
+    error: () => { this.demandes.set([]); this.loading.set(false); }
+});
 }
 
 

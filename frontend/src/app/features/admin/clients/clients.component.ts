@@ -198,4 +198,199 @@ export class ClientsComponent implements OnInit {
   }
 
   filterPanelOpenP = signal(false);
+
+
+
+  // ── DASHBOARDS — nombre de projets par client + croissance clients ──
+readonly GAUGE_COLORS = [
+  { colorClass: 'pd5-color-primary',    hex: 'var(--accent)' },
+  { colorClass: 'pd5-color-secondary',  hex: '#0d41f6' },
+  { colorClass: 'pd5-color-tertiary',   hex: '#00c2ff' },
+  { colorClass: 'pd5-color-quaternary', hex: '#10b981' },
+  { colorClass: 'pd5-color-quinary',    hex: '#f59e0b' },
+  { colorClass: 'pd5-color-senary',     hex: '#ef4444' },
+];
+
+readonly LINE_W = 300;
+readonly LINE_H = 90;
+readonly MOIS_LABELS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+private readonly MOIS_COMPLETS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+lineYear           = signal<number>(new Date().getFullYear());
+lineMonthIdx        = signal<number>(new Date().getMonth());
+lineCalendarOpen    = signal(false);
+lineShowYearPicker  = signal(false);
+
+lineMonthLabel(): string {
+  return this.MOIS_COMPLETS[this.lineMonthIdx()] + ' ' + this.lineYear();
+}
+prevLineYear(): void { this.lineYear.update(y => y - 1); }
+nextLineYear(): void { this.lineYear.update(y => y + 1); }
+selectLineMonth(idx: number): void { this.lineMonthIdx.set(idx); this.lineCalendarOpen.set(false); }
+toggleLineCalendar(): void { this.lineCalendarOpen.set(!this.lineCalendarOpen()); }
+toggleLineYearPicker(): void { this.lineShowYearPicker.set(!this.lineShowYearPicker()); }
+getYearRange(): number[] {
+  const current = new Date().getFullYear();
+  const result: number[] = [];
+  for (let y = current - 3; y <= current + 2; y++) result.push(y);
+  return result;
+}
+
+// ── Jauge : nombre de projets par client (remplace "Taux de complétion par priorité") ──
+private getClientsByProjets(): { client: Client; nombreProjets: number }[] {
+  return [...this.clients()]
+    .map(c => ({ client: c, nombreProjets: c.nombreProjets || 0 }))
+    .filter(item => item.nombreProjets > 0)
+    .sort((a, b) => b.nombreProjets - a.nombreProjets)
+    .slice(0, 6);
+}
+
+totalProjetsTousClients(): number {
+  return this.clients().reduce((sum, c) => sum + (c.nombreProjets || 0), 0);
+}
+
+getGaugeRings(): { r: number; colorClass: string; nom: string; nombreProjets: number }[] {
+  const items = this.getClientsByProjets();
+  if (items.length === 0) return [];
+  const outerR = 84;
+  const STEP = 12;
+  const minInnerR = outerR - (items.length - 1) * STEP;
+  const effectiveOuterR = minInnerR < 15 ? outerR + (15 - minInnerR) : outerR;
+  return items.map((item, i) => ({
+    r: effectiveOuterR - i * STEP,
+    colorClass: this.GAUGE_COLORS[i % this.GAUGE_COLORS.length].colorClass,
+    nom: item.client.nom,
+    nombreProjets: item.nombreProjets
+  }));
+}
+
+getGaugeDashFull(index: number, radius: number): string {
+  const total = 2 * Math.PI * radius;
+  const pct = this.getGaugePct(index);
+  const visible = total * (pct / 100);
+  return `${visible.toFixed(2)} ${total}`;
+}
+
+getGaugePct(index: number): number {
+  const items = this.getClientsByProjets();
+  const item = items[index];
+  const total = this.totalProjetsTousClients();
+  if (!item || total === 0) return 0;
+  return Math.round((item.nombreProjets / total) * 100);
+}
+
+getGaugeLegend(): { nom: string; nombreProjets: number; ringCouleur: string; pct: number }[] {
+  const items = this.getClientsByProjets();
+  return items.map((item, i) => ({
+    nom: item.client.nom,
+    nombreProjets: item.nombreProjets,
+    ringCouleur: this.GAUGE_COLORS[i % this.GAUGE_COLORS.length].hex,
+    pct: this.getGaugePct(i)
+  }));
+}
+
+// ── Line chart : nombre de clients dans le temps (remplace "Activités terminées") ──
+private getMonthlyPeriodPoints(y: number, m: number): { year: number; month: number; day: number }[] {
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const nextM = m === 11 ? 0 : m + 1;
+  const nextY = m === 11 ? y + 1 : y;
+  const daysInNextMonth = new Date(nextY, nextM + 1, 0).getDate();
+
+  const points: { year: number; month: number; day: number }[] = [];
+  for (let d = 1; d <= daysInMonth; d += 8) points.push({ year: y, month: m, day: d });
+  if (points[points.length - 1]?.day !== daysInMonth) points.push({ year: y, month: m, day: daysInMonth });
+  const halfNext = Math.floor(daysInNextMonth / 2);
+  for (let d = 1; d <= halfNext; d += 8) points.push({ year: nextY, month: nextM, day: d });
+  return points;
+}
+
+private getClientsChartMax(): number {
+  const points = this.getMonthlyPeriodPoints(this.lineYear(), this.lineMonthIdx());
+  let max = 0;
+  points.forEach(pt => {
+    const dateFin = new Date(pt.year, pt.month, pt.day, 23, 59, 59);
+    const count = this.clients().filter(c => c.createdAt && new Date(c.createdAt) <= dateFin).length;
+    if (count > max) max = count;
+  });
+  return max;
+}
+
+private buildYAxisLabels(max: number): number[] {
+  const step = Math.max(1, Math.ceil(max / 5));
+  const labels: number[] = [];
+  for (let i = 5; i >= 0; i--) labels.push(i * step);
+  return labels;
+}
+
+getLineYLabels(): number[] {
+  return this.buildYAxisLabels(this.getClientsChartMax());
+}
+
+getLinePoints2(): { x: number; y: number }[] {
+  const points = this.getMonthlyPeriodPoints(this.lineYear(), this.lineMonthIdx());
+  const yLabels = this.getLineYLabels();
+  const yMax = yLabels[0] || 1;
+
+  const counts = points.map(pt => {
+    const dateFin = new Date(pt.year, pt.month, pt.day, 23, 59, 59);
+    return this.clients().filter(c => c.createdAt && new Date(c.createdAt) <= dateFin).length;
+  });
+
+  return points.map((_, i) => ({
+    x: 10 + (i / Math.max(points.length - 1, 1)) * (this.LINE_W - 20),
+    y: this.LINE_H - 10 - (yMax > 0 ? (counts[i] / yMax) * (this.LINE_H - 20) : 0)
+  }));
+}
+
+getLineXLabels2(): string[] {
+  const points = this.getMonthlyPeriodPoints(this.lineYear(), this.lineMonthIdx());
+  return points.map(pt => `${this.MOIS_LABELS[pt.month]}${pt.day}`);
+}
+
+getLinePath2(): string {
+  const pts = this.getLinePoints2();
+  if (!pts.length) return '';
+  return pts.map((p, i) => (i === 0 ? `M${p.x},${p.y}` : `L${p.x},${p.y}`)).join(' ');
+}
+
+getLineAreaPath2(): string {
+  const pts = this.getLinePoints2();
+  if (!pts.length) return '';
+  const line = pts.map((p, i) => (i === 0 ? `M${p.x},${p.y}` : `L${p.x},${p.y}`)).join(' ');
+  return `${line} L${pts[pts.length - 1].x},${this.LINE_H} L${pts[0].x},${this.LINE_H} Z`;
+}
+
+
+
+/** ✅ NOUVEAU — Les 2 clients les plus récemment créés, pour la carte "Clients récents" */
+getClientsRecents(): Client[] {
+  return [...this.clients()]
+    .filter(c => !!c.createdAt)
+    .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
+    .slice(0, 2);
+}
+
+/** ✅ NOUVEAU — % des projets (parmi tous les projets clients) qui appartiennent à un client actif */
+pctProjetsClientsActifs(): number {
+  const total = this.totalProjetsTousClients();
+  if (total === 0) return 0;
+  const actifs = this.clients()
+    .filter(c => c.actif)
+    .reduce((s, c) => s + (c.nombreProjets || 0), 0);
+  return Math.round((actifs / total) * 100);
+}
+
+/** ✅ NOUVEAU — % de clients actifs sur le total des clients */
+pctClientsActifs(): number {
+  const total = this.clients().length;
+  if (total === 0) return 0;
+  return Math.round((this.statsActifs() / total) * 100);
+}
+
+/** ✅ NOUVEAU — dasharray d'une jauge semi-circulaire (demi-cercle, r donné) */
+getSemiGaugeDash(pct: number, r: number): string {
+  const total = Math.PI * r;
+  const fill = total * (Math.max(0, Math.min(100, pct)) / 100);
+  return `${fill.toFixed(2)} ${total.toFixed(2)}`;
+}
 }

@@ -32,7 +32,9 @@ public class TypeDemande {
     @Builder.Default
     private boolean actif = true;
 
-
+    @Column(name = "est_conge", nullable = false)
+    @Builder.Default
+    private boolean estConge = false;
 
 
 }

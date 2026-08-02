@@ -33,20 +33,21 @@
         <span class="kpi-lbl">Cette semaine</span>
       </div>
 
-      <div class="kpi-sep" *ngIf="perms.canSeeFTMenu() && perms.canSeeDemandeMenu()"></div>
+      <div  *ngIf="perms.canSeeFTMenu() && perms.canSeeDemandeMenu()"></div>
 
-      <!-- Demandes en attente -->
-      <div class="kpi-pill" *ngIf="perms.canSeeDemandeMenu()">
-        <span class="kpi-val">{{ demandesEnAttente() }}</span>
-        <span class="kpi-lbl">Demande(s) en attente</span>
-      </div>
+  <!-- ✅ Jours d'absence — valeur statique temporaire -->
+<div class="kpi-sep" *ngIf="!perms.estStagiairePur()"></div>
+<div class="kpi-pill" *ngIf="!perms.estStagiairePur()">
+  <span class="kpi-val">1j</span>
+  <span class="kpi-lbl">Jour(s) d'absence</span>
+</div>
 
-      <!-- Réclamations en attente -->
-      <div class="kpi-sep" *ngIf="perms.canSeeDemandeMenu() && perms.canViewOwnRec()"></div>
-      <div class="kpi-pill" *ngIf="perms.canViewOwnRec()">
-        <span class="kpi-val">{{ reclamationsEnAttente() }}</span>
-        <span class="kpi-lbl">Réclamation(s) en attente</span>
-      </div>
+<!-- ✅ Congés pris / acquis — valeur statique temporaire -->
+<div class="kpi-sep" *ngIf="!perms.estStagiairePur()"></div>
+<div class="kpi-pill" *ngIf="!perms.estStagiairePur()">
+  <span class="kpi-val">2j<span style="font-size:.7em;font-weight:600;color:var(--text-secondary)">/5.4j</span></span>
+  <span class="kpi-lbl">Congés pris</span>
+</div>
 
       <!-- Activités en cours -->
       <div class="kpi-sep" *ngIf="mesActivites().length > 0"></div>

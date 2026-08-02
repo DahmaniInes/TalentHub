@@ -4,6 +4,7 @@ export interface TypeDemande {
   libelle: string;
   description?: string;
   actif: boolean;
+  estConge?: boolean;   // ✅ NOUVEAU
 }
 
 export interface StatutDemande {

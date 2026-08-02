@@ -31,6 +31,7 @@ public class TypeDemandeService {
                 .libelle(req.getLibelle())
                 .description(req.getDescription())
                 .actif(req.isActif())
+                .estConge(req.isEstConge())
                 .build());
     }
 
@@ -53,6 +54,7 @@ public class TypeDemandeService {
         t.setLibelle(req.getLibelle());
         t.setDescription(req.getDescription());
         t.setActif(req.isActif());
+       // existing.setEstConge(req.isEstConge());
         return repository.save(t);
     }
 

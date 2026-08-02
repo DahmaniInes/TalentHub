@@ -9,4 +9,5 @@ public class TypeDemandeRequest {
     @NotBlank private String libelle;
     private String description;
     private boolean actif = true;
+    private boolean estConge;
 }

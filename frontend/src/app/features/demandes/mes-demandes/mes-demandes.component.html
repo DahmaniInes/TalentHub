@@ -1,6 +1,30 @@
 <!-- MES DEMANDES — Style identique à users.component -->
 <div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh">
+<!-- ══ DASHBOARD SOLDE CONGÉ ══ -->
+<div *ngIf="soldeConge() as sc" class="dt-wrap" style="margin-bottom:16px">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
 
+    <div class="pd5-kpi-card" style="padding:14px 16px">
+      <div class="pd5-kpi-card-title" style="font-size:.7rem">Congés acquis ({{ sc.annee }})</div>
+      <div class="pd5-kpi-value" style="font-size:1.5rem">{{ sc.acquis | number:'1.1-1' }}<span style="font-size:.8rem;font-weight:600"> j</span></div>
+      <span style="font-size:.65rem;color:var(--dt-text-sub)">{{ sc.moisEcoules }} mois × {{ sc.tauxMensuel }}j/mois</span>
+    </div>
+
+    <div class="pd5-kpi-card" style="padding:14px 16px">
+      <div class="pd5-kpi-card-title" style="font-size:.7rem">Congés pris ({{ sc.annee }})</div>
+      <div class="pd5-kpi-value" style="font-size:1.5rem">{{ sc.pris | number:'1.1-1' }}<span style="font-size:.8rem;font-weight:600"> j</span></div>
+    </div>
+
+    <div class="pd5-kpi-card" style="padding:14px 16px">
+      <div class="pd5-kpi-card-title" style="font-size:.7rem">Solde disponible</div>
+      <div class="pd5-kpi-value" [style.color]="sc.solde < 0 ? '#ef4444' : 'var(--dt-text)'" style="font-size:1.5rem">
+        {{ sc.solde | number:'1.1-1' }}<span style="font-size:.8rem;font-weight:600"> j</span>
+      </div>
+      <span style="font-size:.65rem;color:var(--dt-text-sub)">acquis + report ({{ sc.report }}j) − pris</span>
+    </div>
+
+  </div>
+</div>
     <!-- Popup commentaire RH -->
     <div *ngIf="commentPopup()" class="dm-comment-overlay" (click)="closeComment()">
       <div class="dm-comment-popup" (click)="$event.stopPropagation()">

@@ -44,7 +44,8 @@ export class TypesDemandesComponent implements OnInit {
             code:        ['', Validators.required],
             libelle:     ['', Validators.required],
             description: [''],
-            actif:       [true]
+            actif:       [true],
+            estConge:    [false]   // ✅ NOUVEAU — marque ce type comme "congé" pour le calcul du solde
         });
 
         // ✅ Auto-uppercase en temps réel, sans bloquer la saisie ni afficher d'erreur
@@ -135,7 +136,7 @@ export class TypesDemandesComponent implements OnInit {
     openCreate(): void {
         if (!this.permCtx.canCreateType()) { this.ui.error("Permission requise : DEMANDE_TYPE_CREATE"); return; }
         this.editingId.set(null);
-        this.form.reset({ code: '', libelle: '', description: '', actif: true });
+        this.form.reset({ code: '', libelle: '', description: '', actif: true, estConge: false });
         this.form.get('code')!.enable();
         this.slideOpen.set(true);
     }

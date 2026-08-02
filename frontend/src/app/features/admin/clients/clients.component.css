@@ -1,0 +1,197 @@
+/* ══ DASHBOARDS — copié de projet-detail.component.css ══ */
+.pd5-dash-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 800px) { .pd5-dash-row { grid-template-columns: 1fr; } }
+  
+  .pd5-dash-card {
+    background: var(--dt-bg);
+    border: 1px solid var(--dt-border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    display: flex; flex-direction: column;
+    gap: 12px;
+  }
+  .pd5-dash-card-header {
+    display: flex; align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .pd5-dash-card-title {
+    font-size: .999rem; font-weight: 450;
+    color: var(--dt-text);
+    display: flex; align-items: center;
+    letter-spacing: 1px;
+  }
+  .pd5-dash-total-val {
+    font-size: 1.6rem; font-weight: 800;
+    color: var(--dt-text);
+    margin-top: 4px;
+    display: flex; align-items: center;
+  }
+  .pd5-export-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 8px 12px;
+    border-radius: 3px;
+    background: rgba(0,0,0,.15);
+    border-color: rgba(255,255,255,.1);
+    color: var(--dt-text);
+    font-size: .7rem; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    transition: all .12s;
+  }
+  .pd5-export-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .pd5-export-btn svg { width: 13px; height: 13px; }
+  
+  .pd5-dash-donut-card { display: flex; flex-direction: column; gap: 16px; }
+  .pd5-gauge-wrap {
+    position: relative; width: 100%; max-width: 220px;
+    flex-shrink: 0; margin: 0 auto; display: flex; justify-content: center;
+  }
+  .pd5-gauge-svg { width: 100%; height: auto; overflow: visible; }
+  .pd5-ring { fill: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-width: 8; }
+  .pd5-color-primary    { stroke: var(--accent); }
+  .pd5-color-secondary  { stroke: #0d41f6; }
+  .pd5-color-tertiary   { stroke: #00c2ff; }
+  .pd5-color-quaternary { stroke: #10b981; }
+  .pd5-color-quinary    { stroke: #f59e0b; }
+  .pd5-color-senary     { stroke: #ef4444; }
+  
+  .pd5-gauge-legend-wrap { display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%; }
+  .pd5-gauge-legend { display: flex; flex-direction: column; gap: 12px; width: 100%; align-items: flex-start; }
+  .pd5-legend-row { display: flex; align-items: center; gap: 10px; width: 100%; }
+  .pd5-legend-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .pd5-legend-label { flex: 1; color: var(--dt-text-sub); }
+  .pd5-legend-pct { color: var(--dt-text); text-align: right; }
+  .pd5-gauge-center-num { font-size: 30px; font-weight: 800; fill: var(--dt-text); }
+  .pd5-gauge-center-label { font-size: 15px; fill: var(--dt-text-sub); }
+  
+  .pd5-date-picker-wrap { position: relative; }
+  .pd5-date-picker-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 10px; border: 1px solid var(--dt-border); border-radius: 3px;
+    background: var(--dt-bg-header); color: var(--dt-text-sub);
+    font-size: .88rem; font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: all .12s; white-space: nowrap;
+  }
+  .pd5-date-picker-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .pd5-date-picker-dark { background: rgba(0,0,0,.15); border-color: rgba(255,255,255,.1); color: var(--dt-text); }
+  
+  .pd5-calendar-dropdown {
+    position: absolute; top: calc(100% + 6px); left: 0; width: 220px;
+    background: var(--dt-bg); border: 1px solid var(--dt-border); border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.2); z-index: 800;
+    opacity: 0; transform: translateY(-4px) scale(.97); pointer-events: none;
+    transition: opacity .14s, transform .14s; padding: 10px;
+  }
+  .pd5-calendar-dropdown.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: all; }
+  .pd5-calendar-right { left: auto; right: 0; }
+  .pd5-cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .pd5-cal-nav {
+    width: 24px; height: 24px; border-radius: 5px; border: none;
+    background: var(--bg-hover); color: var(--dt-text); font-size: .9rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .1s;
+  }
+  .pd5-cal-nav:hover { background: var(--accent-soft); color: var(--accent); }
+  .pd5-cal-month-label { font-size: .74rem; font-weight: 700; color: var(--dt-text); }
+  
+  .pd5-month-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 6px 0; }
+  .pd5-month-btn {
+    padding: 6px 4px; border-radius: 6px; border: 1px solid transparent; background: none;
+    color: var(--dt-text-sub); font-size: .72rem; font-weight: 600; cursor: pointer;
+    font-family: inherit; text-align: center; transition: all .12s;
+  }
+  .pd5-month-btn:hover  { background: var(--accent-soft); color: var(--accent); }
+  .pd5-month-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+  .pd5-year-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 6px 0; }
+  .pd5-year-btn {
+    padding: 6px 4px; border-radius: 6px; border: 1px solid transparent; background: none;
+    color: var(--dt-text-sub); font-size: .72rem; font-weight: 600; cursor: pointer;
+    font-family: inherit; text-align: center; transition: all .12s;
+  }
+  .pd5-year-btn:hover  { background: var(--accent-soft); color: var(--accent); }
+  .pd5-year-btn.active { background: var(--accent); color: white; }
+  
+  .pd5-dash-line-card { justify-content: space-between; }
+  .pd5-line-chart-container { display: flex; gap: 6px; flex: 1; min-height: 100px; }
+  .pd5-line-yaxis { display: flex; flex-direction: column; justify-content: space-between; padding: 2px 0; width: 22px; flex-shrink: 0; }
+  .pd5-yaxis-label, .pd5-xaxis-label { font-size: .57rem; color: var(--dt-text-sub); }
+  .pd5-yaxis-label { text-align: right; line-height: 1; }
+  .pd5-xaxis-label { text-align: center; }
+  .pd5-line-area { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .pd5-line-svg { flex: 1; width: 100%; overflow: visible; }
+  .pd5-line-xaxis2 { display: flex; justify-content: space-between; padding: 0 2px; }
+
+
+
+
+  /* ── Carte "Clients récents" — style Team Leads ── */
+.pd5-dash-leads-card { min-height: 160px; }
+
+.pd5-leads-thead {
+  display: flex; align-items: center;
+  padding: 4px 0 8px;
+  border-bottom: 1px solid var(--dt-border);
+}
+.pd5-leads-col-user  { flex: 1; font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--dt-text-sub); }
+.pd5-leads-col-group { width: 90px; font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--dt-text-sub); text-align: right; }
+
+.pd5-leads-empty { font-size: .73rem; color: var(--dt-text-sub); text-align: center; padding: 20px; opacity: .5; }
+
+.pd5-lead-row { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--dt-border); gap: 8px; }
+.pd5-lead-row:last-child { border-bottom: none; }
+
+.pd5-lead-user { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+
+.pd5-lead-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .6rem; font-weight: 800; color: white; flex-shrink: 0; }
+
+.pd5-lead-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.pd5-lead-nom   { font-size: .76rem; font-weight: 700; color: var(--dt-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pd5-lead-email { font-size: .63rem; color: var(--dt-text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.pd5-lead-group { display: flex; align-items: center; justify-content: flex-end; gap: 6px; width: 90px; flex-shrink: 0; }
+.pd5-lead-group-nom { font-size: .68rem; color: var(--dt-text-sub); font-weight: 600; }
+
+
+
+
+
+
+/* ── Jauges semi-circulaires carrées ── */
+/* ── Jauges semi-circulaires — compactes, hauteur = celle imposée par la grille ── */
+.pd5-semi-gauge-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+    height: 100%;      /* ✅ prend exactement la hauteur de sa ligne de grille */
+
+  }
+  .pd5-semi-gauge-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+
+  }
+  .pd5-semi-gauge-svg { width: 100%; max-width: 200px; height: auto; }  /* ✅ plus petit */
+  .pd5-semi-gauge-track {
+    fill: none;
+    stroke: var(--dt-border);
+    stroke-width: 15;
+    stroke-linecap: square;
+  }
+  .pd5-semi-gauge-fill {
+    fill: none;
+    stroke-width: 15;
+    stroke-linecap: square;
+    transition: stroke-dasharray .3s;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,.12));
+  }
+  .pd5-semi-gauge-num   { font-size: 22px; font-weight: 800; fill: var(--dt-text); }
+  .pd5-semi-gauge-label { font-size: 15px; fill: var(--dt-text-sub); font-weight: 600; }

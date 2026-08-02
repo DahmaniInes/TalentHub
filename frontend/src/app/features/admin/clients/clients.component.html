@@ -1,5 +1,234 @@
 <!-- clients.component.html — COMPLET avec permissions + SVG originaux + accès refusé -->
 <div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh" (click)="closeMenu()">
+ 
+ 
+ 
+ <!-- ══════════════════════════════════════════════════════════
+         DASHBOARDS — Nombre de projets par client + Croissance clients
+    ══════════════════════════════════════════════════════════ -->
+
+ <!-- ══════════════════════════════════════════════════════════
+     DASHBOARDS — Nombre de projets par client + Clients récents + Croissance
+     ✅ Gauche : jauge (1fr) — Droite : colonne empilée verticalement (2fr)
+        avec "Clients récents" (1fr) au-dessus de "Nombre de clients dans le temps" (2fr)
+══════════════════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════
+     DASHBOARDS — Clients récents + Nombre de projets par client (gauche, empilés)
+                  + Nombre de clients dans le temps (droite, pleine hauteur)
+══════════════════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════
+     DASHBOARDS
+     Gauche  : Clients récents + Nombre de projets par client (empilés)
+     Droite  : 2 jauges semi-circulaires côte à côte + Nombre de clients dans le temps
+══════════════════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════
+     DASHBOARDS — Grille 2 colonnes × 2 lignes : chaque ligne s'aligne
+     exactement entre gauche et droite (fin de "Clients récents" =
+     fin de la rangée de jauges ; fin de "Projets par client" = fin
+     de "Clients dans le temps").
+══════════════════════════════════════════════════════════ -->
+<div class="pd5-dash-row" style="grid-template-columns:1fr 2fr;grid-template-rows:auto auto;align-items:stretch">
+
+  <!-- LIGNE 1 / COL 1 : Clients récents -->
+  <div class="pd5-dash-card pd5-dash-leads-card">
+    <div class="pd5-dash-card-header">
+      <div style="flex:1">
+        <div class="pd5-dash-card-title">Clients récents</div>
+      </div>
+    </div>
+    <div class="pd5-leads-thead">
+      <span class="pd5-leads-col-user">Client</span>
+      <span class="pd5-leads-col-group">Devise</span>
+    </div>
+    <div *ngIf="getClientsRecents().length === 0" class="pd5-leads-empty">Aucun client</div>
+    <div *ngFor="let c of getClientsRecents()" class="pd5-lead-row">
+      <div class="pd5-lead-user">
+        <div class="pd5-lead-avatar" [style.background]="getCouleurStyle(c.couleur)">
+          {{ getInitiales(c.nom) }}
+        </div>
+        <div class="pd5-lead-info">
+          <span class="pd5-lead-nom">{{ c.nom }}</span>
+          <span class="pd5-lead-email">{{ c.nomSociete || c.courriel || '—' }}</span>
+        </div>
+      </div>
+      <div class="pd5-lead-group">
+        <span *ngIf="c.devise" class="dt-badge dt-badge-default" style="font-size:.63rem">{{ c.devise }}</span>
+        <span *ngIf="!c.devise" class="pd5-lead-group-nom">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIGNE 1 / COL 2 : les 2 jauges semi-circulaires, côte à côte, hauteur = celle de "Clients récents" -->
+  <div style="display:flex;gap:14px;height:100%">
+
+    <div class="pd5-dash-card pd5-semi-gauge-card">
+      <div class="pd5-dash-card-header">
+        <span class="pd5-dash-card-title" style="font-size:.85rem">Nombre de projets clients</span>
+        <button class="pd5-export-btn">
+          Export
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M7 1v8M4 6l3 3 3-3" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M1 11v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
+      <div class="pd5-semi-gauge-wrap">
+        <svg viewBox="0 0 200 130" class="pd5-semi-gauge-svg">
+          <path class="pd5-semi-gauge-track" d="M30,110 A70,70 0 0 1 170,110" />
+          <path class="pd5-semi-gauge-fill" d="M30,110 A70,70 0 0 1 170,110"
+          style="stroke:#0d41f6"
+          [attr.stroke-dasharray]="getSemiGaugeDash(pctProjetsClientsActifs(), 70)" />
+          <text x="100" y="98" text-anchor="middle" class="pd5-semi-gauge-num">{{ pctProjetsClientsActifs() }}%</text>
+          <text x="100" y="114" text-anchor="middle" class="pd5-semi-gauge-label">des projets</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="pd5-dash-card pd5-semi-gauge-card">
+      <div class="pd5-dash-card-header">
+        <span class="pd5-dash-card-title" style="font-size:.85rem">Nombre de clients actifs</span>
+        <button class="pd5-export-btn">
+          Export
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M7 1v8M4 6l3 3 3-3" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M1 11v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
+      <div class="pd5-semi-gauge-wrap">
+        <svg viewBox="0 0 200 130" class="pd5-semi-gauge-svg">
+          <path class="pd5-semi-gauge-track" d="M30,110 A70,70 0 0 1 170,110" />
+          <path class="pd5-semi-gauge-fill" d="M30,110 A70,70 0 0 1 170,110"
+                style="stroke:#10b981"
+                [attr.stroke-dasharray]="getSemiGaugeDash(pctClientsActifs(), 70)" />
+          <text x="100" y="98" text-anchor="middle" class="pd5-semi-gauge-num">{{ pctClientsActifs() }}%</text>
+          <text x="100" y="114" text-anchor="middle" class="pd5-semi-gauge-label">des clients</text>
+        </svg>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- LIGNE 2 / COL 1 : Nombre de projets par client -->
+  <div class="pd5-dash-card pd5-dash-donut-card">
+    <div class="pd5-dash-card-header">
+      <span class="pd5-dash-card-title">Nombre de projets par client</span>
+      <button class="pd5-export-btn">
+        Export
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M7 1v8M4 6l3 3 3-3" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M1 11v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke-linecap="round" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="pd5-gauge-legend-wrap">
+      <div class="pd5-gauge-wrap">
+        <svg viewBox="0 0 200 200" class="pd5-gauge-svg">
+          <circle *ngFor="let ring of getGaugeRings(); let i = index" cx="100" cy="100" [attr.r]="ring.r"
+            class="pd5-ring" [attr.class]="'pd5-ring ' + ring.colorClass"
+            [attr.stroke-dasharray]="getGaugeDashFull(i, ring.r)" transform="rotate(180 100 100)" />
+
+          <text x="100" y="105" text-anchor="middle" class="pd5-gauge-center-num">
+            {{ totalProjetsTousClients() }}
+          </text>
+          <text x="100" y="120" text-anchor="middle" class="pd5-gauge-center-label">
+            projets
+          </text>
+        </svg>
+      </div>
+
+      <div class="pd5-gauge-legend">
+        <div class="pd5-legend-row" *ngFor="let item of getGaugeLegend()">
+          <span class="pd5-legend-dot" [style.background]="item.ringCouleur"></span>
+          <span class="pd5-legend-label">{{ item.nom }}</span>
+          <span class="pd5-legend-pct">{{ item.pct }}%</span>
+        </div>
+        <div class="pd5-legend-row" *ngIf="getGaugeLegend().length === 0">
+          <span class="pd5-legend-label" style="opacity:.5">Aucun projet assigné</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIGNE 2 / COL 2 : Nombre de clients dans le temps -->
+  <div class="pd5-dash-card pd5-dash-line-card">
+    <div class="pd5-dash-card-header">
+      <div>
+        <div class="pd5-dash-card-title">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            style="width:13px;height:13px;margin-right:6px;opacity:.7">
+            <circle cx="8" cy="8" r="6.5" />
+            <path d="M8 4.5v4l2.5 1.5" stroke-linecap="round" />
+          </svg>
+          Nombre de clients dans le temps
+        </div>
+        <div class="pd5-dash-total-val">
+          {{ clients().length }}
+        </div>
+      </div>
+
+      <div class="pd5-date-picker-wrap" (click)="$event.stopPropagation()">
+        <button class="pd5-date-picker-btn pd5-date-picker-dark" (click)="toggleLineCalendar()">
+          {{ lineMonthLabel() }}
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"
+            style="width:12px;height:12px;flex-shrink:0">
+            <rect x="1" y="2" width="12" height="11" rx="2" />
+            <path d="M1 6h12M4 1v2M10 1v2" stroke-linecap="round" />
+          </svg>
+        </button>
+        <div class="pd5-calendar-dropdown pd5-calendar-right" [class.open]="lineCalendarOpen()"
+          (click)="$event.stopPropagation()">
+          <div class="pd5-cal-header">
+            <button class="pd5-cal-nav" (click)="prevLineYear()">‹</button>
+            <div style="display:flex;align-items:center;gap:4px">
+              <span class="pd5-cal-month-label">{{ lineYear() }}</span>
+              <button class="pd5-cal-nav" style="width:18px;height:18px;font-size:.7rem"
+                (click)="toggleLineYearPicker()">›</button>
+            </div>
+            <button class="pd5-cal-nav" (click)="nextLineYear()">›</button>
+          </div>
+          <div *ngIf="lineShowYearPicker()" class="pd5-year-picker">
+            <button *ngFor="let y of getYearRange()" class="pd5-year-btn" [class.active]="y === lineYear()"
+              (click)="lineYear.set(y); lineShowYearPicker.set(false)">
+              {{ y }}
+            </button>
+          </div>
+          <div *ngIf="!lineShowYearPicker()" class="pd5-month-picker">
+            <button *ngFor="let m of MOIS_LABELS; let i = index" class="pd5-month-btn"
+              [class.active]="i === lineMonthIdx()" (click)="selectLineMonth(i)">
+              {{ m }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pd5-line-chart-container">
+      <div class="pd5-line-yaxis">
+        <span *ngFor="let v of getLineYLabels()" class="pd5-yaxis-label">{{ v }}</span>
+      </div>
+      <div class="pd5-line-area">
+        <svg class="pd5-line-svg" [attr.viewBox]="'0 0 ' + LINE_W + ' ' + LINE_H" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="clientsLineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#00c2ff" stop-opacity=".18" />
+              <stop offset="100%" stop-color="#00c2ff" stop-opacity="0" />
+            </linearGradient>
+          </defs>
+          <path [attr.d]="getLineAreaPath2()" fill="url(#clientsLineGrad)" />
+          <path [attr.d]="getLinePath2()" fill="none" stroke="#00c2ff" stroke-width="1.5" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+        <div class="pd5-line-xaxis2">
+          <span *ngFor="let lbl of getLineXLabels2()" class="pd5-xaxis-label">{{ lbl }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+ 
   <div class="dt-wrap">
 
     <!-- ══ ACCÈS REFUSÉ ══ -->
@@ -95,6 +324,25 @@
         </button>
       </div>
     </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     <!-- Bulk bar -->
     <div *ngIf="selectedCount() > 0" class="dt-bulk-bar">

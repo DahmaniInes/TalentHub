@@ -13,6 +13,7 @@ import { Demande, TypeDemande, StatutDemande } from '../../../shared/models/dema
 import { Utilisateur } from '../../../shared/models/utilisateur.model';
 import { HttpErrorResponse } from '@angular/common/http';
 import { PermissionContextService } from '../../../services/permission-context.service';
+import { CongeService, SoldeConge } from '../../../services/conge.service';
 
 @Component({
     selector: 'app-admin-demandes',
@@ -28,6 +29,7 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     private keycloak       = inject(KeycloakService);
     private ui             = inject(UiService);
     private notifService   = inject(NotificationService);
+    private congeSvc       = inject(CongeService);
     readonly permCtx       = inject(PermissionContextService);
 
     demandes     = signal<Demande[]>([]);
@@ -49,6 +51,15 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     traitError       = signal<string | null>(null);
     commentPopup     = signal<string | null>(null);
 
+    // ✅ NOUVEAU — solde de congé du demandeur, affiché dans la modale de
+    // traitement uniquement si le type de la demande est marqué "congé".
+    soldeUtilisateur = signal<SoldeConge | null>(null);
+
+    // ✅ NOUVEAU — configuration du taux mensuel de congé (admin)
+    tauxActuel  = signal<number>(1.8);
+    editingTaux = signal(false);
+    tauxTemp    = signal(1.8);
+
     pageSize    = 10;
     currentPage = signal(1);
 
@@ -58,6 +69,10 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
         this.nomenclature.getAllTypes().subscribe({ next: t => this.types.set(t), error: () => {} });
         this.nomenclature.getAllStatuts().subscribe({ next: s => this.statuts.set(s), error: () => {} });
         this.userService.getAllUsers().subscribe({ next: u => this.utilisateurs.set(u), error: () => {} });
+        this.congeSvc.getTauxActuel().subscribe({
+            next: t => { this.tauxActuel.set(t.tauxMensuel); this.tauxTemp.set(t.tauxMensuel); },
+            error: () => {}
+        });
         this.loadAll();
 
         // ✅ Écouter le flux SSE — recharger dès qu'une nouvelle notification arrive
@@ -140,6 +155,11 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     getUserPhoto(d: Demande)  { return this.getUser(d)?.photoUrl || null; }
     getUserEmail(d: Demande)  { return this.getUser(d)?.email || ''; }
 
+    /** ✅ NOUVEAU — le type de la demande courante est-il marqué "congé" ? */
+    isDemandeCongeType(d: Demande): boolean {
+        return !!this.types().find(t => t.id === d.typeDemandeId)?.estConge;
+    }
+
     fmtDate(d?: string): string {
         if (!d) return '—';
         const dt = new Date(d);
@@ -204,8 +224,17 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
         this.commentaireRH.set(d.commentaireRH ?? '');
         this.selectedStatutId.set(d.statutDemandeId);
         this.traitError.set(null);
+        this.soldeUtilisateur.set(null);
+
+        // ✅ Si le type de la demande est marqué "congé", charger le solde du demandeur
+        if (this.isDemandeCongeType(d)) {
+            this.congeSvc.getSolde(d.utilisateurId).subscribe({
+                next: s => this.soldeUtilisateur.set(s),
+                error: () => {}
+            });
+        }
     }
-    closeTraitement() { this.traitementModal.set(null); }
+    closeTraitement() { this.traitementModal.set(null); this.soldeUtilisateur.set(null); }
 
     confirmerTraitement(): void {
         const d   = this.traitementModal();
@@ -221,6 +250,7 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
         this.demandeService.traiter(d.id, sid, traitePar, this.commentaireRH(), statutCode).subscribe({
             next: () => {
                 this.traitementModal.set(null);
+                this.soldeUtilisateur.set(null);
                 this.ui.success('Demande traitée.');
                 this.loadAll();
                 this.traitLoading.set(false);
@@ -239,5 +269,15 @@ export class AdminDemandesComponent implements OnInit, OnDestroy {
     exportCsv(): void {
         if (!this.permCtx.canExportDemandes()) { this.ui.error("Permission requise : DEMANDE_EXPORT"); return; }
         this.demandeService.exportCsv();
+    }
+
+    // ✅ NOUVEAU — configuration du taux mensuel de congé
+    startEditTaux(): void { this.editingTaux.set(true); this.tauxTemp.set(this.tauxActuel()); }
+    cancelEditTaux(): void { this.editingTaux.set(false); }
+    saveTaux(): void {
+        this.congeSvc.updateTaux(this.tauxTemp()).subscribe({
+            next: t => { this.tauxActuel.set(t.tauxMensuel); this.editingTaux.set(false); this.ui.success('Taux mis à jour ✅'); },
+            error: () => this.ui.error('Erreur lors de la mise à jour du taux.')
+        });
     }
 }
