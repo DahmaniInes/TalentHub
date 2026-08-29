@@ -9,6 +9,12 @@ import com.talenthub.application_service.Repository.SoldeCongeReportRepository;
 import com.talenthub.application_service.Repository.UtilisateurRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -38,11 +44,31 @@ public class CongeService {
         this.reportRepository = reportRepository;
     }
 
-    /** Récupère le taux mensuel actuel depuis nomenclature-service. */
+    /**
+     * ✅ Récupère le token JWT brut de la requête entrante en cours, pour le
+     * réinjecter dans les appels sortants vers le Gateway (qui exige une
+     * authentification sur toutes les routes). Sans ça, RestTemplate envoie
+     * une requête anonyme et se prend un 401 → listes vides en silence.
+     */
+    private HttpHeaders headersAvecToken() {
+        HttpHeaders headers = new HttpHeaders();
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth instanceof JwtAuthenticationToken jwtAuth) {
+            Jwt jwt = (Jwt) jwtAuth.getPrincipal();
+            headers.setBearerAuth(jwt.getTokenValue());
+        } else {
+            log.warn("[CongeService] Aucun JWT dans le contexte — appel Gateway probablement rejeté (401)");
+        }
+        return headers;
+    }
+
     private double getTauxMensuel() {
         try {
-            Map<?, ?> body = restTemplate.getForObject(
-                    nomenclatureBaseUrl + "/parametres-conge/actuel", Map.class);
+            HttpEntity<Void> entity = new HttpEntity<>(headersAvecToken());
+            Map<?, ?> body = restTemplate.exchange(
+                    nomenclatureBaseUrl + "/parametres-conge/actuel",
+                    HttpMethod.GET, entity, Map.class
+            ).getBody();
             Object v = body != null ? body.get("tauxMensuel") : null;
             return v != null ? Double.parseDouble(v.toString()) : 1.8;
         } catch (Exception e) {
@@ -51,12 +77,14 @@ public class CongeService {
         }
     }
 
-    /** IDs de TypeDemande marqués estConge=true. */
     @SuppressWarnings("unchecked")
     private List<Long> getTypeCongeIds() {
         try {
-            List<Map<String, Object>> types = restTemplate.getForObject(
-                    nomenclatureBaseUrl + "/types-demande", List.class);
+            HttpEntity<Void> entity = new HttpEntity<>(headersAvecToken());
+            List<Map<String, Object>> types = restTemplate.exchange(
+                    nomenclatureBaseUrl + "/types-demande",
+                    HttpMethod.GET, entity, List.class
+            ).getBody();
             return types.stream()
                     .filter(t -> Boolean.TRUE.equals(t.get("estConge")))
                     .map(t -> Long.valueOf(t.get("id").toString()))
@@ -67,12 +95,14 @@ public class CongeService {
         }
     }
 
-    /** ID du StatutDemande de code ACCEPTEE. */
     @SuppressWarnings("unchecked")
     private Long getStatutAccepteeId() {
         try {
-            List<Map<String, Object>> statuts = restTemplate.getForObject(
-                    nomenclatureBaseUrl + "/statuts-demande", List.class);
+            HttpEntity<Void> entity = new HttpEntity<>(headersAvecToken());
+            List<Map<String, Object>> statuts = restTemplate.exchange(
+                    nomenclatureBaseUrl + "/statuts-demande",
+                    HttpMethod.GET, entity, List.class
+            ).getBody();
             return statuts.stream()
                     .filter(s -> "ACCEPTEE".equals(s.get("code")))
                     .map(s -> Long.valueOf(s.get("id").toString()))
@@ -83,7 +113,6 @@ public class CongeService {
         }
     }
 
-    /** Nombre de mois complets écoulés dans l'année courante (ou depuis l'embauche si postérieure au 1er janvier). */
     private double calculerMoisEcoules(LocalDate dateEmbauche, int annee) {
         LocalDate debutAnnee = LocalDate.of(annee, 1, 1);
         LocalDate debutCompte = dateEmbauche.isAfter(debutAnnee) ? dateEmbauche : debutAnnee;
@@ -128,11 +157,17 @@ public class CongeService {
                 .build();
     }
 
-    /** Admin — définit/actualise le report de l'année pour un utilisateur. */
     public void setReport(Long utilisateurId, int annee, double joursReport) {
         SoldeCongeReport r = reportRepository.findByUtilisateurIdAndAnnee(utilisateurId, annee)
                 .orElse(SoldeCongeReport.builder().utilisateurId(utilisateurId).annee(annee).build());
         r.setJoursReport(joursReport);
         reportRepository.save(r);
+    }
+
+
+    /** ✅ NOUVEAU — permet à DemandeService de savoir si ce type de demande
+     * doit être contrôlé par rapport au solde de congé disponible. */
+    public boolean estTypeConge(Long typeDemandeId) {
+        return getTypeCongeIds().contains(typeDemandeId);
     }
 }

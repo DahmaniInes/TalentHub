@@ -1,19 +1,22 @@
-// application-service/.../Service/DemandeService.java — REMPLACE
 package com.talenthub.application_service.Service;
 
 import com.talenthub.application_service.DTO.DemandeRequest;
+import com.talenthub.application_service.DTO.SoldeCongeDTO;
 import com.talenthub.application_service.Entity.Demande;
 import com.talenthub.application_service.Entity.Utilisateur;
 import com.talenthub.application_service.Enum.NotificationType;
 import com.talenthub.application_service.Exception.ResourceNotFoundException;
+import com.talenthub.application_service.Exception.SoldeInsuffisantException;
 import com.talenthub.application_service.Repository.DemandeRepository;
 import com.talenthub.application_service.Repository.ProfilPermissionRepository;
 import com.talenthub.application_service.Repository.UtilisateurRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -23,16 +26,22 @@ public class DemandeService {
     private final DemandeRepository          repository;
     private final UtilisateurRepository      utilisateurRepository;
     private final NotificationService        notificationService;
-    private final ProfilPermissionRepository profilPermRepo; // pour trouver les approbateurs
+    private final ProfilPermissionRepository profilPermRepo;
+    private final CongeService               congeService;
+    private final OutlookSyncService         outlookSyncService; // ✅ NOUVEAU
 
     public DemandeService(DemandeRepository repository,
                           UtilisateurRepository utilisateurRepository,
                           NotificationService notificationService,
-                          ProfilPermissionRepository profilPermRepo) {
-        this.repository           = repository;
+                          ProfilPermissionRepository profilPermRepo,
+                          CongeService congeService,
+                          OutlookSyncService outlookSyncService) { // ✅ NOUVEAU
+        this.repository            = repository;
         this.utilisateurRepository = utilisateurRepository;
-        this.notificationService  = notificationService;
-        this.profilPermRepo       = profilPermRepo;
+        this.notificationService   = notificationService;
+        this.profilPermRepo        = profilPermRepo;
+        this.congeService          = congeService;
+        this.outlookSyncService    = outlookSyncService; // ✅ NOUVEAU
     }
 
     public List<Demande> getAll() { return repository.findAll(); }
@@ -65,6 +74,8 @@ public class DemandeService {
             nbJours = (int)(req.getDateDebut().until(req.getDateFin()).getDays() + 1);
         }
 
+        verifierSoldeDisponible(req.getTypeDemandeId(), req.getUtilisateurId(), nbJours, null);
+
         Demande d = Demande.builder()
                 .utilisateur(utilisateur)
                 .typeDemandeId(req.getTypeDemandeId())
@@ -79,7 +90,6 @@ public class DemandeService {
 
         Demande saved = repository.save(d);
 
-        // ✅ Notifier les approbateurs (ceux qui ont DEMANDE_APPROVE)
         notifierApprobateurs(saved, utilisateur);
 
         return saved;
@@ -88,6 +98,9 @@ public class DemandeService {
     public Demande update(Long id, DemandeRequest req) {
         Demande d = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Demande non trouvée: " + id));
+
+        verifierSoldeDisponible(req.getTypeDemandeId(), d.getUtilisateur().getId(),
+                req.getNbJours(), d.getNbJours());
 
         d.setSujet(req.getSujet());
         d.setDescription(req.getDescription());
@@ -100,15 +113,24 @@ public class DemandeService {
         return repository.save(d);
     }
 
+    private void verifierSoldeDisponible(Long typeDemandeId, Long utilisateurId,
+                                         Integer nbJoursDemande, Integer nbJoursAncienne) {
+        if (nbJoursDemande == null || nbJoursDemande <= 0) return;
+        if (!congeService.estTypeConge(typeDemandeId)) return;
 
+        SoldeCongeDTO solde = congeService.calculerSolde(utilisateurId);
+        double soldeDisponible = solde.getSolde() + (nbJoursAncienne != null ? nbJoursAncienne : 0);
 
-// DemandeService.java — REMPLACE traiter() et notifierDemandeur()
-
-// Ajouter l'injection du repository de statuts via HTTP vers nomenclature
-// OU plus simple : passer le code du statut directement depuis le controller
+        if (nbJoursDemande > soldeDisponible) {
+            throw new SoldeInsuffisantException(String.format(
+                    "Solde insuffisant : %d jour(s) demandé(s) pour %.1f jour(s) disponible(s).",
+                    nbJoursDemande, soldeDisponible
+            ));
+        }
+    }
 
     public Demande traiter(Long id, Long statutId, String traitePar,
-                           String commentaireRH, String statutCode) { // ← ajouter statutCode
+                           String commentaireRH, String statutCode) {
         Demande d = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Demande non trouvée: " + id));
 
@@ -118,8 +140,38 @@ public class DemandeService {
         d.setDateTraitement(LocalDateTime.now());
         Demande saved = repository.save(d);
 
-        // ✅ Utiliser le code passé par le frontend — plus d'heuristique sur l'ID
         notifierDemandeur(saved, statutCode);
+
+        // ✅ NOUVEAU — synchronisation Outlook pour TOUTE demande acceptée
+        // avec des dates renseignées (congé, formation, télétravail...),
+        // aucun filtre par type de demande.
+        if ("ACCEPTEE".equalsIgnoreCase(statutCode)
+                && saved.getDateDebut() != null
+                && saved.getUtilisateur() != null) {
+
+            LocalDate dateFinExclusive = (saved.getDateFin() != null
+                    ? saved.getDateFin() : saved.getDateDebut()).plusDays(1);
+
+            String outlookId = outlookSyncService.syncEvenementToutJour(
+                    saved.getUtilisateur().getId(),
+                    saved.getOutlookEventId(),
+                    saved.getSujet(),
+                    saved.getDateDebut(),
+                    dateFinExclusive
+            );
+            saved.setOutlookEventId(outlookId);
+            repository.save(saved);
+        }
+
+        // ✅ NOUVEAU — si la demande n'est plus acceptée (rejetée après coup,
+        // ou modifiée), retirer l'événement Outlook déjà créé
+        if (!"ACCEPTEE".equalsIgnoreCase(statutCode) && saved.getOutlookEventId() != null) {
+            outlookSyncService.supprimerEvenement(
+                    saved.getUtilisateur().getId(), saved.getOutlookEventId());
+            saved.setOutlookEventId(null);
+            repository.save(saved);
+        }
+
         return saved;
     }
 
@@ -156,20 +208,22 @@ public class DemandeService {
         }
     }
 
-
     public void delete(Long id) {
-        if (!repository.existsById(id))
-            throw new ResourceNotFoundException("Demande non trouvée: " + id);
+        Demande d = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Demande non trouvée: " + id));
+
+        // ✅ NOUVEAU — nettoyage Outlook si la demande supprimée avait un événement synchronisé
+        if (d.getOutlookEventId() != null && d.getUtilisateur() != null) {
+            outlookSyncService.supprimerEvenement(d.getUtilisateur().getId(), d.getOutlookEventId());
+        }
+
         repository.deleteById(id);
     }
 
-    // ── Notifications ──────────────────────────────────────────────────────
-
     private void notifierApprobateurs(Demande demande, Utilisateur demandeur) {
-        // Trouver tous les users ayant la permission DEMANDE_APPROVE
         utilisateurRepository.findAll().stream()
                 .filter(u -> u.getProfil() != null && u.getKeycloakId() != null)
-                .filter(u -> !u.getId().equals(demandeur.getId())) // pas le demandeur lui-même
+                .filter(u -> !u.getId().equals(demandeur.getId()))
                 .filter(u -> userHasPermission(u, "DEMANDE_APPROVE"))
                 .forEach(u -> notificationService.creer(
                         u.getKeycloakId(),
@@ -181,55 +235,8 @@ public class DemandeService {
                 ));
     }
 
-    private void notifierDemandeur(Demande demande) {
-        if (demande.getUtilisateur() == null) return;
-        String keycloakId = demande.getUtilisateur().getKeycloakId();
-        if (keycloakId == null) return;
-
-        // Déterminer si acceptée ou rejetée selon l'id du statut
-        // On utilise un heuristique simple : statutId > 1 = traité
-        // Tu peux affiner en comparant avec le code du statut
-        boolean estAcceptee = isStatutAccepte(demande.getStatutDemandeId());
-
-        if (estAcceptee) {
-            notificationService.creer(
-                    keycloakId,
-                    NotificationType.DEMANDE_VALIDEE,
-                    "Demande acceptée ✅",
-                    "Votre demande \"" + demande.getSujet() + "\" a été acceptée." +
-                            (demande.getCommentaireRH() != null && !demande.getCommentaireRH().isBlank()
-                                    ? " Commentaire : " + demande.getCommentaireRH() : ""),
-                    "/Demande",
-                    demande.getId()
-            );
-        } else {
-            notificationService.creer(
-                    keycloakId,
-                    NotificationType.DEMANDE_REJETEE,
-                    "Demande rejetée ❌",
-                    "Votre demande \"" + demande.getSujet() + "\" a été rejetée." +
-                            (demande.getCommentaireRH() != null && !demande.getCommentaireRH().isBlank()
-                                    ? " Motif : " + demande.getCommentaireRH() : ""),
-                    "/Demande",
-                    demande.getId()
-            );
-        }
-    }
-
     private boolean userHasPermission(Utilisateur u, String permCode) {
         return profilPermRepo.findPermissionCodesByProfilId(u.getProfil().getId())
                 .contains(permCode);
-    }
-
-    /**
-     * Heuristique simple : si le statutId correspond à "ACCEPTEE".
-     * À affiner selon ta table statuts_demande.
-     * Idéalement tu queries le code du statut depuis la nomenclature.
-     */
-    private boolean isStatutAccepte(Long statutId) {
-        // Adapte selon tes IDs réels en BD
-        // Tu peux aussi faire un appel HTTP vers nomenclature-service pour récupérer le code
-        // Pour l'instant, on considère que l'ID 2 = ACCEPTEE, 3 = REJETEE (à adapter)
-        return statutId != null && statutId == 2L;
     }
 }

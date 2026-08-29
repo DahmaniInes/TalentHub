@@ -1,0 +1,42 @@
+::ng-deep .fc {
+    font-family: inherit;
+  }
+  ::ng-deep .fc-toolbar-title {
+    font-size: 1rem !important;
+    font-weight: 700;
+    color: var(--dt-text);
+  }
+  ::ng-deep .fc-button {
+    background: var(--bg-hover) !important;
+    border: 1px solid var(--dt-border) !important;
+    color: var(--dt-text) !important;
+    box-shadow: none !important;
+    text-transform: capitalize !important;
+  }
+  ::ng-deep .fc-button-active {
+    background: var(--accent) !important;
+    color: white !important;
+    border-color: var(--accent) !important;
+  }
+  ::ng-deep .fc-daygrid-day-number {
+    color: var(--dt-text-sub);
+    font-size: .78rem;
+  }
+  ::ng-deep .fc-day-today {
+    background: var(--accent-soft) !important;
+  }
+  ::ng-deep .fc-event {
+    cursor: pointer;
+    font-size: .72rem;
+    border-radius: 4px;
+    padding: 1px 4px;
+  }
+  ::ng-deep .fc-col-header-cell {
+    background: var(--bg-hover);
+  }
+  ::ng-deep .fc-col-header-cell-cushion {
+    color: var(--dt-text-sub);
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }

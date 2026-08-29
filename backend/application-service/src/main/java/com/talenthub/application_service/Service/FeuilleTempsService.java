@@ -1,4 +1,4 @@
-// Service/FeuilleTempsService.java — COMPLET avec recalcul avancement automatique
+// Service/FeuilleTempsService.java — COMPLET avec synchro Outlook
 package com.talenthub.application_service.Service;
 
 import com.talenthub.application_service.DTO.FeuilleTempsDTO;
@@ -34,8 +34,8 @@ public class FeuilleTempsService {
     private final ActiviteRepository          activiteRepository;
     private final ClientRepository            clientRepository;
     private final AvancementService           avancementService;
-    // ✅ NOUVEAU — nécessaire pour filtrer les activités récentes (demande D)
     private final ProjetService               projetService;
+    private final OutlookSyncService          outlookSyncService; // ✅ NOUVEAU
 
     public FeuilleTempsService(
             FeuilleTempsRepository repository,
@@ -47,7 +47,8 @@ public class FeuilleTempsService {
             ActiviteRepository activiteRepository,
             ClientRepository clientRepository,
             AvancementService avancementService,
-            ProjetService projetService) {
+            ProjetService projetService,
+            OutlookSyncService outlookSyncService) { // ✅ NOUVEAU
         this.repository                 = repository;
         this.utilisateurRepository      = utilisateurRepository;
         this.ligneRepository            = ligneRepository;
@@ -58,6 +59,7 @@ public class FeuilleTempsService {
         this.clientRepository          = clientRepository;
         this.avancementService         = avancementService;
         this.projetService             = projetService;
+        this.outlookSyncService        = outlookSyncService; // ✅ NOUVEAU
     }
 
     public FeuilleTempsDTO toDTO(FeuilleTemps ft) {
@@ -76,27 +78,6 @@ public class FeuilleTempsService {
         return repository.findByUtilisateurIdOrderBySemaineDuDesc(utilisateurId);
     }
 
-    // ════════════════════════════════════════════════════════════
-    // ✅ CORRIGÉ — Demande D : activités "récentes" à proposer dans le
-    // calendrier (bloc "Reprendre une activité"), calculées et FILTRÉES
-    // côté serveur.
-    //
-    // ⚠️ Le filtre de visibilité des projets s'applique désormais
-    // SYSTÉMATIQUEMENT (même règle que ProjetService.getVisiblesPourFeuilleTemps,
-    // sans paramètre voitToutEntreprise) — TS_ALL_READ/TS_ALL_UPDATE ne
-    // concernent que le sélecteur d'utilisateur, jamais l'accès aux projets.
-    //
-    // Principe : on part des lignes de feuille de temps historiques de cet
-    // utilisateur (jamais supprimées), mais on exclut celles dont le
-    // projet n'est PLUS dans la liste des projets visibles pour lui
-    // (mêmes équipes que le dropdown Projet de Ma Semaine). Ainsi, si
-    // l'utilisateur a été retiré de tous les groupes donnant accès à un
-    // projet, ce projet disparaît de la liste de suggestions, SANS
-    // qu'aucune ligne de feuille de temps ne soit supprimée ni modifiée.
-    //
-    // On déduplique par combinaison (projetId, activiteId), en gardant
-    // l'occurrence la plus récente, puis on limite à 5 résultats.
-    // ════════════════════════════════════════════════════════════
     @Transactional(readOnly = true)
     public List<LigneFeuilleTemps> getActivitesRecentesDisponibles(Long utilisateurId) {
         List<LigneFeuilleTemps> toutes = ligneRepository.findRecentesByUtilisateurId(utilisateurId);
@@ -105,10 +86,6 @@ public class FeuilleTempsService {
                 .getVisiblesPourFeuilleTemps(utilisateurId)
                 .stream().map(Projet::getId).collect(Collectors.toSet());
 
-        // Lignes sans projet (categorieCode = ACTIVITE/AUTRE) restent
-        // toujours proposées — seul le filtre par visibilité de PROJET
-        // s'applique ici, conformément à la demande qui ne concerne que
-        // les projets de groupes retirés.
         List<LigneFeuilleTemps> filtrees = toutes.stream()
                 .filter(l -> l.getProjetId() == null || projetsVisiblesIds.contains(l.getProjetId()))
                 .toList();
@@ -186,6 +163,14 @@ public class FeuilleTempsService {
         }
 
         if (req.getLignes() != null) {
+            // ✅ NOUVEAU — nettoyer les événements Outlook des lignes qui vont être supprimées
+            List<LigneFeuilleTemps> anciennesLignes = ligneRepository.findByFeuilleTempsId(ft.getId());
+            for (LigneFeuilleTemps l : anciennesLignes) {
+                if (l.getOutlookEventId() != null) {
+                    outlookSyncService.supprimerEvenement(ft.getUtilisateur().getId(), l.getOutlookEventId());
+                }
+            }
+
             ligneRepository.deleteByFeuilleTempsId(ft.getId());
             if (!req.getLignes().isEmpty()) {
                 saveLignes(ft, req.getLignes());
@@ -290,13 +275,21 @@ public class FeuilleTempsService {
         Set<Long> projetIds   = new HashSet<>(ligneRepository.findDistinctProjetIdsByFeuilleTempsId(id));
         Set<Long> activiteIds = new HashSet<>(ligneRepository.findDistinctActiviteIdsByFeuilleTempsId(id));
 
+        // ✅ NOUVEAU — nettoyer les événements Outlook des lignes avant suppression
+        List<LigneFeuilleTemps> lignes = ligneRepository.findByFeuilleTempsId(id);
+        for (LigneFeuilleTemps l : lignes) {
+            if (l.getOutlookEventId() != null) {
+                outlookSyncService.supprimerEvenement(ft.getUtilisateur().getId(), l.getOutlookEventId());
+            }
+        }
+
         ligneRepository.deleteByFeuilleTempsId(id);
         repository.deleteById(id);
 
         avancementService.recalculer(projetIds, activiteIds);
     }
 
-    // ── saveLignes — IDs uniquement ───────────────────────────────────────────
+    // ── saveLignes — IDs uniquement + synchro Outlook ─────────────────────────
     private void saveLignes(FeuilleTemps ft, List<LigneFeuilleTempsRequest> reqs) {
         reqs.forEach(r -> {
             int minutes = r.getMinutesTravaillees();
@@ -331,9 +324,37 @@ public class FeuilleTempsService {
                     .estWeekend(r.isEstWeekend())
                     .build();
 
-            ligneRepository.save(ligne);
+            LigneFeuilleTemps saved = ligneRepository.save(ligne);
+
             if (r.getActiviteId() != null) {
                 assignerUtilisateurActivite(ft.getUtilisateur().getId(), r.getActiviteId());
+            }
+
+            // ✅ NOUVEAU — synchronisation Outlook si un projet ou une activité
+            // est renseigné et que des heures de début/fin existent
+            if ((r.getProjetId() != null || r.getActiviteId() != null)
+                    && r.getHeureDebut() != null && r.getHeureFin() != null
+                    && !r.getHeureDebut().isBlank() && !r.getHeureFin().isBlank()) {
+                try {
+                    String titre = r.getProjetId() != null
+                            ? projetRepository.findById(r.getProjetId()).map(Projet::getNom).orElse("Projet")
+                            : activiteRepository.findById(r.getActiviteId()).map(Activité::getNom).orElse("Activité");
+
+                    String outlookId = outlookSyncService.syncEvenement(
+                            ft.getUtilisateur().getId(),
+                            saved.getOutlookEventId(),
+                            titre,
+                            r.getCommentaire(),
+                            r.getDate(),
+                            r.getHeureDebut(),
+                            r.getHeureFin(),
+                            null
+                    );
+                    saved.setOutlookEventId(outlookId);
+                    ligneRepository.save(saved);
+                } catch (Exception e) {
+                    // Non bloquant — la feuille de temps se sauvegarde même si Outlook échoue
+                }
             }
         });
     }

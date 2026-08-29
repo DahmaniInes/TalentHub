@@ -1,36 +1,26 @@
-<!-- calendrier.component.html — REDESIGN COMPLET -->
+<!-- calendrier.component.html — MIGRÉ VERS FULLCALENDAR -->
 <div class="gcal-root">
 
-  <!-- ══════════════════════════════════════════════════════
-       CARTE PRINCIPALE : Header avec titre + navigation
-       ══════════════════════════════════════════════════════ -->
+  <!-- ══ HEADER (inchangé) ══ -->
   <div class="gcal-header-card">
+    <div class="gcal-header-left">
+      <h1 class="dt-title">
+        <svg class="dt-title-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+          <rect x="2" y="3" width="16" height="15" rx="2.5"/>
+          <path d="M2 8h16" stroke-linecap="round"/>
+          <path d="M6 1v3M14 1v3" stroke-linecap="round"/>
+          <circle cx="7" cy="13" r="1" fill="currentColor" stroke="none"/>
+          <circle cx="10" cy="13" r="1" fill="currentColor" stroke="none"/>
+          <circle cx="13" cy="13" r="1" fill="currentColor" stroke="none"/>
+        </svg>
+        Mon calendrier
+      </h1>
+      <p class="gcal-header-sub">Feuille de temps — {{ selectedUser()?.prenom || '' }} {{ selectedUser()?.nom || '' }}</p>
+    </div>
 
-        <!-- Partie GAUCHE : titre "Mon calendrier" -->
-        <div class="gcal-header-left">
-          <h1 class="dt-title">
-            <svg class="dt-title-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
-              <rect x="2" y="3" width="16" height="15" rx="2.5"/>
-              <path d="M2 8h16" stroke-linecap="round"/>
-              <path d="M6 1v3M14 1v3" stroke-linecap="round"/>
-              <circle cx="7" cy="13" r="1" fill="currentColor" stroke="none"/>
-              <circle cx="10" cy="13" r="1" fill="currentColor" stroke="none"/>
-              <circle cx="13" cy="13" r="1" fill="currentColor" stroke="none"/>
-            </svg>
-            Mon calendrier
-          </h1>
-          <p class="gcal-header-sub">Feuille de temps — {{ selectedUser()?.prenom || '' }} {{ selectedUser()?.nom || '' }}</p>
-        </div>
-
-
-    <!-- Partie DROITE : navigation date + switcher vue -->
     <div class="gcal-header-right">
-
-
-        <!-- Bouton Aujourd'hui -->
-        <button class="gcal-today-pill" (click)="allerAujourdhui()">Aujourd'hui</button>
-
-      <!-- Navigation date : < label > en accent -->
+      <button class="gcal-today-pill" (click)="allerAujourdhui()">Aujourd'hui</button>
+    
       <div class="gcal-nav-date-btn">
         <button class="gcal-nav-arrow" (click)="naviguer(-1)" title="Précédent">
           <svg viewBox="0 0 14 14" fill="none">
@@ -44,28 +34,26 @@
           </svg>
         </button>
       </div>
-
     
-      <!-- Switcher vue : Jour / Semaine / Mois -->
       <div class="gcal-view-switcher">
         <button class="gcal-view-btn" [class.active]="vue()==='jour'"    (click)="changerVue('jour')">Jour</button>
         <button class="gcal-view-btn" [class.active]="vue()==='semaine'" (click)="changerVue('semaine')">Semaine</button>
         <button class="gcal-view-btn" [class.active]="vue()==='mois'"    (click)="changerVue('mois')">Mois</button>
+        <button class="gcal-view-btn" [class.active]="vue()==='annee'"   (click)="changerVue('annee')">Année</button>
       </div>
-
-      <!-- Total heures -->
-      <!--<span *ngIf="totalVue() > 0" class="gcal-total-tag">
-        <svg viewBox="0 0 16 16" fill="none" style="width:11px;height:11px">
-          <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M8 5v3l2.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-        {{ fmtDuree(totalVue()) }}
-      </span> -->
-
+    
+      <!-- ✅ NOUVEAU — bouton Outlook -->
+      <button *ngIf="!outlookConnecte()" class="gcal-today-pill" (click)="connecterOutlook()" title="Synchroniser avec Outlook">
+        🔗 Connecter Outlook
+      </button>
+      <button *ngIf="outlookConnecte()" class="gcal-total-tag" (click)="deconnecterOutlook()" title="Cliquer pour déconnecter" style="cursor:pointer;border:none">
+        ✓ Outlook connecté
+      </button>
+    
     </div>
   </div>
 
-  <!-- ══ PAGE ACCÈS REFUSÉ ══ -->
+  <!-- ══ ACCÈS REFUSÉ ══ -->
   <div *ngIf="!canViewCalendar()" class="gcal-no-perm">
     <div class="gcal-no-perm-icon">
       <svg viewBox="0 0 48 48" fill="none" style="width:36px;height:36px">
@@ -78,182 +66,65 @@
     <p class="gcal-no-perm-sub">Vous n'avez pas la permission de consulter le calendrier de temps.</p>
   </div>
 
-  <!-- Spinner -->
   <div *ngIf="loading() && canViewCalendar()" class="gcal-loading">
     <div class="gcal-spinner"></div> Chargement...
   </div>
 
-  <!-- ══════════════════════════════════════════════════════
-       LAYOUT PRINCIPAL : colonne gauche (calendrier) + sidebar droite
-       ══════════════════════════════════════════════════════ -->
+  <!-- ══ LAYOUT PRINCIPAL ══ -->
   <div *ngIf="!loading() && canViewCalendar()" class="gcal-layout">
 
-    <!-- ════ CALENDRIER (zone principale) ════ -->
+    <!-- ════ CALENDRIER FULLCALENDAR ════ -->
     <div class="gcal-main">
-
-      <!-- ── VUE MOIS ── -->
-      <div *ngIf="vue()==='mois'" class="gcal-mois-wrap">
-        <div class="gcal-mois-head">
-          <div *ngFor="let j of JOURS" class="gcal-mois-dh" [class.gcal-we-dh]="j==='Sam'||j==='Dim'">{{ j }}</div>
+      <!-- Légende -->
+      <div style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px;font-size:.72rem">
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="width:10px;height:10px;border-radius:3px;background:#94a3b8;display:inline-block"></span>
+          <span style="color:var(--text-muted)">Jour férié (travail autorisé)</span>
         </div>
-        <div class="gcal-mois-grid">
-          <div *ngFor="let jour of joursMois()"
-               class="gcal-cell"
-               [class.gcal-cell-autre]="jour.autreMois"
-               [class.gcal-cell-today]="jour.today"
-               [class.gcal-cell-we]="jour.we"
-               (dragover)="onDragOver($event)"
-               (drop)="onDrop($event, jour.date)"
-               (click)="ouvrirAjout(jour.date)">
-            <div class="gcal-cell-head">
-              <span class="gcal-cell-n" [class.gcal-cell-n-today]="jour.today">{{ jour.num }}</span>
-              <span *ngIf="totalDate(jour.date) > 0" class="gcal-cell-h">{{ fmtDuree(totalDate(jour.date)) }}</span>
-            </div>
-            <div class="gcal-chips">
-              <div *ngFor="let e of jour.entrees" class="gcal-chip"
-                   [style.background]="e.couleur+'18'"
-                   [style.border-left-color]="e.couleur"
-                   [draggable]="peutDrag(e)"
-                   (dragstart)="onDragStart($event, e)"
-                   (click)="ouvrirDetail(e, $event)">
-                <span class="gcal-chip-heure" [style.color]="e.couleur">{{ e.heureDebut || '' }}</span>
-                <span class="gcal-chip-name"  [style.color]="e.couleur">{{ e.projetNom || e.activiteNom || '—' }}</span>
-              </div>
-            </div>
-            <div class="gcal-cell-add" *ngIf="canModify()">
-              <svg viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            </div>
-          </div>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="width:10px;height:10px;border-radius:3px;background:#10b981;display:inline-block"></span>
+          <span style="color:var(--text-muted)">Congé accepté</span>
         </div>
       </div>
 
-      <!-- ── VUE SEMAINE ── -->
-      <div *ngIf="vue()==='semaine'" class="gcal-sem-wrap">
-        <div class="gcal-sem-head">
-          <div class="gcal-sem-time-col"></div>
-          <div *ngFor="let jour of joursSemaine()"
-               class="gcal-sem-col-head"
-               [class.gcal-today-th]="jour.today"
-               [class.gcal-we-th]="jour.we">
-            <span class="gcal-sem-jnom">{{ jour.jourNom }}</span>
-            <span class="gcal-sem-jnum" [class.gcal-sem-jnum-today]="jour.today">{{ jour.num }}</span>
-            <span *ngIf="totalDate(jour.date) > 0" class="gcal-sem-total">{{ fmtDuree(totalDate(jour.date)) }}</span>
-          </div>
-        </div>
-        <div class="gcal-sem-body">
-          <div class="gcal-time-col">
-            <div *ngFor="let h of HEURES_JOUR" class="gcal-time-slot-label">{{ h }}</div>
-          </div>
-          <div *ngFor="let jour of joursSemaine()"
-               class="gcal-day-col"
-               [class.gcal-today-col]="jour.today"
-               [class.gcal-we-col]="jour.we">
-            <div *ngFor="let h of HEURES_JOUR"
-                 class="gcal-hour-slot"
-                 (dragover)="onDragOver($event)"
-                 (drop)="onDrop($event, jour.date, h)"
-                 (click)="ouvrirAjout(jour.date, h)">
-            </div>
-            <!-- Entrées positionnées en PX : top=(heureMin-360)px, height=duréeMin px -->
-            <div *ngFor="let e of jour.entrees"
-                 class="gcal-entry-block"
-                 [style.top.px]="getTopPx(e.heureDebut)"
-                 [style.height.px]="getHeightPx(e.minutesTravaillees + e.minutesSupplementaires)"
-                 [style.background]="e.couleur+'22'"
-                 [style.border-left-color]="e.couleur"
-                 [draggable]="peutDrag(e)"
-                 (dragstart)="onDragStart($event, e)"
-                 (click)="ouvrirDetail(e, $event)">
-              <span class="gcal-entry-block-time" [style.color]="e.couleur">{{ e.heureDebut }}{{ e.heureFin ? '–'+e.heureFin : '' }}</span>
-              <span class="gcal-entry-block-name" [style.color]="e.couleur">{{ e.projetNom || 'Sans projet' }}</span>
-              <span *ngIf="e.activiteNom" class="gcal-entry-block-act">{{ e.activiteNom }}</span>
-              <span class="gcal-entry-block-dur" [style.color]="e.couleur">{{ fmtDuree(e.minutesTravaillees) }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- ✅ Wrapper qui capte le drop natif des cartes "activité récente" -->
+      
 
-      <!-- ── VUE JOUR ── -->
-      <div *ngIf="vue()==='jour'" class="gcal-jour-wrap">
-        <div class="gcal-jour-header">
-          <div style="display:flex;align-items:center;gap:8px">
-            <span class="gcal-jour-title">{{ fmtDateFr(dateCourante().toISOString().split('T')[0]) }}</span>
-            <span *ngIf="totalDate(dateCourante().toISOString().split('T')[0]) > 0" class="gcal-total-tag">
-              {{ fmtDuree(totalDate(dateCourante().toISOString().split('T')[0])) }}
-            </span>
-          </div>
-          <button *ngIf="canModify()" class="gcal-add-btn"
-                  (click)="ouvrirAjout(dateCourante().toISOString().split('T')[0])">
-            <svg viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-             activité
-          </button>
-        </div>
-        <div class="gcal-jour-body">
-          <div class="gcal-time-col">
-            <div *ngFor="let h of HEURES_JOUR" class="gcal-time-slot-label">{{ h }}</div>
-          </div>
-          <div class="gcal-day-col gcal-jour-day-col">
-            <div *ngFor="let h of HEURES_JOUR"
-                 class="gcal-hour-slot"
-                 (dragover)="onDragOver($event)"
-                 (drop)="onDrop($event, dateCourante().toISOString().split('T')[0], h)"
-                 (click)="ouvrirAjout(dateCourante().toISOString().split('T')[0], h)">
-            </div>
-            <div *ngFor="let e of joursJour()[0]?.entrees ?? []"
-                 class="gcal-entry-block"
-                 [style.top.px]="getTopPx(e.heureDebut)"
-                 [style.height.px]="getHeightPx(e.minutesTravaillees + e.minutesSupplementaires)"
-                 [style.background]="e.couleur+'22'"
-                 [style.border-left-color]="e.couleur"
-                 [draggable]="peutDrag(e)"
-                 (dragstart)="onDragStart($event, e)"
-                 (click)="ouvrirDetail(e, $event)">
-              <span class="gcal-entry-block-time" [style.color]="e.couleur">{{ e.heureDebut }}{{ e.heureFin ? '–'+e.heureFin : '' }}</span>
-              <span class="gcal-entry-block-name" [style.color]="e.couleur">{{ e.projetNom || 'Sans projet' }}</span>
-              <span *ngIf="e.activiteNom" class="gcal-entry-block-act">{{ e.activiteNom }}</span>
-              <span class="gcal-entry-block-dur" [style.color]="e.couleur">{{ fmtDuree(e.minutesTravaillees) }}</span>
-            </div>
-          </div>
-        </div>
+      <div (dragover)="onCalendarWrapperDragOver($event)" (drop)="onCalendarWrapperDrop($event)">
+        <full-calendar #calendarRef [options]="calendarOptions"></full-calendar>
       </div>
 
     </div><!-- /.gcal-main -->
 
-    <!-- ════ SIDEBAR DROITE ════ -->
+    <!-- ════ SIDEBAR DROITE (inchangée) ════ -->
     <aside class="gcal-sidebar">
 
-      <!-- ── Carte sélecteur utilisateur (visible si droits étendus) ── -->
       <div *ngIf="showUserSelector()" class="gcal-sidebar-user-card">
         <div class="gcal-sidebar-user-label">
-          <svg viewBox="0 0 18 18" fill=var(--accent) style="width:18px;height:18px;">
+          <svg viewBox="0 0 18 18" fill="var(--accent)" style="width:18px;height:18px;">
             <path d="M7 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm-4 6a4 4 0 118 0H3z"/>
           </svg>
           Utilisateur
         </div>
         <select class="gcal-sidebar-user-select"
-        [value]="selectedUser()?.id ?? ''"
-        (change)="onUserChange($any($event.target).value)">
-  <option [value]="currentUser()?.id ?? ''">
-    {{ currentUser()?.prenom }} {{ currentUser()?.nom }} (moi)
-  </option>
-  <option *ngFor="let u of utilisateursDropdown()" [value]="u.id">
-    {{ u.prenom }} {{ u.nom }}
-  </option>
-</select>
-        <!-- Avatar + badge si autre user -->
+                [value]="selectedUser()?.id ?? ''"
+                (change)="onUserChange($any($event.target).value)">
+          <option [value]="currentUser()?.id ?? ''">
+            {{ currentUser()?.prenom }} {{ currentUser()?.nom }} (moi)
+          </option>
+          <option *ngFor="let u of utilisateursDropdown()" [value]="u.id">
+            {{ u.prenom }} {{ u.nom }}
+          </option>
+        </select>
         <div *ngIf="selectedUser()?.id !== currentUser()?.id" class="gcal-sidebar-other-user">
-          <div class="gcal-sidebar-user-avatar"
-               [style.background]="getAvatarColor(selectedUser()?.prenom || '')">
+          <div class="gcal-sidebar-user-avatar" [style.background]="getAvatarColor(selectedUser()?.prenom || '')">
             {{ getInitiales((selectedUser()?.prenom || '') + ' ' + (selectedUser()?.nom || '')) }}
           </div>
           <span class="gcal-sidebar-user-name">{{ selectedUser()?.prenom }} {{ selectedUser()?.nom }}</span>
         </div>
       </div>
 
-      <!-- ── Carte "Reprendre une activité récente" ── -->
       <div class="gcal-sidebar-recentes-card">
-
-        <!-- En-tête de la carte -->
         <div class="gcal-sidebar-recentes-header">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
                style="width:16px;height:16px;color:var(--accent);flex-shrink:0">
@@ -264,7 +135,6 @@
         </div>
         <p class="gcal-sidebar-recentes-hint">Glissez une activité sur le calendrier</p>
 
-        <!-- État vide -->
         <div *ngIf="entreesRecentes().length === 0" class="gcal-sidebar-empty">
           <svg viewBox="0 0 32 32" fill="none" style="width:24px;height:24px;opacity:.25">
             <circle cx="16" cy="16" r="13" stroke="currentColor" stroke-width="1.5"/>
@@ -273,36 +143,22 @@
           <span>Aucune activité récente</span>
         </div>
 
-        <!-- ── Liste des activités récentes ──
-             Chaque carte affiche OBLIGATOIREMENT :
-             1. Nom de l'activité (coloré)
-             2. Nom du projet (avec icône)
-             3. Nom du client (avec icône, si disponible)
-             Le drag ne crée PAS directement l'entrée — il ouvre le formulaire pré-rempli -->
         <div *ngFor="let r of entreesRecentes(); let i = index">
           <div *ngIf="i > 0" class="gcal-recente-sep"></div>
-
           <div class="gcal-recente-card"
                [class.gcal-recente-draggable]="canModify()"
                [style.border-left-color]="r.couleur"
                [draggable]="canModify()"
                (dragstart)="onRecenteDragStart($event, r)"
                [title]="canModify() ? 'Glissez sur le calendrier pour ajouter' : 'Lecture seule'">
-
-            <!-- Nom de l'activité : affiché en ACCENT COULEUR, gras -->
             <div class="gcal-recente-activite" [style.color]="r.couleur">
               {{ r.activiteNom || '(Activité sans nom)' }}
             </div>
-
-            <!-- Projet : OBLIGATOIRE — affiché même si vide avec placeholder -->
             <div class="gcal-recente-row">
-              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"
-                   class="gcal-recente-row-icon">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" class="gcal-recente-row-icon">
                 <path d="M1 3.5h4.5l1.5 1.5H13v7H1V3.5z" stroke-linejoin="round"/>
               </svg>
               <span class="gcal-recente-projet">{{ r.projetNom || 'Sans projet' }}</span>
-            
-              <!-- Client inline si disponible -->
               <ng-container *ngIf="r.clientNom">
                 <span class="gcal-recente-sep-inline">·</span>
                 <svg viewBox="0 0 14 14" fill="currentColor" class="gcal-recente-row-icon" style="opacity:.35">
@@ -311,8 +167,6 @@
                 <span class="gcal-recente-client">{{ r.clientNom }}</span>
               </ng-container>
             </div>
-
-            <!-- Icône drag hint en bas droite -->
             <div *ngIf="canModify()" class="gcal-recente-drag-hint">
               <svg viewBox="0 0 12 10" fill="none" style="width:11px;height:9px">
                 <path d="M1 1h10M1 5h10M1 9h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
@@ -321,32 +175,30 @@
           </div>
         </div>
 
-        <!-- Lecture seule -->
-        <div *ngIf="!canModify() && canViewCalendar() && entreesRecentes().length > 0"
-             class="gcal-sidebar-readonly">
-          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"
-               style="width:10px;height:10px;flex-shrink:0">
+        <div *ngIf="!canModify() && canViewCalendar() && entreesRecentes().length > 0" class="gcal-sidebar-readonly">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" style="width:10px;height:10px;flex-shrink:0">
             <rect x="3" y="6" width="8" height="6" rx="1"/>
             <path d="M5 6V4a2 2 0 014 0v2" stroke-linecap="round"/>
           </svg>
           Vue en lecture seule
         </div>
-
-      </div><!-- /.gcal-sidebar-recentes-card -->
+      </div>
     </aside>
 
   </div><!-- /.gcal-layout -->
 </div><!-- /.gcal-root -->
 
-<!-- ══ POPUP DÉTAIL ══ -->
+<!-- ══ POPUP DÉTAIL (inchangé) ══ -->
 <div *ngIf="detailEntree() && !formulaireOpen()" class="gcal-overlay" (click)="fermerDetail()"></div>
 <div *ngIf="detailEntree() && !formulaireOpen()" class="gcal-popup gcal-popup-detail" (click)="$event.stopPropagation()">
   <div class="gcal-popup-header" [style.border-top-color]="detailEntree()!.couleur">
     <div class="gcal-popup-proj-info">
       <div class="gcal-popup-dot" [style.background]="detailEntree()!.couleur"></div>
       <div>
-        <div class="gcal-popup-proj" [style.color]="detailEntree()!.couleur">{{ detailEntree()!.projetNom || 'Sans projet' }}</div>
-        <div *ngIf="detailEntree()!.activiteNom" class="gcal-popup-act">{{ detailEntree()!.activiteNom }}</div>
+        <div class="gcal-popup-proj" [style.color]="detailEntree()!.couleur">{{ detailEntree()!.activiteNom || 'Sans activité' }}</div>
+        <div *ngIf="detailEntree()!.projetNom" class="gcal-popup-act">{{ detailEntree()!.projetNom }}</div>
+
+
         <div *ngIf="detailEntree()!.clientNom"   class="gcal-popup-client">{{ detailEntree()!.clientNom }}</div>
       </div>
     </div>
@@ -385,7 +237,7 @@
   </div>
 </div>
 
-<!-- ══ FORMULAIRE ══ -->
+<!-- ══ FORMULAIRE (inchangé) ══ -->
 <div *ngIf="formulaireOpen()" class="gcal-overlay" (click)="fermerFormulaire()"></div>
 <div *ngIf="formulaireOpen()" class="gcal-popup gcal-popup-form" (click)="$event.stopPropagation()">
   <div class="gcal-popup-header" style="border-top-color:var(--accent)">
@@ -393,7 +245,7 @@
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;color:var(--accent)">
         <rect x="1" y="2" width="14" height="13" rx="2"/><path d="M1 7h14M5 1v3M11 1v3" stroke-linecap="round"/>
       </svg>
-      {{ formulaireMode() === 'ajout' ? 'Nouvelle entrée' : 'Modifier l'entrée' }}
+      {{ formulaireMode() === 'ajout' ? 'Nouvelle entrée' : "Modifier l'entrée" }}
     </div>
     <button class="gcal-icon-btn" (click)="fermerFormulaire()">
       <svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>

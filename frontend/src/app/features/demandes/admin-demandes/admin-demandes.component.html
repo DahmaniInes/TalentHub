@@ -1,4 +1,3 @@
-<!-- ADMIN DEMANDES — Style identique à users.component, avatar réel employé -->
 <div style="padding:24px 28px;background:var(--bg-primary);min-height:100vh">
 
   <!-- Popup commentaire -->
@@ -12,7 +11,68 @@
     </div>
   </div>
 
-  <div class="dt-wrap">
+  <!-- ══ EN-TÊTE — toggle Table / Calendrier + taux congé ══ -->
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:18px">
+
+    <div style="display:flex;gap:6px">
+      <button
+        class="dt-wrap"
+        style="width:48px;height:48px;border:none;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0"
+        [style.background]="vueActive()==='calendrier' ? 'var(--accent-soft)' : 'var(--dt-bg)'"
+        [style.color]="vueActive()==='calendrier' ? 'var(--accent)' : 'var(--dt-text-sub)'"
+        (click)="vueActive.set('calendrier')" title="Vue calendrier">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="width:20px;height:20px">
+          <rect x="1" y="2" width="14" height="12" rx="1.5"/><path d="M1 6h14M5 1v3M11 1v3"/>
+        </svg>
+      </button>
+      <button
+        class="dt-wrap"
+        style="width:48px;height:48px;border:none;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0"
+        [style.background]="vueActive()==='table' ? 'var(--accent-soft)' : 'var(--dt-bg)'"
+        [style.color]="vueActive()==='table' ? 'var(--accent)' : 'var(--dt-text-sub)'"
+        (click)="vueActive.set('table')" title="Vue liste">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="width:20px;height:20px">
+          <path d="M2 4h12M2 8h12M2 12h12" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Taux congé -->
+    <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-input)">
+      <span style="font-size:.7rem;color:var(--dt-text-sub)">Taux congé/mois :</span>
+      <ng-container *ngIf="!editingTaux(); else editTauxTpl">
+        <strong style="font-size:.78rem">{{ tauxActuel() }} j</strong>
+        <button class="pd5-row-edit-btn" style="opacity:1" (click)="startEditTaux()" title="Modifier le taux">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
+        </button>
+      </ng-container>
+      <ng-template #editTauxTpl>
+        <input type="number" step="0.1" [ngModel]="tauxTemp()" (ngModelChange)="tauxTemp.set($event)"
+               style="width:55px;padding:2px 4px;border:1px solid var(--accent);border-radius:4px;font-size:.76rem">
+        <button class="pd5-row-edit-btn" style="opacity:1;color:#10b981" (click)="saveTaux()" title="Enregistrer">✓</button>
+        <button class="pd5-row-edit-btn" style="opacity:1;color:#ef4444" (click)="cancelEditTaux()" title="Annuler">✕</button>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- ══ VUE CALENDRIER ══ -->
+  <div *ngIf="vueActive()==='calendrier'" class="dt-wrap" style="padding:16px;margin-bottom:16px">
+    <full-calendar [options]="calendarOptions()"></full-calendar>
+
+    <div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:16px;padding-top:14px;border-top:1px solid var(--dt-border)">
+      <div style="display:flex;align-items:center;gap:6px;font-size:.78rem">
+        <span style="width:11px;height:11px;border-radius:3px;display:inline-block;background:#94a3b8"></span>
+        <span style="color:var(--dt-text-sub)">Jours fériés</span>
+      </div>
+      <div *ngFor="let t of types()" style="display:flex;align-items:center;gap:6px;font-size:.78rem">
+        <span style="width:11px;height:11px;border-radius:3px;display:inline-block" [style.background]="getCouleurType(t.id)"></span>
+        <span style="color:var(--dt-text-sub)">{{ t.libelle }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ VUE TABLE ══ -->
+  <div class="dt-wrap" *ngIf="vueActive()==='table'">
 
     <!-- ══ HEADER ══ -->
     <div class="dt-header">
@@ -29,37 +89,10 @@
           <span class="dt-badge dt-badge-accent" style="padding:3px 9px;font-size:.66rem">
             <span class="dt-badge-dot"></span>{{ demandes().length }} Total
           </span>
-          <span class="dt-badge dt-badge-pending" style="padding:3px 9px;font-size:.66rem">
-            <span class="dt-badge-dot"></span>{{ countEnAttente() }} En attente
-          </span>
-          <span class="dt-badge dt-badge-delivered" style="padding:3px 9px;font-size:.66rem">
-            <span class="dt-badge-dot"></span>{{ countAcceptee() }} Acceptées
-          </span>
-          <span class="dt-badge dt-badge-canceled" style="padding:3px 9px;font-size:.66rem">
-            <span class="dt-badge-dot"></span>{{ countRejetee() }} Rejetées
-          </span>
         </div>
       </div>
 
       <div class="dt-header-actions">
-
-        <!-- ✅ NOUVEAU — configuration du taux mensuel de congé -->
-        <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-input)">
-          <span style="font-size:.7rem;color:var(--dt-text-sub)">Taux congé/mois :</span>
-          <ng-container *ngIf="!editingTaux(); else editTauxTpl">
-            <strong style="font-size:.78rem">{{ tauxActuel() }} j</strong>
-            <button class="pd5-row-edit-btn" style="opacity:1" (click)="startEditTaux()" title="Modifier le taux">
-              <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
-            </button>
-          </ng-container>
-          <ng-template #editTauxTpl>
-            <input type="number" step="0.1" [ngModel]="tauxTemp()" (ngModelChange)="tauxTemp.set($event)"
-                   style="width:55px;padding:2px 4px;border:1px solid var(--accent);border-radius:4px;font-size:.76rem">
-            <button class="pd5-row-edit-btn" style="opacity:1;color:#10b981" (click)="saveTaux()" title="Enregistrer">✓</button>
-            <button class="pd5-row-edit-btn" style="opacity:1;color:#ef4444" (click)="cancelEditTaux()" title="Annuler">✕</button>
-          </ng-template>
-        </div>
-
         <div class="dt-search-wrap" (click)="$event.stopPropagation()">
           <div class="dt-search-bar" style="min-width:240px">
             <button class="dt-filter-icon-btn"
@@ -80,14 +113,6 @@
             </div>
             <div class="dt-fp-body">
               <div class="dt-fp-field">
-                <label class="dt-fp-label">Statut</label>
-                <select class="dt-fp-select" [value]="filterStatutId() ?? ''"
-                        (change)="filterStatutId.set($any($event.target).value ? +$any($event.target).value : null); currentPage.set(1)">
-                  <option value="">Tous</option>
-                  <option *ngFor="let s of statuts()" [value]="s.id">{{ s.libelle }}</option>
-                </select>
-              </div>
-              <div class="dt-fp-field">
                 <label class="dt-fp-label">Type</label>
                 <select class="dt-fp-select" [value]="filterTypeId() ?? ''"
                         (change)="filterTypeId.set($any($event.target).value ? +$any($event.target).value : null); currentPage.set(1)">
@@ -95,12 +120,26 @@
                   <option *ngFor="let t of types()" [value]="t.id">{{ t.libelle }}</option>
                 </select>
               </div>
-
             </div>
-
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- ✅ ONGLETS — style référentiel réclamation (mx-so-tabs / mx-so-tab) -->
+    <div class="mx-so-tabs" style="margin-bottom:16px">
+      <button class="mx-so-tab" [class.active]="statutTab()==='EN_ATTENTE'"
+              (click)="setStatutTab('EN_ATTENTE')">
+        En attente ({{ countEnAttente() }})
+      </button>
+      <button class="mx-so-tab" [class.active]="statutTab()==='ACCEPTEE'"
+              (click)="setStatutTab('ACCEPTEE')">
+        Acceptées ({{ countAcceptee() }})
+      </button>
+      <button class="mx-so-tab" [class.active]="statutTab()==='REJETEE'"
+              (click)="setStatutTab('REJETEE')">
+        Rejetées ({{ countRejetee() }})
+      </button>
     </div>
 
     <!-- Bulk bar -->
@@ -123,7 +162,6 @@
                      [checked]="allPageSelected()"
                      (change)="toggleSelectAll()">
             </th>
-            <!-- Employé (avatar + nom + email — style identique à users) -->
             <th class="dt-th" style="min-width:210px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 16 16" fill="currentColor">
@@ -133,7 +171,6 @@
                 Employé
               </div>
             </th>
-            <!-- Sujet -->
             <th class="dt-th" style="min-width:200px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -142,7 +179,6 @@
                 Sujet
               </div>
             </th>
-            <!-- Type -->
             <th class="dt-th" style="min-width:120px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -151,7 +187,6 @@
                 Type
               </div>
             </th>
-            <!-- Période -->
             <th class="dt-th" style="min-width:130px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -161,7 +196,6 @@
                 Période
               </div>
             </th>
-            <!-- Création -->
             <th class="dt-th" style="min-width:110px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -171,7 +205,6 @@
                 Création
               </div>
             </th>
-            <!-- Statut -->
             <th class="dt-th" style="min-width:130px">
               <div class="dt-th-inner">
                 <svg class="dt-th-icon" viewBox="0 0 14 14" fill="none">
@@ -193,19 +226,17 @@
                   <path d="M24 16v8M24 28h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
                 <p class="dt-empty-title">Aucune demande</p>
-                <p class="dt-empty-sub">Modifiez vos filtres</p>
+                <p class="dt-empty-sub">Aucune demande dans cet onglet</p>
               </div>
             </td>
           </tr>
           <tr *ngFor="let d of paged()" class="dt-tr">
-            <!-- Checkbox -->
             <td class="dt-td dt-td-cb" (click)="$event.stopPropagation()">
               <input type="checkbox" class="dt-checkbox"
                      [class.dt-checkbox-active]="isSelected(d.id)"
                      [checked]="isSelected(d.id)"
                      (change)="toggleSelect(d.id, $event)">
             </td>
-            <!-- Employé — avatar photo ou initiales + nom + email -->
             <td class="dt-td">
               <div class="dt-cell-with-avatar">
                 <div class="dt-avatar" style="background:var(--accent)">
@@ -218,7 +249,6 @@
                 </div>
               </div>
             </td>
-            <!-- Sujet -->
             <td class="dt-td">
               <div class="dt-cell-user">
                 <span class="dt-cell-name">{{ d.sujet }}</span>
@@ -227,11 +257,9 @@
                 </span>
               </div>
             </td>
-            <!-- Type -->
             <td class="dt-td">
               <span class="dt-badge dt-badge-accent">{{ getTypeName(d.typeDemandeId) }}</span>
             </td>
-            <!-- Période -->
             <td class="dt-td">
               <div class="dt-cell-user">
                 <span *ngIf="d.dateDebut" class="dt-cell-name">{{ fmtDate(d.dateDebut) }}</span>
@@ -239,11 +267,9 @@
                 <span *ngIf="!d.dateDebut" class="dt-cell-sub">—</span>
               </div>
             </td>
-            <!-- Création -->
             <td class="dt-td">
               <span class="dt-cell-muted">{{ fmtDate(d.dateCreation) }}</span>
             </td>
-            <!-- Statut + commentaire -->
             <td class="dt-td">
               <div style="display:flex;align-items:center;gap:6px;">
                 <span [class]="getStatutBadgeClass(d.statutDemandeId)">
@@ -258,7 +284,6 @@
                 </button>
               </div>
             </td>
-            <!-- Actions -->
             <td class="dt-td dt-td-actions" (click)="$event.stopPropagation()">
               <div class="dt-td-actions-wrap" style="gap:0px">
                 <button *ngIf="peutTraiter() && isEnAttente(d)"
@@ -268,7 +293,6 @@
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
                   </svg>
                 </button>
-
 
                 <button *ngIf="!isEnAttente(d)"
                         class="dt-action-btn dt-action-edit"
@@ -311,7 +335,7 @@
       </div>
     </div>
 
-  </div>
+  </div><!-- /vue table -->
 </div>
 
 <!-- ════ MODAL TRAITEMENT ════ -->
@@ -326,7 +350,6 @@
       </button>
     </div>
     <div class="dm-modal-body">
-      <!-- Résumé avec avatar -->
       <div class="dm-demande-resume">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
           <div class="dt-avatar" style="background:var(--accent);width:32px;height:32px;font-size:.7rem">
@@ -342,7 +365,6 @@
         <strong style="color:var(--dt-text);font-size:.88rem;display:block;margin-top:4px">{{ traitementModal()!.sujet }}</strong>
       </div>
 
-      <!-- ✅ NOUVEAU — Solde de congé du demandeur, uniquement si le type est "congé" -->
       <div *ngIf="soldeUtilisateur() as sc" style="margin-top:10px;padding:10px 12px;background:var(--bg-input);border-radius:8px;border:1px solid var(--border-color);display:flex;gap:16px;flex-wrap:wrap">
         <div>
           <span style="font-size:.62rem;color:var(--dt-text-sub);display:block">Acquis {{ sc.annee }}</span>
@@ -358,7 +380,17 @@
         </div>
       </div>
 
-      <!-- Choix statut -->
+      <div *ngIf="depasseSolde()" style="margin-top:10px;padding:10px 12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;display:flex;align-items:center;gap:8px">
+        <svg viewBox="0 0 20 20" fill="none" stroke="#ef4444" stroke-width="1.8" style="width:16px;height:16px;flex-shrink:0">
+          <path d="M10 6v5M10 14h.01" stroke-linecap="round"/>
+          <circle cx="10" cy="10" r="8"/>
+        </svg>
+        <span style="font-size:.76rem;color:#ef4444;font-weight:600">
+          Le nombre de jours demandé ({{ traitementModal()?.nbJours }}j) dépasse le solde disponible
+          ({{ soldeUtilisateur()?.solde | number:'1.1-1' }}j).
+        </span>
+      </div>
+
       <div class="dm-field" style="margin-top:16px">
         <label class="dm-label">Nouveau statut <span class="dm-required">*</span></label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
@@ -366,14 +398,17 @@
                   class="dm-statut-choice"
                   [class.dm-statut-choice-active]="selectedStatutId() === s.id"
                   [style.--sc]="s.couleur ?? '#6b7280'"
-                  (click)="selectedStatutId.set(s.id)">
+                  [disabled]="s.code === 'ACCEPTEE' && depasseSolde()"
+                  [style.opacity]="s.code === 'ACCEPTEE' && depasseSolde() ? 0.35 : 1"
+                  [style.cursor]="s.code === 'ACCEPTEE' && depasseSolde() ? 'not-allowed' : 'pointer'"
+                  [title]="s.code === 'ACCEPTEE' && depasseSolde() ? 'Solde insuffisant pour accepter cette demande' : ''"
+                  (click)="choisirStatut(s.id)">
             <span class="dm-statut-dot" [style.background]="s.couleur ?? '#6b7280'"></span>
             {{ s.libelle }}
           </button>
         </div>
       </div>
 
-      <!-- Commentaire -->
       <div class="dm-field" style="margin-top:12px">
         <label class="dm-label">
           Commentaire RH
@@ -387,7 +422,8 @@
     </div>
     <div class="dm-modal-footer">
       <button class="dm-btn-cancel" (click)="closeTraitement()">Annuler</button>
-      <button class="dm-btn-save" (click)="confirmerTraitement()" [disabled]="traitLoading()">
+      <button class="dm-btn-save" (click)="confirmerTraitement()"
+              [disabled]="traitLoading() || (isAccepteSelected() && depasseSolde())">
         <div class="dt-spinner" *ngIf="traitLoading()" style="width:14px;height:14px;border-width:1.5px;border-color:rgba(255,255,255,.3);border-top-color:white"></div>
         Confirmer
       </button>

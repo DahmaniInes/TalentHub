@@ -57,4 +57,9 @@ public class LigneFeuilleTemps {
     @Column(name = "est_weekend")
     @Builder.Default
     private boolean estWeekend = false;
+
+
+
+    @Column(name = "outlook_event_id", length = 500)
+    private String outlookEventId;
 }

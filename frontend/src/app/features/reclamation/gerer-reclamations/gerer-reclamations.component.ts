@@ -1,5 +1,5 @@
 // gerer-reclamations.component.ts — CORRIGÉ COMPLET
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReclamationService }       from '../../../services/reclamation.service';
@@ -14,6 +14,8 @@ import { Utilisateur }              from '../../../shared/models/utilisateur.mod
 import { HttpErrorResponse }        from '@angular/common/http';
 import { Subscription }             from 'rxjs';
 
+type StatutTab = 'EN_ATTENTE' | 'EN_COURS' | 'RESOLUE' | 'REJETEE';
+
 @Component({
   selector: 'app-gerer-reclamations',
   standalone: true,
@@ -21,7 +23,7 @@ import { Subscription }             from 'rxjs';
   templateUrl: './gerer-reclamations.component.html',
   styleUrls: ['./gerer-reclamations.component.css']
 })
-export class GererReclamationsComponent implements OnInit {
+export class GererReclamationsComponent implements OnInit, OnDestroy {
 
   private recSvc    = inject(ReclamationService);
   private userSvc   = inject(UserService);
@@ -50,8 +52,10 @@ export class GererReclamationsComponent implements OnInit {
   traiterCommentaire = signal('');
   saving           = signal(false);
 
+  // ✅ NOUVEAU — onglet de statut actif (une seule liste affichée à la fois)
+  statutTab = signal<StatutTab>('EN_ATTENTE');
+
   searchText      = signal('');
-  filterStatutId  = signal<number | null>(null);
   filterServiceId = signal<number | null>(null);
   page            = signal(1);
   pageSize        = 20;
@@ -68,7 +72,6 @@ export class GererReclamationsComponent implements OnInit {
     }
     this.loadAll();
     this.subs.add(this.notifSvc.newNotification$.subscribe(n => {
-      // ✅ FIX : cast en string pour éviter l'erreur de type enum
       const t = String(n.type);
       if (t === 'RECLAMATION_SOUMISE' || t === 'RECLAMATION_COMMENTEE') this.loadAll();
     }));
@@ -88,14 +91,16 @@ export class GererReclamationsComponent implements OnInit {
     this.reclamations.update(recs => recs.map(r => this.enrichirRec(r)));
   }
 
+  // ✅ MODIFIÉ — filtre désormais TOUJOURS par l'onglet de statut actif,
+  // en plus de la recherche texte et du filtre service — une seule liste
+  // à la fois, plus de surcharge visuelle.
   filteredRecs = computed(() => {
-    let list = this.reclamations();
+    let list = this.reclamations().filter(r => r.statutCode === this.statutTab());
     const q  = this.searchText().toLowerCase();
     if (q) list = list.filter(r =>
       r.sujet.toLowerCase().includes(q) ||
       (r.utilisateurNom || '').toLowerCase().includes(q) ||
       (r.serviceNom || '').toLowerCase().includes(q));
-    if (this.filterStatutId())  list = list.filter(r => r.statutReclamationId === this.filterStatutId());
     if (this.filterServiceId()) list = list.filter(r => r.serviceReclamationId === this.filterServiceId());
     return list;
   });
@@ -103,18 +108,18 @@ export class GererReclamationsComponent implements OnInit {
   pagedRecs  = computed(() => this.filteredRecs().slice((this.page()-1)*this.pageSize, this.page()*this.pageSize));
   totalPages = computed(() => Math.max(1, Math.ceil(this.filteredRecs().length / this.pageSize)));
   pagesArr   = computed(() => Array.from({ length: this.totalPages() }, (_, i) => i+1));
-  hasFilters = computed(() => !!(this.filterStatutId() || this.filterServiceId() || this.searchText()));
-  activeFiltersCount = computed(() => (this.filterStatutId() ? 1 : 0) + (this.filterServiceId() ? 1 : 0));
+  hasFilters = computed(() => !!(this.filterServiceId() || this.searchText()));
+  activeFiltersCount = computed(() => (this.filterServiceId() ? 1 : 0));
 
   countByStatut(code: string): number {
     return this.reclamations().filter(r => r.statutCode === code).length;
   }
 
-  // ✅ FIX : méthode pour filtrer par code — interdit d'utiliser => dans les templates
-  filtrerParStatut(code: string): void {
-    const statut = this.statuts().find(s => s.code === code);
-    this.filterStatutId.set(statut?.id ?? null);
+  // ✅ NOUVEAU — bascule d'onglet de statut, remet la pagination à 1
+  setStatutTab(tab: StatutTab): void {
+    this.statutTab.set(tab);
     this.page.set(1);
+    this.closeAllMenus();
   }
 
   // ── Détail ──
@@ -136,12 +141,8 @@ export class GererReclamationsComponent implements OnInit {
     this.traiterCommentaire.set('');
   }
 
-  // ✅ FIX : méthode pour ouvrir le formulaire de traitement
-  // (évite showTraiter.set(true) dans le template qui fonctionnerait mais est moins propre)
   ouvrirFormTraiter(): void { this.showTraiter.set(true); }
 
-  // ✅ FIX : méthode pour annuler le traitement
-  // (évite showTraiter.set(false) directement dans le template)
   annulerTraitement(): void {
     this.showTraiter.set(false);
     this.traiterStatutId.set(null);
@@ -266,7 +267,6 @@ export class GererReclamationsComponent implements OnInit {
   }
 
   resetFilters(): void {
-    this.filterStatutId.set(null);
     this.filterServiceId.set(null);
     this.searchText.set('');
     this.page.set(1);

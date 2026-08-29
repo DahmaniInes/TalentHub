@@ -23,15 +23,15 @@ export type PageFT = 'semaine' | 'entrees' | 'calendrier' | 'fiches' | 'centre';
     CentreDonneesComponent
   ],
   template: `
-    <div style="height:100%;overflow:auto;background:var(--bg-primary)">
-      <app-ma-semaine      *ngIf="page()==='semaine'"></app-ma-semaine>
+<div style="min-height:100%;background:var(--bg-primary)">
+        <app-ma-semaine      *ngIf="page()==='semaine'"></app-ma-semaine>
       <app-mes-entrees     *ngIf="page()==='entrees'"></app-mes-entrees>
       <app-calendrier-ft   *ngIf="page()==='calendrier'"></app-calendrier-ft>
       <app-fiches-de-temps *ngIf="page()==='fiches'"></app-fiches-de-temps>
       <app-centre-donnees  *ngIf="page()==='centre'"></app-centre-donnees>
     </div>
   `,
-  styles: [':host{display:block;height:100%}']
+styles: [':host{display:block;height:100%;overflow-y:auto}']
 })
 export class FeuilleTempsComponent implements OnInit {
   private route = inject(ActivatedRoute);

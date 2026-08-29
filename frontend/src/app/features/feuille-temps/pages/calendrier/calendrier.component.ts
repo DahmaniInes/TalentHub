@@ -1,7 +1,16 @@
-// calendrier.component.ts — COMPLET CORRIGÉ
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+// calendrier.component.ts — FULLCALENDAR + INTÉGRATION OUTLOOK
+import { Component, inject, OnInit, AfterViewInit, ViewChild, signal, computed, effect, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router'; // ✅ NOUVEAU
+import { FullCalendarModule, FullCalendarComponent } from '@fullcalendar/angular';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import multiMonthPlugin from '@fullcalendar/multimonth';
+import interactionPlugin from '@fullcalendar/interaction';
+import { CalendarOptions, EventInput, EventDropArg } from '@fullcalendar/core';
+import frLocale from '@fullcalendar/core/locales/fr';
+import { EventResizeDoneArg } from '@fullcalendar/interaction';
 import { FeuilleTempsService }      from '../../../../services/feuille-temps.service';
 import { ProjetService }            from '../../../../services/projet.service';
 import { ActiviteService }          from '../../../../services/activite.service';
@@ -10,14 +19,19 @@ import { KeycloakService }          from '../../../../services/keycloak.service'
 import { UiService }                from '../../../../services/ui.service';
 import { ErrorService }             from '../../../../services/error.service';
 import { PermissionContextService } from '../../../../services/permission-context.service';
+import { DemandeService }           from '../../../../services/demande.service';
+import { NomenclatureService }      from '../../../../services/nomenclature.service';
+import { JoursFeriesService, JourFerie } from '../../../../services/jours-feries.service';
+import { OutlookService }           from '../../../../services/outlook.service'; // ✅ NOUVEAU
 import { FeuilleTemps, LigneFeuilleTempsRequest } from '../../../../shared/models/feuille-temps.model';
 import { Projet }      from '../../../../shared/models/projet.model';
 import { Activite }    from '../../../../shared/models/activite.model';
 import { Utilisateur } from '../../../../shared/models/utilisateur.model';
+import { Demande, TypeDemande, StatutDemande } from '../../../../shared/models/demande.model';
 import { HttpErrorResponse } from '@angular/common/http';
 import { GroupeService, MembreInfo } from '../../../../services/groupe.service';
 
-export type VueCal = 'mois' | 'semaine' | 'jour';
+export type VueCal = 'mois' | 'semaine' | 'jour' | 'annee';
 
 export interface EntreeCal {
   id?:           number;
@@ -58,24 +72,30 @@ export interface EntreeRecente {
 @Component({
   selector: 'app-calendrier-ft',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, FullCalendarModule],
   templateUrl: './calendrier.component.html',
   styleUrls: ['./calendrier.component.css']
 })
-export class CalendrierFtComponent implements OnInit {
+export class CalendrierFtComponent implements OnInit, AfterViewInit {
 
-  private ftSvc       = inject(FeuilleTempsService);
-  private projetSvc   = inject(ProjetService);
-  private activiteSvc = inject(ActiviteService);
-  private userSvc     = inject(UserService);
-  private keycloak    = inject(KeycloakService);
-  readonly ui         = inject(UiService);
-  private errorSvc    = inject(ErrorService);
-  readonly perms      = inject(PermissionContextService);
-  private groupeSvc   = inject(GroupeService);
+  private ftSvc         = inject(FeuilleTempsService);
+  private projetSvc     = inject(ProjetService);
+  private activiteSvc   = inject(ActiviteService);
+  private userSvc       = inject(UserService);
+  private keycloak      = inject(KeycloakService);
+  readonly ui           = inject(UiService);
+  private errorSvc      = inject(ErrorService);
+  readonly perms        = inject(PermissionContextService);
+  private groupeSvc     = inject(GroupeService);
+  private demandeSvc    = inject(DemandeService);
+  private nomenclature  = inject(NomenclatureService);
+  private joursFeriesSvc = inject(JoursFeriesService);
+  private outlookSvc    = inject(OutlookService); // ✅ NOUVEAU
+  private route         = inject(ActivatedRoute); // ✅ NOUVEAU
   private readonly STATUT_TERMINE_ID = 4;
+  private ngZone = inject(NgZone);
+  @ViewChild('calendarRef') calendarComponent?: FullCalendarComponent;
 
-  // ── Données ──────────────────────────────────────────────────────────────
   currentUser      = signal<Utilisateur | null>(null);
   selectedUser     = signal<Utilisateur | null>(null);
   utilisateursDropdown = signal<MembreInfo[]>([]);
@@ -84,10 +104,16 @@ export class CalendrierFtComponent implements OnInit {
   activitesGlobales   = signal<Activite[]>([]);
   activitesParProjet  = signal<Record<number, Activite[]>>({});
 
+  demandes = signal<Demande[]>([]);
+  typesDemande = signal<TypeDemande[]>([]);
+  statutsDemande = signal<StatutDemande[]>([]);
+  joursFeries = signal<JourFerie[]>([]);
+
+  outlookConnecte = signal(false); // ✅ NOUVEAU
+
   loading = signal(false);
   saving  = signal(false);
 
-  // ── Permissions ───────────────────────────────────────────────────────────
   canReadOwn    = computed(() => this.perms.can('TS_OWN_READ'));
   canCreateOwn  = computed(() => this.perms.can('TS_OWN_CREATE'));
   canUpdateOwn  = computed(() => this.perms.can('TS_OWN_UPDATE'));
@@ -107,34 +133,19 @@ export class CalendrierFtComponent implements OnInit {
     return this.canUpdateAll() || this.canUpdateGroup();
   });
 
-  // ── Navigation ────────────────────────────────────────────────────────────
   dateCourante = signal<Date>(new Date());
   vue          = signal<VueCal>('semaine');
 
-  // ── Popups ────────────────────────────────────────────────────────────────
   detailEntree    = signal<EntreeCal | null>(null);
   formulaireOpen  = signal(false);
   formulaireMode  = signal<'ajout' | 'edition'>('ajout');
   entreeEnEdition = signal<EntreeCal | null>(null);
-  form: FormCal = this.newForm('', '09:00');
+  form: FormCal = this.newForm('', '08:00');
 
-  // ── Drag ─────────────────────────────────────────────────────────────────
-  draggingEntree  = signal<EntreeCal | null>(null);
   draggingRecente = signal<EntreeRecente | null>(null);
 
-  // ── Constantes grille horaire ─────────────────────────────────────────────
-  readonly JOURS    = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
-  readonly MOIS_FR  = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet',
-                       'Août','Septembre','Octobre','Novembre','Décembre'];
   readonly COULEURS = ['#6366f1','#8b5cf6','#10b981','#f97316','#ef4444',
                        '#3b82f6','#c026d3','#eab308','#06b6d4','#84cc16'];
-
-  readonly HEURES_JOUR = Array.from({length: 18}, (_, i) =>
-    `${String(i + 6).padStart(2, '0')}:00`
-  );
-  readonly START_HOUR    = 6;
-  readonly START_MINUTES = this.START_HOUR * 60;
-  readonly SLOT_PX = 60;
 
   private _couleurs: Record<string, string> = {};
   private _ci = 0;
@@ -144,10 +155,16 @@ export class CalendrierFtComponent implements OnInit {
     return this._couleurs[k];
   }
 
+  private readonly PALETTE_DEMANDE = ['#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899'];
+  couleurTypeDemande(typeId: number): string {
+    return this.PALETTE_DEMANDE[typeId % this.PALETTE_DEMANDE.length];
+  }
+
+  entreesRecentes = signal<EntreeRecente[]>([]);
+
   private loadUtilisateursDropdown(): void {
     const me = this.currentUser();
     if (!me) return;
-
     if (this.canReadAll() || this.canUpdateAll()) {
       this.groupeSvc.getTousMembresDeGroupes(me.id).subscribe({
         next: d => this.utilisateursDropdown.set(d),
@@ -161,28 +178,6 @@ export class CalendrierFtComponent implements OnInit {
     }
   }
 
-  getTopPx(heureDebut?: string): number {
-    if (!heureDebut) return 0;
-    const [h, m] = heureDebut.split(':').map(Number);
-    const minutesDepuisDebut = h * 60 + m - this.START_MINUTES;
-    return Math.max(0, Math.min(minutesDepuisDebut, this.HEURES_JOUR.length * this.SLOT_PX));
-  }
-
-  getHeightPx(dureeMinutes: number): number {
-    return Math.max(22, dureeMinutes);
-  }
-
-  entreesRecentes = signal<EntreeRecente[]>([]);
-
-  /**
-   * ✅ CORRIGÉ — Exclut désormais du bloc "Reprendre une activité" toute
-   * entrée dont l'activité résolue est marquée Terminée. Comme
-   * activitesParProjet/activitesGlobales ne contiennent déjà que des
-   * activités NON terminées (chargées via getByProjet /
-   * getGlobalesDisponiblesPourProjet), une activité terminée n'y figure
-   * pas — on la considère donc explicitement exclue plutôt que de la
-   * laisser passer faute de correspondance trouvée.
-   */
   private loadEntreesRecentes(utilisateurId: number): void {
     this.ftSvc.getActivitesRecentesDisponibles(utilisateurId).subscribe({
       next: dtos => {
@@ -220,69 +215,66 @@ export class CalendrierFtComponent implements OnInit {
     });
   }
 
-  // ── Labels navigation ─────────────────────────────────────────────────────
+  private loadDemandes(utilisateurId: number): void {
+    this.demandeSvc.getByUtilisateur(utilisateurId).subscribe({
+      next: d => this.demandes.set(d),
+      error: () => this.demandes.set([])
+    });
+  }
+
+  private chargerJoursFeries(): void {
+    const annee = new Date().getFullYear();
+    this.joursFeriesSvc.getParAnnee(annee).subscribe({
+      next: j => this.joursFeries.update(existants => [...existants, ...j])
+    });
+    this.joursFeriesSvc.getParAnnee(annee + 1).subscribe({
+      next: j => this.joursFeries.update(existants => [...existants, ...j])
+    });
+  }
+
+  // ✅ NOUVEAU — statut de connexion Outlook
+  private verifierStatutOutlook(utilisateurId: number): void {
+    this.outlookSvc.status(utilisateurId).subscribe({
+      next: r => this.outlookConnecte.set(r.connected),
+      error: () => this.outlookConnecte.set(false)
+    });
+  }
+
+  connecterOutlook(): void {
+    const user = this.currentUser();
+    if (!user) return;
+    this.outlookSvc.connect(user.id).subscribe({
+      next: r => window.location.href = r.url,
+      error: () => this.ui.error('Impossible de démarrer la connexion Outlook.')
+    });
+  }
+
+  deconnecterOutlook(): void {
+    const user = this.currentUser();
+    if (!user) return;
+    this.ui.confirm({
+      title: 'Déconnecter Outlook',
+      message: 'Vos futures entrées ne seront plus synchronisées avec Outlook. Continuer ?',
+      confirmLabel: 'Déconnecter', type: 'danger',
+      onConfirm: () => {
+        this.outlookSvc.disconnect(user.id).subscribe({
+          next: () => { this.outlookConnecte.set(false); this.ui.success('Outlook déconnecté.'); },
+          error: () => this.ui.error('Erreur lors de la déconnexion.')
+        });
+      }
+    });
+  }
+
   labelNav = computed(() => {
     const d = this.dateCourante();
-    if (this.vue() === 'mois') return `${this.MOIS_FR[d.getMonth()]} ${d.getFullYear()}`;
+    if (this.vue() === 'annee') return `${d.getFullYear()}`;
+    if (this.vue() === 'mois') return `${d.toLocaleDateString('fr-FR', { month:'long', year:'numeric' })}`;
     if (this.vue() === 'jour') return d.toLocaleDateString('fr-FR', {
       weekday:'long', day:'numeric', month:'long', year:'numeric'
     });
     const lundi = this.lundiDe(d);
     const dim   = new Date(lundi); dim.setDate(dim.getDate() + 6);
     return `${lundi.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} – ${dim.toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'})}`;
-  });
-
-  totalVue = computed(() => {
-    const all = this.vue() === 'jour'
-      ? this.joursJour().flatMap(j => j.entrees)
-      : this.vue() === 'semaine'
-      ? this.joursSemaine().flatMap(j => j.entrees)
-      : this.joursMois().flatMap(j => j.entrees);
-    return all.reduce((s, e) => s + e.minutesTravaillees + e.minutesSupplementaires, 0);
-  });
-
-  joursMois = computed(() => {
-    const d = this.dateCourante();
-    const today = new Date().toISOString().split('T')[0];
-    const y = d.getFullYear(); const m = d.getMonth();
-    const p1  = new Date(y, m, 1);
-    const off  = (p1.getDay() + 6) % 7;
-    const deb  = new Date(p1); deb.setDate(deb.getDate() - off);
-    const dern = new Date(y, m+1, 0);
-    const eDay = (dern.getDay() + 6) % 7;
-    const fin  = new Date(dern); if (eDay < 6) fin.setDate(fin.getDate() + (6-eDay));
-    const jours: any[] = []; const cur = new Date(deb);
-    while (cur <= fin) {
-      const ds = cur.toISOString().split('T')[0];
-      jours.push({
-        date: ds, num: cur.getDate(),
-        autreMois: cur.getMonth() !== m,
-        today: ds === today,
-        we: cur.getDay() === 0 || cur.getDay() === 6,
-        entrees: this.entreesDate(ds)
-      });
-      cur.setDate(cur.getDate() + 1);
-    }
-    return jours;
-  });
-
-  joursSemaine = computed(() => {
-    const lundi = this.lundiDe(this.dateCourante());
-    const today = new Date().toISOString().split('T')[0];
-    return Array.from({length: 7}, (_, i) => {
-      const d = new Date(lundi); d.setDate(d.getDate() + i);
-      const ds = d.toISOString().split('T')[0];
-      return {
-        date: ds, num: d.getDate(), jourNom: this.JOURS[i],
-        today: ds === today, we: i >= 5,
-        entrees: this.entreesDate(ds)
-      };
-    });
-  });
-
-  joursJour = computed(() => {
-    const ds = this.dateCourante().toISOString().split('T')[0];
-    return [{ date: ds, entrees: this.entreesDate(ds) }];
   });
 
   entreesDate(date: string): EntreeCal[] {
@@ -315,8 +307,322 @@ export class CalendrierFtComponent implements OnInit {
     );
   }
 
-  // ── Lifecycle ─────────────────────────────────────────────────────────────
+  private toutesLesDatesConnues(): string[] {
+    const dates = new Set<string>();
+    for (const ft of this.feuilles()) {
+      for (const l of ft.lignes ?? []) {
+        dates.add(typeof l.date === 'string' ? l.date : String(l.date));
+      }
+    }
+    return [...dates];
+  }
+
+  private addOneDay(dateStr: string): string {
+    const d = new Date(dateStr);
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+  }
+
+  private toutesLesActivitesConnues(): Map<number, string> {
+    const m = new Map<number, string>();
+    for (const a of this.activitesGlobales()) m.set(a.id, a.nom);
+    for (const liste of Object.values(this.activitesParProjet())) {
+      for (const a of liste) m.set(a.id, a.nom);
+    }
+    return m;
+  }
+
+  entreesEvents = computed<EventInput[]>(() => {
+    const evts: EventInput[] = [];
+    const activitesConnues = this.toutesLesActivitesConnues();
+    for (const date of this.toutesLesDatesConnues()) {
+      for (const e of this.entreesDate(date)) {
+        const editable = this.peutDrag(e);
+        const heureDebut = e.heureDebut || '08:00';
+        const dureeMinutes = e.minutesTravaillees + e.minutesSupplementaires || 60;
+        let heureFin = e.heureFin;
+        if (!heureFin) {
+          const [h, m] = heureDebut.split(':').map(Number);
+          const totalMin = h * 60 + m + dureeMinutes;
+          const fh = Math.min(23, Math.floor(totalMin / 60));
+          const fm = totalMin % 60;
+          heureFin = `${String(fh).padStart(2,'0')}:${String(fm).padStart(2,'0')}`;
+        }
+
+        let titre: string;
+        if (e.activiteId) {
+          titre = e.activiteNom || activitesConnues.get(e.activiteId) || 'Activité';
+        } else if (e.projetId) {
+          titre = e.projetNom || this.projets().find(p => p.id === e.projetId)?.nom || 'Projet';
+        } else {
+          titre = 'Sans activité';
+        }
+
+        evts.push({
+          id: 'entree-' + e.id,
+          title: titre,
+          start: `${e.date}T${heureDebut}:00`,
+          end: `${e.date}T${heureFin}:00`,
+          allDay: false,
+          backgroundColor: e.couleur,
+          borderColor: e.couleur,
+          editable,
+          durationEditable: editable,
+          startEditable: editable,
+          extendedProps: { type: 'entree', entree: e }
+        });
+      }
+    }
+    return evts;
+  });
+
+  demandesEvents = computed<EventInput[]>(() => {
+    const idAcceptee = this.statutsDemande().find(s => s.code === 'ACCEPTEE')?.id;
+    if (idAcceptee == null) return [];
+    return this.demandes()
+      .filter(d => d.statutDemandeId === idAcceptee && d.dateDebut)
+      .map(d => {
+        const couleur = this.couleurTypeDemande(d.typeDemandeId);
+        const typeName = this.typesDemande().find(t => t.id === d.typeDemandeId)?.libelle ?? 'Congé';
+        const dateFinExclusive = d.dateFin ? this.addOneDay(d.dateFin) : this.addOneDay(d.dateDebut!);
+        return {
+          id: 'demande-' + d.id,
+          title: '🏖 ' + typeName,
+          start: d.dateDebut,
+          end: dateFinExclusive,
+          allDay: true,
+          display: 'block',
+          backgroundColor: couleur,
+          borderColor: couleur,
+          editable: false,
+          extendedProps: { type: 'demande' }
+        } as EventInput;
+      });
+  });
+
+  joursFeriesEvents = computed<EventInput[]>(() =>
+    this.joursFeries().map(j => ({
+      id: 'ferie-' + j.date,
+      title: '🎌 ' + j.localName,
+      start: j.date,
+      end: this.addOneDay(j.date),
+      allDay: true,
+      display: 'block',
+      backgroundColor: '#94a3b8',
+      borderColor: '#94a3b8',
+      editable: false,
+      extendedProps: { type: 'ferie' }
+    }))
+  );
+
+  tousLesEvents = computed<EventInput[]>(() =>
+    [...this.entreesEvents(), ...this.demandesEvents(), ...this.joursFeriesEvents()]
+  );
+
+  readonly calendarOptions: CalendarOptions = {
+    plugins: [dayGridPlugin, timeGridPlugin, multiMonthPlugin, interactionPlugin],
+    initialView: 'timeGridWeek',
+    locale: frLocale,
+    headerToolbar: false,
+    height: 'auto',
+    weekends: true,
+    slotMinTime: '08:00:00',
+    slotMaxTime: '24:00:00',
+    allDaySlot: true,
+    editable: true,
+    eventStartEditable: true,
+    eventDurationEditable: true,
+    events: (info, successCallback) => {
+      successCallback(this.tousLesEvents());
+    },
+    eventDidMount: (info) => {
+      info.el.setAttribute('title', info.event.title);
+    },
+    dateClick: (arg) => {
+      this.ngZone.run(() => {
+        const [datePart, timePart] = arg.dateStr.split('T');
+        this.ouvrirAjout(datePart, timePart?.substring(0, 5));
+      });
+    },
+    eventClick: (info) => {
+      this.ngZone.run(() => {
+        const type = info.event.extendedProps['type'];
+        if (type !== 'entree') return;
+        const e = info.event.extendedProps['entree'] as EntreeCal;
+        this.ouvrirDetail(e);
+      });
+    },
+    eventDrop: (arg: EventDropArg) => {
+      this.ngZone.run(() => this.onEventDrop(arg));
+    },
+    eventResize: (arg: EventResizeDoneArg) => {
+      this.ngZone.run(() => this.onEventResize(arg));
+    }
+  };
+
+  private syncVue(): void {
+    const api = this.calendarComponent?.getApi();
+    if (!api) return;
+    const fcView = this.vue() === 'annee'   ? 'multiMonthYear'
+                 : this.vue() === 'mois'    ? 'dayGridMonth'
+                 : this.vue() === 'jour'    ? 'timeGridDay'
+                 : 'timeGridWeek';
+    api.changeView(fcView, this.dateCourante());
+  }
+
+  private refetchEvents(): void {
+    const api = this.calendarComponent?.getApi();
+    if (!api) return;
+    api.refetchEvents();
+  }
+
+  constructor() {
+    effect(() => {
+      this.tousLesEvents();
+      this.refetchEvents();
+    });
+    effect(() => {
+      this.vue(); this.dateCourante();
+      this.syncVue();
+    });
+  }
+
+  ngAfterViewInit(): void {
+    this.ngZone.runOutsideAngular(() => {
+      setTimeout(() => {
+        this.syncVue();
+        this.refetchEvents();
+      });
+    });
+  }
+
+  private onEventDrop(arg: EventDropArg): void {
+    const entree = arg.event.extendedProps['entree'] as EntreeCal | undefined;
+    if (!entree) { arg.revert(); return; }
+
+    const nouvelleDate = arg.event.startStr.split('T')[0];
+    const nouvelleHeureDebut = arg.event.startStr.split('T')[1]?.substring(0, 5);
+    const nouvelleHeureFin   = arg.event.endStr?.split('T')[1]?.substring(0, 5);
+
+    const ft = this.feuilles().find(f => f.id === entree.feuilleId);
+    if (!ft) { arg.revert(); return; }
+
+    const lignes = (ft.lignes ?? []).map(l => {
+      if (l.id !== entree.id) return this.ligneVersRequest(l);
+      return {
+        ...this.ligneVersRequest(l),
+        date: nouvelleDate,
+        heureDebut: nouvelleHeureDebut ?? l.heureDebut,
+        heureFin: nouvelleHeureFin ?? l.heureFin,
+        estWeekend: FeuilleTempsService.isWeekend(nouvelleDate)
+      };
+    });
+
+    this.ftSvc.update(ft.id, {
+      utilisateurId: ft.utilisateurId, semaineDu: ft.semaineDu, semaineAu: ft.semaineAu,
+      statut: ft.statut, lignes
+    }).subscribe({
+      next: u => {
+        this.feuilles.update(fs => fs.map(f => f.id === u.id ? u : f));
+        this.ui.success('Entrée déplacée ✅');
+        this.notifierSiAutreUser(nouvelleDate);
+      },
+      error: (err: HttpErrorResponse) => { this.ui.error(this.errorSvc.parse(err).message); arg.revert(); }
+    });
+  }
+
+  private onEventResize(arg: EventResizeDoneArg): void {
+    const entree = arg.event.extendedProps['entree'] as EntreeCal | undefined;
+    if (!entree) { arg.revert(); return; }
+
+    const debut = arg.event.start!;
+    const fin   = arg.event.end!;
+    const minutes = Math.round((fin.getTime() - debut.getTime()) / 60000);
+
+    const ft = this.feuilles().find(f => f.id === entree.feuilleId);
+    if (!ft) { arg.revert(); return; }
+
+    const lignes = (ft.lignes ?? []).map(l =>
+      l.id === entree.id
+        ? { ...this.ligneVersRequest(l), minutesTravaillees: minutes }
+        : this.ligneVersRequest(l)
+    );
+
+    this.ftSvc.update(ft.id, {
+      utilisateurId: ft.utilisateurId, semaineDu: ft.semaineDu, semaineAu: ft.semaineAu,
+      statut: ft.statut, lignes
+    }).subscribe({
+      next: u => { this.feuilles.update(fs => fs.map(f => f.id === u.id ? u : f)); this.ui.success('Durée modifiée ✅'); },
+      error: (err: HttpErrorResponse) => { this.ui.error(this.errorSvc.parse(err).message); arg.revert(); }
+    });
+  }
+
+  private ligneVersRequest(l: any): LigneFeuilleTempsRequest {
+    return {
+      date: typeof l.date === 'string' ? l.date : String(l.date),
+      projetId: l.projetId, activiteId: l.activiteId, clientId: l.clientId,
+      heureDebut: l.heureDebut, heureFin: l.heureFin,
+      minutesTravaillees: l.minutesTravaillees, minutesSupplementaires: l.minutesSupplementaires,
+      commentaire: l.commentaire, estWeekend: l.estWeekend ?? false
+    };
+  }
+
+  onRecenteDragStart(event: DragEvent, r: EntreeRecente): void {
+    if (!this.canModify()) { event.preventDefault(); return; }
+    this.draggingRecente.set(r);
+    event.dataTransfer?.setData('type', 'recente');
+  }
+
+  onCalendarWrapperDragOver(event: DragEvent): void {
+    if (this.draggingRecente()) {
+      event.preventDefault();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+    }
+  }
+
+  onCalendarWrapperDrop(event: DragEvent): void {
+    const r = this.draggingRecente();
+    if (!r) return;
+    event.preventDefault();
+
+    const target = event.target as HTMLElement;
+    const dayEl = target.closest('[data-date]') as HTMLElement | null;
+    if (!dayEl) { this.draggingRecente.set(null); return; }
+    const date = dayEl.getAttribute('data-date')!;
+
+    const slotEl = target.closest('.fc-timegrid-slot') as HTMLElement | null;
+    const heure = slotEl?.getAttribute('data-time')?.substring(0, 5);
+
+    const heureDebut = heure || '08:00';
+    const [dh, dm] = heureDebut.split(':').map(Number);
+    const heureFin = `${String(Math.min(dh + 1, 23)).padStart(2, '0')}:${String(dm).padStart(2, '0')}`;
+
+    this.form = {
+      date, projetId: r.projetId, activiteId: r.activiteId,
+      heureDebut, heureFin, minutesTravaillees: 60, commentaire: ''
+    };
+    if (r.projetId) this.loadActivitesDuProjet(r.projetId);
+    this.formulaireMode.set('ajout');
+    this.entreeEnEdition.set(null);
+    this.detailEntree.set(null);
+    this.formulaireOpen.set(true);
+    this.draggingRecente.set(null);
+  }
+
   ngOnInit(): void {
+    this.chargerJoursFeries();
+    this.nomenclature.getAllTypes().subscribe({ next: t => this.typesDemande.set(t), error: () => {} });
+    this.nomenclature.getAllStatuts().subscribe({ next: s => this.statutsDemande.set(s), error: () => {} });
+
+    // ✅ NOUVEAU — lire le paramètre de retour de redirection Outlook
+    this.route.queryParams.subscribe(params => {
+      if (params['outlook'] === 'connecte') {
+        this.ui.success('Outlook connecté avec succès ✅');
+        const user = this.currentUser();
+        if (user) this.verifierStatutOutlook(user.id);
+      }
+    });
+
     const kcId = this.keycloak.getKeycloakUserId();
     if (!kcId) { this.loadFeuilles(); return; }
 
@@ -324,11 +630,11 @@ export class CalendrierFtComponent implements OnInit {
       next: u => {
         this.currentUser.set(u);
         this.selectedUser.set(u);
+        this.verifierStatutOutlook(u.id); // ✅ NOUVEAU
 
         this.projetSvc.getVisiblesPourFeuilleTemps(u.id).subscribe({
           next: ps => {
             this.projets.set(ps);
-
             const projetActivitePromises = ps.map(p => Promise.all([
               new Promise<void>(resolve => {
                 this.activiteSvc.getByProjet(p.id).subscribe({
@@ -353,12 +659,15 @@ export class CalendrierFtComponent implements OnInit {
             Promise.all(projetActivitePromises).then(() => {
               this.loadFeuilles(u.id);
               this.loadEntreesRecentes(u.id);
+              this.loadDemandes(u.id);
               this.loadUtilisateursDropdown();
+              this.ngZone.runOutsideAngular(() => this.refetchEvents());
             });
           },
           error: () => {
             this.loadFeuilles(u.id);
             this.loadEntreesRecentes(u.id);
+            this.loadDemandes(u.id);
             this.loadUtilisateursDropdown();
           }
         });
@@ -383,7 +692,7 @@ export class CalendrierFtComponent implements OnInit {
     const id = val ? +val : me?.id;
     if (!id || (me && id === me.id)) {
       this.selectedUser.set(me ?? null);
-      if (me) { this.loadFeuilles(me.id); this.loadEntreesRecentes(me.id); }
+      if (me) { this.loadFeuilles(me.id); this.loadEntreesRecentes(me.id); this.loadDemandes(me.id); }
       return;
     }
     this.userSvc.getUserById(id).subscribe({
@@ -391,6 +700,7 @@ export class CalendrierFtComponent implements OnInit {
         this.selectedUser.set(user);
         this.loadFeuilles(user.id);
         this.loadEntreesRecentes(user.id);
+        this.loadDemandes(user.id);
       },
       error: () => this.ui.error("Erreur lors du chargement de l'utilisateur sélectionné.")
     });
@@ -401,14 +711,6 @@ export class CalendrierFtComponent implements OnInit {
     this.activiteSvc.getByProjet(projetId).subscribe({
       next: d => this.activitesParProjet.update(m => ({ ...m, [projetId]: d }))
     });
-  }
-
-  getActivitesPourForm(): Activite[] {
-    const pid  = this.form.projetId;
-    const glob = this.activitesGlobales();
-    if (!pid) return glob;
-    const duProjet = this.activitesParProjet()[pid] ?? [];
-    return [...duProjet, ...glob.filter(g => !duProjet.find(a => a.id === g.id))];
   }
 
   onFormProjetChange(): void {
@@ -425,9 +727,9 @@ export class CalendrierFtComponent implements OnInit {
     }
   }
 
-  // ── Navigation ────────────────────────────────────────────────────────────
   naviguer(delta: number): void {
     const d = new Date(this.dateCourante());
+    if (this.vue() === 'annee')   d.setFullYear(d.getFullYear() + delta);
     if (this.vue() === 'mois')    d.setMonth(d.getMonth() + delta);
     if (this.vue() === 'semaine') d.setDate(d.getDate() + delta * 7);
     if (this.vue() === 'jour')    d.setDate(d.getDate() + delta);
@@ -436,7 +738,7 @@ export class CalendrierFtComponent implements OnInit {
   allerAujourdhui(): void { this.dateCourante.set(new Date()); }
   changerVue(v: VueCal): void { this.vue.set(v); }
 
-  private newForm(date: string, heureDebut = '09:00'): FormCal {
+  private newForm(date: string, heureDebut = '08:00'): FormCal {
     const [h, m] = heureDebut.split(':').map(Number);
     const heureFin = `${String(Math.min(h+1, 23)).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
     return {
@@ -445,21 +747,19 @@ export class CalendrierFtComponent implements OnInit {
     };
   }
 
-  // ── Formulaire ────────────────────────────────────────────────────────────
   ouvrirAjout(date: string, heure?: string): void {
     if (!this.canModify()) {
       this.ui.warning("Vous n'avez pas la permission d'ajouter une entrée.");
       return;
     }
-    this.form = this.newForm(date, heure || '09:00');
+    this.form = this.newForm(date, heure || '08:00');
     this.formulaireMode.set('ajout');
     this.entreeEnEdition.set(null);
     this.detailEntree.set(null);
     this.formulaireOpen.set(true);
   }
 
-  ouvrirDetail(e: EntreeCal, event?: MouseEvent): void {
-    event?.stopPropagation();
+  ouvrirDetail(e: EntreeCal): void {
     this.detailEntree.set(e);
     this.formulaireOpen.set(false);
   }
@@ -468,7 +768,7 @@ export class CalendrierFtComponent implements OnInit {
     if (!this.canModify()) { this.ui.warning("Vous n'avez pas la permission de modifier."); return; }
     this.form = {
       date: e.date, projetId: e.projetId, activiteId: e.activiteId,
-      heureDebut: e.heureDebut || '09:00', heureFin: e.heureFin || '10:00',
+      heureDebut: e.heureDebut || '08:00', heureFin: e.heureFin || '09:00',
       minutesTravaillees: e.minutesTravaillees, commentaire: e.commentaire || ''
     };
     if (e.projetId) this.loadActivitesDuProjet(e.projetId);
@@ -493,18 +793,7 @@ export class CalendrierFtComponent implements OnInit {
   }
 
   private buildLignesExistantes(ft: FeuilleTemps): LigneFeuilleTempsRequest[] {
-    return (ft.lignes ?? []).map(l => ({
-      date:          l.date,
-      projetId:      l.projetId,
-      activiteId:    l.activiteId,
-      clientId:      l.clientId,
-      heureDebut:    l.heureDebut,
-      heureFin:      l.heureFin,
-      minutesTravaillees:     l.minutesTravaillees,
-      minutesSupplementaires: l.minutesSupplementaires,
-      commentaire:   l.commentaire,
-      estWeekend:    l.estWeekend ?? false
-    }));
+    return (ft.lignes ?? []).map(l => this.ligneVersRequest(l));
   }
 
   private notifierSiAutreUser(date: string): void {
@@ -546,16 +835,10 @@ export class CalendrierFtComponent implements OnInit {
     if (mode === 'ajout') {
       const { ft: ftExist, lundiDate } = this.getOrCreateFeuille(this.form.date);
       if (ftExist) {
-        const lignes = [
-          ...this.buildLignesExistantes(ftExist),
-          nouvelleLigne
-        ];
+        const lignes = [...this.buildLignesExistantes(ftExist), nouvelleLigne];
         this.ftSvc.update(ftExist.id, {
-          utilisateurId: user.id,
-          semaineDu: ftExist.semaineDu,
-          semaineAu: ftExist.semaineAu,
-          statut: 'BROUILLON',
-          lignes
+          utilisateurId: user.id, semaineDu: ftExist.semaineDu, semaineAu: ftExist.semaineAu,
+          statut: 'BROUILLON', lignes
         }).subscribe({
           next: ft => {
             this.feuilles.update(fs => fs.map(f => f.id === ft.id ? ft : f));
@@ -564,18 +847,13 @@ export class CalendrierFtComponent implements OnInit {
             this.saving.set(false);
             this.notifierSiAutreUser(this.form.date);
           },
-          error: (err: HttpErrorResponse) => {
-            this.ui.error(this.errorSvc.parse(err).message);
-            this.saving.set(false);
-          }
+          error: (err: HttpErrorResponse) => { this.ui.error(this.errorSvc.parse(err).message); this.saving.set(false); }
         });
       } else {
         this.ftSvc.create({
-          utilisateurId: user.id,
-          semaineDu: lundiDate,
+          utilisateurId: user.id, semaineDu: lundiDate,
           semaineAu: FeuilleTempsService.getVendrediSemaine(lundiDate),
-          statut: 'BROUILLON',
-          lignes: [nouvelleLigne]
+          statut: 'BROUILLON', lignes: [nouvelleLigne]
         }).subscribe({
           next: ft => {
             this.feuilles.update(fs => [...fs, ft]);
@@ -584,10 +862,7 @@ export class CalendrierFtComponent implements OnInit {
             this.saving.set(false);
             this.notifierSiAutreUser(this.form.date);
           },
-          error: (err: HttpErrorResponse) => {
-            this.ui.error(this.errorSvc.parse(err).message);
-            this.saving.set(false);
-          }
+          error: (err: HttpErrorResponse) => { this.ui.error(this.errorSvc.parse(err).message); this.saving.set(false); }
         });
       }
     } else {
@@ -600,27 +875,11 @@ export class CalendrierFtComponent implements OnInit {
         return;
       }
       const lignes: LigneFeuilleTempsRequest[] = (ft.lignes ?? []).map(l =>
-        l.id === edition.id
-          ? nouvelleLigne
-          : {
-              date:          l.date,
-              projetId:      l.projetId,
-              activiteId:    l.activiteId,
-              clientId:      l.clientId,
-              heureDebut:    l.heureDebut,
-              heureFin:      l.heureFin,
-              minutesTravaillees:     l.minutesTravaillees,
-              minutesSupplementaires: l.minutesSupplementaires,
-              commentaire:   l.commentaire,
-              estWeekend:    l.estWeekend ?? false
-            }
+        l.id === edition.id ? nouvelleLigne : this.ligneVersRequest(l)
       );
       this.ftSvc.update(ft.id, {
-        utilisateurId: ft.utilisateurId,
-        semaineDu: ft.semaineDu,
-        semaineAu: ft.semaineAu,
-        statut: ft.statut,
-        lignes
+        utilisateurId: ft.utilisateurId, semaineDu: ft.semaineDu, semaineAu: ft.semaineAu,
+        statut: ft.statut, lignes
       }).subscribe({
         next: u => {
           this.feuilles.update(fs => fs.map(f => f.id === u.id ? u : f));
@@ -629,10 +888,7 @@ export class CalendrierFtComponent implements OnInit {
           this.saving.set(false);
           this.notifierSiAutreUser(this.form.date);
         },
-        error: (err: HttpErrorResponse) => {
-          this.ui.error(this.errorSvc.parse(err).message);
-          this.saving.set(false);
-        }
+        error: (err: HttpErrorResponse) => { this.ui.error(this.errorSvc.parse(err).message); this.saving.set(false); }
       });
     }
   }
@@ -648,13 +904,7 @@ export class CalendrierFtComponent implements OnInit {
       message: `Supprimer "${e.projetNom || 'cette entrée'}" du ${e.date} ?`,
       confirmLabel: 'Supprimer', type: 'danger',
       onConfirm: () => {
-        const lignes = (ft.lignes ?? []).filter(l => l.id !== e.id).map(l => ({
-          date:l.date, projetId:l.projetId, projetNom:l.projetNom,
-          activiteId:l.activiteId, activiteNom:l.activiteNom,
-          heureDebut:l.heureDebut, heureFin:l.heureFin,
-          minutesTravaillees:l.minutesTravaillees, minutesSupplementaires:l.minutesSupplementaires,
-          commentaire:l.commentaire, estWeekend:l.estWeekend ?? false
-        }));
+        const lignes = (ft.lignes ?? []).filter(l => l.id !== e.id).map(l => this.ligneVersRequest(l));
         this.ftSvc.update(ft.id, {
           utilisateurId:ft.utilisateurId, semaineDu:ft.semaineDu, semaineAu:ft.semaineAu, statut:ft.statut, lignes
         }).subscribe({
@@ -665,81 +915,10 @@ export class CalendrierFtComponent implements OnInit {
     });
   }
 
-  // ── Drag & Drop ───────────────────────────────────────────────────────────
   peutDrag(e: EntreeCal): boolean {
     return this.canModify() && (e.feuilleStatut === 'BROUILLON' || e.feuilleStatut === 'REJETEE');
   }
 
-  onDragStart(event: DragEvent, e: EntreeCal): void {
-    if (!this.peutDrag(e)) { event.preventDefault(); return; }
-    this.draggingEntree.set(e);
-    this.draggingRecente.set(null);
-    event.dataTransfer?.setData('type', 'entree');
-  }
-
-  onRecenteDragStart(event: DragEvent, r: EntreeRecente): void {
-    if (!this.canModify()) { event.preventDefault(); return; }
-    this.draggingRecente.set(r);
-    this.draggingEntree.set(null);
-    event.dataTransfer?.setData('type', 'recente');
-  }
-
-  onDragOver(event: DragEvent): void {
-    event.preventDefault();
-    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
-  }
-
-  onDrop(event: DragEvent, date: string, heure?: string): void {
-    event.preventDefault();
-
-    const r = this.draggingRecente();
-    if (r) {
-      const heureDebut = heure || '09:00';
-      const [dh, dm]   = heureDebut.split(':').map(Number);
-      const heureFin   = `${String(Math.min(dh+1, 23)).padStart(2,'0')}:${String(dm).padStart(2,'0')}`;
-
-      this.form = {
-        date,
-        projetId:    r.projetId,
-        activiteId:  r.activiteId,
-        heureDebut,
-        heureFin,
-        minutesTravaillees: 60,
-        commentaire: '',
-      };
-      if (r.projetId) this.loadActivitesDuProjet(r.projetId);
-      this.formulaireMode.set('ajout');
-      this.entreeEnEdition.set(null);
-      this.detailEntree.set(null);
-      this.formulaireOpen.set(true);
-      this.draggingRecente.set(null);
-      return;
-    }
-
-    const drag = this.draggingEntree();
-    if (!drag || drag.date === date) { this.draggingEntree.set(null); return; }
-    const ft = this.feuilles().find(f => f.id === drag.feuilleId);
-    if (!ft) { this.draggingEntree.set(null); return; }
-
-    const lignes = (ft.lignes ?? []).map(l => ({
-      date:     l.id === drag.id ? date : (typeof l.date==='string' ? l.date : String(l.date)),
-      projetId: l.projetId, projetNom: l.projetNom,
-      activiteId: l.activiteId, activiteNom: l.activiteNom,
-      heureDebut: l.heureDebut, heureFin: l.heureFin,
-      minutesTravaillees: l.minutesTravaillees, minutesSupplementaires: l.minutesSupplementaires,
-      commentaire: l.commentaire,
-      estWeekend: FeuilleTempsService.isWeekend(l.id===drag.id ? date : (typeof l.date==='string' ? l.date : String(l.date)))
-    }));
-
-    this.ftSvc.update(ft.id, {
-      utilisateurId:ft.utilisateurId, semaineDu:ft.semaineDu, semaineAu:ft.semaineAu, statut:ft.statut, lignes
-    }).subscribe({
-      next: u => { this.feuilles.update(fs => fs.map(f => f.id===u.id ? u : f)); this.ui.success('Entrée déplacée ✅'); this.draggingEntree.set(null); this.notifierSiAutreUser(date); },
-      error: (err: HttpErrorResponse) => { this.ui.error(this.errorSvc.parse(err).message); this.draggingEntree.set(null); }
-    });
-  }
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
   private lundiDe(d: Date): Date {
     const r = new Date(d); r.setDate(r.getDate() - ((r.getDay()+6) % 7)); return r;
   }
@@ -760,25 +939,14 @@ export class CalendrierFtComponent implements OnInit {
 
   getInitiales(nomComplet: string): string {
     if (!nomComplet) return '?';
-    return nomComplet
-      .split(' ')
-      .filter(m => m.length > 0)
-      .map(m => m[0].toUpperCase())
-      .slice(0, 2)
-      .join('');
+    return nomComplet.split(' ').filter(m => m.length > 0).map(m => m[0].toUpperCase()).slice(0, 2).join('');
   }
 
   getAvatarColor(nom: string): string {
     if (!nom) return '#6366f1';
-    const couleurs = [
-      '#6366f1', '#8b5cf6', '#10b981', '#f97316', '#ef4444',
-      '#3b82f6', '#c026d3', '#eab308', '#06b6d4', '#84cc16'
-    ];
     let hash = 0;
-    for (let i = 0; i < nom.length; i++) {
-      hash = nom.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return couleurs[Math.abs(hash) % couleurs.length];
+    for (let i = 0; i < nom.length; i++) hash = nom.charCodeAt(i) + ((hash << 5) - hash);
+    return this.COULEURS[Math.abs(hash) % this.COULEURS.length];
   }
 
   showUserSelector = computed(() =>

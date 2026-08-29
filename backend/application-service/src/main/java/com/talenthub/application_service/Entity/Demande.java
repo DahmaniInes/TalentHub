@@ -206,4 +206,8 @@ public class Demande {
     public void setDateTraitement(LocalDateTime dateTraitement) {
         this.dateTraitement = dateTraitement;
     }
+
+
+    @Column(name = "outlook_event_id", length = 500)
+    private String outlookEventId;
 }

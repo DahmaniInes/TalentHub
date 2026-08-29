@@ -3,6 +3,7 @@ package com.talenthub.application_service.Controller;
 
 import com.talenthub.application_service.DTO.DemandeDTO;
 import com.talenthub.application_service.DTO.DemandeRequest;
+import com.talenthub.application_service.Exception.SoldeInsuffisantException;
 import com.talenthub.application_service.Security.PermissionContext;
 import com.talenthub.application_service.Security.RequiresPermission;
 import com.talenthub.application_service.Service.DemandeService;
@@ -178,5 +179,17 @@ public class DemandeController {
                 d.getDateCreation() != null ? d.getDateCreation() : ""
         ));
         writer.flush();
+    }
+
+
+
+
+
+    @ExceptionHandler(SoldeInsuffisantException.class)
+    public ResponseEntity<?> handleSoldeInsuffisant(SoldeInsuffisantException ex) {
+        return ResponseEntity.status(400).body(Map.of(
+                "error", "SOLDE_INSUFFISANT",
+                "message", ex.getMessage()
+        ));
     }
 }

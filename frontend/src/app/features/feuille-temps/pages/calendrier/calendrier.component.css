@@ -1,5 +1,8 @@
 /* calendrier.component.css — REDESIGN COMPLET */
-
+:host {
+  display: block;
+  height: 100%;
+}
 /* ── Conteneur racine ── */
 .gcal-root {
   display: flex;
@@ -194,6 +197,9 @@
    ══════════════════════════════════════════════════ */
 .gcal-layout { display: flex; flex: 1; overflow: hidden; min-height: 0;  }
 .gcal-main   { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; border-radius: 1px; }
+::ng-deep .fc-scroller {
+  overflow: visible !important; /* pas de scroll interne caché qui coupe le contenu */
+}
 
 /* ══ VUE MOIS ══ */
 .gcal-mois-wrap {
@@ -513,9 +519,8 @@
 .gcal-root {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 100%;   /* ✅ CORRIGÉ — plus de height:100% figé + overflow:hidden */
   background: var(--bg-primary);
-  overflow: hidden;
   gap: 0;
 }
 
@@ -701,8 +706,8 @@
 /* ══════════════════════════════════════════════════
    LAYOUT : calendrier (flex:1) + sidebar fixe
    ══════════════════════════════════════════════════ */
-.gcal-layout { display: flex; flex: 1; overflow: hidden; min-height: 0;  }
-.gcal-main   { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; border-radius: 1px; }
+   .gcal-layout { display: flex; flex: 1; align-items: flex-start; }  /* ✅ CORRIGÉ — plus d'overflow:hidden qui coupait le contenu */
+   .gcal-main   { flex: 1; min-width: 0; display: flex; flex-direction: column; border-radius: 1px; }
 
 /* ══ VUE MOIS ══ */
 .gcal-mois-wrap {
@@ -1025,3 +1030,26 @@
 }
 
 .gcal-form-save:hover:not(:disabled) { opacity: .88; }
+
+::ng-deep .fc { font-family: inherit;
+ }
+::ng-deep .fc-col-header, ::ng-deep .fc-col-header-cell, ::ng-deep .fc-timegrid-axis, ::ng-deep table.fc-scrollgrid { background: var(--dt-bg, var(--bg-card)) !important; }
+::ng-deep .fc-col-header-cell-cushion { color: var(--text-muted) !important; font-size: .72rem; font-weight: 700; text-transform: uppercase; }
+::ng-deep .fc-timegrid-slot-label-cushion { color: var(--text-muted) !important; font-size: .68rem; }
+::ng-deep .fc-day-today { background: var(--accent-soft) !important; }
+::ng-deep .fc-theme-standard td, ::ng-deep .fc-theme-standard th { border-color: var(--border-color) !important; }
+::ng-deep .fc-event { border-radius: 4px !important; cursor: pointer; font-size: .68rem; font-weight: 600; }
+::ng-deep .fc-daygrid-day-number { color: var(--text-primary) !important; }
+/* ✅ NOUVEAU — masque uniquement le texte "Toute la journée" dans la
+   colonne d'axe, tout en gardant la ligne all-day fonctionnelle pour
+   que les demandes/jours fériés continuent de s'y afficher. */
+   ::ng-deep .fc-timegrid-axis-cushion {
+    display: none !important;
+  }
+  ::ng-deep .fc-timegrid-axis-frame {
+    min-width: 0 !important;
+  }
+
+::ng-deep .fc-bg-event {
+  opacity: 0.18 !important;
+}

@@ -49,6 +49,11 @@ public class SecurityConfig {
                         // ✅ La vérification fine se fait via @RequiresPermission
                         // Spring Security vérifie juste que le token est valide
                         .requestMatchers("/notifications/sse/**").permitAll()
+                        // ✅ NOUVEAU — le callback OAuth2 est appelé DIRECTEMENT par
+                        // Microsoft (redirection navigateur depuis login.microsoftonline.com),
+                        // jamais par le frontend Angular avec un token JWT TalentHub —
+                        // il doit donc être public, sinon la redirection se fait bloquer en 401.
+                        .requestMatchers("/outlook/callback").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

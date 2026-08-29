@@ -1,6 +1,12 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FullCalendarModule } from '@fullcalendar/angular';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import multiMonthPlugin from '@fullcalendar/multimonth';
+import { CalendarOptions, EventInput } from '@fullcalendar/core';
+import frLocale from '@fullcalendar/core/locales/fr';
 import { DemandeService } from '../../../services/demande.service';
 import { NomenclatureService } from '../../../services/nomenclature.service';
 import { UserService } from '../../../services/user.service';
@@ -13,15 +19,16 @@ import { PermissionContextService } from '../../../services/permission-context.s
 import { Subscription } from 'rxjs';
 import { NotificationService } from '../../../services/notification.service';
 import { CongeService, SoldeConge } from '../../../services/conge.service';
+import { JoursFeriesService, JourFerie } from '../../../services/jours-feries.service';
 
 @Component({
   selector: 'app-mes-demandes',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, FullCalendarModule],
   templateUrl: './mes-demandes.component.html',
   styleUrls: ['./mes-demandes.component.css']
 })
-export class MesDemandesComponent implements OnInit {
+export class MesDemandesComponent implements OnInit, OnDestroy {
   private demandeService = inject(DemandeService);
   private nomenclature   = inject(NomenclatureService);
   private userService    = inject(UserService);
@@ -29,11 +36,11 @@ export class MesDemandesComponent implements OnInit {
   private ui             = inject(UiService);
   private fb             = inject(FormBuilder);
   private congeSvc = inject(CongeService);
+  private joursFeriesSvc = inject(JoursFeriesService);
 
   private notifService = inject(NotificationService);
   private subs = new Subscription();
   readonly permCtx = inject(PermissionContextService);
-
 
   demandes    = signal<Demande[]>([]);
   types       = signal<TypeDemande[]>([]);
@@ -62,6 +69,23 @@ export class MesDemandesComponent implements OnInit {
   pageSize    = 10;
   currentPage = signal(1);
 
+  // ✅ Toggle Table / Calendrier
+  vueActive = signal<'table' | 'calendrier'>('table');
+
+  // ✅ Jours fériés — appel direct frontend vers Nager.Date, aucune
+  // dépendance backend (voir JoursFeriesService)
+  joursFeries = signal<JourFerie[]>([]);
+
+  // ✅ palette de couleurs générée côté frontend uniquement
+  private readonly PALETTE_COULEURS = [
+    '#6366f1', '#10b981', '#ef4444', '#f59e0b', '#3b82f6',
+    '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#06b6d4'
+  ];
+
+  getCouleurType(typeId: number): string {
+    return this.PALETTE_COULEURS[typeId % this.PALETTE_COULEURS.length];
+  }
+
   form: FormGroup;
 
   constructor() {
@@ -69,22 +93,20 @@ export class MesDemandesComponent implements OnInit {
       typeDemandeId: [null, Validators.required],
       sujet:         ['', [Validators.required, Validators.minLength(3)]],
       description:   [''],
-      dateDebut:     [null, Validators.required],   // ✅ obligatoire
-      dateFin:       [null, Validators.required],   // ✅ obligatoire  
+      dateDebut:     [null, [Validators.required, this.dateNonPasseeValidator]],
+      dateFin:       [null, Validators.required],
       nbJours:       [null],
-    }, { validators: this.dateRangeValidator }); 
-    this.form.get('dateDebut')!.valueChanges.subscribe(() => this.calcNbJours());
-    this.form.get('dateFin')!.valueChanges.subscribe(() => this.calcNbJours());
+    }, { validators: this.dateRangeValidator });
   }
 
   ngOnInit(): void {
     this.nomenclature.getAllTypes().subscribe({ next: t => this.types.set(t), error: () => {} });
     this.nomenclature.getAllStatuts().subscribe({ next: s => this.statuts.set(s), error: () => {} });
+    this.chargerJoursFeries(); // ✅ NOUVEAU
     this.loadUserAndDemandes();
     this.subs.add(
       this.notifService.newNotification$.subscribe(notif => {
           if (notif.type === 'DEMANDE_VALIDEE' || notif.type === 'DEMANDE_REJETEE') {
-              // Ma demande a été traitée → recharger silencieusement
               this.loadUserAndDemandes();
           }
       })
@@ -101,9 +123,34 @@ private dateRangeValidator(group: FormGroup) {
     return null;
 }
 
+private dateNonPasseeValidator(control: any) {
+    if (!control.value) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const val = new Date(control.value);
+    val.setHours(0, 0, 0, 0);
+    return val < today ? { dateNonPassee: true } : null;
+}
+
+today(): string {
+    return new Date().toISOString().split('T')[0];
+}
+
+// ✅ NOUVEAU — charge les jours fériés de l'année courante ET suivante
+// (couvre le cas où le calendrier affiche janvier de l'année d'après),
+// directement depuis Nager.Date, sans passer par le backend TalentHub.
+private chargerJoursFeries(): void {
+  const annee = new Date().getFullYear();
+  this.joursFeriesSvc.getParAnnee(annee).subscribe({
+    next: j => this.joursFeries.update(existants => [...existants, ...j])
+  });
+  this.joursFeriesSvc.getParAnnee(annee + 1).subscribe({
+    next: j => this.joursFeries.update(existants => [...existants, ...j])
+  });
+}
+
 
 private loadUserAndDemandes(): void {
-  // ✅ Vérifier la permission avant de charger
   if (!this.permCtx.canViewOwnDemandes() && !this.permCtx.canCreateDemande()) {
       this.ui.warning("Vous n'avez pas la permission de voir vos demandes.");
       this.loading.set(false);
@@ -157,7 +204,6 @@ private loadUserAndDemandes(): void {
   pagesArr   = computed(() => Array.from({ length: this.totalPages() }, (_, i) => i + 1));
   activeFiltersCount = computed(() => (this.filterStatutId() ? 1 : 0) + (this.filterTypeId() ? 1 : 0));
 
-  // Sélection computed
   allPageSelected = computed(() => {
     const p = this.paged();
     return p.length > 0 && p.every(d => this.selectedIds().has(d.id));
@@ -188,6 +234,23 @@ private loadUserAndDemandes(): void {
     return `${String(dt.getDate()).padStart(2,'0')} ${m[dt.getMonth()]}, ${dt.getFullYear()}`;
   }
 
+  typeSelectionneEstConge(): boolean {
+    const typeId = this.form.get('typeDemandeId')?.value;
+    return !!this.types().find(t => t.id === typeId)?.estConge;
+  }
+
+  soldeInsuffisant(): boolean {
+    if (!this.typeSelectionneEstConge()) return false;
+    const jours = this.form.get('nbJours')?.value;
+    const solde = this.soldeConge()?.solde;
+    if (!jours || solde == null) return false;
+
+    const id = this.editingId();
+    const ancienneDemande = id ? this.demandes().find(d => d.id === id) : null;
+    const soldeDisponible = solde + (ancienneDemande?.nbJours ?? 0);
+
+    return jours > soldeDisponible;
+  }
 
   private calcNbJours(): void {
     const debut = this.form.get('dateDebut')?.value;
@@ -197,6 +260,103 @@ private loadUserAndDemandes(): void {
       this.form.get('nbJours')!.setValue(diff, { emitEvent: false });
     }
   }
+
+  onFormFieldChange(): void {
+    this.calcNbJours();
+  }
+
+  // ✅ Demandes acceptées avec dates → source du calendrier
+  demandesAccepteesAvecDates = computed(() =>
+    this.demandes().filter(d =>
+      this.getStatut(d.statutDemandeId)?.code === 'ACCEPTEE' && d.dateDebut
+    )
+  );
+
+  // Le titre affiché dans chaque case est le nom du TYPE de demande
+  calendarEvents = computed<EventInput[]>(() =>
+    this.demandesAccepteesAvecDates().map(d => {
+      const couleur = this.getCouleurType(d.typeDemandeId);
+      return {
+        id: String(d.id),
+        title: this.getTypeName(d.typeDemandeId),
+        start: d.dateDebut,
+        end: d.dateFin ? this.addOneDay(d.dateFin) : d.dateDebut,
+        backgroundColor: couleur,
+        borderColor: couleur,
+        display: 'block',
+        extendedProps: { demande: d }
+      };
+    })
+  );
+
+  // ✅ NOUVEAU — événements calendrier pour les jours fériés
+  joursFeriesEvents = computed<EventInput[]>(() =>
+    this.joursFeries().map(j => ({
+      id: 'ferie-' + j.date,
+      title: j.localName,
+      start: j.date,
+      allDay: true,
+      display: 'block',
+      backgroundColor: '#94a3b8',
+      borderColor: '#94a3b8',
+      editable: false,
+      extendedProps: { estFerie: true }
+    }))
+  );
+
+  calendarOptions = computed<CalendarOptions>(() => ({
+    plugins: [dayGridPlugin, interactionPlugin, multiMonthPlugin],
+    initialView: 'dayGridMonth',
+    locale: frLocale,
+    height: 'auto',
+    weekends: true,
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridDay,dayGridWeek,dayGridMonth,multiMonthYear'
+    },
+    buttonText: {
+      today: "Aujourd'hui",
+      day: 'Jour',
+      week: 'Semaine',
+      month: 'Mois',
+      year: 'Année'
+    },
+    events: [...this.calendarEvents(), ...this.joursFeriesEvents()],
+    eventDisplay: 'block',
+    dayMaxEvents: 3,
+    // ✅ NOUVEAU — ajoute un tooltip natif (title HTML) avec le nom complet,
+    // visible au survol, même si le texte affiché dans la case est tronqué
+    eventDidMount: (info) => {
+      info.el.setAttribute('title', info.event.title);
+    },
+    eventClick: (info) => {
+      if (info.event.extendedProps['estFerie']) return;
+      const d = this.demandes().find(x => x.id === +info.event.id);
+      if (d) this.showComment(d, new Event('click'));
+    }
+  }));
+
+  private addOneDay(dateStr: string): string {
+    const d = new Date(dateStr);
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+  }
+
+  // ✅ Légende avec clés couleur — uniquement les types réellement représentés
+  legendeTypes = computed(() => {
+    const accepteesParType = new Map<number, number>();
+    this.demandesAccepteesAvecDates().forEach(d => {
+      accepteesParType.set(d.typeDemandeId, (accepteesParType.get(d.typeDemandeId) ?? 0) + 1);
+    });
+    return this.types()
+      .filter(t => accepteesParType.has(t.id))
+      .map(t => ({
+        ...t,
+        count: accepteesParType.get(t.id) ?? 0,
+        couleur: this.getCouleurType(t.id)
+      }));
+  });
 
   // ── Sélection ──
   toggleSelectAll(): void {
@@ -258,12 +418,23 @@ private loadUserAndDemandes(): void {
       this.slideError.set('La date de fin doit être après la date de début.');
       return;
   }
+  if (this.form.get('dateDebut')?.hasError('dateNonPassee')) {
+      this.slideError.set('La date de début ne peut pas être antérieure à aujourd\'hui.');
+      return;
+  }
   if (this.form.invalid) {
       this.slideError.set('Veuillez remplir tous les champs obligatoires.');
       return;
   }
+  if (this.soldeInsuffisant()) {
+      this.slideError.set('Solde de congé insuffisant pour cette période.');
+      return;
+  }
 
 
+
+
+  
     const user = this.currentUser();
     if (!user) { this.slideError.set('Utilisateur non identifié.'); return; }
     this.loading.set(true);

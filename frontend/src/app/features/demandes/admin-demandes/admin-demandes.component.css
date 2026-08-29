@@ -1,0 +1,14 @@
+::ng-deep .fc { font-family: inherit; }
+::ng-deep .fc-toolbar-title { font-size: 1rem !important; font-weight: 700; color: var(--dt-text); }
+::ng-deep .fc-button { background: var(--bg-hover) !important; border: 1px solid var(--dt-border) !important; color: var(--dt-text) !important; box-shadow: none !important; text-transform: capitalize !important; }
+::ng-deep .fc-button-active, ::ng-deep .fc-button-primary:not(:disabled).fc-button-active { background: var(--accent) !important; color: white !important; border-color: var(--accent) !important; }
+::ng-deep .fc-col-header, ::ng-deep .fc-col-header-cell, ::ng-deep .fc-scrollgrid-section-header th, ::ng-deep .fc-daygrid-day-frame, ::ng-deep table.fc-scrollgrid { background: var(--dt-bg) !important; }
+::ng-deep .fc-col-header-cell-cushion { color: var(--dt-text-sub) !important; background: transparent !important; font-size: .72rem; font-weight: 700; text-transform: uppercase; }
+::ng-deep .fc-daygrid-day-number { color: var(--dt-text) !important; }
+::ng-deep .fc-day-today { background: var(--accent-soft) !important; }
+::ng-deep .fc-scrollgrid, ::ng-deep .fc-scrollgrid-section > *, ::ng-deep .fc-theme-standard td, ::ng-deep .fc-theme-standard th { border-color: var(--dt-border) !important; }
+::ng-deep .fc-multimonth { background: var(--dt-bg) !important; }
+::ng-deep .fc-multimonth-daygrid, ::ng-deep .fc-multimonth-daygrid-table, ::ng-deep .fc-multimonth-header { background: var(--dt-bg) !important; }
+::ng-deep .fc-multimonth-title { color: var(--dt-text) !important; background: transparent !important; }
+::ng-deep .fc-multimonth .fc-col-header-cell-cushion, ::ng-deep .fc-multimonth .fc-daygrid-day-number { color: var(--dt-text-sub) !important; }
+::ng-deep .fc-daygrid-event { display: block !important; width: 100% !important; margin: 1px 0 !important; border-radius: 4px !important; cursor: pointer; color: white !important; font-size: .68rem; font-weight: 600; }
