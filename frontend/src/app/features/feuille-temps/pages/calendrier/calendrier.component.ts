@@ -177,19 +177,25 @@ export class CalendrierFtComponent implements OnInit, AfterViewInit {
       });
     }
   }
-
+  
   private loadEntreesRecentes(utilisateurId: number): void {
     this.ftSvc.getActivitesRecentesDisponibles(utilisateurId).subscribe({
       next: dtos => {
         const projets = this.projets();
         const recentes: EntreeRecente[] = dtos
           .filter(d => {
+            // ✅ NOUVEAU — rejette d'emblée toute entrée sans projet ET sans activité
+            if (!d.projetId && !d.activiteId) return false;
+  
             if (!d.activiteId) return true;
             const activitesDuProjet = d.projetId ? (this.activitesParProjet()[d.projetId] ?? []) : [];
             const activite = activitesDuProjet.find(a => a.id === d.activiteId)
                            ?? this.activitesGlobales().find(a => a.id === d.activiteId);
             return !!activite && activite.statutActiviteId !== this.STATUT_TERMINE_ID;
           })
+
+
+
           .map(d => {
             const projet = projets.find(p => p.id === d.projetId);
             const activitesDuProjet = d.projetId ? (this.activitesParProjet()[d.projetId] ?? []) : [];
@@ -337,7 +343,9 @@ export class CalendrierFtComponent implements OnInit, AfterViewInit {
     const activitesConnues = this.toutesLesActivitesConnues();
     for (const date of this.toutesLesDatesConnues()) {
       for (const e of this.entreesDate(date)) {
+        if (!e.projetId && !e.activiteId) continue;
         const editable = this.peutDrag(e);
+
         const heureDebut = e.heureDebut || '08:00';
         const dureeMinutes = e.minutesTravaillees + e.minutesSupplementaires || 60;
         let heureFin = e.heureFin;
@@ -432,6 +440,7 @@ export class CalendrierFtComponent implements OnInit, AfterViewInit {
     editable: true,
     eventStartEditable: true,
     eventDurationEditable: true,
+    displayEventTime: false, // ✅ NOUVEAU — masque l'heure début-fin dans la carte, la position dans la grille suffit déjà
     events: (info, successCallback) => {
       successCallback(this.tousLesEvents());
     },

@@ -69,7 +69,7 @@ export class FeuilleTempsService {
   }
 
   static getDatesDesSemaine(lundi: string): string[] {
-    return Array.from({ length: 6 }, (_, i) => {
+    return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(lundi);
       d.setDate(d.getDate() + i);
       return d.toISOString().split('T')[0];

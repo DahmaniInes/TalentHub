@@ -611,10 +611,11 @@
 }
 
 /* Anneau coloré : en attente → amber/orange */
+/* Anneau coloré : en attente → amber/orange */
 .home-ring-amber {
   fill: none;
-  stroke: #0d41f6;
-  --ring-border: #0d32b3;
+  stroke: #f59e0b;
+  --ring-border: #b45309;
   stroke-width: 7;
   transition: stroke-dasharray .9s cubic-bezier(.4,0,.2,1);
 }
@@ -872,3 +873,113 @@
   /* Actions en 2 colonnes sur mobile */
   .qa-grid { grid-template-columns: 1fr 1fr; }
 }
+
+
+::ng-deep .b-week .fc {
+  font-size: .72rem;
+}
+::ng-deep .b-week .fc-toolbar-title {
+  font-size: .85rem !important;
+  font-weight: 700;
+}
+::ng-deep .b-week .fc-daygrid-event {
+  cursor: default;
+  font-size: .62rem;
+  padding: 1px 3px;
+}
+::ng-deep .b-week .fc-button {
+  padding: 2px 6px !important;
+  font-size: .7rem !important;
+}
+.mini-cal-arrows {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 4px;
+}
+.mini-cal-arrow {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0 3px;
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  line-height: 1;
+  transition: color .12s;
+}
+.mini-cal-arrow:hover {
+  color: var(--accent);
+}
+
+
+
+
+
+/* ✅ MODIFIÉ — 3 par ligne, icône pleine couleur (sans halo/opacité), libellé centré dessous */
+.qa-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+/* Bouton action rapide : icône au-dessus, libellé centré dessous */
+.qa-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 12px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  font-size: 10.5px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all .18s;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.25;
+}
+.qa-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+/* ✅ MODIFIÉ — icône pleine couleur, sans fond translucide/halo */
+.qa-ico {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: none;
+}
+/* Couleurs pleines — le SVG (stroke="currentColor") devient blanc automatiquement */
+.qa-ico.teal   { background: #14b8a6; color: #fff; }
+.qa-ico.blue   { background: #3b82f6; color: #fff; }
+.qa-ico.purple { background: #c026d3; color: #fff; }
+.qa-ico.pink   { background: #ec4899; color: #fff; }
+.qa-ico.orange { background: #f97316; color: #fff; }
+.qa-ico.indigo { background: #6366f1; color: #fff; }
+
+
+
+
+/* ✅ NOUVEAU — wrapper flex pour empiler b-profile + Mes stagiaires
+   dans la même cellule de grille (colonne 1) */
+   .b-profile-col {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+  }
+
+
+
+  

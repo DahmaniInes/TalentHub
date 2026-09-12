@@ -1,5 +1,5 @@
 // src/app/features/home/home.component.ts — COMPLET
-import { Component, OnInit, ViewEncapsulation, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, inject, signal, computed, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
@@ -27,6 +27,14 @@ import { DocumentEspaceStage }   from '../../shared/models/document-espace-stage
 import { Reclamation, StatutReclamation } from '../../shared/models/reclamation.model';
 import { GroupeService } from '../../services/groupe.service';
 import { Groupe } from '../../shared/models/groupe.model';
+import { FullCalendarModule, FullCalendarComponent } from '@fullcalendar/angular';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import { CalendarOptions, EventInput } from '@fullcalendar/core';
+import frLocale from '@fullcalendar/core/locales/fr';
+import { JoursFeriesService, JourFerie } from '../../services/jours-feries.service';
+import { NomenclatureService } from '../../services/nomenclature.service';
+import { TypeDemande } from '../../shared/models/demande.model';
+import { CongeService, SoldeConge } from '../../services/conge.service';
 
 interface FluxItem {
   type:      'ACTIVITE' | 'DOCUMENT' | 'DEMANDE';
@@ -40,7 +48,7 @@ interface FluxItem {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, GraduationCapComponent],
+  imports: [CommonModule, GraduationCapComponent, FullCalendarModule],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
   encapsulation: ViewEncapsulation.None
@@ -82,6 +90,134 @@ export class HomeComponent implements OnInit {
   mesReclamations     = signal<Reclamation[]>([]);
   statutsReclamation  = signal<StatutReclamation[]>([]);
   loadingReclamations = signal(false);
+  private joursFeriesSvc  = inject(JoursFeriesService);
+  private nomenclatureSvc = inject(NomenclatureService); // ✅ NOUVEAU
+  private congeSvc        = inject(CongeService);         // ✅ NOUVEAU
+
+  soldeConge = signal<SoldeConge | null>(null); // ✅ NOUVEAU
+  // ── Mini calendrier (carte "Calendrier" du home, employés uniquement) ──
+  @ViewChild('miniCalRef') miniCalComponent?: FullCalendarComponent;
+
+  // ✅ label "Mois Année" affiché à la place du mot "Calendrier"
+  miniCalLabel = signal<string>('');
+
+  private capitalize(s: string): string {
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  miniCalPrev(): void {
+    this.miniCalComponent?.getApi().prev();
+  }
+  miniCalNext(): void {
+    this.miniCalComponent?.getApi().next();
+  }
+
+  // ✅ NOUVEAU — toutes les feuilles (pas seulement la semaine courante), pour la mini vue mois
+  toutesFeuilles = signal<FeuilleTemps[]>([]);
+  joursFeries    = signal<JourFerie[]>([]);
+  typesDemande   = signal<TypeDemande[]>([]); // ✅ NOUVEAU
+
+  private readonly PALETTE_MINI = ['#6366f1','#8b5cf6','#10b981','#f97316','#ef4444','#3b82f6','#c026d3'];
+  private couleurMini(id?: number): string {
+    return this.PALETTE_MINI[(id ?? 0) % this.PALETTE_MINI.length];
+  }
+
+  // ✅ NOUVEAU — palette dédiée aux types de demande, distincte de PALETTE_MINI
+  private readonly PALETTE_DEMANDE_HOME = ['#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#ef4444'];
+  private couleurTypeDemandeHome(typeId: number): string {
+    return this.PALETTE_DEMANDE_HOME[typeId % this.PALETTE_DEMANDE_HOME.length];
+  }
+
+  private chargerTypesDemandeHome(): void {
+    this.nomenclatureSvc.getAllTypes().subscribe({
+      next: t => this.typesDemande.set(t),
+      error: () => {}
+    });
+  }
+
+  private addOneDayHome(dateStr: string): string {
+    const d = new Date(dateStr);
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+  }
+
+  // ✅ Événements de la mini-calendrier — activités saisies + demandes traitées + jours fériés
+  miniCalEvents = computed<EventInput[]>(() => {
+    const evts: EventInput[] = [];
+
+    for (const ft of this.toutesFeuilles()) {
+      for (const l of ft.lignes ?? []) {
+        const titre = l.activiteNom || l.projetNom; // ✅ CORRIGÉ — activité prioritaire sur projet
+        if (!titre) continue; // ✅ jamais d'entrée "sans nom"
+        const couleur = this.couleurMini(l.projetId ?? l.activiteId);
+        evts.push({
+          id: 'ft-' + l.id,
+          title: titre,
+          start: typeof l.date === 'string' ? l.date : String(l.date),
+          allDay: true,
+          display: 'block',
+          backgroundColor: couleur,
+          borderColor: couleur
+        });
+      }
+    }
+
+    for (const d of this.mesDemandes()) {
+      if (!d.dateDebut || !d.dateTraitement) continue; // simplifié : traitée = considérée acceptée pour l'aperçu
+      // ✅ CORRIGÉ — titre = nom du TYPE de demande (pas le sujet), couleur différente par type
+      const typeName = this.typesDemande().find(t => t.id === d.typeDemandeId)?.libelle ?? 'Demande';
+      const couleur  = this.couleurTypeDemandeHome(d.typeDemandeId);
+      evts.push({
+        id: 'dem-' + d.id,
+        title: '📅 ' + typeName,
+        start: d.dateDebut,
+        end: d.dateFin ? this.addOneDayHome(d.dateFin) : this.addOneDayHome(d.dateDebut),
+        allDay: true,
+        display: 'block',
+        backgroundColor: couleur,
+        borderColor: couleur
+      });
+    }
+
+    for (const j of this.joursFeries()) {
+      evts.push({
+        id: 'ferie-' + j.date,
+        title: '🎌 ' + j.localName,
+        start: j.date,
+        allDay: true,
+        display: 'block',
+        backgroundColor: '#94a3b8',
+        borderColor: '#94a3b8'
+      });
+    }
+
+    return evts;
+  });
+
+  // ✅ Options — mois uniquement, lecture seule, sans header interne
+  // (navigation + titre gérés à la main dans bc-head via miniCalLabel/miniCalPrev/miniCalNext)
+  readonly miniCalOptions: CalendarOptions = {
+    plugins: [dayGridPlugin],
+    initialView: 'dayGridMonth',
+    locale: frLocale,
+    height: 'auto',
+    headerToolbar: false,
+    editable: false,
+    selectable: false,
+    dayMaxEvents: 2,
+    events: (info, successCallback) => successCallback(this.miniCalEvents()),
+    eventClick: (info) => { info.jsEvent.preventDefault(); },
+    datesSet: (arg) => {
+      this.miniCalLabel.set(this.capitalize(arg.view.title));
+    }
+  };
+
+  private chargerJoursFeriesHome(): void {
+    const annee = new Date().getFullYear();
+    this.joursFeriesSvc.getParAnnee(annee).subscribe({
+      next: j => this.joursFeries.update(e => [...e, ...j])
+    });
+  }
 
   fluxRecent = signal<FluxItem[]>([]);
 
@@ -177,6 +313,7 @@ weekLineAreaPath = computed(() => {
       };
     });
   });
+
 
   demandesEnAttente  = computed(() => this.mesDemandes().filter(d => !d.dateTraitement).length);
   demandesApprouvees = computed(() => this.mesDemandes().filter(d =>  !!d.dateTraitement).length);
@@ -285,6 +422,14 @@ weekLineAreaPath = computed(() => {
     this.userSvc.getUserByKeycloakId(kcId).subscribe({
       next: u => {
         this.currentUser.set(u);
+        this.chargerTypesDemandeHome(); // ✅ NOUVEAU
+        if (!this.perms.estStagiairePur()) {
+          this.congeSvc.getSolde(u.id).subscribe({ // ✅ NOUVEAU
+            next: sc => this.soldeConge.set(sc),
+            error: () => {}
+          });
+        }
+
         this.recSvc.getAllStatuts().subscribe({
           next: d => this.statutsReclamation.set(d),
           error: () => {}
@@ -302,7 +447,9 @@ weekLineAreaPath = computed(() => {
       this.loadingFeuille.set(true);
       appels['feuilles'] = this.ftSvc.getByUtilisateur(userId).pipe(catchError(() => of([])));
     }
-
+    if (this.perms.canSeeFTMenu() && !this.perms.estStagiairePur()) {
+      this.chargerJoursFeriesHome();
+    }
     // KPI carte profil — groupes
     appels['groupesApp'] = this.groupeSvc.getAll().pipe(catchError(() => of([])));
 
@@ -359,6 +506,7 @@ weekLineAreaPath = computed(() => {
           this.feuilleSemaine.set(
             (res.feuilles as FeuilleTemps[]).find(f => f.semaineDu === lundi) || null
           );
+          this.toutesFeuilles.set(res.feuilles as FeuilleTemps[]);
           this.loadingFeuille.set(false);
         }
 
@@ -505,7 +653,7 @@ weekLineAreaPath = computed(() => {
   }
 
   activitesAffichees = computed(() =>
-  this.activiteRecenteExpanded() ? this.fluxRecent() : this.fluxRecent().slice(0, 4)
+  this.activiteRecenteExpanded() ? this.fluxRecent() : this.fluxRecent().slice(0, 2)
 );
 
   // ── KPI carte profil ──────────────────────────────────────────────────

@@ -173,14 +173,15 @@
             </td>
 
             <!-- Heures -->
-            <td class="dt-td">
-              <div class="dt-cell-user">
-                <span class="dt-cell-name" style="color:var(--accent);font-weight:700">{{ fmt(ft.minutesTravaillees) }}</span>
-                <span *ngIf="ft.minutesSupplementaires > 0" class="dt-cell-sub" style="color:#10b981">
-                  +{{ fmt(ft.minutesSupplementaires) }} suppl.
-                </span>
-              </div>
-            </td>
+                  <!-- Heures -->
+                  <td class="dt-td">
+                    <div class="dt-cell-user">
+                      <span class="dt-cell-name" style="color:var(--accent);font-weight:700">{{ fmt((ft.heuresTravaillees ?? 0) * 60) }}</span>
+                      <span *ngIf="ft.minutesSupplementaires > 0" class="dt-cell-sub" style="color:#10b981">
+                        +{{ fmt(ft.minutesSupplementaires) }} suppl.
+                      </span>
+                    </div>
+                  </td>
 
             <!-- Entrées : nombre + mot "activité(s)" -->
             <td class="dt-td">
@@ -284,132 +285,124 @@
   </div>
 </div>
 
-<!-- ════ SLIDE-OVER DÉTAIL ════ -->
-<div *ngIf="feuilleDetail() && !showRejetModal()" class="mx-overlay" (click)="fermerDetail()"></div>
-<div *ngIf="feuilleDetail() as ft" class="mx-slideover" [style.display]="showRejetModal() ? 'none' : ''">
-  <div class="mx-so-header">
-    <!-- Avatar de l'employé dans le drawer -->
-    <div class="dt-avatar"
-         style="width:44px;height:44px;border-radius:11px;flex-shrink:0"
-         [style.background]="getUtilisateur(ft)?.photoUrl ? 'transparent' : getAvatarColor(ft.utilisateurNom || '')">
-      <img *ngIf="getUtilisateur(ft)?.photoUrl"
-           [src]="getUtilisateur(ft)!.photoUrl!"
-           style="width:100%;height:100%;object-fit:cover;border-radius:11px"
-           [alt]="ft.utilisateurNom">
-      <span *ngIf="!getUtilisateur(ft)?.photoUrl"
-            style="font-size:.8rem;font-weight:800;color:white">
-        {{ getInitiales(ft.utilisateurNom) }}
-      </span>
-    </div>
-    <div class="mx-so-title-block">
-      <p class="mx-so-name">{{ ft.utilisateurNom || 'Utilisateur' }}</p>
-      <p class="mx-so-sub" style="font-size:.72rem;color:var(--dt-text-sub)">
-        {{ getUtilisateur(ft)?.email || '' }}
-      </p>
-      <p class="mx-so-sub">Semaine {{ ft.semaineDu | date:'dd/MM' }} – {{ ft.semaineAu | date:'dd/MM/yyyy' }}</p>
-      <div class="mx-so-badges">
-        <span class="dt-badge" style="font-size:.62rem"
-              [class.dt-badge-delivered]="ft.statut==='VALIDEE'"
-              [class.dt-badge-canceled]="ft.statut==='REJETEE'"
-              [class.dt-badge-pending]="ft.statut==='SOUMISE'"
-              [class.dt-badge-default]="ft.statut==='BROUILLON'">
-          <span class="dt-badge-dot"></span>{{ statutLabel(ft.statut) }}
+<!-- ════ POPUP DÉTAIL (converti depuis slide-over) ════ -->
+<div *ngIf="feuilleDetail() && !showRejetModal()" class="mx-modal-backdrop" (click)="fermerDetail()">
+  <div class="mx-modal" style="max-width:640px;max-height:85vh;padding:0;overflow:hidden;display:flex;flex-direction:column" (click)="$event.stopPropagation()">
+
+    <div class="mx-so-header" style="flex-shrink:0">
+      <div class="dt-avatar"
+           style="width:44px;height:44px;border-radius:11px;flex-shrink:0"
+           [style.background]="getUtilisateur(feuilleDetail()!)?.photoUrl ? 'transparent' : getAvatarColor(feuilleDetail()!.utilisateurNom || '')">
+        <img *ngIf="getUtilisateur(feuilleDetail()!)?.photoUrl"
+             [src]="getUtilisateur(feuilleDetail()!)!.photoUrl!"
+             style="width:100%;height:100%;object-fit:cover;border-radius:11px"
+             [alt]="feuilleDetail()!.utilisateurNom">
+        <span *ngIf="!getUtilisateur(feuilleDetail()!)?.photoUrl"
+              style="font-size:.8rem;font-weight:800;color:white">
+          {{ getInitiales(feuilleDetail()!.utilisateurNom) }}
         </span>
       </div>
-    </div>
-    <button class="mx-so-close" (click)="fermerDetail()">
-      <svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-    </button>
-  </div>
-
-  <div class="mx-so-body">
-    <!-- Résumé heures -->
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <div style="background:var(--bg-hover);border-radius:8px;padding:10px 14px;text-align:center;flex:1;border:1px solid var(--border-color)">
-        <p style="font-size:.62rem;color:var(--text-muted);margin:0;font-weight:700;text-transform:uppercase">Heures</p>
-        <p style="font-size:1.1rem;font-weight:800;color:var(--accent);margin:4px 0 0">{{ fmt(ft.minutesTravaillees) }}</p>
-      </div>
-      <div *ngIf="ft.minutesSupplementaires > 0"
-           style="background:rgba(16,185,129,.08);border-radius:8px;padding:10px 14px;text-align:center;flex:1;border:1px solid rgba(16,185,129,.2)">
-        <p style="font-size:.62rem;color:#10b981;margin:0;font-weight:700;text-transform:uppercase">Suppl.</p>
-        <p style="font-size:1.1rem;font-weight:800;color:#10b981;margin:4px 0 0">+{{ fmt(ft.minutesSupplementaires) }}</p>
-      </div>
-    </div>
-
-    <!-- Entrées en TABLEAU (colonnes: Projet, Activité, Durée) -->
-    <div>
-      <p class="mx-so-section-title">Entrées ({{ ft.lignes?.length || 0 }} activité{{ (ft.lignes?.length||0) > 1 ? 's' : '' }})</p>
-      <div class="appro-entries-table-wrap">
-        <table class="appro-entries-table" *ngIf="ft.lignes && ft.lignes.length > 0">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Projet</th>
-              <th>Activité</th>
-              <th>Horaire</th>
-              <th>Durée</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let l of ft.lignes">
-              <td>{{ l.date | date:'dd/MM' }}</td>
-              <td>
-                <span style="font-weight:600;color:var(--text-primary)">{{ l.projetNom || '—' }}</span>
-              </td>
-              <td>
-                <span style="font-size:.73rem;color:var(--text-secondary)">{{ l.activiteNom || '—' }}</span>
-              </td>
-              <td style="white-space:nowrap;font-size:.72rem;color:var(--text-muted)">
-                {{ l.heureDebut && l.heureFin ? l.heureDebut + ' – ' + l.heureFin : '—' }}
-              </td>
-              <td style="font-weight:700;color:var(--accent);white-space:nowrap">
-                {{ fmtDureeEntree(l.minutesTravaillees) }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <div *ngIf="!ft.lignes || ft.lignes.length === 0" class="dt-empty" style="padding:20px">
-          <p class="dt-empty-sub">Aucune entrée.</p>
+      <div class="mx-so-title-block">
+        <p class="mx-so-name">{{ feuilleDetail()!.utilisateurNom || 'Utilisateur' }}</p>
+        <p class="mx-so-sub" style="font-size:.72rem;color:var(--dt-text-sub)">
+          {{ getUtilisateur(feuilleDetail()!)?.email || '' }}
+        </p>
+        <p class="mx-so-sub">Semaine {{ feuilleDetail()!.semaineDu | date:'dd/MM' }} – {{ feuilleDetail()!.semaineAu | date:'dd/MM/yyyy' }}</p>
+        <div class="mx-so-badges">
+          <span class="dt-badge" style="font-size:.62rem"
+                [class.dt-badge-delivered]="feuilleDetail()!.statut==='VALIDEE'"
+                [class.dt-badge-canceled]="feuilleDetail()!.statut==='REJETEE'"
+                [class.dt-badge-pending]="feuilleDetail()!.statut==='SOUMISE'"
+                [class.dt-badge-default]="feuilleDetail()!.statut==='BROUILLON'">
+            <span class="dt-badge-dot"></span>{{ statutLabel(feuilleDetail()!.statut) }}
+          </span>
         </div>
       </div>
+      <button class="mx-so-close" (click)="fermerDetail()">
+        <svg viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
     </div>
 
-    <!-- Commentaires -->
-    <div *ngIf="ft.commentaireEmploye">
-      <p class="mx-so-section-title">Commentaire de l'employé</p>
-      <p style="font-size:.78rem;color:var(--text-secondary);background:var(--bg-hover);padding:8px 10px;border-radius:7px;margin:0;border:1px solid var(--border-color)">
-        {{ ft.commentaireEmploye }}
-      </p>
-    </div>
-    <div *ngIf="ft.commentaireValideur">
-      <p class="mx-so-section-title">Commentaire du valideur</p>
-      <p style="font-size:.78rem;padding:8px 10px;border-radius:7px;margin:0;border:1px solid"
-         [style.background]="ft.statut==='REJETEE'?'rgba(239,68,68,.08)':'rgba(16,185,129,.08)'"
-         [style.color]="ft.statut==='REJETEE'?'#ef4444':'#10b981'"
-         [style.border-color]="ft.statut==='REJETEE'?'rgba(239,68,68,.2)':'rgba(16,185,129,.2)'">
-        {{ ft.commentaireValideur }}
-      </p>
-    </div>
-  </div>
+    <div class="mx-so-body" style="overflow-y:auto;flex:1">
+      <!-- Résumé heures -->
+       <!-- Résumé heures -->
+       <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div style="background:var(--bg-hover);border-radius:8px;padding:10px 14px;text-align:center;flex:1;border:1px solid var(--border-color)">
+          <p style="font-size:.62rem;color:var(--text-muted);margin:0;font-weight:700;text-transform:uppercase">Heures</p>
+          <p style="font-size:1.1rem;font-weight:800;color:var(--accent);margin:4px 0 0">{{ fmt((feuilleDetail()!.heuresTravaillees ?? 0) * 60) }}</p>
+        </div>
+        <div *ngIf="feuilleDetail()!.minutesSupplementaires > 0"
+             style="background:rgba(16,185,129,.08);border-radius:8px;padding:10px 14px;text-align:center;flex:1;border:1px solid rgba(16,185,129,.2)">
+          <p style="font-size:.62rem;color:#10b981;margin:0;font-weight:700;text-transform:uppercase">Suppl.</p>
+          <p style="font-size:1.1rem;font-weight:800;color:#10b981;margin:4px 0 0">+{{ fmt(feuilleDetail()!.minutesSupplementaires) }}</p>
+        </div>
+      </div>
 
-  <!-- Actions si SOUMISE -->
-  <div *ngIf="ft.statut==='SOUMISE'"
-       style="padding:12px 18px;border-top:1px solid var(--border-color);background:var(--bg-hover);display:flex;gap:8px;flex-shrink:0">
-    <button class="dt-btn-create" style="flex:1;justify-content:center;height:38px" (click)="valider(ft)">
-      <svg viewBox="0 0 12 12" fill="none" style="width:11px;height:11px">
-        <path d="M2 6l3 3.5 5-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      Valider
-    </button>
-    <button class="ms-btn ms-btn-remove" style="flex:1;justify-content:center;height:38px" (click)="ouvrirRejet(ft)">
-      Rejeter
-    </button>
-  </div>
-  <div *ngIf="ft.statut!=='SOUMISE'" class="mx-so-footer">
-    <button class="mx-btn mx-btn-ghost" (click)="fermerDetail()">Fermer</button>
+      <!-- Entrées en TABLEAU -->
+      <div>
+        <p class="mx-so-section-title">Entrées ({{ feuilleDetail()!.lignes?.length || 0 }} activité{{ (feuilleDetail()!.lignes?.length||0) > 1 ? 's' : '' }})</p>
+        <div class="appro-entries-table-wrap">
+          <table class="appro-entries-table" *ngIf="feuilleDetail()!.lignes && feuilleDetail()!.lignes.length > 0">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Projet</th>
+                <th>Activité</th>
+                <th>Durée</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let l of feuilleDetail()!.lignes">
+                <td>{{ l.date | date:'dd/MM' }}</td>
+                <td><span style="font-weight:600;color:var(--text-primary)">{{ l.projetNom || '—' }}</span></td>
+                <td><span style="font-size:.73rem;color:var(--text-secondary)">{{ l.activiteNom || '—' }}</span></td>
+                <td style="font-weight:700;color:var(--accent);white-space:nowrap">{{ fmtDureeEntree(l.minutesTravaillees) }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div *ngIf="!feuilleDetail()!.lignes || feuilleDetail()!.lignes.length === 0" class="dt-empty" style="padding:20px">
+            <p class="dt-empty-sub">Aucune entrée.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Commentaires -->
+      <div *ngIf="feuilleDetail()!.commentaireEmploye">
+        <p class="mx-so-section-title">Commentaire de l'employé</p>
+        <p style="font-size:.78rem;color:var(--text-secondary);background:var(--bg-hover);padding:8px 10px;border-radius:7px;margin:0;border:1px solid var(--border-color)">
+          {{ feuilleDetail()!.commentaireEmploye }}
+        </p>
+      </div>
+      <div *ngIf="feuilleDetail()!.commentaireValideur">
+        <p class="mx-so-section-title">Commentaire du valideur</p>
+        <p style="font-size:.78rem;padding:8px 10px;border-radius:7px;margin:0;border:1px solid"
+           [style.background]="feuilleDetail()!.statut==='REJETEE'?'rgba(239,68,68,.08)':'rgba(16,185,129,.08)'"
+           [style.color]="feuilleDetail()!.statut==='REJETEE'?'#ef4444':'#10b981'"
+           [style.border-color]="feuilleDetail()!.statut==='REJETEE'?'rgba(239,68,68,.2)':'rgba(16,185,129,.2)'">
+          {{ feuilleDetail()!.commentaireValideur }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Actions si SOUMISE -->
+    <div *ngIf="feuilleDetail()!.statut==='SOUMISE'"
+         style="padding:12px 18px;border-top:1px solid var(--border-color);background:var(--bg-hover);display:flex;gap:8px;flex-shrink:0">
+      <button class="dt-btn-create" style="flex:1;justify-content:center;height:38px" (click)="valider(feuilleDetail()!)">
+        <svg viewBox="0 0 12 12" fill="none" style="width:11px;height:11px">
+          <path d="M2 6l3 3.5 5-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Valider
+      </button>
+      <button class="ms-btn ms-btn-remove" style="flex:1;justify-content:center;height:38px" (click)="ouvrirRejet(feuilleDetail()!)">
+        Rejeter
+      </button>
+    </div>
+    <div *ngIf="feuilleDetail()!.statut!=='SOUMISE'" class="mx-so-footer" style="flex-shrink:0">
+      <button class="mx-btn mx-btn-ghost" (click)="fermerDetail()">Fermer</button>
+    </div>
+
   </div>
 </div>
-
 <!-- ════ MODAL REJET ════ -->
 <div *ngIf="showRejetModal()" class="mx-modal-backdrop" (click)="showRejetModal.set(false)">
   <div class="mx-modal" style="max-width:420px;padding:0;overflow:hidden" (click)="$event.stopPropagation()">

@@ -35,19 +35,23 @@
 
       <div  *ngIf="perms.canSeeFTMenu() && perms.canSeeDemandeMenu()"></div>
 
-  <!-- ✅ Jours d'absence — valeur statique temporaire -->
-<div class="kpi-sep" *ngIf="!perms.estStagiairePur()"></div>
-<div class="kpi-pill" *ngIf="!perms.estStagiairePur()">
-  <span class="kpi-val">1j</span>
-  <span class="kpi-lbl">Jour(s) d'absence</span>
-</div>
+  <!-- ✅ CORRIGÉ — Jours d'absence, calculés depuis la feuille de temps de la semaine -->
+  <!-- ✅ CORRIGÉ — Jours de congé disponibles (solde réel) -->
+  <div class="kpi-sep" *ngIf="!perms.estStagiairePur() && soldeConge() as sc"></div>
+  <div class="kpi-pill" *ngIf="!perms.estStagiairePur() && soldeConge() as sc">
+    <span class="kpi-val">{{ sc.solde | number:'1.0-1' }}j</span>
+    <span class="kpi-lbl">Congés disponibles</span>
+  </div>
+  
+  <!-- ✅ CORRIGÉ — Congés pris (valeur seule, sans le total) -->
+  <div class="kpi-sep" *ngIf="!perms.estStagiairePur() && soldeConge() as sc"></div>
+  <div class="kpi-pill" *ngIf="!perms.estStagiairePur() && soldeConge() as sc">
+    <span class="kpi-val">{{ sc.pris | number:'1.0-1' }}j</span>
+    <span class="kpi-lbl">Congés pris</span>
+  </div>
+  
 
-<!-- ✅ Congés pris / acquis — valeur statique temporaire -->
-<div class="kpi-sep" *ngIf="!perms.estStagiairePur()"></div>
-<div class="kpi-pill" *ngIf="!perms.estStagiairePur()">
-  <span class="kpi-val">2j<span style="font-size:.7em;font-weight:600;color:var(--text-secondary)">/5.4j</span></span>
-  <span class="kpi-lbl">Congés pris</span>
-</div>
+
 
       <!-- Activités en cours -->
       <div class="kpi-sep" *ngIf="mesActivites().length > 0"></div>
@@ -66,8 +70,11 @@
   <div class="bento" [class.has-right]="hasRightCol()">
 
     <!-- ── PROFILE ── -->
-    <div class="bcard b-profile">
+    <!-- ── COLONNE PROFIL (wrapper) ── -->
+    <div class="b-profile-col">
 
+      <!-- ── PROFILE ── -->
+      <div class="bcard b-profile">
       <!-- Avatar + nom + statut -->
       <div class="pb-top">
         <div class="pb-avatar" [style.overflow]="currentUser()?.photoUrl ? 'hidden' : 'visible'">
@@ -223,105 +230,116 @@
       <button class="pb-cta" (click)="goTo('/profil')">Modifier le profil</button>
     </div>
 
+    <!-- ── MES STAGIAIRES — carte séparée, sous la carte profil, même colonne ── -->
+    <div class="bcard" *ngIf="perms.can('INT_SUPER_CAN_SUPERVISE')">
+      <div class="bc-head">
+        <span class="bc-title">Mes stagiaires</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div *ngFor="let s of mesStagiaires()"
+             style="display:flex;align-items:center;gap:10px;padding:7px 8px;">
+          <div style="width:38px;height:38px;border-radius:50%;flex-shrink:0;
+                      overflow:hidden;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+                      display:flex;align-items:center;justify-content:center;
+                      font-size:.56rem;font-weight:800;color:#fff">
+            <img *ngIf="s.photoUrl" [src]="s.photoUrl"
+                 style="width:100%;height:100%;object-fit:cover">
+            <span *ngIf="!s.photoUrl">{{ getInitiales((s.prenom||'') + ' ' + (s.nom||'')) }}</span>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:700;color:var(--text-primary);
+                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px">
+              {{ s.full }}
+            </div>
+            <div style="font-size:12px;color:var(--text-secondary);
+                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+              {{ s.email }}
+            </div>
+          </div>
+          <span *ngIf="s.poste" class="dt-badge"
+                style="background:var(--accent-soft);color:var(--accent);
+                       border-color:rgba(192,38,211,.25);flex-shrink:0">
+            {{ s.poste }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    </div><!-- ✅ NOUVEAU — /b-profile-col -->
+
     <!-- ── COLONNE CENTRALE (toujours présente) ── -->
     <div class="b-center-col">
 
-      <!-- CETTE SEMAINE -->
-      <div class="bcard b-week" *ngIf="perms.canSeeFTMenu()">
+  
+      <!-- ✅ NOUVEAU — MINI CALENDRIER MENSUEL (employés uniquement, pas stagiaires) -->
+           <!-- ✅ NOUVEAU — MINI CALENDRIER MENSUEL (employés uniquement, pas stagiaires) -->
+      <div class="bcard b-week" *ngIf="!perms.estStagiairePur() && perms.canSeeFTMenu()">
         <div class="bc-head">
-          <span class="bc-title">Cette semaine</span>
-          <span class="bc-muted">{{ heuresSemaineFmt() }} enregistrées</span>
-          <a class="bc-link" (click)="goTo('/feuille-temps')">Feuille complète →</a>
+          <span class="bc-title">{{ miniCalLabel() }}</span>
+          <div class="mini-cal-arrows">
+            <button class="mini-cal-arrow" (click)="miniCalPrev()" title="Mois précédent">‹</button>
+            <button class="mini-cal-arrow" (click)="miniCalNext()" title="Mois suivant">›</button>
+          </div>
+          <a class="bc-link" (click)="goTo('/feuille-temps?page=calendrier')">Vue complète →</a>
         </div>
-
-        <div *ngIf="loadingFeuille()" class="week-loading"><div class="home-spinner-sm"></div></div>
-
-        <div class="week-body" *ngIf="!loadingFeuille()">
-          <div class="week-line-wrap" *ngIf="joursSemaine().length > 0">
-            <svg class="week-line-svg" [attr.viewBox]="'0 0 ' + WEEK_LINE_W + ' ' + WEEK_LINE_H"
-                 preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="weekLineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stop-color="var(--accent)" stop-opacity=".22"/>
-                  <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
-                </linearGradient>
-              </defs>
-              <path [attr.d]="weekLineAreaPath()" fill="url(#weekLineGrad)"/>
-              <path [attr.d]="weekLinePath()" fill="none" stroke="var(--accent)" stroke-width="2.5"
-                    stroke-linecap="round" stroke-linejoin="round"/>
-              <g *ngFor="let p of weekLinePoints()">
-                <circle [attr.cx]="p.x" [attr.cy]="p.y" [attr.r]="p.isToday ? 5 : 3.5"
-                        [attr.fill]="p.isToday ? 'var(--accent)' : 'var(--bg-card)'"
-                        stroke="var(--accent)" stroke-width="2">
-                  <title>{{ p.label }} — {{ p.minutes > 0 ? (p.minutes / 60).toFixed(1) + 'h' : 'Aucune heure' }}</title>
-                </circle>
-              </g>
-            </svg>
-            <div class="week-line-xaxis">
-              <span *ngFor="let j of joursSemaine()" class="week-line-xlbl" [class.today-lbl]="j.isToday">
-                {{ j.label }}
-              </span>
-            </div>
-          </div>
-
-          <div class="week-empty" *ngIf="joursSemaine().length === 0">
-            <p>Aucune feuille de temps pour cette semaine.</p>
-            <button class="mx-btn mx-btn-primary mx-btn-sm" (click)="goTo('/feuille-temps')">
-              Créer ma feuille
-            </button>
-          </div>
-
-          <div class="week-chips" *ngIf="joursSemaine().length > 0">
-            <span class="wc hrs">⏱ {{ heuresSemaineFmt() }} cette semaine</span>
-            <span class="wc pres" *ngIf="feuilleSemaine()?.statut === 'VALIDEE'">✓ Validée</span>
-            <span class="wc late" *ngIf="feuilleSemaine()?.statut === 'SOUMISE'">⏳ Soumise</span>
-            <span class="wc abs"  *ngIf="feuilleSemaine()?.statut === 'BROUILLON'">✎ Brouillon</span>
-          </div>
-        </div>
+        <full-calendar #miniCalRef [options]="miniCalOptions"></full-calendar>
       </div>
 
-<!-- ── MES STAGIAIRES — visible uniquement si superviseur avec au moins 1 stagiaire ── -->
-<div class="bcard"
-     *ngIf="perms.can('INT_SUPER_CAN_SUPERVISE')">
-  <div class="bc-head">
-    <span class="bc-title">Mes stagiaires</span>
-  
-  </div>
-  <div style="display:flex;flex-direction:column;gap:6px">
-    <div *ngFor="let s of mesStagiaires()"
-    style="display:flex;align-items:center;gap:10px;padding:7px 8px;">
- <!-- Avatar rond -->
- <div style="width:38px;height:38px;border-radius:50%;flex-shrink:0;
-             overflow:hidden;background:linear-gradient(135deg,var(--accent),var(--accent-2));
-             display:flex;align-items:center;justify-content:center;
-             font-size:.56rem;font-weight:800;color:#fff">
-   <img *ngIf="s.photoUrl" [src]="s.photoUrl"
-        style="width:100%;height:100%;object-fit:cover">
-   <span *ngIf="!s.photoUrl">{{ getInitiales((s.prenom||'') + ' ' + (s.nom||'')) }}</span>
- </div>
- <!-- Infos : email au-dessus, nom en dessous -->
- <div style="flex:1;min-width:0">
-  <div style="font-size:12px;font-weight:700;color:var(--text-primary);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px">
-{{ s.full}}
-</div>
-   <div style="font-size:12px;color:var(--text-secondary);
-               white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-     {{ s.email }}
-   </div>
-  
- </div>
- <!-- Badge poste -->
- <span *ngIf="s.poste" class="dt-badge"
-       style="background:var(--accent-soft);color:var(--accent);
-              border-color:rgba(192,38,211,.25);flex-shrink:0">
-   {{ s.poste }}
- </span>
-</div>
+      
+    <!-- CETTE SEMAINE -->
+    <div class="bcard b-week" *ngIf="perms.canSeeFTMenu()">
+      <div class="bc-head">
+        <span class="bc-title">Cette semaine</span>
+        <span class="bc-muted">{{ heuresSemaineFmt() }} enregistrées</span>
+        <a class="bc-link" (click)="goTo('/feuille-temps')">Feuille complète →</a>
+      </div>
 
+      <div *ngIf="loadingFeuille()" class="week-loading"><div class="home-spinner-sm"></div></div>
 
-  </div>
-</div>
+      <div class="week-body" *ngIf="!loadingFeuille()">
+        <div class="week-line-wrap" *ngIf="joursSemaine().length > 0">
+          <svg class="week-line-svg" [attr.viewBox]="'0 0 ' + WEEK_LINE_W + ' ' + WEEK_LINE_H"
+               preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="weekLineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="var(--accent)" stop-opacity=".22"/>
+                <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path [attr.d]="weekLineAreaPath()" fill="url(#weekLineGrad)"/>
+            <path [attr.d]="weekLinePath()" fill="none" stroke="var(--accent)" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+            <g *ngFor="let p of weekLinePoints()">
+              <circle [attr.cx]="p.x" [attr.cy]="p.y" [attr.r]="p.isToday ? 5 : 3.5"
+                      [attr.fill]="p.isToday ? 'var(--accent)' : 'var(--bg-card)'"
+                      stroke="var(--accent)" stroke-width="2">
+                <title>{{ p.label }} — {{ p.minutes > 0 ? (p.minutes / 60).toFixed(1) + 'h' : 'Aucune heure' }}</title>
+              </circle>
+            </g>
+          </svg>
+          <div class="week-line-xaxis">
+            <span *ngFor="let j of joursSemaine()" class="week-line-xlbl" [class.today-lbl]="j.isToday">
+              {{ j.label }}
+            </span>
+          </div>
+        </div>
+
+        <div class="week-empty" *ngIf="joursSemaine().length === 0">
+          <p>Aucune feuille de temps pour cette semaine.</p>
+          <button class="mx-btn mx-btn-primary mx-btn-sm" (click)="goTo('/feuille-temps')">
+            Créer ma feuille
+          </button>
+        </div>
+
+        <div class="week-chips" *ngIf="joursSemaine().length > 0">
+          <span class="wc hrs">⏱ {{ heuresSemaineFmt() }} cette semaine</span>
+          <span class="wc pres" *ngIf="feuilleSemaine()?.statut === 'VALIDEE'">✓ Validée</span>
+          <span class="wc late" *ngIf="feuilleSemaine()?.statut === 'SOUMISE'">⏳ Soumise</span>
+          <span class="wc abs"  *ngIf="feuilleSemaine()?.statut === 'BROUILLON'">✎ Brouillon</span>
+        </div>
+      </div>
+    </div>
+
 <!-- ── MES SUPERVISEURS — visible uniquement si stagiaire pur avec superviseurs ── -->
 <div class="bcard"
      *ngIf="perms.estStagiairePur()">
@@ -399,12 +417,13 @@
         </div>
         
         <!-- ✅ Lien "voir plus" — n'apparaît que s'il y a plus de 4 items -->
-        <div *ngIf="fluxRecent().length > 4" style="text-align:center;margin-top:8px">
-          <a class="bc-link" style="margin:0;display:inline-block"
-             (click)="activiteRecenteExpanded.set(!activiteRecenteExpanded())">
-            {{ activiteRecenteExpanded() ? 'Réduire ▲' : 'Voir ' + (fluxRecent().length - 4) + ' de plus ▼' }}
-          </a>
-        </div>
+               <!-- ✅ Lien "voir plus" — n'apparaît que s'il y a plus de 2 items -->
+               <div *ngIf="fluxRecent().length > 2" style="text-align:center;margin-top:8px">
+                <a class="bc-link" style="margin:0;display:inline-block"
+                   (click)="activiteRecenteExpanded.set(!activiteRecenteExpanded())">
+                  {{ activiteRecenteExpanded() ? 'Réduire ▲' : 'Voir ' + (fluxRecent().length - 2) + ' de plus ▼' }}
+                </a>
+              </div>
         
         <div class="ilist-empty" *ngIf="fluxRecent().length === 0">
           <p>Aucune activité récente.</p>
@@ -419,7 +438,13 @@
         </div>
       </div>
 
-      <!-- QUICK ACTIONS -->
+    
+
+    </div><!-- /b-center-col -->
+    <!-- ── COLONNE DROITE (n'existe que si au moins une carte droite est visible) ── -->
+    <div class="b-right-col" *ngIf="hasRightCol()">
+
+      <!-- QUICK ACTIONS — déplacé en haut de la 3e colonne -->
       <div class="bcard b-actions">
         <div class="bc-head">
           <span class="bc-title">Actions rapides</span>
@@ -427,7 +452,7 @@
         <div class="qa-grid">
           <button class="qa-btn" *ngIf="perms.canCreateOwnTS()" (click)="goTo('/feuille-temps')">
             <span class="qa-ico teal">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="4" width="18" height="18" rx="2"/>
                 <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
                 <line x1="3" y1="10" x2="21" y2="10"/>
@@ -437,7 +462,7 @@
           </button>
           <button class="qa-btn" *ngIf="perms.canCreateDemande()" (click)="goTo('/demande')">
             <span class="qa-ico blue">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                 <polyline points="14 2 14 8 20 8"/>
               </svg>
@@ -446,7 +471,7 @@
           </button>
           <button class="qa-btn" *ngIf="perms.canSeeProjetsStageMenu()" (click)="goTo('/projets-stage')">
             <span class="qa-ico purple">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="3" width="7" height="7" rx="1"/>
                 <rect x="14" y="3" width="7" height="7" rx="1"/>
                 <rect x="14" y="14" width="7" height="7" rx="1"/>
@@ -457,7 +482,7 @@
           </button>
           <button class="qa-btn" *ngIf="perms.canSeeDocEspaceStageMenu()" (click)="goTo('/espace-stage/documents')">
             <span class="qa-ico pink">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M4 2h10l6 6v14H4V2z"/><path d="M14 2v6h6"/>
               </svg>
             </span>
@@ -465,34 +490,52 @@
           </button>
           <button class="qa-btn" *ngIf="perms.canCreateReclamation()" (click)="goTo('/reclamations')">
             <span class="qa-ico teal">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
               </svg>
             </span>
             Réclamation
           </button>
+          <button class="qa-btn" (click)="goTo('/stagiaires')">
+            <span class="qa-ico orange">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 10L12 5 2 10l10 5 10-5z"/>
+                <path d="M6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/>
+              </svg>
+            </span>
+            Espace stagiaire
+          </button>
+          <button class="qa-btn" (click)="goTo('/groups')">
+            <span class="qa-ico indigo">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </span>
+            Mes équipes
+          </button>
           <button class="qa-btn" (click)="goTo('/profil')">
             <span class="qa-ico blue">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                 <circle cx="9" cy="7" r="4"/>
               </svg>
             </span>
             Mon profil
           </button>
+
+
+
+
         </div>
       </div>
-
-    </div><!-- /b-center-col -->
-
-    <!-- ── COLONNE DROITE (n'existe que si au moins une carte droite est visible) ── -->
-    <div class="b-right-col" *ngIf="hasRightCol()">
 
       <!-- ═══════════════════════════════════════════════════════
            CARTE MES DEMANDES — style jauge concentrique (pd5)
       ═══════════════════════════════════════════════════════ -->
       <div class="bcard b-leave" *ngIf="perms.canSeeDemandeMenu()">
-
         <!-- En-tête : titre + badge dt total -->
         <div class="bc-head">
           <span class="bc-title">Mes demandes</span>
