@@ -1,4 +1,3 @@
-// src/main/java/com/talenthub/api_gateway/config/GatewayCorsConfig.java
 package com.talenthub.api_gateway.config;
 
 import org.springframework.context.annotation.Bean;

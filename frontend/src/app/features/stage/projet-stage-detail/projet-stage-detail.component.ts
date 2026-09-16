@@ -1568,8 +1568,8 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
       points.push({ label: `${this.MOIS_LABELS[nextM]}${d}`, year: nextY, month: nextM, day: d });
     }
 
-    const yLabels = this.getYAxisLabels();
-    const yMax = yLabels[0] || 1;
+    const yLabels = this.getLineYLabels();   // ✅ même échelle que les labels Y affichés
+const yMax = yLabels[0] || 1;
 
     const counts = points.map((pt, i) => {
       const start = i === 0 ? 1 : points[i - 1].day + 1;

@@ -1,7 +1,6 @@
 // api-gateway/.../Config/GatewaySecurityConfig.java — REMPLACE
 package com.talenthub.api_gateway.config;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,7 +15,6 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class GatewaySecurityConfig {
 
-    // ✅ Déclarer explicitement le JwtDecoder
     @Bean
     public JwtDecoder jwtDecoder() {
         return NimbusJwtDecoder.withJwkSetUri(
@@ -27,16 +25,19 @@ public class GatewaySecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(cors -> {}) // ✅ Active CORS via GatewayCorsConfig
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/api/application/notifications/sse/**").permitAll()
-                        .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/api/application/utilisateurs/keycloak/**").permitAll()
+                        .requestMatchers("/api/application/profil-permissions/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.decoder(jwtDecoder()))  // ✅ Decoder explicite
+                        .jwt(jwt -> jwt.decoder(jwtDecoder()))
                 );
         return http.build();
     }

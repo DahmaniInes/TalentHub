@@ -216,7 +216,13 @@ private loadUserAndDemandes(): void {
   // ── Helpers ──
   getTypeName(id: number)  { return this.types().find(t => t.id === id)?.libelle ?? '—'; }
   getStatut(id: number)    { return this.statuts().find(s => s.id === id); }
-
+// Types visibles : un stagiaire pur n'a pas droit aux congés,
+// on masque donc tout type dont le code commence par "CONGE".
+typesVisibles = computed(() => {
+  const list = this.types();
+  if (!this.permCtx.estStagiairePur()) return list;
+  return list.filter(t => !(t.code ?? '').toUpperCase().startsWith('CONGE'));
+});
   getStatutBadgeClass(id: number): string {
     const code = this.statuts().find(s => s.id === id)?.code ?? '';
     switch (code) {

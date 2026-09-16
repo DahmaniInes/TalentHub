@@ -34,8 +34,7 @@
     </div>
 
     <!-- DROITE : pills statistiques congé -->
-    <div *ngIf="soldeConge() as sc" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-
+    <div *ngIf="!permCtx.estStagiairePur() && soldeConge() as sc" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
       <!-- CARTE 1 : bordure ajoutée, padding augmenté -->
       <div style="display:flex;align-items:center;gap:0;background:var(--bg-hover);border-radius:4px;overflow:hidden;border:1px solid var(--dt-border)">
         <div style="display:flex;align-items:center;gap:8px;padding:12px 18px">
@@ -174,16 +173,14 @@
                     <select class="dt-fp-select" [value]="filterStatutId() ?? ''"
                             (change)="filterStatutId.set($any($event.target).value ? +$any($event.target).value : null); currentPage.set(1)">
                       <option value="">Tous</option>
-                      <option *ngFor="let s of statuts()" [value]="s.id">{{ s.libelle }}</option>
-                    </select>
+                      <option *ngFor="let t of typesVisibles()" [value]="t.id">{{ t.libelle }}</option>                    </select>
                   </div>
                   <div class="dt-fp-field">
                     <label class="dt-fp-label">Type</label>
                     <select class="dt-fp-select" [value]="filterTypeId() ?? ''"
                             (change)="filterTypeId.set($any($event.target).value ? +$any($event.target).value : null); currentPage.set(1)">
                       <option value="">Tous</option>
-                      <option *ngFor="let t of types()" [value]="t.id">{{ t.libelle }}</option>
-                    </select>
+                      <option *ngFor="let t of typesVisibles()" [value]="t.id">{{ t.libelle }}</option>                    </select>
                   </div>
                 </div>
               </div>
@@ -402,8 +399,7 @@
               <label class="dm-label">Type <span class="dm-required">*</span></label>
               <select formControlName="typeDemandeId" class="dm-select" (change)="onFormFieldChange()">
                 <option [value]="null">-- Sélectionner --</option>
-                <option *ngFor="let t of types()" [value]="t.id">{{ t.libelle }}</option>
-              </select>
+                <option *ngFor="let t of typesVisibles()" [value]="t.id">{{ t.libelle }}</option>              </select>
             </div>
             <div class="dm-field">
               <label class="dm-label">Sujet <span class="dm-required">*</span></label>

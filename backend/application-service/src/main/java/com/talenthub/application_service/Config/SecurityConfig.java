@@ -54,6 +54,8 @@ public class SecurityConfig {
                         // jamais par le frontend Angular avec un token JWT TalentHub —
                         // il doit donc être public, sinon la redirection se fait bloquer en 401.
                         .requestMatchers("/outlook/callback").permitAll()
+                        .requestMatchers("/utilisateurs/keycloak/**").permitAll()
+                        .requestMatchers("/profil-permissions/**").permitAll()   // aussi temporaire
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

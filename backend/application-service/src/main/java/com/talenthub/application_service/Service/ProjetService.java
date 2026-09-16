@@ -28,7 +28,7 @@ public class ProjetService {
     private final CommentaireRepository  commentaireRepository;
     private final MembreEquipeRepository membreEquipeRepository;
     private final StagiaireSuperviseurRepository stagiaireSuperviseurRepository;
-
+    private final AvancementService avancementService;   // ✅ AJOUT
     @Transactional(readOnly = true)
     public List<Projet> getAll() { return projetRepository.findAll(); }
 
@@ -155,12 +155,12 @@ public class ProjetService {
         if (details.getTypeProjetId() != null)
             existing.setTypeProjetId(details.getTypeProjetId());
 
-        existing.setAvancement(details.getAvancement());
         existing.setBudgetPrevu(details.getBudgetPrevu());
         if (details.getBudgetConsomme() != null)
             existing.setBudgetConsomme(details.getBudgetConsomme());
-        existing.setHeuresEstimees(details.getHeuresEstimees());
-        if (details.getTypeBudget() != null)
+// ✅ ne pas écraser l'estimation si le formulaire ne l'a pas envoyée
+        if (details.getHeuresEstimees() != null)
+            existing.setHeuresEstimees(details.getHeuresEstimees());        if (details.getTypeBudget() != null)
             existing.setTypeBudget(details.getTypeBudget());
         if (details.getSeuilAlerteHoraire() != null)
             existing.setSeuilAlerteHoraire(details.getSeuilAlerteHoraire());
@@ -189,7 +189,12 @@ public class ProjetService {
                     : new ArrayList<>(
                     activiteRepository.findAllById(activiteIds)));
         }
-        return projetRepository.save(existing);
+        projetRepository.save(existing);
+
+        // ✅ avancement est une valeur DÉRIVÉE (heuresPassees / heuresEstimees) :
+        // on la recalcule au lieu de la copier depuis le formulaire.
+        avancementService.recalculerProjet(id);
+        return projetRepository.findById(id).orElse(existing);
     }
 
     @Transactional

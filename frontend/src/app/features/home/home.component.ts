@@ -652,9 +652,11 @@ weekLineAreaPath = computed(() => {
       : nom.substring(0, 2).toUpperCase();
   }
 
-  activitesAffichees = computed(() =>
-  this.activiteRecenteExpanded() ? this.fluxRecent() : this.fluxRecent().slice(0, 2)
-);
+  activitesAffichees = computed(() => {
+    // Stagiaire : toutes les activités affichées directement, sans masquage
+    if (this.perms.estStagiairePur()) return this.fluxRecent();
+    return this.activiteRecenteExpanded() ? this.fluxRecent() : this.fluxRecent().slice(0, 2);
+  });
 
   // ── KPI carte profil ──────────────────────────────────────────────────
   joursAnciennete = computed(() => {

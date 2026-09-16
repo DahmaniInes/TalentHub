@@ -63,6 +63,7 @@ public class UtilisateurController {
     @GetMapping("/keycloak/{keycloakId}")
     public ResponseEntity<UtilisateurResponseDTO> getUtilisateurByKeycloakId(
             @PathVariable String keycloakId) {
+        System.out.println("======> APPEL /utilisateurs/keycloak/" + keycloakId);
         return ResponseEntity.ok(
                 new UtilisateurResponseDTO(utilisateurService.getUtilisateurByKeycloakId(keycloakId))
         );

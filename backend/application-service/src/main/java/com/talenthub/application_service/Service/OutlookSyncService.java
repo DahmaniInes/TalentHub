@@ -14,11 +14,17 @@ import java.util.Map;
 public class OutlookSyncService {
 
     private final OutlookIntegrationService integrationService;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
 
     public OutlookSyncService(OutlookIntegrationService integrationService) {
         this.integrationService = integrationService;
+        org.apache.hc.client5.http.impl.classic.CloseableHttpClient httpClient =
+                org.apache.hc.client5.http.impl.classic.HttpClients.createDefault();
+        this.restTemplate = new RestTemplate(
+                new org.springframework.http.client.HttpComponentsClientHttpRequestFactory(httpClient)
+        );
     }
+
 
     /**
      * Crée OU met à jour (si outlookEventId déjà présent) un événement.

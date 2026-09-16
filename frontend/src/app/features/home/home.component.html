@@ -418,8 +418,7 @@
         
         <!-- ✅ Lien "voir plus" — n'apparaît que s'il y a plus de 4 items -->
                <!-- ✅ Lien "voir plus" — n'apparaît que s'il y a plus de 2 items -->
-               <div *ngIf="fluxRecent().length > 2" style="text-align:center;margin-top:8px">
-                <a class="bc-link" style="margin:0;display:inline-block"
+               <div *ngIf="fluxRecent().length > 2 && !perms.estStagiairePur()" style="text-align:center;margin-top:8px">                <a class="bc-link" style="margin:0;display:inline-block"
                    (click)="activiteRecenteExpanded.set(!activiteRecenteExpanded())">
                   {{ activiteRecenteExpanded() ? 'Réduire ▲' : 'Voir ' + (fluxRecent().length - 2) + ' de plus ▼' }}
                 </a>
