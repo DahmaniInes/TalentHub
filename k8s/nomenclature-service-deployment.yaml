@@ -1,0 +1,35 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nomenclature-service
+  namespace: talenthub
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nomenclature-service
+  template:
+    metadata:
+      labels:
+        app: nomenclature-service
+    spec:
+      containers:
+        - name: nomenclature-service
+          image: talenthubines2026.azurecr.io/nomenclature-service:latest
+          ports:
+            - containerPort: 8083
+          env:
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://eureka-server:8761/eureka/
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nomenclature-service
+  namespace: talenthub
+spec:
+  selector:
+    app: nomenclature-service
+  ports:
+    - port: 8083
+      targetPort: 8083

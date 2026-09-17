@@ -1,0 +1,40 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: talenthub
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+        - name: api-gateway
+          image: talenthubines2026.azurecr.io/api-gateway:latest
+          ports:
+            - containerPort: 8085
+          env:
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://eureka-server:8761/eureka/
+            - name: SPRING_DATA_REDIS_HOST
+              value: redis
+            - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI
+              value: http://keycloak:8080/realms/talenthub/protocol/openid-connect/certs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: talenthub
+spec:
+  type: LoadBalancer
+  selector:
+    app: api-gateway
+  ports:
+    - port: 8085
+      targetPort: 8085
