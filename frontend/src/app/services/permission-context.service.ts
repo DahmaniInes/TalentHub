@@ -1,4 +1,5 @@
 // src/app/services/permission-context.service.ts — COMPLET FINAL
+import { environment } from '../../environments/environment';
 import { Injectable, signal } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { KeycloakService } from './keycloak.service';
@@ -34,10 +35,11 @@ export class PermissionContextService {
         const token = await this.keycloak.getValidToken();
         if (!token || !this.profilId) return;
         return new Promise(resolve => {
-            this.http.get<string[]>(
-                `http://localhost:8085/api/application/profil-permissions/profil/${this.profilId}/codes`,
-                { headers: new HttpHeaders({ Authorization: `Bearer ${token}` }) }
-            ).subscribe({
+
+         this.http.get<string[]>(
+    `${environment.apiUrl}/api/application/profil-permissions/profil/${this.profilId}/codes`,
+    { headers: new HttpHeaders({ Authorization: `Bearer ${token}` }) }
+).subscribe({
                 next: codes => { this.perms.set(new Set(codes)); this.loaded.set(true); resolve(); },
                 error: ()   => { this.loaded.set(true); resolve(); }
             });

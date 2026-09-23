@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Stage } from '../shared/models/stage.model';
@@ -7,7 +8,7 @@ import { Stage } from '../shared/models/stage.model';
 export class StageAngularService {
 
   private http = inject(HttpClient);
-  private api  = 'http://localhost:8085/api/application/stages';
+  private api  = environment.apiUrl + '/api/application/stages';
 
   getByUser(userId: number): Observable<Stage[]> {
     return this.http.get<Stage[]>(`${this.api}/utilisateur/${userId}`);

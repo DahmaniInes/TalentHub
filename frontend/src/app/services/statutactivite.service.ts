@@ -1,9 +1,10 @@
 import { Injectable, inject } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { StatutActivite } from '../shared/models/statut-activite.model';
 
-const BASE = 'http://localhost:8085/api/nomenclature/statut-activite';
+const BASE = environment.apiUrl + '/api/nomenclature/statut-activite';
 
 @Injectable({ providedIn: 'root' })
 export class StatutActiviteService {

@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Client, ClientRequest } from '../shared/models/client.model';
@@ -6,7 +7,7 @@ import { Client, ClientRequest } from '../shared/models/client.model';
 @Injectable({ providedIn: 'root' })
 export class ClientService {
   private http = inject(HttpClient);
-  private base = 'http://localhost:8085/api/application/clients';
+  private base = environment.apiUrl + '/api/application/clients';
  
   getAll(actif?: boolean): Observable<Client[]> {
     let params = new HttpParams();

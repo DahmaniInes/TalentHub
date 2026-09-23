@@ -1,4 +1,5 @@
 // src/app/services/evaluation-activite.service.ts — MISE À JOUR
+import { environment } from '../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -13,7 +14,7 @@ import {
 export class EvaluationActiviteService {
 
   private http = inject(HttpClient);
-  private base = 'http://localhost:8085/api/application/activites';
+  private base = environment.apiUrl + '/api/application/activites';
 
   getByActivite(activiteId: number): Observable<EvaluationsActiviteResponse> {
     return this.http.get<EvaluationsActiviteResponse>(

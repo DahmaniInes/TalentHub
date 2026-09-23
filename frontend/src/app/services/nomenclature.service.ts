@@ -1,10 +1,11 @@
 // src/app/services/nomenclature.service.ts — REMPLACE
+import { environment } from '../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { TypeDemande, StatutDemande } from '../shared/models/demande.model';
 
-const BASE = 'http://localhost:8085/api/nomenclature';
+const BASE = environment.apiUrl + '/api/nomenclature';
 
 @Injectable({ providedIn: 'root' })
 export class NomenclatureService {

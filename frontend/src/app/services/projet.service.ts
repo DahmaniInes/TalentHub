@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
@@ -10,8 +11,8 @@ import {
 export class ProjetService {
 
   private http = inject(HttpClient);
-  private base = 'http://localhost:8085/api/application/projets';
-  private nomenclatureBase = 'http://localhost:8085/api/nomenclature';
+  private base = environment.apiUrl + '/api/application/projets';
+  private nomenclatureBase = environment.apiUrl + '/api/nomenclature';
 
   getAll(params?: {
     clientId?: number;

@@ -1,4 +1,5 @@
 // src/app/services/commentaire.service.ts
+import { environment } from '../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -7,7 +8,7 @@ import { Commentaire, CommentaireRequest } from '../shared/models/commentaire.mo
 @Injectable({ providedIn: 'root' })
 export class CommentaireService {
     private http = inject(HttpClient);
-    private base = 'http://localhost:8085/api/application/commentaires';
+    private base = environment.apiUrl + '/api/application/commentaires';
 
     getByProjet(projetId: number): Observable<Commentaire[]> {
         return this.http.get<Commentaire[]>(`${this.base}/projet/${projetId}`);

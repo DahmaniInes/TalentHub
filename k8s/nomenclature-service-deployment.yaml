@@ -17,8 +17,14 @@ spec:
         - name: nomenclature-service
           image: talenthubines2026.azurecr.io/nomenclature-service:latest
           ports:
-            - containerPort: 8083
+            - containerPort: 8082
           env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://postgres:5432/nomenclature_db
+            - name: SPRING_DATASOURCE_USERNAME
+              value: postgres
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: root
             - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
               value: http://eureka-server:8761/eureka/
 ---
@@ -31,5 +37,5 @@ spec:
   selector:
     app: nomenclature-service
   ports:
-    - port: 8083
-      targetPort: 8083
+    - port: 8082
+      targetPort: 8082

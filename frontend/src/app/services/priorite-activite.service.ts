@@ -1,4 +1,5 @@
 // src/app/services/priorite-activite.service.ts
+import { environment } from '../../environments/environment';
 
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
@@ -12,7 +13,7 @@ export class PrioriteActiviteService {
   private http = inject(HttpClient);
 
   /** Base URL du nomenclature-service via gateway */
-  private base = 'http://localhost:8085/api/nomenclature/priorites-activite';
+  private base = environment.apiUrl + '/api/nomenclature/priorites-activite';
 
   // ── Lecture ──────────────────────────────────────────────
 

@@ -1,4 +1,5 @@
 // src/app/services/groupe.service.ts
+import { environment } from '../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -30,7 +31,7 @@ export interface MembreInfo {
 @Injectable({ providedIn: 'root' })
 export class GroupeService {
   private http = inject(HttpClient);
-  private base = 'http://localhost:8085/api/application/groupes';
+  private base = environment.apiUrl + '/api/application/groupes';
 
   getAll(): Observable<Groupe[]> {
     return this.http.get<Groupe[]>(this.base);

@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { MembreEquipe, AddMembreRequest } from '../shared/models/membre-equipe.model';
@@ -6,7 +7,7 @@ import { MembreEquipe, AddMembreRequest } from '../shared/models/membre-equipe.m
 @Injectable({ providedIn: 'root' })
 export class MembreEquipeService {
   private http = inject(HttpClient);
-  private base = 'http://localhost:8085/api/application/membres-equipe';
+  private base = environment.apiUrl + '/api/application/membres-equipe';
  
   getByProjet(projetId: number): Observable<MembreEquipe[]> {
     return this.http.get<MembreEquipe[]>(`${this.base}/projet/${projetId}`);

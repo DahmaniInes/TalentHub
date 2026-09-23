@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Profil } from '../shared/models/profil.model';
@@ -8,7 +9,7 @@ import { Profil } from '../shared/models/profil.model';
 })
 export class ProfilService {
 
-  private apiUrl = 'http://localhost:8085/api/application/profils';   // via API Gateway
+  private apiUrl = environment.apiUrl + '/api/application/profils';   // via API Gateway
 
   constructor(private http: HttpClient) {}
 

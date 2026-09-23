@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
@@ -12,8 +13,8 @@ export interface SoldeConge {
   annee: number;
 }
 
-const BASE = 'http://localhost:8085/api/application/conges';
-const NOMENC_BASE = 'http://localhost:8085/api/nomenclature/parametres-conge';
+const BASE = environment.apiUrl + '/api/application/conges';
+const NOMENC_BASE = environment.apiUrl + '/api/nomenclature/parametres-conge';
 
 @Injectable({ providedIn: 'root' })
 export class CongeService {

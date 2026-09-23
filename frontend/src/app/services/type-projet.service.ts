@@ -1,9 +1,10 @@
 import { Injectable, inject } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { TypeProjet } from '../shared/models/projet.model';
 
-const BASE = 'http://localhost:8085/api/nomenclature/type-projet';
+const BASE = environment.apiUrl + '/api/nomenclature/type-projet';
 
 @Injectable({ providedIn: 'root' })
 export class TypeProjetService {

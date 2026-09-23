@@ -1,11 +1,12 @@
 // src/app/services/permission.service.ts — REMPLACE le fichier entier
+import { environment } from '../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Permission } from '../shared/models/permission.model';
 import { Profil } from '../shared/models/profil.model';
 
-const BASE = 'http://localhost:8085/api/application';
+const BASE = environment.apiUrl + '/api/application';
 
 // ✅ Interface simplifiée — plus de canRead/canWrite/etc.
 export interface ProfilPermission {

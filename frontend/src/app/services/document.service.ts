@@ -1,10 +1,11 @@
 import { Injectable, inject } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Document, TypeDocument, StatutDocument } from '../shared/models/document.model';
 
-const BASE       = 'http://localhost:8085/api/application/documents';
-const NOMEN_BASE = 'http://localhost:8085/api/nomenclature';
+const BASE       = environment.apiUrl + '/api/application/documents';
+const NOMEN_BASE = environment.apiUrl + '/api/nomenclature';
 
 @Injectable({ providedIn: 'root' })
 export class DocumentService {

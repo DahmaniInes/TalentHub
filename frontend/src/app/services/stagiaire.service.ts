@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Utilisateur } from '../shared/models/utilisateur.model';
@@ -7,8 +8,8 @@ import { Utilisateur } from '../shared/models/utilisateur.model';
 export class StagiaireService {
 
   private http = inject(HttpClient);
-  private api  = 'http://localhost:8085/api/application/stagiaires';
-  private nomenclatureApi = 'http://localhost:8085/api/nomenclature/types-stage';
+  private api  = environment.apiUrl + '/api/application/stagiaires';
+  private nomenclatureApi = environment.apiUrl + '/api/nomenclature/types-stage';
 
   getAll(): Observable<Utilisateur[]> {
     return this.http.get<Utilisateur[]>(this.api);

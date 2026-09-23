@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Projet, ProjetRequest } from '../shared/models/projet.model';
@@ -11,9 +12,9 @@ const TYPE_PROJET_STAGE_ID = 4;
 export class ProjetStageService {
 
   private http = inject(HttpClient);
-  private apiProjets   = 'http://localhost:8085/api/application/projets';
-  private apiActivites = 'http://localhost:8085/api/application/activites';
-  private apiMembres   = 'http://localhost:8085/api/application/membres-equipe';
+  private apiProjets   = environment.apiUrl + '/api/application/projets';
+  private apiActivites = environment.apiUrl + '/api/application/activites';
+  private apiMembres   = environment.apiUrl + '/api/application/membres-equipe';
 
   // ── Projets de stage (typeProjetId = 4) ──────────────────────
 

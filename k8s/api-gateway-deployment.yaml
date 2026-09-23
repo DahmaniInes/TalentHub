@@ -1,4 +1,4 @@
-﻿apiVersion: apps/v1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: api-gateway
@@ -25,6 +25,8 @@ spec:
               value: redis
             - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI
               value: http://keycloak:8080/realms/talenthub/protocol/openid-connect/certs
+            - name: PERMISSIONS_LOADER_URL
+              value: http://application-service:8081/profil-permissions/profil/{profilId}/codes
 ---
 apiVersion: v1
 kind: Service
@@ -32,7 +34,7 @@ metadata:
   name: api-gateway
   namespace: talenthub
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: api-gateway
   ports:

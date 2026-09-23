@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 import { catchError } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { ProjetStageService }       from '../../../services/projet-stage-service.service';
@@ -227,9 +228,9 @@ export class ProjetsStageComponent implements OnInit {
     if (idsAvecStagiaires.length === 0) return;
 
     const appels = idsAvecStagiaires.map(p =>
-        this.http.get<{ stagiaireId: number; superviseurs: SuperviseurInfo[] }[]>(
-            `http://localhost:8085/api/application/projets/${p.id}/superviseurs-stagiaires`
-        ).pipe(catchError(() => of([])))
+      this.http.get<{ stagiaireId: number; superviseurs: SuperviseurInfo[] }[]>(
+        `${environment.apiUrl}/api/application/projets/${p.id}/superviseurs-stagiaires`
+    ).pipe(catchError(() => of([])))
     );
 
     forkJoin(appels).subscribe(resultats => {

@@ -1,9 +1,10 @@
 // src/app/services/outlook.service.ts
+import { environment } from '../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-const BASE = 'http://localhost:8085/api/application/outlook';
+const BASE = environment.apiUrl + '/api/application/outlook';
 
 @Injectable({ providedIn: 'root' })
 export class OutlookService {

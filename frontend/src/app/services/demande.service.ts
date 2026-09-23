@@ -1,10 +1,11 @@
 // src/app/services/demande.service.ts — REMPLACE
+import { environment } from '../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Demande, DemandeRequest } from '../shared/models/demande.model';
 
-const BASE = 'http://localhost:8085/api/application/demandes';
+const BASE = environment.apiUrl + '/api/application/demandes';
 
 @Injectable({ providedIn: 'root' })
 export class DemandeService {

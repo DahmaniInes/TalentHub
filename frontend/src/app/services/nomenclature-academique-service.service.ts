@@ -1,4 +1,5 @@
 // src/app/services/nomenclature-academique.service.ts
+import { environment } from '../../environments/environment';
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -7,7 +8,7 @@ import { Universite, Specialite, NiveauEtude } from '../shared/models/nomenclatu
 @Injectable({ providedIn: 'root' })
 export class NomenclatureAcademiqueService {
 
-  private base = 'http://localhost:8085/api/nomenclature';
+  private base = environment.apiUrl + '/api/nomenclature';
 
   constructor(private http: HttpClient) {}
 

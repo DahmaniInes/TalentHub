@@ -6,7 +6,7 @@ import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { GraduationCapComponent } from '../graduation-cap/graduation-cap.component';
-
+import { environment } from '../../../environments/environment';
 import { UserService }               from '../../services/user.service';
 import { KeycloakService }           from '../../services/keycloak.service';
 import { PermissionContextService }  from '../../services/permission-context.service';
@@ -545,9 +545,9 @@ weekLineAreaPath = computed(() => {
           if (this.perms.estStagiairePur() && projets.length > 0) {
             forkJoin(
               projets.map((p: any) =>
-                this.http.get<any[]>(
-                  `http://localhost:8085/api/application/projets/${p.id}/superviseurs-stagiaires`
-                ).pipe(catchError(() => of([])))
+              this.http.get<any[]>(
+                `${environment.apiUrl}/api/application/projets/${p.id}/superviseurs-stagiaires`
+            ).pipe(catchError(() => of([])))
               )
             ).subscribe(resultats => {
               const seen = new Set<number>();

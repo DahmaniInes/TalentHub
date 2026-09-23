@@ -230,8 +230,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   const token = localStorage.getItem('keycloak-token') || '';
   
   this.http.post(
-      'http://localhost:8085/api/utilisateurs/sync-keycloak-profil-ids',
-      {},
+    `${environment.apiUrl}/api/utilisateurs/sync-keycloak-profil-ids`,      {},
       { headers: { Authorization: `Bearer ${token}` } }
   ).subscribe({
       next: (result: any) => {

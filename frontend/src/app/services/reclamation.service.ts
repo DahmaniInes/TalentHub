@@ -1,11 +1,12 @@
 // src/app/services/reclamation.service.ts
+import { environment } from '../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Reclamation, ReclamationRequest, ServiceReclamation, StatutReclamation } from '../shared/models/reclamation.model';
 
-const BASE      = 'http://localhost:8085/api/application/reclamations';
-const NOMEN_URL = 'http://localhost:8085/api/nomenclature'; // via gateway
+const BASE      = environment.apiUrl + '/api/application/reclamations';
+const NOMEN_URL = environment.apiUrl + '/api/nomenclature'; // via gateway
 
 @Injectable({ providedIn: 'root' })
 export class ReclamationService {

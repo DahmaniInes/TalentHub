@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { UserCreationRequest } from '../shared/models/user-creation-request.model';
@@ -11,7 +12,7 @@ export class UserService {
   private http           = inject(HttpClient);
   private keycloakService = inject(KeycloakService);
 
-  private apiUrl = 'http://localhost:8085/api/application/utilisateurs';
+  private apiUrl = environment.apiUrl + '/api/application/utilisateurs';
 
   createUser(request: UserCreationRequest): Observable<Utilisateur> {
     return this.http.post<Utilisateur>(this.apiUrl, request);

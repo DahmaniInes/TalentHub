@@ -1,10 +1,11 @@
 // src/app/services/feuille-temps.service.ts — COMPLET FINAL
+import { environment } from '../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { FeuilleTemps, FeuilleTempsRequest } from '../shared/models/feuille-temps.model';
 
-const BASE = 'http://localhost:8085/api/application/feuilles-temps';
+const BASE = environment.apiUrl + '/api/application/feuilles-temps';
 
 // ✅ NOUVEAU — forme renvoyée par /activites-recentes-disponibles/{id}
 export interface ActiviteRecenteDTO {

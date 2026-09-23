@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Activite, ActiviteRequest } from '../shared/models/activite.model';
@@ -7,7 +8,7 @@ import { Activite, ActiviteRequest } from '../shared/models/activite.model';
 export class ActiviteService {
 
   private http = inject(HttpClient);
-  private base = 'http://localhost:8085/api/application/activites';
+  private base = environment.apiUrl + '/api/application/activites';
 
   getAll(params?: {
     statutId?: number;

@@ -5,7 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
-
+import { environment } from '../../../../environments/environment';
 import { ProjetService }            from '../../../services/projet.service';
 import { ActiviteService }          from '../../../services/activite.service';
 import { CommentaireService }        from '../../../services/commentaire.service';
@@ -653,8 +653,8 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
   private chargerSuperviseursStagiaires(p: Projet): void {
     if (!p?.id) return;
     this.http.get<{ stagiaireId: number; superviseurs: SuperviseurInfo[] }[]>(
-        `http://localhost:8085/api/application/projets/${p.id}/superviseurs-stagiaires`
-    ).pipe(
+      `${environment.apiUrl}/api/application/projets/${p.id}/superviseurs-stagiaires`
+  ).pipe(
         catchError(() => of([]))
     ).subscribe(rows => {
       const map = new Map<number, SuperviseurInfo[]>();
@@ -697,8 +697,7 @@ export class ProjetStageDetailComponent implements OnInit, OnDestroy {
   // dédié fourni) : POST /membres-equipe/stagiaire et
   // DELETE /membres-equipe/projet/{projetId}/utilisateur/{userId}.
 
-  private readonly membresEquipeApi = 'http://localhost:8085/api/application/membres-equipe';
-
+  private readonly membresEquipeApi = `${environment.apiUrl}/api/application/membres-equipe`;
   startEditStagiaires(): void {
     if (!this.perms.canEditProjetStage()) return;
     const p = this.projet();

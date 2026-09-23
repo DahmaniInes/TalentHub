@@ -1,12 +1,13 @@
 // src/app/services/notification.service.ts — REMPLACE
+import { environment } from '../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { AppNotification } from '../shared/models/notification.model';
 import { KeycloakService } from './keycloak.service';
 
-const SSE_BASE = 'http://localhost:8085/api/application/notifications/sse';
-const API_BASE = 'http://localhost:8085/api/application/notifications';
+const SSE_BASE = environment.apiUrl + '/api/application/notifications/sse';
+const API_BASE = environment.apiUrl + '/api/application/notifications';
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
