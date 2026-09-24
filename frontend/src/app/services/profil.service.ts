@@ -8,9 +8,6 @@ import { Profil } from '../shared/models/profil.model';
   providedIn: 'root'
 })
 export class ProfilService {
-
-
-  
   private apiUrl = environment.apiUrl + '/api/application/profils';   // via API Gateway
 
   constructor(private http: HttpClient) {}
