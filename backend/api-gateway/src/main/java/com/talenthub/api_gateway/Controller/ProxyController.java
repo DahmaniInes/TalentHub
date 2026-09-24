@@ -23,7 +23,7 @@ public class ProxyController {
         this.restTemplate = restTemplate;
     }
 
-    // ✅ NOUVEAU — proxy multipart GÉNÉRIQUE, gère tout endpoint d'upload
+    // ✅ proxy multipart GÉNÉRIQUE, gère tout endpoint d'upload
     // (fichiers ET champs texte associés), quel que soit leur nom
     @PostMapping(value = "/api/application/**", consumes = "multipart/form-data")
     public ResponseEntity<byte[]> proxyMultipartApplication(HttpServletRequest request,
@@ -75,7 +75,8 @@ public class ProxyController {
 
             HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
 
-            return restTemplate.exchange(targetUrl, HttpMethod.POST, entity, byte[].class);
+            ResponseEntity<byte[]> response = restTemplate.exchange(targetUrl, HttpMethod.POST, entity, byte[].class);
+            return buildCleanResponse(response);
         } catch (IOException e) {
             return ResponseEntity.status(500).body(("Erreur upload proxy: " + e.getMessage()).getBytes());
         } catch (org.springframework.web.client.HttpStatusCodeException e) {
@@ -83,7 +84,7 @@ public class ProxyController {
         }
     }
 
-    // ── Routes JSON classiques (inchangées) ──
+    // ── Routes JSON classiques ──
 
     @RequestMapping(value = "/api/application/**", method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.PATCH})
     public ResponseEntity<byte[]> proxyApplicationService(HttpServletRequest request,
@@ -100,7 +101,8 @@ public class ProxyController {
         HttpEntity<byte[]> entity = new HttpEntity<>(body, headers);
 
         try {
-            return restTemplate.exchange(targetUrl, method, entity, byte[].class);
+            ResponseEntity<byte[]> response = restTemplate.exchange(targetUrl, method, entity, byte[].class);
+            return buildCleanResponse(response);
         } catch (org.springframework.web.client.HttpStatusCodeException e) {
             return buildErrorResponse(e);
         }
@@ -121,10 +123,27 @@ public class ProxyController {
         HttpEntity<byte[]> entity = new HttpEntity<>(body, headers);
 
         try {
-            return restTemplate.exchange(targetUrl, method, entity, byte[].class);
+            ResponseEntity<byte[]> response = restTemplate.exchange(targetUrl, method, entity, byte[].class);
+            return buildCleanResponse(response);
         } catch (org.springframework.web.client.HttpStatusCodeException e) {
             return buildErrorResponse(e);
         }
+    }
+
+    // ✅ NOUVEAU — filtre les en-têtes "hop-by-hop" sur les réponses RÉUSSIES
+    // (Transfer-Encoding, Content-Length, Connection) qui causent des
+    // doublons d'en-têtes une fois que Spring MVC reconstruit la réponse
+    private ResponseEntity<byte[]> buildCleanResponse(ResponseEntity<byte[]> response) {
+        HttpHeaders cleanHeaders = new HttpHeaders();
+        response.getHeaders().forEach((key, values) -> {
+            String k = key.toLowerCase();
+            if (!k.equals("transfer-encoding") && !k.equals("content-length") && !k.equals("connection")) {
+                cleanHeaders.put(key, values);
+            }
+        });
+        return ResponseEntity.status(response.getStatusCode())
+                .headers(cleanHeaders)
+                .body(response.getBody());
     }
 
     private ResponseEntity<byte[]> buildErrorResponse(org.springframework.web.client.HttpStatusCodeException e) {

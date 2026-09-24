@@ -1,6 +1,7 @@
 // api-gateway/.../Config/GatewaySecurityConfig.java — REMPLACE
 package com.talenthub.api_gateway.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -15,11 +16,15 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class GatewaySecurityConfig {
 
+    // ✅ CORRIGÉ — lit la vraie valeur depuis application.yaml / variable d'env
+    // au lieu de l'URL "http://localhost:8080" codée en dur, qui ignorait
+    // totalement la config Kubernetes (SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI)
+    @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
+    private String jwkSetUri;
+
     @Bean
     public JwtDecoder jwtDecoder() {
-        return NimbusJwtDecoder.withJwkSetUri(
-                "http://localhost:8080/realms/talenthub/protocol/openid-connect/certs"
-        ).build();
+        return NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
     }
 
     @Bean

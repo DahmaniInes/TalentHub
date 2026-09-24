@@ -10,11 +10,11 @@ export class KeycloakService {
   async init(): Promise<boolean> {
     if (this.initialized) return true;  // ✅ évite double init
 
- const config: KeycloakConfig = {
-  url: 'http://localhost:8080',
-  realm: 'talenthub',
-  clientId: 'talenthub-frontend'
-};
+    const config: KeycloakConfig = {
+      url: 'http://57.174.7.159',
+      realm: 'talenthub',
+      clientId: 'talenthub-frontend'
+    };
 
     this.keycloak = new Keycloak(config);
 
