@@ -248,11 +248,21 @@ export class MaSemaineComponent implements OnInit {
     this.lignesMatrice.set(Object.values(g));
   }
 
+    /**
+   * ✅ Génère un identifiant unique côté client sans dépendre de
+   * crypto.randomUUID(), indisponible en contexte non sécurisé (HTTP
+   * sur une IP publique, hors localhost). Utilisé uniquement comme clé
+   * d'affichage/sélection — jamais envoyé au backend.
+   */
+    private generateRowId(): string {
+      return 'row-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+    }
+    
   newLigne(): MatriceLigne {
     const jours: MatriceLigne['jours'] = {};
     for (const d of FeuilleTempsService.getDatesDesSemaine(this.lundiCourant()))
       jours[d] = { minutes: 0, minutesSupp: 0, heureDebut: '', heureFin: '', commentaire: '', estWeekend: FeuilleTempsService.isWeekend(d) };
-    return { rowId: crypto.randomUUID(), jours };
+    return { rowId: this.generateRowId(), jours };  // ✅ CORRIGÉ — remplace crypto.randomUUID()
   }
 
   // ── Actions lignes ──

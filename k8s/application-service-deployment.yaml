@@ -21,12 +21,26 @@ spec:
           env:
             - name: SPRING_DATASOURCE_URL
               value: jdbc:postgresql://postgres:5432/application_db
+            - name: SPRING_DATASOURCE_USERNAME
+              value: postgres
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: root
             - name: SPRING_DATA_REDIS_HOST
               value: redis
             - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
               value: http://eureka-server:8761/eureka/
             - name: KEYCLOAK_AUTH_SERVER_URL
               value: http://keycloak:8080
+            - name: NOMENCLATURE_BASE_URL
+              value: "http://nomenclature-service:8082"
+          volumeMounts:
+            - name: app-config
+              mountPath: /app/config
+              readOnly: true
+      volumes:
+        - name: app-config
+          secret:
+            secretName: application-service-config
 ---
 apiVersion: v1
 kind: Service

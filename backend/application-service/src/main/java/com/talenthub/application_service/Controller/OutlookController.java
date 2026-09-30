@@ -27,7 +27,7 @@ public class OutlookController {
     public void callback(@RequestParam String code, @RequestParam String state,
                          HttpServletResponse response) throws IOException {
         integrationService.handleCallback(code, Long.parseLong(state));
-        response.sendRedirect("http://localhost:4200/feuille-temps?page=calendrier&outlook=connecte");
+        response.sendRedirect("http://57.174.7.159/feuille-temps?page=calendrier&outlook=connecte");
     }
 
     @GetMapping("/status/{utilisateurId}")
