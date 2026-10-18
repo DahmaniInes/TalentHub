@@ -6,14 +6,18 @@ The platform centralizes HR processes, improves request tracking, and streamline
 
 ## Key Features
 
-- **Internship Management:** Track interns, internships, supervisors, and evaluations.
-- **HR Requests:** Submit and track employee requests, including leave, remote work, business trips, and training.
-- **Complaints Management:** Centralize complaints and improve traceability.
-- **Project Management:** Organize projects and assign responsibilities.
-- **Referential Management:** Manage shared reference data.
-- **Role-Based Access Control:** Enforce granular permissions according to user roles.
-- **Authentication and SSO:** Secure authentication through Keycloak.
-- **CI/CD:** Automate build and code-quality analysis using Jenkins and SonarQube.
+- **User Management:** Manage user accounts and access.
+- **Profile & Permission Management:** Configure user profiles and fine-grained permissions.
+- **Client & Team Management:** Manage clients, teams, and team assignments.
+- **Project & Activity Management:** Organize projects, activities, and responsibilities.
+- **Timesheet Management:** Track and manage working hours.
+- **Requests & Complaints Management:** Submit, process, and track requests and complaints.
+- **Internship Management:** Manage interns, supervisors, internships, and evaluations.
+- **Referential Management:** Maintain centralized reference data.
+- **Authentication & SSO:** Secure authentication and single sign-on using Keycloak.
+- **Automated Testing:** Test backend business logic using JUnit and Mockito.
+- **CI/CD Pipeline:** Automate builds, testing, and code quality analysis using Jenkins, Maven, and SonarQube.
+- **Containerization & Deployment:** Containerize application services with Docker and deploy the application using Kubernetes on Microsoft Azure Kubernetes Service (AKS).
 
 ## Architecture
 
@@ -42,13 +46,14 @@ Security is a core component of TalentHub.
 
 ## DevOps and Quality
 
-The CI/CD workflow is designed to automate key stages of the development lifecycle:
-
-- Source code checkout from Git.
-- Automated build using Maven.
-- Code quality analysis with SonarQube.
-- Test execution and coverage reporting.
-- Containerization with Docker.
+- **CI/CD:** Automated pipeline with Jenkins and GitHub.
+- **Build & Packaging:** Maven 3.9 and JDK 21.
+- **Automated Testing:** JUnit test execution and reporting.
+- **Code Coverage:** JaCoCo.
+- **Code Quality:** SonarQube analysis and Quality Gate.
+- **Containerization:** Docker image build and push to Azure Container Registry (ACR).
+- **Deployment:** Automated rollout on Azure Kubernetes Service (AKS).
+- **Notifications:** Email alerts for pipeline success or failure.
 
 ## Project Context
 
@@ -59,19 +64,57 @@ The CI/CD workflow is designed to automate key stages of the development lifecyc
 
 ## Technologies
 
-`Angular` `TypeScript` `Java` `Spring Boot` `PostgreSQL` `Keycloak` `Redis` `REST API` `Docker` `Jenkins` `SonarQube` `Azure`
+`Angular` `TypeScript` `Java` `Spring Boot` `Microservices` `REST API` `PostgreSQL` `Keycloak` `Redis` `Docker` `Kubernetes` `Jenkins` `Maven` `JUnit` `JaCoCo` `SonarQube` `Microsoft Azure` `Azure Kubernetes Service (AKS)` `Azure Container Registry (ACR)`
 
 ## Getting Started
 
-To run TalentHub locally, you need to configure the frontend, backend microservices, database, authentication server, and supporting infrastructure.
+### Prerequisites
 
-1. Clone the repository.
-2. Configure the required environment variables and service URLs.
-3. Start PostgreSQL, Redis, Keycloak, and the required backend services.
-4. Start the Angular frontend.
-5. Access the application using the configured local URL.
+Make sure you have the following tools installed:
 
-*Detailed installation commands and environment configuration should be added according to the repository's current setup.*
+- Git
+- Java JDK 21
+- Maven 3.9+
+- Node.js and npm
+- Angular CLI
+- Docker
+- Access to the required PostgreSQL, Redis, and Keycloak configurations
+
+### Installation
+
+**1. Clone the repository**
+
+```bash
+git clone https://github.com/DahmaniInes/TalentHub.git
+cd TalentHub
+```
+
+**2. Configure the environment**
+
+Configure the database connection, authentication settings, service URLs, and required environment variables for the frontend and backend services.
+
+**3. Start the backend services**
+
+Navigate to each Spring Boot microservice directory, configure its dependencies, and start it using Maven.
+
+```bash
+mvn spring-boot:run
+```
+
+**4. Start the Angular frontend**
+
+Navigate to the frontend directory and install the dependencies:
+
+```bash
+npm install
+ng serve
+```
+
+**5. Access the application**
+
+Open `http://localhost:4200` in your browser, provided that the frontend is configured to use the correct backend endpoints.
+
+> **Note:** PostgreSQL, Redis, Keycloak, service discovery, and the API Gateway must be configured and running for the application to work correctly.
 
 ## Author
 
